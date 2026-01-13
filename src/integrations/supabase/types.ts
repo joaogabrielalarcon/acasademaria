@@ -16,37 +16,70 @@ export type Database = {
     Tables: {
       clientes: {
         Row: {
+          assessores: Json | null
           bairro: string | null
+          cep: string | null
+          cidade: string | null
+          condominio: string | null
+          cpf_cnpj: string | null
           created_at: string
+          datas_importantes: Json | null
           email: string | null
           endereco: string | null
+          estado: string | null
+          funcionarios_casa: Json | null
           id: string
+          inscricao_estadual: string | null
           nome: string
           notas: string | null
+          particularidades: string | null
+          proprietarios: Json | null
           status: string
           telefone: string | null
           updated_at: string
         }
         Insert: {
+          assessores?: Json | null
           bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          condominio?: string | null
+          cpf_cnpj?: string | null
           created_at?: string
+          datas_importantes?: Json | null
           email?: string | null
           endereco?: string | null
+          estado?: string | null
+          funcionarios_casa?: Json | null
           id?: string
+          inscricao_estadual?: string | null
           nome: string
           notas?: string | null
+          particularidades?: string | null
+          proprietarios?: Json | null
           status?: string
           telefone?: string | null
           updated_at?: string
         }
         Update: {
+          assessores?: Json | null
           bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          condominio?: string | null
+          cpf_cnpj?: string | null
           created_at?: string
+          datas_importantes?: Json | null
           email?: string | null
           endereco?: string | null
+          estado?: string | null
+          funcionarios_casa?: Json | null
           id?: string
+          inscricao_estadual?: string | null
           nome?: string
           notas?: string | null
+          particularidades?: string | null
+          proprietarios?: Json | null
           status?: string
           telefone?: string | null
           updated_at?: string
@@ -76,6 +109,75 @@ export type Database = {
           nome?: string
         }
         Relationships: []
+      }
+      insumos: {
+        Row: {
+          ativo: boolean
+          categoria: string | null
+          created_at: string
+          id: string
+          nome: string
+          unidade: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          categoria?: string | null
+          created_at?: string
+          id?: string
+          nome: string
+          unidade?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string | null
+          created_at?: string
+          id?: string
+          nome?: string
+          unidade?: string | null
+        }
+        Relationships: []
+      }
+      registro_insumos: {
+        Row: {
+          created_at: string
+          id: string
+          insumo_id: string
+          observacao: string | null
+          quantidade: number
+          registro_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          insumo_id: string
+          observacao?: string | null
+          quantidade: number
+          registro_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          insumo_id?: string
+          observacao?: string | null
+          quantidade?: number
+          registro_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registro_insumos_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "insumos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registro_insumos_registro_id_fkey"
+            columns: ["registro_id"]
+            isOneToOne: false
+            referencedRelation: "registros"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       registros: {
         Row: {

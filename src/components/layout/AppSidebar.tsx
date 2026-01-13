@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { 
-  LayoutDashboard, 
   Users, 
   MapPin, 
   UserCircle,
@@ -20,14 +19,9 @@ import {
 
 const navigationItems = [
   {
-    title: "Timeline",
-    icon: LayoutDashboard,
-    href: "/",
-  },
-  {
     title: "Clientes",
     icon: Users,
-    href: "/clientes",
+    href: "/",
   },
   {
     title: "Trechos",
