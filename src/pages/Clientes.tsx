@@ -46,9 +46,9 @@ const mockClientes = [
 ];
 
 const statusConfig: Record<string, { label: string; className: string }> = {
-  ativo: { label: "Ativo", className: "bg-verde-medio/10 text-verde-medio border-verde-medio/20" },
+  ativo: { label: "Ativo", className: "bg-primary/20 text-primary border-primary/30" },
   inativo: { label: "Inativo", className: "bg-muted text-muted-foreground border-muted" },
-  prospecto: { label: "Prospecto", className: "bg-telha/10 text-telha border-telha/20" },
+  prospecto: { label: "Prospecto", className: "bg-primary/10 text-primary/80 border-primary/20" },
 };
 
 function ClienteCard({ cliente }: { cliente: typeof mockClientes[0] }) {
@@ -58,8 +58,8 @@ function ClienteCard({ cliente }: { cliente: typeof mockClientes[0] }) {
     <Link to={`/clientes/${cliente.id}`} className="block">
       <article className="card-botanical p-5 h-full animate-fade-in hover:shadow-card transition-all group">
         {/* Icon */}
-        <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center mb-4 group-hover:bg-secondary/20 transition-colors">
-          <Building2 className="w-6 h-6 text-secondary" />
+        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+          <Building2 className="w-6 h-6 text-primary" />
         </div>
 
         {/* Content */}
@@ -74,7 +74,7 @@ function ClienteCard({ cliente }: { cliente: typeof mockClientes[0] }) {
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-2 border-t border-border/50">
+          <div className="flex items-center justify-between pt-2 border-t border-primary/10">
             <Badge variant="outline" className={status.className}>
               {status.label}
             </Badge>
@@ -93,9 +93,9 @@ function EmptyState() {
   return (
     <div className="empty-state py-24 col-span-full">
       <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-6">
-        <Building2 className="w-10 h-10 text-muted-foreground/40" />
+        <Building2 className="w-10 h-10 text-muted-foreground" />
       </div>
-      <h3 className="font-display text-xl font-semibold mb-2">
+      <h3 className="font-display text-xl font-semibold mb-2 text-foreground">
         Nenhum cliente cadastrado
       </h3>
       <p className="text-muted-foreground mb-6 max-w-sm">

@@ -9,16 +9,20 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
+        // Primário: fundo creme, texto terracota
         default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm",
-        outline: "border border-input bg-background hover:bg-accent/5 hover:text-accent-foreground hover:border-accent",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-sm",
-        ghost: "hover:bg-accent/10 hover:text-accent",
+        // Outline: borda creme, texto creme
+        outline: "border border-primary/50 bg-transparent text-primary hover:bg-primary/10 hover:border-primary",
+        // Secondary: creme com opacidade
+        secondary: "bg-primary/20 text-primary hover:bg-primary/30 shadow-sm",
+        // Ghost: texto creme
+        ghost: "text-primary hover:bg-primary/10",
         link: "text-primary underline-offset-4 hover:underline",
-        // MFM Custom Variants
+        // Terracota (invertido): agora é fundo creme, texto terracota
         terracota: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg",
-        success: "bg-success text-success-foreground hover:bg-success/90 shadow-sm",
-        botanical: "bg-verde-escuro text-creme hover:bg-verde-escuro/90 shadow-sm",
+        success: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
+        botanical: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
         soft: "bg-muted text-muted-foreground hover:bg-muted/80",
       },
       size: {

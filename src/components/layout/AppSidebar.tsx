@@ -78,7 +78,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
                   isActive 
-                    ? "bg-sidebar-accent text-sidebar-primary-foreground" 
+                    ? "bg-sidebar-accent text-sidebar-foreground" 
                     : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                 )}
               >

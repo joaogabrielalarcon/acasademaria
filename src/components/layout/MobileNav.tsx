@@ -22,7 +22,7 @@ export function MobileNav() {
   const location = useLocation();
 
   return (
-    <div className="flex flex-col h-full text-creme">
+    <div className="flex flex-col h-full text-sidebar-foreground">
       {/* Logo */}
       <div className="flex items-center justify-center py-6 border-b border-sidebar-border">
         <Logo variant="compact" />
@@ -43,8 +43,8 @@ export function MobileNav() {
                     className={cn(
                       "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
                       isActive 
-                        ? "bg-sidebar-accent text-creme" 
-                        : "text-creme/70 hover:bg-sidebar-accent/50 hover:text-creme"
+                        ? "bg-sidebar-accent text-sidebar-foreground" 
+                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                     )}
                   >
                     <item.icon className="w-5 h-5" />
@@ -61,13 +61,13 @@ export function MobileNav() {
       <div className="border-t border-sidebar-border p-4">
         <div className="flex items-center gap-3 px-2 py-2 rounded-lg bg-sidebar-accent/30">
           <div className="w-10 h-10 rounded-full bg-sidebar-primary/20 flex items-center justify-center">
-            <UserCircle className="w-6 h-6 text-terracota" />
+            <UserCircle className="w-6 h-6 text-sidebar-primary" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-medium truncate">Usuário</p>
-            <p className="text-sm text-creme/60 truncate">Admin</p>
+            <p className="text-sm text-sidebar-foreground/60 truncate">Admin</p>
           </div>
-          <Button variant="ghost" size="icon-sm" className="text-creme/50 hover:text-creme">
+          <Button variant="ghost" size="icon-sm" className="text-sidebar-foreground/50 hover:text-sidebar-foreground">
             <LogOut className="w-5 h-5" />
           </Button>
         </div>

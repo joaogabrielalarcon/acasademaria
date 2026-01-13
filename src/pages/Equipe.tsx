@@ -58,14 +58,14 @@ export default function Equipe() {
 
       {/* List */}
       <div className="card-botanical overflow-hidden">
-        <div className="divide-y divide-border">
+        <div className="divide-y divide-primary/10">
           {colaboradores.map((colaborador) => (
             <div 
               key={colaborador.id} 
               className="flex items-center gap-4 p-4 hover:bg-muted/30 transition-colors"
             >
-              <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center flex-shrink-0">
-                <UserCircle className="w-6 h-6 text-secondary" />
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <UserCircle className="w-6 h-6 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-medium text-foreground">

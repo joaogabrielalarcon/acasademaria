@@ -79,7 +79,7 @@ function RegistroCard({ registro }: { registro: typeof mockRegistros[0] }) {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="flex flex-col items-center gap-2 text-muted-foreground/40">
+              <div className="flex flex-col items-center gap-2 text-muted-foreground">
                 <ImageIcon className="w-12 h-12" />
                 <span className="text-xs">Sem foto</span>
               </div>
@@ -132,9 +132,9 @@ function EmptyState() {
   return (
     <div className="empty-state py-24">
       <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-6">
-        <ImageIcon className="w-10 h-10 text-muted-foreground/40" />
+        <ImageIcon className="w-10 h-10 text-muted-foreground" />
       </div>
-      <h3 className="font-display text-xl font-semibold mb-2">
+      <h3 className="font-display text-xl font-semibold mb-2 text-foreground">
         Nenhum registro ainda
       </h3>
       <p className="text-muted-foreground mb-6 max-w-sm">

@@ -99,7 +99,7 @@ export default function NovoCliente() {
           </div>
 
           {/* Actions */}
-          <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4 border-t border-border">
+          <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4 border-t border-primary/20">
             <Button type="button" variant="outline" onClick={() => navigate(-1)}>
               Cancelar
             </Button>
