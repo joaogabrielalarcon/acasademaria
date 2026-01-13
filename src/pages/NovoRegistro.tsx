@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Upload, X, GripVertical } from "lucide-react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowLeft, Upload, Plus, Trash2, Package } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +36,18 @@ const mockColaboradores = [
   { id: "4", nome: "Maria Fernanda" },
 ];
 
+const mockInsumos = [
+  { id: "1", nome: "Adubo NPK 10-10-10", categoria: "adubo", unidade: "kg" },
+  { id: "2", nome: "Terra vegetal", categoria: "substrato", unidade: "sacos" },
+  { id: "3", nome: "Calcário dolomítico", categoria: "adubo", unidade: "kg" },
+  { id: "4", nome: "Casca de pinus", categoria: "substrato", unidade: "sacos" },
+  { id: "5", nome: "Muda de Ipe", categoria: "planta", unidade: "un" },
+  { id: "6", nome: "Palmeira Imperial", categoria: "planta", unidade: "un" },
+  { id: "7", nome: "Forração Amendoim", categoria: "planta", unidade: "mudas" },
+  { id: "8", nome: "Roçadeira", categoria: "ferramenta", unidade: "un" },
+  { id: "9", nome: "Soprador", categoria: "maquina", unidade: "un" },
+];
+
 const tipoOptions = [
   { value: "manutencao", label: "Manutenção" },
   { value: "implantacao", label: "Implantação" },
@@ -52,11 +64,25 @@ const areaOptions = [
   { value: "direcao", label: "Direção" },
 ];
 
+interface InsumoSelecionado {
+  insumoId: string;
+  nome: string;
+  quantidade: number;
+  unidade: string;
+}
+
 export default function NovoRegistro() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [selectedCliente, setSelectedCliente] = useState("");
+  const [searchParams] = useSearchParams();
+  
+  const clienteIdFromUrl = searchParams.get("cliente") || "";
+  
+  const [selectedCliente, setSelectedCliente] = useState(clienteIdFromUrl);
   const [selectedResponsaveis, setSelectedResponsaveis] = useState<string[]>([]);
+  const [insumosSelecionados, setInsumosSelecionados] = useState<InsumoSelecionado[]>([]);
+  const [novoInsumoId, setNovoInsumoId] = useState("");
+  const [novoInsumoQtd, setNovoInsumoQtd] = useState("");
 
   const filteredTrechos = mockTrechos.filter(t => t.clienteId === selectedCliente);
 
@@ -66,7 +92,13 @@ export default function NovoRegistro() {
       title: "Registro salvo!",
       description: "O registro foi adicionado com sucesso.",
     });
-    navigate("/");
+    
+    // Se veio de um cliente, volta para o perfil dele
+    if (clienteIdFromUrl) {
+      navigate(`/clientes/${clienteIdFromUrl}`);
+    } else {
+      navigate("/");
+    }
   };
 
   const toggleResponsavel = (id: string) => {
@@ -77,15 +109,51 @@ export default function NovoRegistro() {
     );
   };
 
+  const addInsumo = () => {
+    if (!novoInsumoId || !novoInsumoQtd) return;
+    
+    const insumo = mockInsumos.find(i => i.id === novoInsumoId);
+    if (!insumo) return;
+    
+    // Verifica se já está na lista
+    if (insumosSelecionados.some(i => i.insumoId === novoInsumoId)) {
+      toast({
+        title: "Insumo já adicionado",
+        description: "Este insumo já está na lista.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setInsumosSelecionados([
+      ...insumosSelecionados,
+      {
+        insumoId: insumo.id,
+        nome: insumo.nome,
+        quantidade: parseFloat(novoInsumoQtd),
+        unidade: insumo.unidade,
+      }
+    ]);
+    
+    setNovoInsumoId("");
+    setNovoInsumoQtd("");
+  };
+
+  const removeInsumo = (insumoId: string) => {
+    setInsumosSelecionados(insumosSelecionados.filter(i => i.insumoId !== insumoId));
+  };
+
+  const clienteNome = mockClientes.find(c => c.id === selectedCliente)?.nome;
+
   return (
     <AppLayout>
       {/* Back Button */}
       <Link 
-        to="/" 
+        to={clienteIdFromUrl ? `/clientes/${clienteIdFromUrl}` : "/"} 
         className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
       >
         <ArrowLeft className="w-4 h-4" />
-        <span>Voltar para Timeline</span>
+        <span>Voltar {clienteIdFromUrl && clienteNome ? `para ${clienteNome}` : "para Clientes"}</span>
       </Link>
 
       <div className="max-w-2xl">
@@ -187,9 +255,15 @@ export default function NovoRegistro() {
                 ))}
               </RadioGroup>
             </div>
+          </section>
 
+          {/* Seção 4: Equipe */}
+          <section className="space-y-4">
+            <h2 className="font-display text-lg font-semibold border-b border-primary/20 pb-2 text-foreground">
+              Equipe
+            </h2>
             <div className="space-y-2">
-              <Label>Responsáveis</Label>
+              <Label>Responsáveis pelo Serviço</Label>
               <div className="flex flex-wrap gap-2">
                 {mockColaboradores.map(c => (
                   <button
@@ -209,7 +283,85 @@ export default function NovoRegistro() {
             </div>
           </section>
 
-          {/* Seção 4: Detalhes */}
+          {/* Seção 5: Insumos */}
+          <section className="space-y-4">
+            <h2 className="font-display text-lg font-semibold border-b border-primary/20 pb-2 text-foreground flex items-center gap-2">
+              <Package className="w-5 h-5" />
+              Insumos Utilizados
+            </h2>
+            
+            {/* Adicionar Insumo */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Select value={novoInsumoId} onValueChange={setNovoInsumoId}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Buscar insumo..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {mockInsumos.map(i => (
+                    <SelectItem key={i.id} value={i.id}>
+                      {i.nome} ({i.unidade})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input 
+                type="number" 
+                placeholder="Qtd" 
+                className="w-24"
+                value={novoInsumoQtd}
+                onChange={(e) => setNovoInsumoQtd(e.target.value)}
+                min="0"
+                step="0.01"
+              />
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={addInsumo}
+                disabled={!novoInsumoId || !novoInsumoQtd}
+              >
+                <Plus className="w-4 h-4" />
+                Adicionar
+              </Button>
+            </div>
+
+            {/* Lista de Insumos Selecionados */}
+            {insumosSelecionados.length > 0 ? (
+              <div className="space-y-2">
+                {insumosSelecionados.map((insumo) => (
+                  <div 
+                    key={insumo.insumoId} 
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                  >
+                    <span className="text-sm text-foreground">
+                      {insumo.nome}
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium text-primary">
+                        {insumo.quantidade} {insumo.unidade}
+                      </span>
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="icon-sm"
+                        onClick={() => removeInsumo(insumo.insumoId)}
+                      >
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Nenhum insumo adicionado</p>
+            )}
+
+            <Button type="button" variant="ghost" size="sm" className="text-muted-foreground">
+              <Plus className="w-4 h-4" />
+              Cadastrar novo insumo
+            </Button>
+          </section>
+
+          {/* Seção 6: Detalhes */}
           <section className="space-y-4">
             <h2 className="font-display text-lg font-semibold border-b border-primary/20 pb-2 text-foreground">
               Detalhes
@@ -250,7 +402,7 @@ export default function NovoRegistro() {
             </div>
           </section>
 
-          {/* Seção 5: Mídia */}
+          {/* Seção 7: Mídia */}
           <section className="space-y-4">
             <h2 className="font-display text-lg font-semibold border-b border-primary/20 pb-2 text-foreground">
               Mídia
@@ -268,6 +420,9 @@ export default function NovoRegistro() {
                 Selecionar Arquivos
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Dica: marque as fotos como "Antes" ou "Depois" para facilitar a comparação
+            </p>
           </section>
 
           {/* Actions */}

@@ -1,6 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
 import { 
-  LayoutDashboard, 
   Users, 
   MapPin, 
   UserCircle,
@@ -12,8 +11,7 @@ import { Button } from "@/components/ui/button";
 import { SheetClose } from "@/components/ui/sheet";
 
 const navigationItems = [
-  { title: "Timeline", icon: LayoutDashboard, href: "/" },
-  { title: "Clientes", icon: Users, href: "/clientes" },
+  { title: "Clientes", icon: Users, href: "/" },
   { title: "Trechos", icon: MapPin, href: "/trechos" },
   { title: "Equipe", icon: UserCircle, href: "/equipe" },
 ];
