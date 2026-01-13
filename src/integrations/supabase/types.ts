@@ -238,6 +238,7 @@ export type Database = {
           cliente_id: string
           colaboradores_ids: string[] | null
           created_at: string
+          data_alerta: string | null
           data_servico: string
           descricao: string
           equipe_presente_ids: string[] | null
@@ -249,6 +250,7 @@ export type Database = {
           observacoes_internas: string | null
           proposta_id: string | null
           solicitante: string | null
+          status: string
           tags: string[] | null
           tipo: string
           trecho_id: string | null
@@ -259,6 +261,7 @@ export type Database = {
           cliente_id: string
           colaboradores_ids?: string[] | null
           created_at?: string
+          data_alerta?: string | null
           data_servico: string
           descricao: string
           equipe_presente_ids?: string[] | null
@@ -270,6 +273,7 @@ export type Database = {
           observacoes_internas?: string | null
           proposta_id?: string | null
           solicitante?: string | null
+          status?: string
           tags?: string[] | null
           tipo: string
           trecho_id?: string | null
@@ -280,6 +284,7 @@ export type Database = {
           cliente_id?: string
           colaboradores_ids?: string[] | null
           created_at?: string
+          data_alerta?: string | null
           data_servico?: string
           descricao?: string
           equipe_presente_ids?: string[] | null
@@ -291,6 +296,7 @@ export type Database = {
           observacoes_internas?: string | null
           proposta_id?: string | null
           solicitante?: string | null
+          status?: string
           tags?: string[] | null
           tipo?: string
           trecho_id?: string | null

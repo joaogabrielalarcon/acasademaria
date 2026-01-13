@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Upload, Plus, Trash2, Package, Users, FileText } from "lucide-react";
+import { ArrowLeft, Upload, Plus, Trash2, Package, Users, FileText, Bell } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { parseISO, isAfter, startOfDay, format } from "date-fns";
 
 // Mock data
 const mockClientes = [
@@ -79,6 +80,14 @@ const areaOptions = [
   { value: "direcao", label: "Direção" },
 ];
 
+const alertaOptions = [
+  { value: "nenhum", label: "Sem lembrete" },
+  { value: "no_dia", label: "No dia" },
+  { value: "1_dia", label: "1 dia antes" },
+  { value: "3_dias", label: "3 dias antes" },
+  { value: "1_semana", label: "1 semana antes" },
+];
+
 interface InsumoSelecionado {
   insumoId: string;
   nome: string;
@@ -92,6 +101,7 @@ export default function NovoRegistro() {
   const [searchParams] = useSearchParams();
   
   const clienteIdFromUrl = searchParams.get("cliente") || "";
+  const dataFromUrl = searchParams.get("data") || new Date().toISOString().split('T')[0];
   
   const [selectedCliente, setSelectedCliente] = useState(clienteIdFromUrl);
   const [selectedProposta, setSelectedProposta] = useState("");
@@ -102,6 +112,20 @@ export default function NovoRegistro() {
   const [insumosSelecionados, setInsumosSelecionados] = useState<InsumoSelecionado[]>([]);
   const [novoInsumoId, setNovoInsumoId] = useState("");
   const [novoInsumoQtd, setNovoInsumoQtd] = useState("");
+  const [dataServico, setDataServico] = useState(dataFromUrl);
+  const [statusRegistro, setStatusRegistro] = useState<string>("realizado");
+  const [alertaOpcao, setAlertaOpcao] = useState("nenhum");
+
+  // Atualizar status baseado na data selecionada
+  useEffect(() => {
+    const today = startOfDay(new Date());
+    const selectedDate = parseISO(dataServico);
+    if (isAfter(selectedDate, today)) {
+      setStatusRegistro("agendado");
+    } else {
+      setStatusRegistro("realizado");
+    }
+  }, [dataServico]);
 
   const filteredTrechos = mockTrechos.filter(t => t.clienteId === selectedCliente);
   const filteredPropostas = mockPropostas.filter(
@@ -246,7 +270,8 @@ export default function NovoRegistro() {
                 <Input 
                   type="date" 
                   id="data" 
-                  defaultValue={new Date().toISOString().split('T')[0]}
+                  value={dataServico}
+                  onChange={(e) => setDataServico(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -254,6 +279,61 @@ export default function NovoRegistro() {
                 <Input type="time" id="hora" />
               </div>
             </div>
+            
+            {/* Status do Registro */}
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <RadioGroup 
+                value={statusRegistro} 
+                onValueChange={setStatusRegistro}
+                className="flex flex-wrap gap-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="realizado" id="status-realizado" />
+                  <Label htmlFor="status-realizado" className="font-normal cursor-pointer flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+                    Realizado
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="agendado" id="status-agendado" />
+                  <Label htmlFor="status-agendado" className="font-normal cursor-pointer flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                    Agendado
+                  </Label>
+                </div>
+              </RadioGroup>
+              {statusRegistro === "agendado" && (
+                <p className="text-xs text-muted-foreground">
+                  Este serviço será exibido como pendente no calendário até ser marcado como realizado.
+                </p>
+              )}
+            </div>
+
+            {/* Lembrete (apenas para agendados) */}
+            {statusRegistro === "agendado" && (
+              <div className="space-y-2 p-4 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
+                <Label className="flex items-center gap-2">
+                  <Bell className="w-4 h-4 text-blue-600" />
+                  Lembrete
+                </Label>
+                <Select value={alertaOpcao} onValueChange={setAlertaOpcao}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Quando lembrar?" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {alertaOptions.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Você receberá uma notificação para lembrar deste serviço.
+                </p>
+              </div>
+            )}
           </section>
 
           {/* Seção 3: Classificação e Proposta */}

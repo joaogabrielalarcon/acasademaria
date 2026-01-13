@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { 
   ArrowLeft, 
@@ -16,13 +17,15 @@ import {
   AlertCircle,
   Package,
   DollarSign,
-  Clock
+  Clock,
+  List,
+  CalendarDays
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
+import { CalendarioDiario } from "@/components/CalendarioDiario";
 // Mock data expandido
 const mockCliente = {
   id: "1",
@@ -156,6 +159,7 @@ export default function ClientePerfil() {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get("tab") || "cadastro";
+  const [diarioView, setDiarioView] = useState<'feed' | 'calendario'>('feed');
   const cliente = mockCliente;
   const status = statusConfig[cliente.status];
 
@@ -434,118 +438,148 @@ export default function ClientePerfil() {
         </TabsContent>
 
         {/* Tab Diário */}
-        <TabsContent value="diario">
+        <TabsContent value="diario" className="bg-rose-50/60 dark:bg-rose-950/20 rounded-xl p-6 -mx-1">
           {/* Header do Diário */}
-          <div className="flex items-center justify-between mb-6">
-            <p className="text-muted-foreground">
-              Histórico de serviços e registros do jardim
-            </p>
-            <Button variant="terracota" asChild>
-              <Link to={`/registros/novo?cliente=${id}`}>
-                <Plus className="w-4 h-4" />
-                Novo Registro
-              </Link>
-            </Button>
-          </div>
-
-          {/* Timeline */}
-          <div className="relative">
-            {/* Timeline Line */}
-            <div className="timeline-line" />
-
-            {/* Timeline Items */}
-            <div className="space-y-4 pl-10">
-              {cliente.registros.map((registro) => (
-                <Link 
-                  key={registro.id} 
-                  to={`/registros/${registro.id}`}
-                  className="block"
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-2">
+              <p className="text-muted-foreground">
+                Histórico de serviços e registros do jardim
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              {/* Toggle Feed/Calendário */}
+              <div className="flex items-center bg-muted rounded-lg p-1">
+                <Button
+                  variant={diarioView === 'feed' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setDiarioView('feed')}
                 >
-                  <article className="card-botanical p-4 relative animate-fade-in hover:shadow-card transition-all">
-                    {/* Timeline Dot */}
-                    <div className="timeline-dot absolute -left-[2.15rem] top-5" />
-
-                    <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                      {/* Photo Placeholder */}
-                      <div className="w-full sm:w-24 h-20 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                        <ImageIcon className="w-6 h-6 text-muted-foreground" />
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="tag-primary text-xs">
-                              {tipoLabels[registro.tipo] || registro.tipo}
-                            </span>
-                            {registro.proposta && (
-                              <Badge variant="outline" className="text-xs">
-                                {registro.proposta.codigo}
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <Calendar className="w-3.5 h-3.5" />
-                            {new Date(registro.data).toLocaleDateString('pt-BR')}
-                          </div>
-                        </div>
-                        
-                        <p className="text-sm font-medium text-foreground mb-1">
-                          {registro.trecho}
-                        </p>
-                        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                          {registro.descricao}
-                        </p>
-
-                        {/* Proposta */}
-                        {registro.proposta && (
-                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
-                            <FileText className="w-3.5 h-3.5 text-primary" />
-                            <span className="text-primary font-medium">
-                              {registro.proposta.codigo} / {registro.proposta.titulo}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Equipe do Dia */}
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-                          <Users className="w-3.5 h-3.5" />
-                          <span>Equipe do dia: </span>
-                          <span className="text-foreground">{registro.equipePresente.join(", ")}</span>
-                        </div>
-
-                        {/* Executores */}
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-                          <User className="w-3.5 h-3.5" />
-                          <span>Executores: </span>
-                          <span className="text-foreground">{registro.executores.join(", ")}</span>
-                        </div>
-
-                        {/* Solicitante */}
-                        {registro.solicitante && (
-                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
-                            <Briefcase className="w-3.5 h-3.5" />
-                            <span>Solicitante: </span>
-                            <span className="text-foreground">{registro.solicitante}</span>
-                          </div>
-                        )}
-
-                        {/* Insumos */}
-                        {registro.insumos.length > 0 && (
-                          <div className="flex items-start gap-1.5 text-xs text-muted-foreground">
-                            <Package className="w-3.5 h-3.5 mt-0.5" />
-                            <span className="text-foreground">
-                              {registro.insumos.map(i => `${i.nome} (${i.quantidade} ${i.unidade})`).join(", ")}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </article>
+                  <List className="w-4 h-4" />
+                  Feed
+                </Button>
+                <Button
+                  variant={diarioView === 'calendario' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setDiarioView('calendario')}
+                >
+                  <CalendarDays className="w-4 h-4" />
+                  Calendário
+                </Button>
+              </div>
+              <Button variant="terracota" asChild>
+                <Link to={`/registros/novo?cliente=${id}`}>
+                  <Plus className="w-4 h-4" />
+                  Novo Registro
                 </Link>
-              ))}
+              </Button>
             </div>
           </div>
+
+          {/* Conteúdo baseado na visualização */}
+          {diarioView === 'calendario' ? (
+            <CalendarioDiario registros={cliente.registros} clienteId={id || ''} />
+          ) : (
+            /* Timeline (Feed) */
+            <div className="relative">
+              {/* Timeline Line */}
+              <div className="timeline-line" />
+
+              {/* Timeline Items */}
+              <div className="space-y-4 pl-10">
+                {cliente.registros.map((registro) => (
+                  <Link 
+                    key={registro.id} 
+                    to={`/registros/${registro.id}`}
+                    className="block"
+                  >
+                    <article className="card-botanical p-4 relative animate-fade-in hover:shadow-card transition-all">
+                      {/* Timeline Dot */}
+                      <div className="timeline-dot absolute -left-[2.15rem] top-5" />
+
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                        {/* Photo Placeholder */}
+                        <div className="w-full sm:w-24 h-20 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                          <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="tag-primary text-xs">
+                                {tipoLabels[registro.tipo] || registro.tipo}
+                              </span>
+                              {registro.proposta && (
+                                <Badge variant="outline" className="text-xs">
+                                  {registro.proposta.codigo}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <Calendar className="w-3.5 h-3.5" />
+                              {new Date(registro.data).toLocaleDateString('pt-BR')}
+                            </div>
+                          </div>
+                          
+                          <p className="text-sm font-medium text-foreground mb-1">
+                            {registro.trecho}
+                          </p>
+                          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                            {registro.descricao}
+                          </p>
+
+                          {/* Proposta */}
+                          {registro.proposta && (
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+                              <FileText className="w-3.5 h-3.5 text-primary" />
+                              <span className="text-primary font-medium">
+                                {registro.proposta.codigo} / {registro.proposta.titulo}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Equipe do Dia */}
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+                            <Users className="w-3.5 h-3.5" />
+                            <span>Equipe do dia: </span>
+                            <span className="text-foreground">{registro.equipePresente.join(", ")}</span>
+                          </div>
+
+                          {/* Executores */}
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+                            <User className="w-3.5 h-3.5" />
+                            <span>Executores: </span>
+                            <span className="text-foreground">{registro.executores.join(", ")}</span>
+                          </div>
+
+                          {/* Solicitante */}
+                          {registro.solicitante && (
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+                              <Briefcase className="w-3.5 h-3.5" />
+                              <span>Solicitante: </span>
+                              <span className="text-foreground">{registro.solicitante}</span>
+                            </div>
+                          )}
+
+                          {/* Insumos */}
+                          {registro.insumos.length > 0 && (
+                            <div className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                              <Package className="w-3.5 h-3.5 mt-0.5" />
+                              <span className="text-foreground">
+                                {registro.insumos.map(i => `${i.nome} (${i.quantidade} ${i.unidade})`).join(", ")}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </article>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </TabsContent>
 
         {/* Tab Propostas */}
