@@ -50,9 +50,9 @@ const mockCliente = {
 };
 
 const statusConfig: Record<string, { label: string; className: string }> = {
-  ativo: { label: "Ativo", className: "bg-verde-medio/10 text-verde-medio border-verde-medio/20" },
+  ativo: { label: "Ativo", className: "bg-primary/20 text-primary border-primary/30" },
   inativo: { label: "Inativo", className: "bg-muted text-muted-foreground border-muted" },
-  prospecto: { label: "Prospecto", className: "bg-telha/10 text-telha border-telha/20" },
+  prospecto: { label: "Prospecto", className: "bg-primary/10 text-primary/80 border-primary/20" },
 };
 
 const tipoLabels: Record<string, string> = {
@@ -129,7 +129,7 @@ export default function ClientePerfil() {
       {/* Trechos */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-lg font-semibold">Trechos do Jardim</h2>
+          <h2 className="font-display text-lg font-semibold text-foreground">Trechos do Jardim</h2>
           <Button variant="ghost" size="sm" asChild>
             <Link to={`/trechos/novo?cliente=${id}`}>
               <Plus className="w-4 h-4" />
@@ -142,7 +142,7 @@ export default function ClientePerfil() {
             <Link
               key={trecho.id}
               to={`/trechos/${trecho.id}`}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-verde-folha/10 text-verde-folha text-sm font-medium hover:bg-verde-folha/20 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
             >
               <MapPin className="w-3.5 h-3.5" />
               {trecho.nome}
@@ -154,7 +154,7 @@ export default function ClientePerfil() {
       {/* Timeline */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-lg font-semibold">Histórico de Serviços</h2>
+          <h2 className="font-display text-lg font-semibold text-foreground">Histórico de Serviços</h2>
           <Button variant="terracota" size="sm" asChild>
             <Link to={`/registros/novo?cliente=${id}`}>
               <Plus className="w-4 h-4" />
@@ -182,7 +182,7 @@ export default function ClientePerfil() {
                   <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                     {/* Photo Placeholder */}
                     <div className="w-full sm:w-24 h-20 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                      <ImageIcon className="w-6 h-6 text-muted-foreground/40" />
+                      <ImageIcon className="w-6 h-6 text-muted-foreground" />
                     </div>
 
                     {/* Content */}

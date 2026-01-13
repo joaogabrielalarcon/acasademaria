@@ -14,14 +14,11 @@ export default {
     },
     extend: {
       colors: {
-        // Brand Colors
+        // Brand Colors - Monocromático terracota/creme
         terracota: "hsl(var(--terracota))",
+        "terracota-dark": "hsl(var(--terracota-dark))",
+        "terracota-darker": "hsl(var(--terracota-darker))",
         creme: "hsl(var(--creme))",
-        "verde-escuro": "hsl(var(--verde-escuro))",
-        "verde-medio": "hsl(var(--verde-medio))",
-        "verde-folha": "hsl(var(--verde-folha))",
-        telha: "hsl(var(--telha))",
-        "roxo-profundo": "hsl(var(--roxo-profundo))",
         
         // Semantic Colors
         border: "hsl(var(--border))",

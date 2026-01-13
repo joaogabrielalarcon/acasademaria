@@ -45,8 +45,8 @@ export default function Trechos() {
         {mockTrechos.map((trecho) => (
           <Link key={trecho.id} to={`/trechos/${trecho.id}`} className="block">
             <article className="card-botanical p-4 flex items-center gap-4 animate-fade-in hover:shadow-card transition-all">
-              <div className="w-10 h-10 rounded-lg bg-verde-folha/10 flex items-center justify-center flex-shrink-0">
-                <MapPin className="w-5 h-5 text-verde-folha" />
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <MapPin className="w-5 h-5 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-display font-semibold text-foreground">

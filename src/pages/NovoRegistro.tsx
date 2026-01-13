@@ -99,7 +99,7 @@ export default function NovoRegistro() {
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Seção 1: Localização */}
           <section className="space-y-4">
-            <h2 className="font-display text-lg font-semibold border-b border-border pb-2">
+            <h2 className="font-display text-lg font-semibold border-b border-primary/20 pb-2 text-foreground">
               Localização
             </h2>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -135,7 +135,7 @@ export default function NovoRegistro() {
 
           {/* Seção 2: Quando */}
           <section className="space-y-4">
-            <h2 className="font-display text-lg font-semibold border-b border-border pb-2">
+            <h2 className="font-display text-lg font-semibold border-b border-primary/20 pb-2 text-foreground">
               Quando
             </h2>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -156,7 +156,7 @@ export default function NovoRegistro() {
 
           {/* Seção 3: Classificação */}
           <section className="space-y-4">
-            <h2 className="font-display text-lg font-semibold border-b border-border pb-2">
+            <h2 className="font-display text-lg font-semibold border-b border-primary/20 pb-2 text-foreground">
               Classificação
             </h2>
             
@@ -198,7 +198,7 @@ export default function NovoRegistro() {
                     onClick={() => toggleResponsavel(c.id)}
                     className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                       selectedResponsaveis.includes(c.id)
-                        ? 'bg-secondary text-secondary-foreground'
+                        ? 'bg-primary text-primary-foreground'
                         : 'bg-muted text-muted-foreground hover:bg-muted/80'
                     }`}
                   >
@@ -211,7 +211,7 @@ export default function NovoRegistro() {
 
           {/* Seção 4: Detalhes */}
           <section className="space-y-4">
-            <h2 className="font-display text-lg font-semibold border-b border-border pb-2">
+            <h2 className="font-display text-lg font-semibold border-b border-primary/20 pb-2 text-foreground">
               Detalhes
             </h2>
             
@@ -252,11 +252,11 @@ export default function NovoRegistro() {
 
           {/* Seção 5: Mídia */}
           <section className="space-y-4">
-            <h2 className="font-display text-lg font-semibold border-b border-border pb-2">
+            <h2 className="font-display text-lg font-semibold border-b border-primary/20 pb-2 text-foreground">
               Mídia
             </h2>
             
-            <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
+            <div className="border-2 border-dashed border-primary/30 rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
               <Upload className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
               <p className="text-sm text-muted-foreground mb-1">
                 Arraste fotos ou vídeos aqui
@@ -271,7 +271,7 @@ export default function NovoRegistro() {
           </section>
 
           {/* Actions */}
-          <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4 border-t border-border">
+          <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4 border-t border-primary/20">
             <Button type="button" variant="outline" onClick={() => navigate(-1)}>
               Cancelar
             </Button>
