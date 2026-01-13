@@ -9,11 +9,11 @@ interface LogoProps {
 export function Logo({ variant = "full", className }: LogoProps) {
   if (variant === "icon") {
     return (
-      <div className={cn("flex items-center justify-center", className)}>
+      <div className={cn("flex items-center justify-center w-full", className)}>
         <img 
           src={logoMfm} 
           alt="MFM Paisagismo" 
-          className="h-10 w-auto object-contain"
+          className="w-full max-w-[48px] h-auto object-contain"
         />
       </div>
     );
@@ -21,22 +21,22 @@ export function Logo({ variant = "full", className }: LogoProps) {
 
   if (variant === "compact") {
     return (
-      <div className={cn("flex items-center justify-center", className)}>
+      <div className={cn("flex items-center justify-center w-full", className)}>
         <img 
           src={logoMfm} 
           alt="MFM Paisagismo" 
-          className="h-8 w-auto object-contain"
+          className="w-full max-w-[180px] h-auto object-contain"
         />
       </div>
     );
   }
 
   return (
-    <div className={cn("flex flex-col items-center gap-1", className)}>
+    <div className={cn("flex flex-col items-center w-full", className)}>
       <img 
         src={logoMfm} 
         alt="MFM Paisagismo Ecológico" 
-        className="h-16 w-auto object-contain"
+        className="w-full max-w-[220px] h-auto object-contain"
       />
     </div>
   );
