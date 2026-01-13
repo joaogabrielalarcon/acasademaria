@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { 
   ArrowLeft, 
   MapPin, 
@@ -14,7 +14,9 @@ import {
   User,
   Briefcase,
   AlertCircle,
-  Package
+  Package,
+  DollarSign,
+  Clock
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -64,7 +66,10 @@ const mockCliente = {
       data: "2024-01-12",
       tipo: "manutenção",
       trecho: "Jardim Frontal",
-      responsaveis: ["João Silva"],
+      proposta: { codigo: "2024-015", titulo: "Manutenção Anual" },
+      equipePresente: ["João Silva", "Maria Santos", "Pedro Oliveira"],
+      executores: ["João Silva", "Maria Santos"],
+      solicitante: "D. Ana (Proprietária)",
       descricao: "Poda de formação e limpeza geral",
       insumos: [
         { nome: "Adubo NPK", quantidade: 2, unidade: "kg" },
@@ -76,12 +81,53 @@ const mockCliente = {
       data: "2024-01-05",
       tipo: "implantação",
       trecho: "Piscina",
-      responsaveis: ["Maria Santos", "Pedro Oliveira"],
+      proposta: { codigo: "2024-012", titulo: "Implantação Jardim Lateral" },
+      equipePresente: ["Maria Santos", "Pedro Oliveira"],
+      executores: ["Maria Santos", "Pedro Oliveira"],
+      solicitante: null,
       descricao: "Plantio de novas forrações e palmeiras",
       insumos: [
         { nome: "Palmeira Imperial", quantidade: 2, unidade: "un" },
         { nome: "Forração Amendoim", quantidade: 50, unidade: "mudas" },
       ],
+    },
+  ],
+  propostas: [
+    {
+      id: "1",
+      codigo: "2024-015",
+      titulo: "Manutenção Anual",
+      status: "aprovada",
+      data_envio: "2024-01-10",
+      valor: 2500,
+      descricao: "Manutenção mensal com poda, adubação e limpeza geral",
+    },
+    {
+      id: "2",
+      codigo: "2024-012",
+      titulo: "Implantação Jardim Lateral",
+      status: "aprovada",
+      data_envio: "2024-01-05",
+      valor: 45000,
+      descricao: "Projeto completo com palmeiras imperiais e forrações",
+    },
+    {
+      id: "3",
+      codigo: "2023-089",
+      titulo: "Reforma Área Piscina",
+      status: "recusada",
+      data_envio: "2023-12-01",
+      valor: 28000,
+      descricao: "Reforma paisagística da área da piscina",
+    },
+    {
+      id: "4",
+      codigo: "2024-018",
+      titulo: "Vasos Decorativos",
+      status: "enviada",
+      data_envio: "2024-01-15",
+      valor: 5800,
+      descricao: "Fornecimento e plantio de vasos ornamentais para varanda",
     },
   ],
 };
@@ -90,6 +136,13 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   ativo: { label: "Ativo", className: "bg-primary/20 text-primary border-primary/30" },
   inativo: { label: "Inativo", className: "bg-muted text-muted-foreground border-muted" },
   prospecto: { label: "Prospecto", className: "bg-primary/10 text-primary/80 border-primary/20" },
+};
+
+const propostaStatusConfig: Record<string, { label: string; className: string }> = {
+  rascunho: { label: "Rascunho", className: "bg-muted text-muted-foreground" },
+  enviada: { label: "Enviada", className: "bg-blue-500/20 text-blue-700 dark:text-blue-300" },
+  aprovada: { label: "Aprovada", className: "bg-green-500/20 text-green-700 dark:text-green-300" },
+  recusada: { label: "Recusada", className: "bg-red-500/20 text-red-700 dark:text-red-300" },
 };
 
 const tipoLabels: Record<string, string> = {
@@ -101,8 +154,17 @@ const tipoLabels: Record<string, string> = {
 
 export default function ClientePerfil() {
   const { id } = useParams();
-  const cliente = mockCliente; // Would fetch by id
+  const [searchParams] = useSearchParams();
+  const defaultTab = searchParams.get("tab") || "cadastro";
+  const cliente = mockCliente;
   const status = statusConfig[cliente.status];
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+  };
 
   return (
     <AppLayout>
@@ -144,7 +206,7 @@ export default function ClientePerfil() {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="cadastro" className="w-full">
+      <Tabs defaultValue={defaultTab} className="w-full">
         <TabsList className="mb-6">
           <TabsTrigger value="cadastro" className="gap-2">
             <FileText className="w-4 h-4" />
@@ -153,6 +215,10 @@ export default function ClientePerfil() {
           <TabsTrigger value="diario" className="gap-2">
             <Calendar className="w-4 h-4" />
             Diário
+          </TabsTrigger>
+          <TabsTrigger value="propostas" className="gap-2">
+            <DollarSign className="w-4 h-4" />
+            Propostas
           </TabsTrigger>
         </TabsList>
 
@@ -348,23 +414,20 @@ export default function ClientePerfil() {
                 <MapPin className="w-5 h-5 text-primary" />
                 Trechos do Jardim
               </h2>
-              <Button variant="ghost" size="sm" asChild>
-                <Link to={`/trechos/novo?cliente=${id}`}>
-                  <Plus className="w-4 h-4" />
-                  Novo Trecho
-                </Link>
+              <Button variant="ghost" size="sm">
+                <Plus className="w-4 h-4" />
+                Novo Trecho
               </Button>
             </div>
             <div className="flex flex-wrap gap-2">
               {cliente.trechos.map((trecho) => (
-                <Link
+                <button
                   key={trecho.id}
-                  to={`/trechos/${trecho.id}`}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
                 >
                   <MapPin className="w-3.5 h-3.5" />
                   {trecho.nome}
-                </Link>
+                </button>
               ))}
             </div>
           </section>
@@ -411,32 +474,69 @@ export default function ClientePerfil() {
                       {/* Content */}
                       <div className="flex-1">
                         <div className="flex items-start justify-between gap-2 mb-2">
-                          <span className="tag-primary text-xs">
-                            {tipoLabels[registro.tipo] || registro.tipo}
-                          </span>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="tag-primary text-xs">
+                              {tipoLabels[registro.tipo] || registro.tipo}
+                            </span>
+                            {registro.proposta && (
+                              <Badge variant="outline" className="text-xs">
+                                {registro.proposta.codigo}
+                              </Badge>
+                            )}
+                          </div>
                           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <Calendar className="w-3.5 h-3.5" />
                             {new Date(registro.data).toLocaleDateString('pt-BR')}
                           </div>
                         </div>
+                        
                         <p className="text-sm font-medium text-foreground mb-1">
                           {registro.trecho}
                         </p>
-                        <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
                           {registro.descricao}
                         </p>
 
-                        {/* Equipe */}
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+                        {/* Proposta */}
+                        {registro.proposta && (
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+                            <FileText className="w-3.5 h-3.5 text-primary" />
+                            <span className="text-primary font-medium">
+                              {registro.proposta.codigo} / {registro.proposta.titulo}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Equipe do Dia */}
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
                           <Users className="w-3.5 h-3.5" />
-                          {registro.responsaveis.join(", ")}
+                          <span>Equipe do dia: </span>
+                          <span className="text-foreground">{registro.equipePresente.join(", ")}</span>
                         </div>
 
+                        {/* Executores */}
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+                          <User className="w-3.5 h-3.5" />
+                          <span>Executores: </span>
+                          <span className="text-foreground">{registro.executores.join(", ")}</span>
+                        </div>
+
+                        {/* Solicitante */}
+                        {registro.solicitante && (
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+                            <Briefcase className="w-3.5 h-3.5" />
+                            <span>Solicitante: </span>
+                            <span className="text-foreground">{registro.solicitante}</span>
+                          </div>
+                        )}
+
                         {/* Insumos */}
-                        {registro.insumos && registro.insumos.length > 0 && (
-                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <Package className="w-3.5 h-3.5" />
-                            {registro.insumos.map(i => `${i.nome} (${i.quantidade} ${i.unidade})`).join(", ")}
+                        {registro.insumos.length > 0 && (
+                          <div className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                            <Package className="w-3.5 h-3.5 mt-0.5" />
+                            <span className="text-foreground">
+                              {registro.insumos.map(i => `${i.nome} (${i.quantidade} ${i.unidade})`).join(", ")}
+                            </span>
                           </div>
                         )}
                       </div>
@@ -446,26 +546,91 @@ export default function ClientePerfil() {
               ))}
             </div>
           </div>
+        </TabsContent>
 
-          {cliente.registros.length === 0 && (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-                <Calendar className="w-8 h-8 text-muted-foreground" />
-              </div>
-              <h3 className="font-display text-lg font-semibold mb-2 text-foreground">
-                Nenhum registro ainda
-              </h3>
-              <p className="text-muted-foreground mb-4">
-                Comece a documentar os serviços realizados neste jardim
+        {/* Tab Propostas */}
+        <TabsContent value="propostas">
+          {/* Header das Propostas */}
+          <div className="flex items-center justify-between mb-6">
+            <p className="text-muted-foreground">
+              Histórico de propostas comerciais enviadas
+            </p>
+            <Button variant="terracota" asChild>
+              <Link to={`/propostas/nova?cliente=${id}`}>
+                <Plus className="w-4 h-4" />
+                Nova Proposta
+              </Link>
+            </Button>
+          </div>
+
+          {/* Estatísticas rápidas */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+            <div className="card-botanical p-4 text-center">
+              <p className="text-2xl font-bold text-foreground">
+                {cliente.propostas.length}
               </p>
-              <Button variant="terracota" asChild>
-                <Link to={`/registros/novo?cliente=${id}`}>
-                  <Plus className="w-4 h-4" />
-                  Novo Registro
-                </Link>
-              </Button>
+              <p className="text-xs text-muted-foreground">Total</p>
             </div>
-          )}
+            <div className="card-botanical p-4 text-center">
+              <p className="text-2xl font-bold text-green-600">
+                {cliente.propostas.filter(p => p.status === "aprovada").length}
+              </p>
+              <p className="text-xs text-muted-foreground">Aprovadas</p>
+            </div>
+            <div className="card-botanical p-4 text-center">
+              <p className="text-2xl font-bold text-blue-600">
+                {cliente.propostas.filter(p => p.status === "enviada").length}
+              </p>
+              <p className="text-xs text-muted-foreground">Aguardando</p>
+            </div>
+            <div className="card-botanical p-4 text-center">
+              <p className="text-2xl font-bold text-red-600">
+                {cliente.propostas.filter(p => p.status === "recusada").length}
+              </p>
+              <p className="text-xs text-muted-foreground">Recusadas</p>
+            </div>
+          </div>
+
+          {/* Lista de Propostas */}
+          <div className="space-y-4">
+            {cliente.propostas.map((proposta) => {
+              const statusInfo = propostaStatusConfig[proposta.status];
+              return (
+                <article 
+                  key={proposta.id} 
+                  className="card-botanical p-5 hover:shadow-card transition-all cursor-pointer"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Badge className={statusInfo.className}>
+                          {statusInfo.label}
+                        </Badge>
+                        <span className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5" />
+                          {new Date(proposta.data_envio).toLocaleDateString('pt-BR')}
+                        </span>
+                      </div>
+                      
+                      <h3 className="font-semibold text-foreground mb-1">
+                        {proposta.codigo} / {proposta.titulo}
+                      </h3>
+                      
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {proposta.descricao}
+                      </p>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-primary">
+                        {formatCurrency(proposta.valor)}
+                      </p>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
         </TabsContent>
       </Tabs>
     </AppLayout>

@@ -1,7 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { 
   Users, 
-  MapPin, 
   UserCircle,
   LogOut 
 } from "lucide-react";
@@ -12,7 +11,6 @@ import { SheetClose } from "@/components/ui/sheet";
 
 const navigationItems = [
   { title: "Clientes", icon: Users, href: "/" },
-  { title: "Trechos", icon: MapPin, href: "/trechos" },
   { title: "Equipe", icon: UserCircle, href: "/equipe" },
 ];
 

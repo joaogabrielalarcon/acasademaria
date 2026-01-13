@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Upload, Plus, Trash2, Package } from "lucide-react";
+import { ArrowLeft, Upload, Plus, Trash2, Package, Users, FileText } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 // Mock data
 const mockClientes = [
@@ -36,6 +37,12 @@ const mockColaboradores = [
   { id: "4", nome: "Maria Fernanda" },
 ];
 
+const mockPropostas = [
+  { id: "1", codigo: "2024-015", titulo: "Manutenção Anual", status: "aprovada", clienteId: "1" },
+  { id: "2", codigo: "2024-012", titulo: "Implantação Jardim Lateral", status: "aprovada", clienteId: "1" },
+  { id: "3", codigo: "2024-008", titulo: "Reforma Piscina", status: "enviada", clienteId: "1" },
+];
+
 const mockInsumos = [
   { id: "1", nome: "Adubo NPK 10-10-10", categoria: "adubo", unidade: "kg" },
   { id: "2", nome: "Terra vegetal", categoria: "substrato", unidade: "sacos" },
@@ -46,6 +53,14 @@ const mockInsumos = [
   { id: "7", nome: "Forração Amendoim", categoria: "planta", unidade: "mudas" },
   { id: "8", nome: "Roçadeira", categoria: "ferramenta", unidade: "un" },
   { id: "9", nome: "Soprador", categoria: "maquina", unidade: "un" },
+];
+
+// Mock de possíveis solicitantes (proprietários + funcionários da casa)
+const mockSolicitantes = [
+  { id: "prop-1", nome: "Roberto Silveira", tipo: "proprietario" },
+  { id: "prop-2", nome: "Ana Silveira", tipo: "proprietario" },
+  { id: "func-1", nome: "José Carlos (Caseiro)", tipo: "funcionario" },
+  { id: "func-2", nome: "Maria (Governanta)", tipo: "funcionario" },
 ];
 
 const tipoOptions = [
@@ -79,12 +94,19 @@ export default function NovoRegistro() {
   const clienteIdFromUrl = searchParams.get("cliente") || "";
   
   const [selectedCliente, setSelectedCliente] = useState(clienteIdFromUrl);
-  const [selectedResponsaveis, setSelectedResponsaveis] = useState<string[]>([]);
+  const [selectedProposta, setSelectedProposta] = useState("");
+  const [equipePresente, setEquipePresente] = useState<string[]>([]);
+  const [executores, setExecutores] = useState<string[]>([]);
+  const [solicitante, setSolicitante] = useState("");
+  const [solicitanteOutro, setSolicitanteOutro] = useState("");
   const [insumosSelecionados, setInsumosSelecionados] = useState<InsumoSelecionado[]>([]);
   const [novoInsumoId, setNovoInsumoId] = useState("");
   const [novoInsumoQtd, setNovoInsumoQtd] = useState("");
 
   const filteredTrechos = mockTrechos.filter(t => t.clienteId === selectedCliente);
+  const filteredPropostas = mockPropostas.filter(
+    p => p.clienteId === selectedCliente && p.status === "aprovada"
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,7 +115,6 @@ export default function NovoRegistro() {
       description: "O registro foi adicionado com sucesso.",
     });
     
-    // Se veio de um cliente, volta para o perfil dele
     if (clienteIdFromUrl) {
       navigate(`/clientes/${clienteIdFromUrl}`);
     } else {
@@ -101,8 +122,22 @@ export default function NovoRegistro() {
     }
   };
 
-  const toggleResponsavel = (id: string) => {
-    setSelectedResponsaveis(prev => 
+  const toggleEquipePresente = (id: string) => {
+    setEquipePresente(prev => {
+      if (prev.includes(id)) {
+        // Se remover da equipe presente, também remover dos executores
+        setExecutores(exec => exec.filter(e => e !== id));
+        return prev.filter(r => r !== id);
+      }
+      return [...prev, id];
+    });
+  };
+
+  const toggleExecutor = (id: string) => {
+    // Só pode ser executor se estiver na equipe presente
+    if (!equipePresente.includes(id)) return;
+    
+    setExecutores(prev => 
       prev.includes(id) 
         ? prev.filter(r => r !== id)
         : [...prev, id]
@@ -115,7 +150,6 @@ export default function NovoRegistro() {
     const insumo = mockInsumos.find(i => i.id === novoInsumoId);
     if (!insumo) return;
     
-    // Verifica se já está na lista
     if (insumosSelecionados.some(i => i.insumoId === novoInsumoId)) {
       toast({
         title: "Insumo já adicionado",
@@ -222,11 +256,48 @@ export default function NovoRegistro() {
             </div>
           </section>
 
-          {/* Seção 3: Classificação */}
+          {/* Seção 3: Classificação e Proposta */}
           <section className="space-y-4">
-            <h2 className="font-display text-lg font-semibold border-b border-primary/20 pb-2 text-foreground">
+            <h2 className="font-display text-lg font-semibold border-b border-primary/20 pb-2 text-foreground flex items-center gap-2">
+              <FileText className="w-5 h-5" />
               Classificação
             </h2>
+
+            {/* Proposta Vinculada */}
+            <div className="space-y-2">
+              <Label htmlFor="proposta">Proposta Vinculada</Label>
+              <Select 
+                value={selectedProposta} 
+                onValueChange={setSelectedProposta}
+                disabled={!selectedCliente}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={
+                    !selectedCliente 
+                      ? "Selecione um cliente primeiro" 
+                      : filteredPropostas.length === 0 
+                        ? "Nenhuma proposta aprovada" 
+                        : "Selecione uma proposta (opcional)"
+                  } />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nenhuma">Nenhuma proposta vinculada</SelectItem>
+                  {filteredPropostas.map(p => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.codigo} / {p.titulo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedCliente && filteredPropostas.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Este cliente não possui propostas aprovadas.{" "}
+                  <Link to={`/propostas/nova?cliente=${selectedCliente}`} className="text-primary hover:underline">
+                    Criar proposta
+                  </Link>
+                </p>
+              )}
+            </div>
             
             <div className="space-y-2">
               <Label htmlFor="tipo">Tipo de Serviço *</Label>
@@ -257,21 +328,27 @@ export default function NovoRegistro() {
             </div>
           </section>
 
-          {/* Seção 4: Equipe */}
+          {/* Seção 4: Equipe do Dia */}
           <section className="space-y-4">
-            <h2 className="font-display text-lg font-semibold border-b border-primary/20 pb-2 text-foreground">
+            <h2 className="font-display text-lg font-semibold border-b border-primary/20 pb-2 text-foreground flex items-center gap-2">
+              <Users className="w-5 h-5" />
               Equipe
             </h2>
+            
+            {/* Equipe Presente */}
             <div className="space-y-2">
-              <Label>Responsáveis pelo Serviço</Label>
+              <Label>Quem esteve presente na casa?</Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Selecione todos que foram ao local no dia
+              </p>
               <div className="flex flex-wrap gap-2">
                 {mockColaboradores.map(c => (
                   <button
                     key={c.id}
                     type="button"
-                    onClick={() => toggleResponsavel(c.id)}
+                    onClick={() => toggleEquipePresente(c.id)}
                     className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                      selectedResponsaveis.includes(c.id)
+                      equipePresente.includes(c.id)
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted text-muted-foreground hover:bg-muted/80'
                     }`}
@@ -280,6 +357,62 @@ export default function NovoRegistro() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Executores do Serviço */}
+            {equipePresente.length > 0 && (
+              <div className="space-y-2">
+                <Label>Quem executou este serviço específico?</Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Selecione quem realizou a atividade registrada
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {mockColaboradores
+                    .filter(c => equipePresente.includes(c.id))
+                    .map(c => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => toggleExecutor(c.id)}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                          executores.includes(c.id)
+                            ? 'bg-secondary text-secondary-foreground'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                        }`}
+                      >
+                        {c.nome}
+                      </button>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* Solicitante */}
+            <div className="space-y-2">
+              <Label>Quem solicitou este serviço?</Label>
+              <Select value={solicitante} onValueChange={setSolicitante}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o solicitante" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nenhum">Serviço de rotina (sem solicitação)</SelectItem>
+                  {mockSolicitantes.map(s => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.nome}
+                      {s.tipo === "proprietario" && " (Proprietário)"}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="outro">Outro (especificar)</SelectItem>
+                </SelectContent>
+              </Select>
+              {solicitante === "outro" && (
+                <Input
+                  placeholder="Nome do solicitante..."
+                  value={solicitanteOutro}
+                  onChange={(e) => setSolicitanteOutro(e.target.value)}
+                  className="mt-2"
+                />
+              )}
             </div>
           </section>
 

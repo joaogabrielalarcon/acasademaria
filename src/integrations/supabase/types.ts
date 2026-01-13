@@ -137,6 +137,59 @@ export type Database = {
         }
         Relationships: []
       }
+      propostas: {
+        Row: {
+          cliente_id: string
+          codigo: string
+          created_at: string
+          data_envio: string | null
+          data_resposta: string | null
+          descricao: string | null
+          id: string
+          observacoes: string | null
+          status: string
+          titulo: string
+          updated_at: string
+          valor: number | null
+        }
+        Insert: {
+          cliente_id: string
+          codigo: string
+          created_at?: string
+          data_envio?: string | null
+          data_resposta?: string | null
+          descricao?: string | null
+          id?: string
+          observacoes?: string | null
+          status?: string
+          titulo: string
+          updated_at?: string
+          valor?: number | null
+        }
+        Update: {
+          cliente_id?: string
+          codigo?: string
+          created_at?: string
+          data_envio?: string | null
+          data_resposta?: string | null
+          descricao?: string | null
+          id?: string
+          observacoes?: string | null
+          status?: string
+          titulo?: string
+          updated_at?: string
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "propostas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       registro_insumos: {
         Row: {
           created_at: string
@@ -187,11 +240,15 @@ export type Database = {
           created_at: string
           data_servico: string
           descricao: string
+          equipe_presente_ids: string[] | null
+          executores_ids: string[] | null
           hora_servico: string | null
           humor_do_jardim: string | null
           id: string
           midia: Json | null
           observacoes_internas: string | null
+          proposta_id: string | null
+          solicitante: string | null
           tags: string[] | null
           tipo: string
           trecho_id: string | null
@@ -204,11 +261,15 @@ export type Database = {
           created_at?: string
           data_servico: string
           descricao: string
+          equipe_presente_ids?: string[] | null
+          executores_ids?: string[] | null
           hora_servico?: string | null
           humor_do_jardim?: string | null
           id?: string
           midia?: Json | null
           observacoes_internas?: string | null
+          proposta_id?: string | null
+          solicitante?: string | null
           tags?: string[] | null
           tipo: string
           trecho_id?: string | null
@@ -221,11 +282,15 @@ export type Database = {
           created_at?: string
           data_servico?: string
           descricao?: string
+          equipe_presente_ids?: string[] | null
+          executores_ids?: string[] | null
           hora_servico?: string | null
           humor_do_jardim?: string | null
           id?: string
           midia?: Json | null
           observacoes_internas?: string | null
+          proposta_id?: string | null
+          solicitante?: string | null
           tags?: string[] | null
           tipo?: string
           trecho_id?: string | null
@@ -237,6 +302,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_proposta_id_fkey"
+            columns: ["proposta_id"]
+            isOneToOne: false
+            referencedRelation: "propostas"
             referencedColumns: ["id"]
           },
           {

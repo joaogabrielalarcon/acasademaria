@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { 
   Users, 
-  MapPin, 
   UserCircle,
   ChevronLeft,
   ChevronRight,
@@ -22,11 +21,6 @@ const navigationItems = [
     title: "Clientes",
     icon: Users,
     href: "/",
-  },
-  {
-    title: "Trechos",
-    icon: MapPin,
-    href: "/trechos",
   },
   {
     title: "Equipe",
