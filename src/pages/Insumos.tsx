@@ -32,6 +32,7 @@ import { useInsumos, Insumo } from "@/hooks/useInsumos";
 import { useFornecedores } from "@/hooks/useFornecedores";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { capitalizeWords } from "@/hooks/useInputMasks";
 
 const CATEGORIAS_INSUMOS = [
   "Fertilizantes",
@@ -175,7 +176,7 @@ export default function Insumos() {
                   <Input
                     id="nome"
                     value={formData.nome}
-                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, nome: capitalizeWords(e.target.value) })}
                     placeholder="Nome do insumo"
                   />
                 </div>
