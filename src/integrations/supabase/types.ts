@@ -107,6 +107,7 @@ export type Database = {
           condominio: string | null
           cpf_cnpj: string | null
           created_at: string
+          created_by: string | null
           datas_importantes: Json | null
           email: string | null
           endereco: string | null
@@ -121,6 +122,7 @@ export type Database = {
           status: string
           telefone: string | null
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
           assessores?: Json | null
@@ -130,6 +132,7 @@ export type Database = {
           condominio?: string | null
           cpf_cnpj?: string | null
           created_at?: string
+          created_by?: string | null
           datas_importantes?: Json | null
           email?: string | null
           endereco?: string | null
@@ -144,6 +147,7 @@ export type Database = {
           status?: string
           telefone?: string | null
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           assessores?: Json | null
@@ -153,6 +157,7 @@ export type Database = {
           condominio?: string | null
           cpf_cnpj?: string | null
           created_at?: string
+          created_by?: string | null
           datas_importantes?: Json | null
           email?: string | null
           endereco?: string | null
@@ -167,6 +172,7 @@ export type Database = {
           status?: string
           telefone?: string | null
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -180,6 +186,7 @@ export type Database = {
           cidade: string | null
           cpf: string | null
           created_at: string
+          created_by: string | null
           data_nascimento: string | null
           email: string | null
           endereco: string | null
@@ -193,6 +200,7 @@ export type Database = {
           tamanho_calcado: string | null
           tamanho_camiseta: string | null
           telefone: string | null
+          updated_by: string | null
           user_id: string | null
           username: string | null
         }
@@ -205,6 +213,7 @@ export type Database = {
           cidade?: string | null
           cpf?: string | null
           created_at?: string
+          created_by?: string | null
           data_nascimento?: string | null
           email?: string | null
           endereco?: string | null
@@ -218,6 +227,7 @@ export type Database = {
           tamanho_calcado?: string | null
           tamanho_camiseta?: string | null
           telefone?: string | null
+          updated_by?: string | null
           user_id?: string | null
           username?: string | null
         }
@@ -230,6 +240,7 @@ export type Database = {
           cidade?: string | null
           cpf?: string | null
           created_at?: string
+          created_by?: string | null
           data_nascimento?: string | null
           email?: string | null
           endereco?: string | null
@@ -243,6 +254,7 @@ export type Database = {
           tamanho_calcado?: string | null
           tamanho_camiseta?: string | null
           telefone?: string | null
+          updated_by?: string | null
           user_id?: string | null
           username?: string | null
         }
@@ -261,6 +273,7 @@ export type Database = {
           cliente_id: string
           comentarios_jardim: string | null
           created_at: string
+          created_by: string | null
           data_alerta: string | null
           data_visita: string
           equipe_presente_ids: string[] | null
@@ -270,11 +283,13 @@ export type Database = {
           status: string
           trecho_id: string | null
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
           cliente_id: string
           comentarios_jardim?: string | null
           created_at?: string
+          created_by?: string | null
           data_alerta?: string | null
           data_visita: string
           equipe_presente_ids?: string[] | null
@@ -284,11 +299,13 @@ export type Database = {
           status?: string
           trecho_id?: string | null
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           cliente_id?: string
           comentarios_jardim?: string | null
           created_at?: string
+          created_by?: string | null
           data_alerta?: string | null
           data_visita?: string
           equipe_presente_ids?: string[] | null
@@ -298,6 +315,7 @@ export type Database = {
           status?: string
           trecho_id?: string | null
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -366,6 +384,7 @@ export type Database = {
           cidade: string | null
           cnpj: string | null
           created_at: string
+          created_by: string | null
           email: string | null
           endereco: string | null
           estado: string | null
@@ -375,11 +394,13 @@ export type Database = {
           status: string
           telefone: string | null
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
           cidade?: string | null
           cnpj?: string | null
           created_at?: string
+          created_by?: string | null
           email?: string | null
           endereco?: string | null
           estado?: string | null
@@ -389,11 +410,13 @@ export type Database = {
           status?: string
           telefone?: string | null
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           cidade?: string | null
           cnpj?: string | null
           created_at?: string
+          created_by?: string | null
           email?: string | null
           endereco?: string | null
           estado?: string | null
@@ -403,6 +426,7 @@ export type Database = {
           status?: string
           telefone?: string | null
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -411,6 +435,7 @@ export type Database = {
           ativo: boolean
           categoria: string | null
           created_at: string
+          created_by: string | null
           fornecedor_id: string | null
           id: string
           nome: string
@@ -418,11 +443,13 @@ export type Database = {
           preco_unitario: number | null
           ultima_compra: string | null
           unidade: string | null
+          updated_by: string | null
         }
         Insert: {
           ativo?: boolean
           categoria?: string | null
           created_at?: string
+          created_by?: string | null
           fornecedor_id?: string | null
           id?: string
           nome: string
@@ -430,11 +457,13 @@ export type Database = {
           preco_unitario?: number | null
           ultima_compra?: string | null
           unidade?: string | null
+          updated_by?: string | null
         }
         Update: {
           ativo?: boolean
           categoria?: string | null
           created_at?: string
+          created_by?: string | null
           fornecedor_id?: string | null
           id?: string
           nome?: string
@@ -442,6 +471,7 @@ export type Database = {
           preco_unitario?: number | null
           ultima_compra?: string | null
           unidade?: string | null
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -459,6 +489,7 @@ export type Database = {
           categoria: string | null
           codigo_interno: string | null
           created_at: string
+          created_by: string | null
           horas_acumuladas: number
           horas_limite_manutencao: number
           id: string
@@ -471,12 +502,14 @@ export type Database = {
           status: string
           ultima_manutencao: string | null
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
           ativo?: boolean
           categoria?: string | null
           codigo_interno?: string | null
           created_at?: string
+          created_by?: string | null
           horas_acumuladas?: number
           horas_limite_manutencao?: number
           id?: string
@@ -489,12 +522,14 @@ export type Database = {
           status?: string
           ultima_manutencao?: string | null
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           ativo?: boolean
           categoria?: string | null
           codigo_interno?: string | null
           created_at?: string
+          created_by?: string | null
           horas_acumuladas?: number
           horas_limite_manutencao?: number
           id?: string
@@ -507,6 +542,7 @@ export type Database = {
           status?: string
           ultima_manutencao?: string | null
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -516,6 +552,7 @@ export type Database = {
           ativo: boolean
           categoria_id: string | null
           created_at: string
+          created_by: string | null
           dap_cm: number | null
           fornecedor_id: string | null
           id: string
@@ -529,12 +566,14 @@ export type Database = {
           ultima_compra: string | null
           unidade: string | null
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
           altura_cm?: number | null
           ativo?: boolean
           categoria_id?: string | null
           created_at?: string
+          created_by?: string | null
           dap_cm?: number | null
           fornecedor_id?: string | null
           id?: string
@@ -548,12 +587,14 @@ export type Database = {
           ultima_compra?: string | null
           unidade?: string | null
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           altura_cm?: number | null
           ativo?: boolean
           categoria_id?: string | null
           created_at?: string
+          created_by?: string | null
           dap_cm?: number | null
           fornecedor_id?: string | null
           id?: string
@@ -567,6 +608,7 @@ export type Database = {
           ultima_compra?: string | null
           unidade?: string | null
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -634,6 +676,7 @@ export type Database = {
           cliente_id: string
           codigo: string
           created_at: string
+          created_by: string | null
           data_envio: string | null
           data_resposta: string | null
           descricao: string | null
@@ -642,12 +685,14 @@ export type Database = {
           status: string
           titulo: string
           updated_at: string
+          updated_by: string | null
           valor: number | null
         }
         Insert: {
           cliente_id: string
           codigo: string
           created_at?: string
+          created_by?: string | null
           data_envio?: string | null
           data_resposta?: string | null
           descricao?: string | null
@@ -656,12 +701,14 @@ export type Database = {
           status?: string
           titulo: string
           updated_at?: string
+          updated_by?: string | null
           valor?: number | null
         }
         Update: {
           cliente_id?: string
           codigo?: string
           created_at?: string
+          created_by?: string | null
           data_envio?: string | null
           data_resposta?: string | null
           descricao?: string | null
@@ -670,6 +717,7 @@ export type Database = {
           status?: string
           titulo?: string
           updated_at?: string
+          updated_by?: string | null
           valor?: number | null
         }
         Relationships: [
@@ -840,6 +888,7 @@ export type Database = {
           cliente_id: string
           colaboradores_ids: string[] | null
           created_at: string
+          created_by: string | null
           data_alerta: string | null
           data_servico: string
           descricao: string
@@ -858,6 +907,7 @@ export type Database = {
           tipo: string
           trecho_id: string | null
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
           area_funcional?: string | null
@@ -865,6 +915,7 @@ export type Database = {
           cliente_id: string
           colaboradores_ids?: string[] | null
           created_at?: string
+          created_by?: string | null
           data_alerta?: string | null
           data_servico: string
           descricao: string
@@ -883,6 +934,7 @@ export type Database = {
           tipo: string
           trecho_id?: string | null
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           area_funcional?: string | null
@@ -890,6 +942,7 @@ export type Database = {
           cliente_id?: string
           colaboradores_ids?: string[] | null
           created_at?: string
+          created_by?: string | null
           data_alerta?: string | null
           data_servico?: string
           descricao?: string
@@ -908,6 +961,7 @@ export type Database = {
           tipo?: string
           trecho_id?: string | null
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -977,26 +1031,32 @@ export type Database = {
         Row: {
           cliente_id: string
           created_at: string
+          created_by: string | null
           descricao: string | null
           id: string
           nome: string
           ordem: number | null
+          updated_by: string | null
         }
         Insert: {
           cliente_id: string
           created_at?: string
+          created_by?: string | null
           descricao?: string | null
           id?: string
           nome: string
           ordem?: number | null
+          updated_by?: string | null
         }
         Update: {
           cliente_id?: string
           created_at?: string
+          created_by?: string | null
           descricao?: string | null
           id?: string
           nome?: string
           ordem?: number | null
+          updated_by?: string | null
         }
         Relationships: [
           {
