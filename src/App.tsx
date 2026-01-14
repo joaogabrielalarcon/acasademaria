@@ -36,6 +36,7 @@ const App = () => (
           <Route path="/bootstrap" element={<BootstrapAdmin />} />
           <Route path="/clientes/novo" element={<NovoCliente />} />
           <Route path="/clientes/:id" element={<ClientePerfil />} />
+          <Route path="/clientes/:id/editar" element={<NovoCliente />} />
           <Route path="/equipe" element={<Equipe />} />
           <Route path="/registros/novo" element={<NovoRegistro />} />
           <Route path="/recebimentos/novo" element={<NovoRecebimento />} />

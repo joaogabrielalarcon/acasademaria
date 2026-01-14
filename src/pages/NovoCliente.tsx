@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, Star } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, Plus, Trash2, Star, Loader2 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { formatCPFCNPJ, formatCEP, formatPhone, formatIE, capitalizeWords } from "@/hooks/useInputMasks";
 import { supabase } from "@/integrations/supabase/client";
+import { useCliente } from "@/hooks/useCliente";
 
 interface Proprietario {
   nome: string;
@@ -44,6 +45,8 @@ interface DataImportante {
 }
 
 export default function NovoCliente() {
+  const { id } = useParams();
+  const isEditing = Boolean(id);
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -69,6 +72,65 @@ export default function NovoCliente() {
   const [particularidades, setParticularidades] = useState("");
   const [notas, setNotas] = useState("");
 
+  // Fetch existing client data if editing
+  const { data: clienteExistente, isLoading: loadingCliente } = useCliente(id);
+
+  // Populate form with existing data when editing
+  useEffect(() => {
+    if (clienteExistente && isEditing) {
+      setNome(clienteExistente.nome || "");
+      setStatus(clienteExistente.status || "ativo");
+      setEndereco(clienteExistente.endereco || "");
+      setBairro(clienteExistente.bairro || "");
+      setCidade(clienteExistente.cidade || "");
+      setEstado(clienteExistente.estado || "");
+      setCep(clienteExistente.cep || "");
+      setCondominio(clienteExistente.condominio || "");
+      setCpfCnpj(clienteExistente.cpf_cnpj || "");
+      setInscricaoEstadual(clienteExistente.inscricao_estadual || "");
+      setParticularidades(clienteExistente.particularidades || "");
+      setNotas(clienteExistente.notas || "");
+      
+      // Map proprietarios
+      if (clienteExistente.proprietarios && clienteExistente.proprietarios.length > 0) {
+        setProprietarios(clienteExistente.proprietarios.map((p: any) => ({
+          nome: p.nome || "",
+          telefone: p.telefone || "",
+          email: p.email || "",
+          pontoContato: p.pontoContato || false,
+        })));
+      }
+      
+      // Map funcionarios
+      if (clienteExistente.funcionarios_casa && clienteExistente.funcionarios_casa.length > 0) {
+        setFuncionarios(clienteExistente.funcionarios_casa.map((f: any) => ({
+          nome: f.nome || "",
+          funcao: f.funcao || "",
+          telefone: f.telefone || "",
+          pontoContato: f.pontoContato || false,
+        })));
+      }
+      
+      // Map assessores
+      if (clienteExistente.assessores && clienteExistente.assessores.length > 0) {
+        setAssessores(clienteExistente.assessores.map((a: any) => ({
+          nome: a.nome || "",
+          empresa: a.empresa || "",
+          telefone: a.telefone || "",
+          pontoContato: a.pontoContato || false,
+        })));
+      }
+      
+      // Map datas importantes
+      if (clienteExistente.datas_importantes && clienteExistente.datas_importantes.length > 0) {
+        setDatasImportantes(clienteExistente.datas_importantes.map((d: any) => ({
+          data: d.data || "",
+          descricao: d.descricao || "",
+        })));
+      }
+    }
+  }, [clienteExistente, isEditing]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -83,36 +145,53 @@ export default function NovoCliente() {
 
     setIsLoading(true);
 
+    const clienteData = {
+      nome: nome.trim(),
+      status,
+      cpf_cnpj: cpfCnpj || null,
+      inscricao_estadual: inscricaoEstadual || null,
+      endereco: endereco || null,
+      bairro: bairro || null,
+      cidade: cidade || null,
+      estado: estado || null,
+      cep: cep || null,
+      condominio: condominio || null,
+      proprietarios: JSON.parse(JSON.stringify(proprietarios.filter(p => p.nome.trim()))),
+      funcionarios_casa: JSON.parse(JSON.stringify(funcionarios.filter(f => f.nome.trim()))),
+      assessores: JSON.parse(JSON.stringify(assessores.filter(a => a.nome.trim()))),
+      datas_importantes: JSON.parse(JSON.stringify(datasImportantes.filter(d => d.data || d.descricao))),
+      particularidades: particularidades || null,
+      notas: notas || null,
+    };
+
     try {
-      const { error } = await supabase.from("clientes").insert({
-        nome: nome.trim(),
-        status,
-        cpf_cnpj: cpfCnpj || null,
-        inscricao_estadual: inscricaoEstadual || null,
-        endereco: endereco || null,
-        bairro: bairro || null,
-        cidade: cidade || null,
-        estado: estado || null,
-        cep: cep || null,
-        condominio: condominio || null,
-        proprietarios: JSON.parse(JSON.stringify(proprietarios.filter(p => p.nome.trim()))),
-        funcionarios_casa: JSON.parse(JSON.stringify(funcionarios.filter(f => f.nome.trim()))),
-        assessores: JSON.parse(JSON.stringify(assessores.filter(a => a.nome.trim()))),
-        datas_importantes: JSON.parse(JSON.stringify(datasImportantes.filter(d => d.data || d.descricao))),
-        particularidades: particularidades || null,
-        notas: notas || null,
-      });
+      if (isEditing && id) {
+        const { error } = await supabase
+          .from("clientes")
+          .update(clienteData)
+          .eq("id", id);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast({
-        title: "Cliente cadastrado!",
-        description: "O cliente foi adicionado com sucesso.",
-      });
-      navigate("/");
+        toast({
+          title: "Cliente atualizado!",
+          description: "Os dados do cliente foram salvos com sucesso.",
+        });
+        navigate(`/clientes/${id}`);
+      } else {
+        const { error } = await supabase.from("clientes").insert(clienteData);
+
+        if (error) throw error;
+
+        toast({
+          title: "Cliente cadastrado!",
+          description: "O cliente foi adicionado com sucesso.",
+        });
+        navigate("/");
+      }
     } catch (error: any) {
       toast({
-        title: "Erro ao cadastrar",
+        title: isEditing ? "Erro ao atualizar" : "Erro ao cadastrar",
         description: error.message || "Não foi possível salvar o cliente.",
         variant: "destructive",
       });
@@ -173,23 +252,34 @@ export default function NovoCliente() {
     setDatasImportantes(updated);
   };
 
+  // Show loading while fetching existing data
+  if (isEditing && loadingCliente) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center py-24">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout>
       {/* Back Button */}
       <Link 
-        to="/" 
+        to={isEditing ? `/clientes/${id}` : "/"} 
         className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
       >
         <ArrowLeft className="w-4 h-4" />
-        <span>Voltar para Clientes</span>
+        <span>{isEditing ? "Voltar para o Cliente" : "Voltar para Clientes"}</span>
       </Link>
 
       <div className="max-w-2xl">
         <h1 className="font-display text-2xl lg:text-3xl font-bold text-foreground mb-2">
-          Novo Cliente
+          {isEditing ? "Editar Cliente" : "Novo Cliente"}
         </h1>
         <p className="text-muted-foreground mb-8">
-          Cadastre um novo cliente e seu jardim
+          {isEditing ? "Atualize os dados do cliente" : "Cadastre um novo cliente e seu jardim"}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-8">
@@ -585,7 +675,7 @@ export default function NovoCliente() {
               Cancelar
             </Button>
             <Button type="submit" variant="terracota" disabled={isLoading}>
-              {isLoading ? "Salvando..." : "Salvar Cliente"}
+              {isLoading ? "Salvando..." : isEditing ? "Atualizar Cliente" : "Salvar Cliente"}
             </Button>
           </div>
         </form>
