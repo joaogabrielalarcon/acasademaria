@@ -53,6 +53,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatCPF, formatCEP, formatPhone, capitalizeWords } from "@/hooks/useInputMasks";
 
 const ESTADOS_BRASIL = [
   "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA",
@@ -111,34 +112,7 @@ export default function Equipe() {
   const createEntregaMutation = useCreateEntrega();
   const deleteEntregaMutation = useDeleteEntrega();
 
-  const capitalizeWords = (text: string) => {
-    return text
-      .split(" ")
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(" ");
-  };
-
-  const formatPhone = (value: string) => {
-    const numbers = value.replace(/\D/g, "");
-    if (numbers.length <= 2) return numbers;
-    if (numbers.length <= 7) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
-    if (numbers.length <= 11) return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
-    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
-  };
-
-  const formatCep = (value: string) => {
-    const numbers = value.replace(/\D/g, "");
-    if (numbers.length <= 5) return numbers;
-    return `${numbers.slice(0, 5)}-${numbers.slice(5, 8)}`;
-  };
-
-  const formatCpf = (value: string) => {
-    const numbers = value.replace(/\D/g, "");
-    if (numbers.length <= 3) return numbers;
-    if (numbers.length <= 6) return `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
-    if (numbers.length <= 9) return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`;
-    return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9, 11)}`;
-  };
+  // Usando as funções de formatação do useInputMasks
 
   const toggleAtivoMutation = useMutation({
     mutationFn: async ({ id, ativo }: { id: string; ativo: boolean }) => {
@@ -482,10 +456,9 @@ export default function Equipe() {
                 id="nome"
                 placeholder="Nome completo"
                 value={nome}
-                onChange={(e) => setNome(e.target.value)}
+                onChange={(e) => setNome(capitalizeWords(e.target.value))}
               />
             </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="cpf">CPF</Label>
@@ -493,7 +466,7 @@ export default function Equipe() {
                   id="cpf"
                   placeholder="000.000.000-00"
                   value={cpf}
-                  onChange={(e) => setCpf(formatCpf(e.target.value))}
+                  onChange={(e) => setCpf(formatCPF(e.target.value))}
                   maxLength={14}
                 />
               </div>
@@ -529,7 +502,7 @@ export default function Equipe() {
                   id="cargo"
                   placeholder="Ex: Jardineiro"
                   value={cargo}
-                  onChange={(e) => setCargo(e.target.value)}
+                  onChange={(e) => setCargo(capitalizeWords(e.target.value))}
                 />
               </div>
               <div className="space-y-2">
@@ -538,7 +511,7 @@ export default function Equipe() {
                   id="area"
                   placeholder="Ex: Operações"
                   value={area}
-                  onChange={(e) => setArea(e.target.value)}
+                  onChange={(e) => setArea(capitalizeWords(e.target.value))}
                 />
               </div>
             </div>
@@ -569,7 +542,7 @@ export default function Equipe() {
                     id="endereco"
                     placeholder="Rua, número, complemento"
                     value={endereco}
-                    onChange={(e) => setEndereco(e.target.value)}
+                    onChange={(e) => setEndereco(capitalizeWords(e.target.value))}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -579,7 +552,7 @@ export default function Equipe() {
                       id="cidade"
                       placeholder="Cidade"
                       value={cidade}
-                      onChange={(e) => setCidade(e.target.value)}
+                      onChange={(e) => setCidade(capitalizeWords(e.target.value))}
                     />
                   </div>
                   <div className="space-y-2">
@@ -604,7 +577,7 @@ export default function Equipe() {
                     id="cep"
                     placeholder="00000-000"
                     value={cep}
-                    onChange={(e) => setCep(formatCep(e.target.value))}
+                    onChange={(e) => setCep(formatCEP(e.target.value))}
                     maxLength={9}
                   />
                 </div>

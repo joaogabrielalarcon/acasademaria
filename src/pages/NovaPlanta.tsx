@@ -18,6 +18,7 @@ import { useCategoriasPlantas } from "@/hooks/useCategoriasPlantas";
 import { useFornecedores } from "@/hooks/useFornecedores";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { capitalizeWords } from "@/hooks/useInputMasks";
 
 export default function NovaPlanta() {
   const navigate = useNavigate();
@@ -146,7 +147,7 @@ export default function NovaPlanta() {
               <Input
                 id="nome_popular"
                 value={formData.nome_popular}
-                onChange={(e) => setFormData({ ...formData, nome_popular: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, nome_popular: capitalizeWords(e.target.value) })}
                 placeholder="Ex: Ipê Amarelo"
               />
             </div>

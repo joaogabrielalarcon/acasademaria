@@ -31,6 +31,7 @@ import { Plus, Pencil, Search } from "lucide-react";
 import { useFornecedores, Fornecedor } from "@/hooks/useFornecedores";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { formatCNPJ, formatPhone, capitalizeWords } from "@/hooks/useInputMasks";
 
 export default function Fornecedores() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -160,7 +161,7 @@ export default function Fornecedores() {
                     <Input
                       id="nome"
                       value={formData.nome}
-                      onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, nome: capitalizeWords(e.target.value) })}
                       placeholder="Nome do fornecedor"
                     />
                   </div>
@@ -170,8 +171,9 @@ export default function Fornecedores() {
                     <Input
                       id="cnpj"
                       value={formData.cnpj}
-                      onChange={(e) => setFormData({ ...formData, cnpj: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, cnpj: formatCNPJ(e.target.value) })}
                       placeholder="00.000.000/0000-00"
+                      maxLength={18}
                     />
                   </div>
 
@@ -180,8 +182,9 @@ export default function Fornecedores() {
                     <Input
                       id="telefone"
                       value={formData.telefone}
-                      onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, telefone: formatPhone(e.target.value) })}
                       placeholder="(00) 00000-0000"
+                      maxLength={15}
                     />
                   </div>
 
@@ -201,7 +204,7 @@ export default function Fornecedores() {
                     <Input
                       id="endereco"
                       value={formData.endereco}
-                      onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, endereco: capitalizeWords(e.target.value) })}
                       placeholder="Rua, número, bairro"
                     />
                   </div>
@@ -211,7 +214,7 @@ export default function Fornecedores() {
                     <Input
                       id="cidade"
                       value={formData.cidade}
-                      onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, cidade: capitalizeWords(e.target.value) })}
                       placeholder="Cidade"
                     />
                   </div>
@@ -221,7 +224,7 @@ export default function Fornecedores() {
                     <Input
                       id="estado"
                       value={formData.estado}
-                      onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, estado: e.target.value.toUpperCase() })}
                       placeholder="UF"
                       maxLength={2}
                     />
