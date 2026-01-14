@@ -55,6 +55,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatCPF, formatCEP, formatPhone, capitalizeWords } from "@/hooks/useInputMasks";
+import { ImageUpload } from "@/components/ImageUpload";
 
 const ESTADOS_BRASIL = [
   "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA",
@@ -96,6 +97,7 @@ export default function Equipe() {
   const [tamanhoCalcado, setTamanhoCalcado] = useState("");
   const [observacoes, setObservacoes] = useState("");
   const [ativo, setAtivo] = useState(true);
+  const [fotoUrl, setFotoUrl] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   
   // Collapsible sections
@@ -156,6 +158,7 @@ export default function Equipe() {
     setTamanhoCalcado("");
     setObservacoes("");
     setAtivo(true);
+    setFotoUrl(null);
     setEnderecoOpen(false);
     setUniformeOpen(false);
     setMaquinasOpen(false);
@@ -185,6 +188,7 @@ export default function Equipe() {
     setTamanhoCalcado(colaborador.tamanho_calcado || "");
     setObservacoes(colaborador.observacoes || "");
     setAtivo(colaborador.ativo);
+    setFotoUrl(colaborador.foto_url || null);
     setEnderecoOpen(!!colaborador.endereco || !!colaborador.cidade);
     setUniformeOpen(!!colaborador.tamanho_camiseta || !!colaborador.tamanho_calca || !!colaborador.tamanho_calcado);
     setMaquinasOpen((colaborador.maquinas_ids?.length || 0) > 0);
@@ -227,6 +231,7 @@ export default function Equipe() {
       tamanho_calca: tamanhoCalca || null,
       tamanho_calcado: tamanhoCalcado || null,
       observacoes: observacoes.trim() || null,
+      foto_url: fotoUrl,
       ativo,
     };
 
@@ -396,8 +401,16 @@ export default function Equipe() {
                 key={colaborador.id}
                 className="flex items-center gap-4 p-4 hover:bg-muted/30 transition-colors"
               >
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <UserCircle className="w-6 h-6 text-primary" />
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  {colaborador.foto_url ? (
+                    <img 
+                      src={colaborador.foto_url} 
+                      alt={colaborador.nome} 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <UserCircle className="w-6 h-6 text-primary" />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium text-foreground">
@@ -458,6 +471,16 @@ export default function Equipe() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            {/* Upload de Foto */}
+            <div className="flex justify-center pb-2">
+              <ImageUpload
+                value={fotoUrl}
+                onChange={setFotoUrl}
+                bucket="colaboradores-fotos"
+                folder="colaboradores"
+              />
+            </div>
+
             {/* Dados Básicos */}
             <div className="space-y-2">
               <Label htmlFor="nome">Nome *</Label>

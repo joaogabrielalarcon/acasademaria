@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil, GripVertical } from "lucide-react";
+import { Plus, Pencil, Search } from "lucide-react";
 import { useCategoriasPlantas, CategoriaPlanta } from "@/hooks/useCategoriasPlantas";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -28,6 +28,7 @@ import { toast } from "sonner";
 export default function CategoriasPlantas() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCategoria, setEditingCategoria] = useState<CategoriaPlanta | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const { data: categorias = [], isLoading } = useCategoriasPlantas();
   const queryClient = useQueryClient();
@@ -37,6 +38,14 @@ export default function CategoriasPlantas() {
     ordem: 0,
     ativo: true,
   });
+
+  // Filtrar e ordenar alfabeticamente
+  const filteredCategorias = useMemo(() => {
+    const filtered = categorias.filter((cat) =>
+      cat.nome.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    return filtered.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  }, [categorias, searchTerm]);
 
   const resetForm = () => {
     setFormData({
@@ -106,9 +115,6 @@ export default function CategoriasPlantas() {
     }
     saveMutation.mutate(formData);
   };
-
-  // Fetch all categories including inactive ones for this admin view
-  const allCategoriasQuery = useQueryClient().getQueryData<CategoriaPlanta[]>(["categorias_plantas"]);
 
   return (
     <AppLayout>
@@ -184,8 +190,19 @@ export default function CategoriasPlantas() {
           </Dialog>
         </div>
 
+        {/* Search */}
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome..."
+            className="pl-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
         <div className="card-botanical p-4">
-          <p className="text-sm text-muted-foreground mb-4">
+          <p className="text-sm text-muted-foreground">
             <strong>Dica:</strong> Plantas da categoria "Árvore" exigem o campo DAP (Diâmetro à Altura do Peito) no recebimento de materiais.
           </p>
         </div>
@@ -195,7 +212,6 @@ export default function CategoriasPlantas() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-12"></TableHead>
                 <TableHead>Nome</TableHead>
                 <TableHead>Ordem</TableHead>
                 <TableHead>Status</TableHead>
@@ -205,22 +221,19 @@ export default function CategoriasPlantas() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                     Carregando...
                   </TableCell>
                 </TableRow>
-              ) : categorias.length === 0 ? (
+              ) : filteredCategorias.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                    Nenhuma categoria cadastrada
+                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                    {searchTerm ? "Nenhuma categoria encontrada" : "Nenhuma categoria cadastrada"}
                   </TableCell>
                 </TableRow>
               ) : (
-                categorias.map((categoria) => (
+                filteredCategorias.map((categoria) => (
                   <TableRow key={categoria.id}>
-                    <TableCell>
-                      <GripVertical className="w-4 h-4 text-muted-foreground" />
-                    </TableCell>
                     <TableCell className="font-medium">{categoria.nome}</TableCell>
                     <TableCell>{categoria.ordem}</TableCell>
                     <TableCell>
