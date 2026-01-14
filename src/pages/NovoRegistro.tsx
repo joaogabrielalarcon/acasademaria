@@ -25,11 +25,7 @@ const mockClientes = [
   { id: "3", nome: "Edifício Aurora" },
 ];
 
-const mockTrechos = [
-  { id: "1", nome: "Jardim Frontal", clienteId: "1" },
-  { id: "2", nome: "Piscina", clienteId: "1" },
-  { id: "3", nome: "Horta", clienteId: "2" },
-];
+// Trechos movidos para ServicoBlock
 
 const mockColaboradores = [
   { id: "1", nome: "João Silva" },
@@ -62,7 +58,7 @@ export default function NovoRegistro() {
 
   // === SEÇÃO 1: Dados da Diária ===
   const [selectedCliente, setSelectedCliente] = useState(clienteIdFromUrl);
-  const [selectedTrecho, setSelectedTrecho] = useState("");
+  
   const [dataVisita, setDataVisita] = useState(dataFromUrl);
   const [periodo, setPeriodo] = useState("dia_inteiro");
   const [equipePresente, setEquipePresente] = useState<string[]>([]);
@@ -85,7 +81,7 @@ export default function NovoRegistro() {
     }
   }, [dataVisita]);
 
-  const filteredTrechos = mockTrechos.filter((t) => t.clienteId === selectedCliente);
+  
 
   const toggleEquipePresente = (id: string) => {
     setEquipePresente((prev) => {
@@ -187,49 +183,21 @@ export default function NovoRegistro() {
               </h2>
             </div>
 
-            {/* Cliente e Trecho */}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="cliente">Cliente *</Label>
-                <Select value={selectedCliente} onValueChange={setSelectedCliente}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {mockClientes.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="trecho">Trecho geral</Label>
-                <Select
-                  value={selectedTrecho}
-                  onValueChange={setSelectedTrecho}
-                  disabled={!selectedCliente}
-                >
-                  <SelectTrigger>
-                    <SelectValue
-                      placeholder={
-                        selectedCliente
-                          ? "Selecione o trecho"
-                          : "Selecione um cliente primeiro"
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="geral">Área geral / Todo o jardim</SelectItem>
-                    {filteredTrechos.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>
-                        {t.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            {/* Cliente */}
+            <div className="space-y-2">
+              <Label htmlFor="cliente">Cliente *</Label>
+              <Select value={selectedCliente} onValueChange={setSelectedCliente}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {mockClientes.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Data e Período */}

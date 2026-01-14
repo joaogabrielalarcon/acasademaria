@@ -45,6 +45,13 @@ const mockInsumos = [
   { id: "9", nome: "Soprador", categoria: "maquina", unidade: "un" },
 ];
 
+const mockTrechos = [
+  { id: "1", nome: "Jardim Frontal", clienteId: "1" },
+  { id: "2", nome: "Piscina", clienteId: "1" },
+  { id: "3", nome: "Horta", clienteId: "2" },
+  { id: "4", nome: "Área de lazer", clienteId: "1" },
+];
+
 const tipoOptions = [
   { value: "manutencao", label: "Manutenção" },
   { value: "implantacao", label: "Implantação" },
@@ -64,6 +71,7 @@ interface InsumoSelecionado {
 export interface ServicoData {
   id: string;
   tipo: string;
+  trechoId: string;
   executoresIds: string[];
   solicitante: string;
   solicitanteOutro: string;
@@ -178,24 +186,46 @@ export function ServicoBlock({
         {/* Content */}
         <CollapsibleContent>
           <div className="p-4 space-y-4 border-t border-primary/10">
-            {/* Tipo de Serviço */}
-            <div className="space-y-2">
-              <Label>Tipo de Serviço *</Label>
-              <Select
-                value={servico.tipo}
-                onValueChange={(value) => onUpdate(servico.id, { tipo: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tipoOptions.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>
-                      {t.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* Tipo de Serviço e Trecho */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Tipo de Serviço *</Label>
+                <Select
+                  value={servico.tipo}
+                  onValueChange={(value) => onUpdate(servico.id, { tipo: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tipoOptions.map((t) => (
+                      <SelectItem key={t.value} value={t.value}>
+                        {t.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Área / Trecho</Label>
+                <Select
+                  value={servico.trechoId}
+                  onValueChange={(value) => onUpdate(servico.id, { trechoId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Onde foi realizado?" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="geral">Área geral / Todo o jardim</SelectItem>
+                    {mockTrechos.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {/* Responsáveis pela Execução */}
@@ -391,6 +421,7 @@ export function createEmptyServico(): ServicoData {
   return {
     id: crypto.randomUUID(),
     tipo: "",
+    trechoId: "",
     executoresIds: [],
     solicitante: "",
     solicitanteOutro: "",
