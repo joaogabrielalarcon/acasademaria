@@ -158,7 +158,7 @@ export function ServicoBlock({
                 {index + 1}
               </span>
               <span className="font-medium text-foreground">
-                {servico.tipo ? tipoLabel : `Serviço ${index + 1}`}
+                {index + 1} - Serviço
               </span>
               {servico.descricao && (
                 <span className="text-sm text-muted-foreground truncate max-w-[200px]">
