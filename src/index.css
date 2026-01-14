@@ -49,14 +49,14 @@
     
     --radius: 0.5rem;
     
-    /* Sidebar - terracota mais escuro para contraste */
-    --sidebar-background: 11 77% 24%; /* terracota mais escuro */
+    /* Sidebar - terracota oficial */
+    --sidebar-background: 11 77% 38%; /* terracota oficial #9E3722 */
     --sidebar-foreground: 21 100% 95%; /* creme */
     --sidebar-primary: 21 100% 95%; /* creme */
     --sidebar-primary-foreground: 11 77% 38%; /* terracota */
-    --sidebar-accent: 11 60% 30%; /* terracota médio */
+    --sidebar-accent: 11 77% 32%; /* terracota levemente escuro */
     --sidebar-accent-foreground: 21 100% 95%; /* creme */
-    --sidebar-border: 21 30% 50%; /* creme com baixa opacidade */
+    --sidebar-border: 21 50% 70%; /* creme com opacidade */
     --sidebar-ring: 21 100% 95%; /* creme */
     
     /* Custom Properties */
@@ -93,13 +93,13 @@
     --input: 21 30% 40%;
     --ring: 21 100% 95%;
     
-    --sidebar-background: 11 77% 18%;
+    --sidebar-background: 11 77% 32%;
     --sidebar-foreground: 21 100% 95%;
     --sidebar-primary: 21 100% 95%;
     --sidebar-primary-foreground: 11 77% 38%;
-    --sidebar-accent: 11 60% 24%;
+    --sidebar-accent: 11 77% 26%;
     --sidebar-accent-foreground: 21 100% 95%;
-    --sidebar-border: 21 20% 35%;
+    --sidebar-border: 21 40% 50%;
   }
 }
 
