@@ -169,7 +169,7 @@ export default function NovoRecebimento() {
         .insert({
           cliente_id: clienteId,
           data_servico: format(dataRecebimento, "yyyy-MM-dd"),
-          tipo: "recebimento_materiais",
+          tipo: "entrega", // Valor válido da constraint
           status: "realizado",
           descricao: `Recebimento de ${itens.length} item(s)`,
           observacoes_internas: observacoes || null,

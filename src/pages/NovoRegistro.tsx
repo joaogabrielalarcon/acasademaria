@@ -195,7 +195,7 @@ export default function NovoRegistro() {
             executores_ids: servico.executoresIds,
             equipe_presente_ids: equipePresente,
             solicitante: servico.solicitante === "outro" ? servico.solicitanteOutro : servico.solicitante || null,
-            midia: servico.midia, // Agora suporta mídia
+            midia: servico.midiaUrls.length > 0 ? servico.midiaUrls : [],
           })
           .select()
           .single();

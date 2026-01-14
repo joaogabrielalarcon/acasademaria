@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ChevronDown, ChevronUp, Trash2, Upload, Plus, Wrench, Loader2 } from "lucide-react";
+import { useState, useRef } from "react";
+import { ChevronDown, ChevronUp, Trash2, Upload, Plus, Wrench, Loader2, X, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +22,8 @@ import { useColaboradores } from "@/hooks/useColaboradores";
 import { useInsumos } from "@/hooks/useInsumos";
 import { useMaquinas } from "@/hooks/useMaquinas";
 import { useTrechosCliente, useCliente } from "@/hooks/useCliente";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const periodoOptions = [
   { value: "manha", label: "Manhã" },
@@ -72,7 +74,7 @@ export interface ServicoData {
   maquinas: MaquinaSelecionada[];
   descricao: string;
   observacoesInternas: string;
-  midia: File[];
+  midiaUrls: string[]; // URLs das mídias no storage
 }
 
 interface ServicoBlockProps {
@@ -100,6 +102,8 @@ export function ServicoBlock({
   const [novoInsumoUnidade, setNovoInsumoUnidade] = useState("");
   const [novaMaquinaId, setNovaMaquinaId] = useState("");
   const [novaMaquinaHoras, setNovaMaquinaHoras] = useState("");
+  const [isUploadingMidia, setIsUploadingMidia] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Dados do banco - ordenados alfabeticamente
   const { data: categoriasRaw = [], isLoading: loadingCategorias } = useCategorias();
@@ -211,6 +215,93 @@ export function ServicoBlock({
     onUpdate(servico.id, {
       maquinas: servico.maquinas.filter((m) => m.maquinaId !== maquinaId),
     });
+  };
+
+  // Upload de mídia
+  const handleMidiaUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploadingMidia(true);
+    const newUrls: string[] = [];
+
+    try {
+      for (const file of Array.from(files)) {
+        // Validar tipo
+        if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
+          toast.error(`Arquivo ${file.name} não é uma imagem ou vídeo`);
+          continue;
+        }
+
+        // Validar tamanho (max 50MB para vídeos, 10MB para imagens)
+        const maxSize = file.type.startsWith("video/") ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
+        if (file.size > maxSize) {
+          toast.error(`Arquivo ${file.name} muito grande`);
+          continue;
+        }
+
+        const fileExt = file.name.split(".").pop();
+        const fileName = `servicos/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+        const { data, error } = await supabase.storage
+          .from("registros-midia")
+          .upload(fileName, file, {
+            cacheControl: "3600",
+            upsert: false,
+          });
+
+        if (error) {
+          console.error("Erro ao enviar arquivo:", error);
+          toast.error(`Erro ao enviar ${file.name}`);
+          continue;
+        }
+
+        const { data: urlData } = supabase.storage
+          .from("registros-midia")
+          .getPublicUrl(data.path);
+
+        newUrls.push(urlData.publicUrl);
+      }
+
+      if (newUrls.length > 0) {
+        onUpdate(servico.id, {
+          midiaUrls: [...servico.midiaUrls, ...newUrls],
+        });
+        toast.success(`${newUrls.length} arquivo(s) enviado(s)`);
+      }
+    } catch (error) {
+      console.error("Erro no upload:", error);
+      toast.error("Erro ao enviar arquivos");
+    } finally {
+      setIsUploadingMidia(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const removeMidia = async (url: string) => {
+    try {
+      // Extrair o path do arquivo da URL
+      const urlObj = new URL(url);
+      const pathMatch = urlObj.pathname.match(/\/storage\/v1\/object\/public\/registros-midia\/(.+)/);
+      
+      if (pathMatch) {
+        const filePath = decodeURIComponent(pathMatch[1]);
+        await supabase.storage.from("registros-midia").remove([filePath]);
+      }
+      
+      onUpdate(servico.id, {
+        midiaUrls: servico.midiaUrls.filter((m) => m !== url),
+      });
+      toast.success("Arquivo removido");
+    } catch (error) {
+      console.error("Erro ao remover arquivo:", error);
+      // Mesmo se falhar no storage, remove da lista
+      onUpdate(servico.id, {
+        midiaUrls: servico.midiaUrls.filter((m) => m !== url),
+      });
+    }
   };
 
   const categoriasLabel = servico.categoriasIds
@@ -583,17 +674,70 @@ export function ServicoBlock({
             {/* Upload de Mídia */}
             <div className="space-y-2">
               <Label>Fotos e Vídeos</Label>
-              <div className="border-2 border-dashed border-primary/30 rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer">
-                <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground mb-1">
-                  Arraste fotos ou vídeos aqui
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  JPG, PNG, WEBP, MP4, MOV (máx. 250MB cada)
-                </p>
-                <Button variant="outline" size="sm" className="mt-3">
-                  Selecionar Arquivos
-                </Button>
+              
+              {/* Preview de mídias já enviadas */}
+              {servico.midiaUrls.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {servico.midiaUrls.map((url, idx) => (
+                    <div key={idx} className="relative group">
+                      {url.match(/\.(mp4|mov|webm)$/i) ? (
+                        <video
+                          src={url}
+                          className="w-20 h-20 object-cover rounded-lg border border-border"
+                        />
+                      ) : (
+                        <img
+                          src={url}
+                          alt={`Mídia ${idx + 1}`}
+                          className="w-20 h-20 object-cover rounded-lg border border-border"
+                        />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeMidia(url)}
+                        className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Input de upload */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,video/*"
+                multiple
+                onChange={handleMidiaUpload}
+                className="hidden"
+              />
+              
+              <div 
+                onClick={() => !isUploadingMidia && fileInputRef.current?.click()}
+                className="border-2 border-dashed border-primary/30 rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer"
+              >
+                {isUploadingMidia ? (
+                  <>
+                    <Loader2 className="w-8 h-8 text-primary mx-auto mb-2 animate-spin" />
+                    <p className="text-sm text-muted-foreground">Enviando arquivos...</p>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Clique para selecionar fotos ou vídeos
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      JPG, PNG, WEBP, MP4, MOV (máx. 50MB vídeos, 10MB imagens)
+                    </p>
+                    <Button type="button" variant="outline" size="sm" className="mt-3">
+                      <ImageIcon className="w-4 h-4 mr-1" />
+                      Selecionar Arquivos
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -616,6 +760,6 @@ export function createEmptyServico(): ServicoData {
     maquinas: [],
     descricao: "",
     observacoesInternas: "",
-    midia: [],
+    midiaUrls: [],
   };
 }
