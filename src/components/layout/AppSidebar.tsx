@@ -10,9 +10,9 @@ import {
   Package,
   Truck,
   Tags,
-  Building2,
+  Settings,
   ChevronDown,
-  FolderOpen
+  Building2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
@@ -27,46 +27,62 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, useUserRoles } from "@/hooks/useAuth";
 
-const navigationItems = [
+// Definição dos perfis de acesso
+type UserRole = "admin" | "gestor" | "operador";
+
+// Mapeamento de itens por permissão
+// diretoria (admin) = vê tudo
+// administrativo (admin) = vê tudo
+// gestão de operações (gestor) = só Clientes e Equipe
+// operacional (operador) = mesma visão do gestor
+
+const allNavigationItems = [
   {
     title: "Clientes",
     icon: Users,
     href: "/",
+    roles: ["admin", "gestor", "operador"] as UserRole[],
   },
   {
     title: "Equipe",
     icon: UserCircle,
     href: "/equipe",
+    roles: ["admin", "gestor", "operador"] as UserRole[],
   },
-];
-
-const cadastrosItems = [
   {
     title: "Plantas",
     icon: Leaf,
     href: "/plantas",
+    roles: ["admin"] as UserRole[],
   },
   {
     title: "Produtos e Insumos",
     icon: Package,
     href: "/insumos",
+    roles: ["admin"] as UserRole[],
   },
   {
     title: "Fornecedores",
     icon: Truck,
     href: "/fornecedores",
+    roles: ["admin"] as UserRole[],
   },
   {
     title: "Categorias de Plantas",
     icon: Tags,
     href: "/categorias-plantas",
+    roles: ["admin"] as UserRole[],
   },
+];
+
+const configItems = [
   {
-    title: "Áreas",
+    title: "Áreas Internas",
     icon: Building2,
     href: "/areas",
+    roles: ["admin"] as UserRole[],
   },
 ];
 
@@ -76,19 +92,78 @@ interface AppSidebarProps {
 
 export function AppSidebar({ className }: AppSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
-  const [cadastrosOpen, setCadastrosOpen] = useState(false);
+  const [configOpen, setConfigOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { data: userRoles = [] } = useUserRoles(user?.id);
 
-  // Auto-expand cadastros if current route is inside
-  const isCadastrosActive = cadastrosItems.some(
+  // Determina o maior nível de acesso do usuário
+  const getUserHighestRole = (): UserRole => {
+    if (userRoles.some(r => r.role === "admin")) return "admin";
+    if (userRoles.some(r => r.role === "gestor")) return "gestor";
+    return "operador";
+  };
+
+  const userRole = getUserHighestRole();
+
+  // Filtra itens de navegação baseado no perfil do usuário
+  const visibleNavigationItems = allNavigationItems.filter(
+    item => item.roles.includes(userRole)
+  );
+
+  const visibleConfigItems = configItems.filter(
+    item => item.roles.includes(userRole)
+  );
+
+  // Auto-expand config if current route is inside
+  const isConfigActive = visibleConfigItems.some(
     item => location.pathname === item.href || location.pathname.startsWith(item.href)
   );
 
   const handleLogout = async () => {
     await signOut();
     navigate("/login");
+  };
+
+  const renderNavItem = (item: typeof allNavigationItems[0], isSubItem = false) => {
+    const isActive = location.pathname === item.href || 
+      (item.href !== "/" && location.pathname.startsWith(item.href));
+    
+    const linkContent = (
+      <Link
+        to={item.href}
+        className={cn(
+          "flex items-center gap-3 rounded-lg transition-all duration-200",
+          isSubItem ? "px-3 py-2 text-sm" : "px-3 py-2.5",
+          isActive 
+            ? "bg-sidebar-accent text-sidebar-foreground" 
+            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+        )}
+      >
+        <item.icon className={cn("flex-shrink-0", isSubItem ? "w-4 h-4" : "w-5 h-5")} />
+        {!collapsed && (
+          <span className="font-medium text-sm">{item.title}</span>
+        )}
+      </Link>
+    );
+
+    if (collapsed) {
+      return (
+        <li key={item.title}>
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              {linkContent}
+            </TooltipTrigger>
+            <TooltipContent side="right" className="ml-2">
+              {item.title}
+            </TooltipContent>
+          </Tooltip>
+        </li>
+      );
+    }
+
+    return <li key={item.title}>{linkContent}</li>;
   };
 
   return (
@@ -110,122 +185,67 @@ export function AppSidebar({ className }: AppSidebarProps) {
       {/* Navigation */}
       <nav className="flex-1 py-6 overflow-y-auto">
         <ul className="space-y-1 px-2">
-          {navigationItems.map((item) => {
-            const isActive = location.pathname === item.href || 
-              (item.href !== "/" && location.pathname.startsWith(item.href));
-            
-            const linkContent = (
-              <Link
-                to={item.href}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
-                  isActive 
-                    ? "bg-sidebar-accent text-sidebar-foreground" 
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                )}
-              >
-                <item.icon className="w-5 h-5 flex-shrink-0" />
-                {!collapsed && (
-                  <span className="font-medium text-sm">{item.title}</span>
-                )}
-              </Link>
-            );
-
-            if (collapsed) {
-              return (
-                <li key={item.title}>
-                  <Tooltip delayDuration={0}>
-                    <TooltipTrigger asChild>
-                      {linkContent}
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="ml-2">
-                      {item.title}
-                    </TooltipContent>
-                  </Tooltip>
-                </li>
-              );
-            }
-
-            return <li key={item.title}>{linkContent}</li>;
-          })}
+          {visibleNavigationItems.map((item) => renderNavItem(item))}
         </ul>
 
-        {/* Cadastros Collapsible Section */}
-        <div className="mt-4 px-2">
-          <Collapsible 
-            open={collapsed ? false : (cadastrosOpen || isCadastrosActive)} 
-            onOpenChange={setCadastrosOpen}
-          >
-            {collapsed ? (
-              <Tooltip delayDuration={0}>
-                <TooltipTrigger asChild>
-                  <Link
-                    to="/plantas"
+        {/* Configurações Collapsible Section - apenas para admin */}
+        {visibleConfigItems.length > 0 && (
+          <div className="mt-6 px-2">
+            <Collapsible 
+              open={collapsed ? false : (configOpen || isConfigActive)} 
+              onOpenChange={setConfigOpen}
+            >
+              {collapsed ? (
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <Link
+                      to="/areas"
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
+                        isConfigActive 
+                          ? "bg-sidebar-accent text-sidebar-foreground" 
+                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                      )}
+                    >
+                      <Settings className="w-5 h-5 flex-shrink-0" />
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="ml-2">
+                    Configurações
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <CollapsibleTrigger asChild>
+                  <button
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
-                      isCadastrosActive 
-                        ? "bg-sidebar-accent text-sidebar-foreground" 
+                      "flex items-center justify-between w-full px-3 py-2.5 rounded-lg transition-all duration-200",
+                      isConfigActive 
+                        ? "bg-sidebar-accent/50 text-sidebar-foreground" 
                         : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                     )}
                   >
-                    <FolderOpen className="w-5 h-5 flex-shrink-0" />
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent side="right" className="ml-2">
-                  Cadastros
-                </TooltipContent>
-              </Tooltip>
-            ) : (
-              <CollapsibleTrigger asChild>
-                <button
-                  className={cn(
-                    "flex items-center justify-between w-full px-3 py-2.5 rounded-lg transition-all duration-200",
-                    isCadastrosActive 
-                      ? "bg-sidebar-accent/50 text-sidebar-foreground" 
-                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <FolderOpen className="w-5 h-5 flex-shrink-0" />
-                    <span className="font-medium text-sm">Cadastros</span>
-                  </div>
-                  <ChevronDown 
-                    className={cn(
-                      "w-4 h-4 transition-transform duration-200",
-                      (cadastrosOpen || isCadastrosActive) && "rotate-180"
-                    )} 
-                  />
-                </button>
-              </CollapsibleTrigger>
-            )}
-            
-            <CollapsibleContent className="mt-1">
-              <ul className="space-y-1 pl-4">
-                {cadastrosItems.map((item) => {
-                  const isActive = location.pathname === item.href || 
-                    location.pathname.startsWith(item.href);
-                  
-                  return (
-                    <li key={item.title}>
-                      <Link
-                        to={item.href}
-                        className={cn(
-                          "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm",
-                          isActive 
-                            ? "bg-sidebar-accent text-sidebar-foreground" 
-                            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                        )}
-                      >
-                        <item.icon className="w-4 h-4 flex-shrink-0" />
-                        <span className="font-medium">{item.title}</span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </CollapsibleContent>
-          </Collapsible>
-        </div>
+                    <div className="flex items-center gap-3">
+                      <Settings className="w-5 h-5 flex-shrink-0" />
+                      <span className="font-medium text-sm">Configurações</span>
+                    </div>
+                    <ChevronDown 
+                      className={cn(
+                        "w-4 h-4 transition-transform duration-200",
+                        (configOpen || isConfigActive) && "rotate-180"
+                      )} 
+                    />
+                  </button>
+                </CollapsibleTrigger>
+              )}
+              
+              <CollapsibleContent className="mt-1">
+                <ul className="space-y-1 pl-4">
+                  {visibleConfigItems.map((item) => renderNavItem(item, true))}
+                </ul>
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+        )}
       </nav>
 
       {/* Footer */}
