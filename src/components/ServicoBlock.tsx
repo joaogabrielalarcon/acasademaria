@@ -159,11 +159,13 @@ export function ServicoBlock({
     onUpdate(servico.id, { executoresIds: newExecutores });
   };
 
-  const toggleCategoria = (id: string) => {
-    const newCategorias = servico.categoriasIds.includes(id)
-      ? servico.categoriasIds.filter((c) => c !== id)
-      : [...servico.categoriasIds, id];
-    onUpdate(servico.id, { categoriasIds: newCategorias });
+  const addCategoria = (id: string) => {
+    if (!id || servico.categoriasIds.includes(id)) return;
+    onUpdate(servico.id, { categoriasIds: [...servico.categoriasIds, id] });
+  };
+
+  const removeCategoria = (id: string) => {
+    onUpdate(servico.id, { categoriasIds: servico.categoriasIds.filter((c) => c !== id) });
   };
 
   const addInsumo = () => {
@@ -284,25 +286,40 @@ export function ServicoBlock({
             {/* Categorias do Serviço */}
             <div className="space-y-2">
               <Label>Categorias do Serviço *</Label>
-              <p className="text-xs text-muted-foreground mb-2">
-                Selecione uma ou mais categorias que descrevem este serviço
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {mockCategoriasServico.map((cat) => (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => toggleCategoria(cat.id)}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                      servico.categoriasIds.includes(cat.id)
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80"
-                    }`}
-                  >
-                    {cat.nome}
-                  </button>
-                ))}
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Select onValueChange={addCategoria} value="">
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Selecionar categoria..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mockCategoriasServico
+                      .filter((cat) => !servico.categoriasIds.includes(cat.id))
+                      .map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.nome}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
               </div>
+              {servico.categoriasIds.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {servico.categoriasIds.map((catId) => {
+                    const cat = mockCategoriasServico.find((c) => c.id === catId);
+                    return cat ? (
+                      <Badge
+                        key={catId}
+                        variant="secondary"
+                        className="flex items-center gap-1 cursor-pointer hover:bg-destructive/20"
+                        onClick={() => removeCategoria(catId)}
+                      >
+                        {cat.nome}
+                        <Trash2 className="w-3 h-3 text-destructive" />
+                      </Badge>
+                    ) : null;
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Período e Trecho */}
