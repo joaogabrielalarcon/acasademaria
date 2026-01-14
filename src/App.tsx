@@ -18,6 +18,7 @@ import Insumos from "./pages/Insumos";
 import Login from "./pages/Login";
 import AlterarSenha from "./pages/AlterarSenha";
 import Areas from "./pages/Areas";
+import BootstrapAdmin from "./pages/BootstrapAdmin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/" element={<Clientes />} />
           <Route path="/login" element={<Login />} />
           <Route path="/alterar-senha" element={<AlterarSenha />} />
+          <Route path="/bootstrap" element={<BootstrapAdmin />} />
           <Route path="/clientes/novo" element={<NovoCliente />} />
           <Route path="/clientes/:id" element={<ClientePerfil />} />
           <Route path="/equipe" element={<Equipe />} />
