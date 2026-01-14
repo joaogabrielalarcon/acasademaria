@@ -10,6 +10,11 @@ import Equipe from "./pages/Equipe";
 import NovoRegistro from "./pages/NovoRegistro";
 import NovaProposta from "./pages/NovaProposta";
 import NovoRecebimento from "./pages/NovoRecebimento";
+import Fornecedores from "./pages/Fornecedores";
+import CategoriasPlantas from "./pages/CategoriasPlantas";
+import Plantas from "./pages/Plantas";
+import NovaPlanta from "./pages/NovaPlanta";
+import Insumos from "./pages/Insumos";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +33,12 @@ const App = () => (
           <Route path="/registros/novo" element={<NovoRegistro />} />
           <Route path="/recebimentos/novo" element={<NovoRecebimento />} />
           <Route path="/propostas/nova" element={<NovaProposta />} />
+          <Route path="/fornecedores" element={<Fornecedores />} />
+          <Route path="/categorias-plantas" element={<CategoriasPlantas />} />
+          <Route path="/plantas" element={<Plantas />} />
+          <Route path="/plantas/nova" element={<NovaPlanta />} />
+          <Route path="/plantas/:id/editar" element={<NovaPlanta />} />
+          <Route path="/insumos" element={<Insumos />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
