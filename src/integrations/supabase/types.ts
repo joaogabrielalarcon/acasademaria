@@ -110,6 +110,66 @@ export type Database = {
         }
         Relationships: []
       }
+      diarias: {
+        Row: {
+          cliente_id: string
+          comentarios_jardim: string | null
+          created_at: string
+          data_alerta: string | null
+          data_visita: string
+          equipe_presente_ids: string[] | null
+          id: string
+          observacoes_internas: string | null
+          periodo: string
+          status: string
+          trecho_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          cliente_id: string
+          comentarios_jardim?: string | null
+          created_at?: string
+          data_alerta?: string | null
+          data_visita: string
+          equipe_presente_ids?: string[] | null
+          id?: string
+          observacoes_internas?: string | null
+          periodo?: string
+          status?: string
+          trecho_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string
+          comentarios_jardim?: string | null
+          created_at?: string
+          data_alerta?: string | null
+          data_visita?: string
+          equipe_presente_ids?: string[] | null
+          id?: string
+          observacoes_internas?: string | null
+          periodo?: string
+          status?: string
+          trecho_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diarias_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diarias_trecho_id_fkey"
+            columns: ["trecho_id"]
+            isOneToOne: false
+            referencedRelation: "trechos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       insumos: {
         Row: {
           ativo: boolean
@@ -241,6 +301,7 @@ export type Database = {
           data_alerta: string | null
           data_servico: string
           descricao: string
+          diaria_id: string | null
           equipe_presente_ids: string[] | null
           executores_ids: string[] | null
           hora_servico: string | null
@@ -264,6 +325,7 @@ export type Database = {
           data_alerta?: string | null
           data_servico: string
           descricao: string
+          diaria_id?: string | null
           equipe_presente_ids?: string[] | null
           executores_ids?: string[] | null
           hora_servico?: string | null
@@ -287,6 +349,7 @@ export type Database = {
           data_alerta?: string | null
           data_servico?: string
           descricao?: string
+          diaria_id?: string | null
           equipe_presente_ids?: string[] | null
           executores_ids?: string[] | null
           hora_servico?: string | null
@@ -308,6 +371,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_diaria_id_fkey"
+            columns: ["diaria_id"]
+            isOneToOne: false
+            referencedRelation: "diarias"
             referencedColumns: ["id"]
           },
           {
