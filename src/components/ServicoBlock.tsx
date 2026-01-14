@@ -72,7 +72,7 @@ const mockCategoriasServico = [
   { id: "7", nome: "Visita Técnica" },
   { id: "8", nome: "Entrega" },
   { id: "9", nome: "Limpeza" },
-  { id: "10", nome: "Controle de Pragas" },
+  { id: "10", nome: "Controle de Espontâneas" },
 ];
 
 const periodoOptions = [
