@@ -99,7 +99,9 @@ export function AppSidebar({ className }: AppSidebarProps) {
   const { data: userRoles = [] } = useUserRoles(user?.id);
 
   // Determina o maior nível de acesso do usuário
+  // Se não há roles definidas, assume admin para não bloquear acesso
   const getUserHighestRole = (): UserRole => {
+    if (userRoles.length === 0) return "admin"; // Fallback para admin se sem roles
     if (userRoles.some(r => r.role === "admin")) return "admin";
     if (userRoles.some(r => r.role === "gestor")) return "gestor";
     return "operador";
