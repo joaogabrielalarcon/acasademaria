@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Star } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,18 +20,21 @@ interface Proprietario {
   nome: string;
   telefone: string;
   email: string;
+  pontoContato: boolean;
 }
 
 interface FuncionarioCasa {
   nome: string;
   funcao: string;
   telefone: string;
+  pontoContato: boolean;
 }
 
 interface Assessor {
   nome: string;
   empresa: string;
   telefone: string;
+  pontoContato: boolean;
 }
 
 interface DataImportante {
@@ -44,7 +47,7 @@ export default function NovoCliente() {
   const { toast } = useToast();
 
   const [proprietarios, setProprietarios] = useState<Proprietario[]>([
-    { nome: "", telefone: "", email: "" }
+    { nome: "", telefone: "", email: "", pontoContato: false }
   ]);
   const [funcionarios, setFuncionarios] = useState<FuncionarioCasa[]>([]);
   const [assessores, setAssessores] = useState<Assessor[]>([]);
@@ -59,7 +62,6 @@ export default function NovoCliente() {
   const [cpfCnpj, setCpfCnpj] = useState("");
   const [inscricaoEstadual, setInscricaoEstadual] = useState("");
   const [cep, setCep] = useState("");
-  const [telefone, setTelefone] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,40 +74,40 @@ export default function NovoCliente() {
 
   // Proprietários
   const addProprietario = () => {
-    setProprietarios([...proprietarios, { nome: "", telefone: "", email: "" }]);
+    setProprietarios([...proprietarios, { nome: "", telefone: "", email: "", pontoContato: false }]);
   };
   const removeProprietario = (index: number) => {
     setProprietarios(proprietarios.filter((_, i) => i !== index));
   };
-  const updateProprietario = (index: number, field: keyof Proprietario, value: string) => {
+  const updateProprietario = (index: number, field: keyof Proprietario, value: string | boolean) => {
     const updated = [...proprietarios];
-    updated[index][field] = value;
+    (updated[index] as any)[field] = value;
     setProprietarios(updated);
   };
 
   // Funcionários
   const addFuncionario = () => {
-    setFuncionarios([...funcionarios, { nome: "", funcao: "", telefone: "" }]);
+    setFuncionarios([...funcionarios, { nome: "", funcao: "", telefone: "", pontoContato: false }]);
   };
   const removeFuncionario = (index: number) => {
     setFuncionarios(funcionarios.filter((_, i) => i !== index));
   };
-  const updateFuncionario = (index: number, field: keyof FuncionarioCasa, value: string) => {
+  const updateFuncionario = (index: number, field: keyof FuncionarioCasa, value: string | boolean) => {
     const updated = [...funcionarios];
-    updated[index][field] = value;
+    (updated[index] as any)[field] = value;
     setFuncionarios(updated);
   };
 
   // Assessores
   const addAssessor = () => {
-    setAssessores([...assessores, { nome: "", empresa: "", telefone: "" }]);
+    setAssessores([...assessores, { nome: "", empresa: "", telefone: "", pontoContato: false }]);
   };
   const removeAssessor = (index: number) => {
     setAssessores(assessores.filter((_, i) => i !== index));
   };
-  const updateAssessor = (index: number, field: keyof Assessor, value: string) => {
+  const updateAssessor = (index: number, field: keyof Assessor, value: string | boolean) => {
     const updated = [...assessores];
-    updated[index][field] = value;
+    (updated[index] as any)[field] = value;
     setAssessores(updated);
   };
 
@@ -262,44 +264,37 @@ export default function NovoCliente() {
             </div>
           </section>
 
-          {/* Seção 3: Contato Principal */}
-          <section className="space-y-4">
-            <h2 className="font-display text-lg font-semibold border-b border-primary/20 pb-2 text-foreground">
-              Contato Principal
-            </h2>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="telefone">Telefone</Label>
-                <Input 
-                  id="telefone" 
-                  type="tel" 
-                  placeholder="(11) 99999-0000"
-                  value={telefone}
-                  onChange={(e) => setTelefone(formatPhone(e.target.value))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="email@exemplo.com" />
-              </div>
-            </div>
-          </section>
-
-          {/* Seção 4: Proprietários */}
+          {/* Seção 3: Proprietários */}
           <section className="space-y-4">
             <div className="flex items-center justify-between border-b border-primary/20 pb-2">
-              <h2 className="font-display text-lg font-semibold text-foreground">
-                Proprietários
-              </h2>
+              <div>
+                <h2 className="font-display text-lg font-semibold text-foreground">
+                  Proprietários
+                </h2>
+                <p className="text-xs text-muted-foreground mt-1">
+                  <Star className="w-3 h-3 inline text-amber-500" /> = Ponto de contato
+                </p>
+              </div>
               <Button type="button" variant="ghost" size="sm" onClick={addProprietario}>
                 <Plus className="w-4 h-4" />
                 Adicionar
               </Button>
             </div>
             {proprietarios.map((prop, index) => (
-              <div key={index} className="p-4 rounded-lg bg-muted/30 space-y-3">
+              <div key={index} className={`p-4 rounded-lg space-y-3 ${prop.pontoContato ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-muted/30'}`}>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-foreground">Proprietário {index + 1}</span>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="icon-sm"
+                      onClick={() => updateProprietario(index, "pontoContato", !prop.pontoContato)}
+                      title={prop.pontoContato ? "Remover como ponto de contato" : "Marcar como ponto de contato"}
+                    >
+                      <Star className={`w-4 h-4 ${prop.pontoContato ? 'fill-amber-500 text-amber-500' : 'text-muted-foreground'}`} />
+                    </Button>
+                    <span className="text-sm font-medium text-foreground">Proprietário {index + 1}</span>
+                  </div>
                   {proprietarios.length > 1 && (
                     <Button 
                       type="button" 
@@ -332,12 +327,17 @@ export default function NovoCliente() {
             ))}
           </section>
 
-          {/* Seção 5: Funcionários da Casa */}
+          {/* Seção 4: Funcionários da Casa */}
           <section className="space-y-4">
             <div className="flex items-center justify-between border-b border-primary/20 pb-2">
-              <h2 className="font-display text-lg font-semibold text-foreground">
-                Funcionários da Casa
-              </h2>
+              <div>
+                <h2 className="font-display text-lg font-semibold text-foreground">
+                  Funcionários da Casa
+                </h2>
+                <p className="text-xs text-muted-foreground mt-1">
+                  <Star className="w-3 h-3 inline text-amber-500" /> = Ponto de contato
+                </p>
+              </div>
               <Button type="button" variant="ghost" size="sm" onClick={addFuncionario}>
                 <Plus className="w-4 h-4" />
                 Adicionar
@@ -347,9 +347,20 @@ export default function NovoCliente() {
               <p className="text-sm text-muted-foreground">Nenhum funcionário adicionado</p>
             ) : (
               funcionarios.map((func, index) => (
-                <div key={index} className="p-4 rounded-lg bg-muted/30 space-y-3">
+                <div key={index} className={`p-4 rounded-lg space-y-3 ${func.pontoContato ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-muted/30'}`}>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-foreground">Funcionário {index + 1}</span>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="icon-sm"
+                        onClick={() => updateFuncionario(index, "pontoContato", !func.pontoContato)}
+                        title={func.pontoContato ? "Remover como ponto de contato" : "Marcar como ponto de contato"}
+                      >
+                        <Star className={`w-4 h-4 ${func.pontoContato ? 'fill-amber-500 text-amber-500' : 'text-muted-foreground'}`} />
+                      </Button>
+                      <span className="text-sm font-medium text-foreground">Funcionário {index + 1}</span>
+                    </div>
                     <Button 
                       type="button" 
                       variant="ghost" 
@@ -381,12 +392,17 @@ export default function NovoCliente() {
             )}
           </section>
 
-          {/* Seção 6: Assessores */}
+          {/* Seção 5: Assessores */}
           <section className="space-y-4">
             <div className="flex items-center justify-between border-b border-primary/20 pb-2">
-              <h2 className="font-display text-lg font-semibold text-foreground">
-                Assessores
-              </h2>
+              <div>
+                <h2 className="font-display text-lg font-semibold text-foreground">
+                  Assessores
+                </h2>
+                <p className="text-xs text-muted-foreground mt-1">
+                  <Star className="w-3 h-3 inline text-amber-500" /> = Ponto de contato
+                </p>
+              </div>
               <Button type="button" variant="ghost" size="sm" onClick={addAssessor}>
                 <Plus className="w-4 h-4" />
                 Adicionar
@@ -396,9 +412,20 @@ export default function NovoCliente() {
               <p className="text-sm text-muted-foreground">Nenhum assessor adicionado</p>
             ) : (
               assessores.map((ass, index) => (
-                <div key={index} className="p-4 rounded-lg bg-muted/30 space-y-3">
+                <div key={index} className={`p-4 rounded-lg space-y-3 ${ass.pontoContato ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-muted/30'}`}>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-foreground">Assessor {index + 1}</span>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="icon-sm"
+                        onClick={() => updateAssessor(index, "pontoContato", !ass.pontoContato)}
+                        title={ass.pontoContato ? "Remover como ponto de contato" : "Marcar como ponto de contato"}
+                      >
+                        <Star className={`w-4 h-4 ${ass.pontoContato ? 'fill-amber-500 text-amber-500' : 'text-muted-foreground'}`} />
+                      </Button>
+                      <span className="text-sm font-medium text-foreground">Assessor {index + 1}</span>
+                    </div>
                     <Button 
                       type="button" 
                       variant="ghost" 
