@@ -12,7 +12,8 @@ import {
   Tags,
   Settings,
   ChevronDown,
-  Building2
+  Building2,
+  Shield
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
@@ -82,6 +83,12 @@ const configItems = [
     title: "Áreas Internas",
     icon: Building2,
     href: "/areas",
+    roles: ["admin"] as UserRole[],
+  },
+  {
+    title: "Controle de Acessos",
+    icon: Shield,
+    href: "/acessos",
     roles: ["admin"] as UserRole[],
   },
 ];

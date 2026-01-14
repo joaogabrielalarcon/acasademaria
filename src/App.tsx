@@ -19,6 +19,7 @@ import Insumos from "./pages/Insumos";
 import Login from "./pages/Login";
 import AlterarSenha from "./pages/AlterarSenha";
 import Areas from "./pages/Areas";
+import ControleAcessos from "./pages/ControleAcessos";
 import BootstrapAdmin from "./pages/BootstrapAdmin";
 import NotFound from "./pages/NotFound";
 
@@ -51,6 +52,7 @@ const App = () => (
           <Route path="/plantas/:id/editar" element={<NovaPlanta />} />
           <Route path="/insumos" element={<Insumos />} />
           <Route path="/areas" element={<Areas />} />
+          <Route path="/acessos" element={<ControleAcessos />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
