@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Trash2, Upload, Plus } from "lucide-react";
+import { ChevronDown, ChevronUp, Trash2, Upload, Plus, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +17,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-
 // Mock data (mover para hooks/context depois)
 const mockColaboradores = [
   { id: "1", nome: "João Silva" },
@@ -50,6 +49,16 @@ const mockTrechos = [
   { id: "2", nome: "Piscina", clienteId: "1" },
   { id: "3", nome: "Horta", clienteId: "2" },
   { id: "4", nome: "Área de lazer", clienteId: "1" },
+];
+
+// Mock de máquinas (conectar ao banco depois)
+const mockMaquinas = [
+  { id: "1", nome: "Roçadeira Stihl FS 220", categoria: "roçadeira" },
+  { id: "2", nome: "Soprador Stihl BR 600", categoria: "soprador" },
+  { id: "3", nome: "Motosserra Stihl MS 170", categoria: "motosserra" },
+  { id: "4", nome: "Cortador de Grama Honda HRX 217", categoria: "cortador" },
+  { id: "5", nome: "Podador de Cerca Viva Stihl HS 45", categoria: "podador" },
+  { id: "6", nome: "Pulverizador Jacto PJH 20", categoria: "pulverizador" },
 ];
 
 const tipoOptions = [
@@ -91,6 +100,13 @@ interface InsumoSelecionado {
   unidade: string;
 }
 
+interface MaquinaSelecionada {
+  maquinaId: string;
+  nome: string;
+  horasUtilizadas: number;
+  observacao: string;
+}
+
 export interface ServicoData {
   id: string;
   tipo: string;
@@ -100,6 +116,7 @@ export interface ServicoData {
   solicitante: string;
   solicitanteOutro: string;
   insumos: InsumoSelecionado[];
+  maquinas: MaquinaSelecionada[];
   descricao: string;
   observacoesInternas: string;
   tags: string;
@@ -127,6 +144,8 @@ export function ServicoBlock({
   const [novoInsumoId, setNovoInsumoId] = useState("");
   const [novoInsumoQtd, setNovoInsumoQtd] = useState("");
   const [novoInsumoUnidade, setNovoInsumoUnidade] = useState("");
+  const [novaMaquinaId, setNovaMaquinaId] = useState("");
+  const [novaMaquinaHoras, setNovaMaquinaHoras] = useState("");
 
   const toggleExecutor = (id: string) => {
     if (!equipePresenteIds.includes(id)) return;
@@ -170,6 +189,33 @@ export function ServicoBlock({
   const removeInsumo = (insumoId: string) => {
     onUpdate(servico.id, {
       insumos: servico.insumos.filter((i) => i.insumoId !== insumoId),
+    });
+  };
+
+  const addMaquina = () => {
+    if (!novaMaquinaId || !novaMaquinaHoras) return;
+    const maquina = mockMaquinas.find((m) => m.id === novaMaquinaId);
+    if (!maquina) return;
+    if (servico.maquinas.some((m) => m.maquinaId === novaMaquinaId)) return;
+
+    onUpdate(servico.id, {
+      maquinas: [
+        ...servico.maquinas,
+        {
+          maquinaId: maquina.id,
+          nome: maquina.nome,
+          horasUtilizadas: parseFloat(novaMaquinaHoras),
+          observacao: "",
+        },
+      ],
+    });
+    setNovaMaquinaId("");
+    setNovaMaquinaHoras("");
+  };
+
+  const removeMaquina = (maquinaId: string) => {
+    onUpdate(servico.id, {
+      maquinas: servico.maquinas.filter((m) => m.maquinaId !== maquinaId),
     });
   };
 
@@ -417,6 +463,74 @@ export function ServicoBlock({
               )}
             </div>
 
+            {/* Máquinas Utilizadas */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Wrench className="w-4 h-4" />
+                Máquinas utilizadas
+              </Label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Select value={novaMaquinaId} onValueChange={setNovaMaquinaId}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Selecionar máquina..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mockMaquinas.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  type="number"
+                  placeholder="Horas"
+                  className="w-24"
+                  value={novaMaquinaHoras}
+                  onChange={(e) => setNovaMaquinaHoras(e.target.value)}
+                  min="0"
+                  step="0.5"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addMaquina}
+                  disabled={!novaMaquinaId || !novaMaquinaHoras}
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+              {servico.maquinas.length > 0 && (
+                <div className="space-y-1 mt-2">
+                  {servico.maquinas.map((maquina) => (
+                    <div
+                      key={maquina.maquinaId}
+                      className="flex items-center justify-between p-2 rounded bg-muted/50 text-sm"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Wrench className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span>{maquina.nome}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-primary">
+                          {maquina.horasUtilizadas}h
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => removeMaquina(maquina.maquinaId)}
+                        >
+                          <Trash2 className="w-3 h-3 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Descrição */}
             <div className="space-y-2">
               <Label>Descrição do que foi feito *</Label>
@@ -493,6 +607,7 @@ export function createEmptyServico(): ServicoData {
     solicitante: "",
     solicitanteOutro: "",
     insumos: [],
+    maquinas: [],
     descricao: "",
     observacoesInternas: "",
     tags: "",
