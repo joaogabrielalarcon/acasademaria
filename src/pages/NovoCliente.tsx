@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { formatCPFCNPJ, formatCEP, formatPhone, formatIE } from "@/hooks/useInputMasks";
+import { formatCPFCNPJ, formatCEP, formatPhone, formatIE, capitalizeWords } from "@/hooks/useInputMasks";
 
 interface Proprietario {
   nome: string;
@@ -51,6 +51,11 @@ export default function NovoCliente() {
   const [datasImportantes, setDatasImportantes] = useState<DataImportante[]>([]);
 
   // Estados para campos formatados
+  const [nome, setNome] = useState("");
+  const [endereco, setEndereco] = useState("");
+  const [bairro, setBairro] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [condominio, setCondominio] = useState("");
   const [cpfCnpj, setCpfCnpj] = useState("");
   const [inscricaoEstadual, setInscricaoEstadual] = useState("");
   const [cep, setCep] = useState("");
@@ -145,7 +150,13 @@ export default function NovoCliente() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="nome">Nome da Propriedade *</Label>
-                <Input id="nome" placeholder="Ex: Família Silveira, Residência Campos" required />
+                <Input 
+                  id="nome" 
+                  placeholder="Ex: Família Silveira, Residência Campos" 
+                  required 
+                  value={nome}
+                  onChange={(e) => setNome(capitalizeWords(e.target.value))}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
@@ -189,15 +200,30 @@ export default function NovoCliente() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="endereco">Endereço</Label>
-                <Input id="endereco" placeholder="Rua, número" />
+                <Input 
+                  id="endereco" 
+                  placeholder="Rua, número"
+                  value={endereco}
+                  onChange={(e) => setEndereco(capitalizeWords(e.target.value))}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="bairro">Bairro</Label>
-                <Input id="bairro" placeholder="Bairro" />
+                <Input 
+                  id="bairro" 
+                  placeholder="Bairro"
+                  value={bairro}
+                  onChange={(e) => setBairro(capitalizeWords(e.target.value))}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="cidade">Cidade</Label>
-                <Input id="cidade" placeholder="Cidade" />
+                <Input 
+                  id="cidade" 
+                  placeholder="Cidade"
+                  value={cidade}
+                  onChange={(e) => setCidade(capitalizeWords(e.target.value))}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="estado">Estado</Label>
@@ -226,7 +252,12 @@ export default function NovoCliente() {
               </div>
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="condominio">Condomínio (opcional)</Label>
-                <Input id="condominio" placeholder="Nome do condomínio" />
+                <Input 
+                  id="condominio" 
+                  placeholder="Nome do condomínio"
+                  value={condominio}
+                  onChange={(e) => setCondominio(capitalizeWords(e.target.value))}
+                />
               </div>
             </div>
           </section>
@@ -284,7 +315,7 @@ export default function NovoCliente() {
                   <Input 
                     placeholder="Nome"
                     value={prop.nome}
-                    onChange={(e) => updateProprietario(index, "nome", e.target.value)}
+                    onChange={(e) => updateProprietario(index, "nome", capitalizeWords(e.target.value))}
                   />
                   <Input 
                     placeholder="Telefone"
@@ -332,12 +363,12 @@ export default function NovoCliente() {
                     <Input 
                       placeholder="Nome"
                       value={func.nome}
-                      onChange={(e) => updateFuncionario(index, "nome", e.target.value)}
+                      onChange={(e) => updateFuncionario(index, "nome", capitalizeWords(e.target.value))}
                     />
                     <Input 
                       placeholder="Função (caseiro, governanta...)"
                       value={func.funcao}
-                      onChange={(e) => updateFuncionario(index, "funcao", e.target.value)}
+                      onChange={(e) => updateFuncionario(index, "funcao", capitalizeWords(e.target.value))}
                     />
                     <Input 
                       placeholder="Telefone"
@@ -381,12 +412,12 @@ export default function NovoCliente() {
                     <Input 
                       placeholder="Nome"
                       value={ass.nome}
-                      onChange={(e) => updateAssessor(index, "nome", e.target.value)}
+                      onChange={(e) => updateAssessor(index, "nome", capitalizeWords(e.target.value))}
                     />
                     <Input 
                       placeholder="Empresa / Função"
                       value={ass.empresa}
-                      onChange={(e) => updateAssessor(index, "empresa", e.target.value)}
+                      onChange={(e) => updateAssessor(index, "empresa", capitalizeWords(e.target.value))}
                     />
                     <Input 
                       placeholder="Telefone"
