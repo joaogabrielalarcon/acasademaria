@@ -197,6 +197,63 @@ export type Database = {
         }
         Relationships: []
       }
+      maquinas: {
+        Row: {
+          ativo: boolean
+          categoria: string | null
+          codigo_interno: string | null
+          created_at: string
+          horas_acumuladas: number
+          horas_limite_manutencao: number
+          id: string
+          marca: string | null
+          modelo: string | null
+          nome: string
+          numero_serie: string | null
+          observacoes: string | null
+          proxima_manutencao_em: number | null
+          status: string
+          ultima_manutencao: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          categoria?: string | null
+          codigo_interno?: string | null
+          created_at?: string
+          horas_acumuladas?: number
+          horas_limite_manutencao?: number
+          id?: string
+          marca?: string | null
+          modelo?: string | null
+          nome: string
+          numero_serie?: string | null
+          observacoes?: string | null
+          proxima_manutencao_em?: number | null
+          status?: string
+          ultima_manutencao?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string | null
+          codigo_interno?: string | null
+          created_at?: string
+          horas_acumuladas?: number
+          horas_limite_manutencao?: number
+          id?: string
+          marca?: string | null
+          modelo?: string | null
+          nome?: string
+          numero_serie?: string | null
+          observacoes?: string | null
+          proxima_manutencao_em?: number | null
+          status?: string
+          ultima_manutencao?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       propostas: {
         Row: {
           cliente_id: string
@@ -285,6 +342,48 @@ export type Database = {
           },
           {
             foreignKeyName: "registro_insumos_registro_id_fkey"
+            columns: ["registro_id"]
+            isOneToOne: false
+            referencedRelation: "registros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      registro_maquinas: {
+        Row: {
+          created_at: string
+          horas_utilizadas: number
+          id: string
+          maquina_id: string
+          observacao: string | null
+          registro_id: string
+        }
+        Insert: {
+          created_at?: string
+          horas_utilizadas?: number
+          id?: string
+          maquina_id: string
+          observacao?: string | null
+          registro_id: string
+        }
+        Update: {
+          created_at?: string
+          horas_utilizadas?: number
+          id?: string
+          maquina_id?: string
+          observacao?: string | null
+          registro_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registro_maquinas_maquina_id_fkey"
+            columns: ["maquina_id"]
+            isOneToOne: false
+            referencedRelation: "maquinas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registro_maquinas_registro_id_fkey"
             columns: ["registro_id"]
             isOneToOne: false
             referencedRelation: "registros"
