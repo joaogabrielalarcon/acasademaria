@@ -39,9 +39,9 @@ interface ItemRecebido {
   nome: string;
   quantidade: number;
   unidade: string;
-  porte?: string;
-  alturaCm?: number;
-  dapCm?: number;
+  altura?: number;
+  alturaUnidade?: "cm" | "m";
+  dap?: string;
   observacao?: string;
 }
 
@@ -66,11 +66,9 @@ const unidadeOptions = [
   { value: "pacotes", label: "Pacotes" },
 ];
 
-const porteOptions = [
-  { value: "P", label: "Pequeno (P)" },
-  { value: "M", label: "Médio (M)" },
-  { value: "G", label: "Grande (G)" },
-  { value: "XG", label: "Extra Grande (XG)" },
+const alturaUnidadeOptions = [
+  { value: "cm", label: "cm" },
+  { value: "m", label: "m" },
 ];
 
 export default function NovoRecebimento() {
@@ -93,9 +91,9 @@ export default function NovoRecebimento() {
   const [itemSelecionadoId, setItemSelecionadoId] = useState("");
   const [quantidade, setQuantidade] = useState("");
   const [unidade, setUnidade] = useState("");
-  const [porte, setPorte] = useState("");
-  const [alturaCm, setAlturaCm] = useState("");
-  const [dapCm, setDapCm] = useState("");
+  const [altura, setAltura] = useState("");
+  const [alturaUnidade, setAlturaUnidade] = useState<"cm" | "m">("cm");
+  const [dap, setDap] = useState("");
   const [observacaoItem, setObservacaoItem] = useState("");
 
   // Hooks para dados
@@ -129,9 +127,9 @@ export default function NovoRecebimento() {
       nome,
       quantidade: parseFloat(quantidade),
       unidade,
-      porte: porte || undefined,
-      alturaCm: alturaCm ? parseFloat(alturaCm) : undefined,
-      dapCm: dapCm ? parseFloat(dapCm) : undefined,
+      altura: altura ? parseFloat(altura) : undefined,
+      alturaUnidade: altura ? alturaUnidade : undefined,
+      dap: dap || undefined,
       observacao: observacaoItem || undefined,
     };
 
@@ -143,9 +141,9 @@ export default function NovoRecebimento() {
     setItemSelecionadoId("");
     setQuantidade("");
     setUnidade("");
-    setPorte("");
-    setAlturaCm("");
-    setDapCm("");
+    setAltura("");
+    setAlturaUnidade("cm");
+    setDap("");
     setObservacaoItem("");
   };
 
@@ -186,19 +184,25 @@ export default function NovoRecebimento() {
 
       if (registroError) throw registroError;
 
-      // Inserir os itens recebidos
-      const itensParaInserir = itens.map((item) => ({
-        registro_id: registro.id,
-        tipo_item: item.tipoItem,
-        planta_id: item.plantaId || null,
-        insumo_id: item.insumoId || null,
-        quantidade: item.quantidade,
-        unidade: item.unidade,
-        porte: item.porte || null,
-        altura_cm: item.alturaCm || null,
-        dap_cm: item.dapCm || null,
-        observacao: item.observacao || null,
-      }));
+      // Inserir os itens recebidos - converter altura para cm se necessário
+      const itensParaInserir = itens.map((item) => {
+        let alturaCm = null;
+        if (item.altura) {
+          alturaCm = item.alturaUnidade === "m" ? item.altura * 100 : item.altura;
+        }
+        return {
+          registro_id: registro.id,
+          tipo_item: item.tipoItem,
+          planta_id: item.plantaId || null,
+          insumo_id: item.insumoId || null,
+          quantidade: item.quantidade,
+          unidade: item.unidade,
+          porte: item.altura ? `${item.altura}${item.alturaUnidade}` : null,
+          altura_cm: alturaCm,
+          dap_cm: item.dap ? parseFloat(item.dap) : null,
+          observacao: item.observacao || null,
+        };
+      });
 
       const { error: itensError } = await supabase
         .from("recebimento_itens")
@@ -216,14 +220,13 @@ export default function NovoRecebimento() {
     }
   };
 
-  // Verificar se a categoria da planta precisa de altura/DAP
+  // Verificar se a categoria da planta é árvore (precisa de DAP)
   const plantaSelecionada = plantas.find((p) => p.id === itemSelecionadoId);
   const categoriaSelecionada = plantaSelecionada
     ? categoriasPlantas.find((c) => c.id === plantaSelecionada.categoria_id)
     : null;
-  const precisaAlturaDap =
-    categoriaSelecionada?.campos_obrigatorios?.includes("altura") ||
-    categoriaSelecionada?.campos_obrigatorios?.includes("dap");
+  const isArvore = categoriaSelecionada?.nome?.toLowerCase().includes("árvore") ||
+    categoriaSelecionada?.nome?.toLowerCase().includes("arvore");
 
   return (
     <AppLayout>
@@ -336,87 +339,86 @@ export default function NovoRecebimento() {
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="planta" className="gap-2">
                       <Leaf className="w-4 h-4" />
-                      Planta
+                      Plantas
                     </TabsTrigger>
                     <TabsTrigger value="insumo" className="gap-2">
                       <Package className="w-4 h-4" />
-                      Insumo
+                      Produtos e Insumos
                     </TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="planta" className="space-y-4 mt-4">
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label>Planta *</Label>
-                        <Select
-                          value={itemSelecionadoId}
-                          onValueChange={setItemSelecionadoId}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecionar planta..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {plantas.map((p) => (
-                              <SelectItem key={p.id} value={p.id}>
-                                {p.nome_popular}
-                                {p.nome_cientifico && (
-                                  <span className="text-muted-foreground ml-1">
-                                    ({p.nome_cientifico})
-                                  </span>
-                                )}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Porte</Label>
-                        <Select value={porte} onValueChange={setPorte}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecionar porte..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {porteOptions.map((p) => (
-                              <SelectItem key={p.value} value={p.value}>
-                                {p.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    <div className="space-y-2">
+                      <Label>Planta *</Label>
+                      <Select
+                        value={itemSelecionadoId}
+                        onValueChange={setItemSelecionadoId}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecionar planta..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {plantas.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.nome_popular}
+                              {p.nome_cientifico && (
+                                <span className="text-muted-foreground ml-1">
+                                  ({p.nome_cientifico})
+                                </span>
+                              )}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
 
-                    {/* Altura e DAP para árvores/palmeiras */}
-                    {precisaAlturaDap && (
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-2">
-                          <Label>Altura (cm)</Label>
+                    {/* Porte/Altura - campo aberto com unidade */}
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Porte (Altura)</Label>
+                        <div className="flex gap-2">
                           <Input
                             type="number"
-                            placeholder="Ex: 150"
-                            value={alturaCm}
-                            onChange={(e) => setAlturaCm(e.target.value)}
+                            placeholder="Ex: 1.5"
+                            value={altura}
+                            onChange={(e) => setAltura(e.target.value)}
                             min="0"
+                            step="0.01"
+                            className="flex-1"
                           />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>DAP (cm)</Label>
-                          <Input
-                            type="number"
-                            placeholder="Ex: 10"
-                            value={dapCm}
-                            onChange={(e) => setDapCm(e.target.value)}
-                            min="0"
-                          />
+                          <Select value={alturaUnidade} onValueChange={(v) => setAlturaUnidade(v as "cm" | "m")}>
+                            <SelectTrigger className="w-20">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {alturaUnidadeOptions.map((u) => (
+                                <SelectItem key={u.value} value={u.value}>
+                                  {u.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
-                    )}
+
+                      {/* DAP - só para árvores */}
+                      {isArvore && (
+                        <div className="space-y-2">
+                          <Label>DAP</Label>
+                          <Input
+                            type="text"
+                            placeholder="Ex: 10cm"
+                            value={dap}
+                            onChange={(e) => setDap(e.target.value)}
+                          />
+                        </div>
+                      )}
+                    </div>
                   </TabsContent>
 
                   <TabsContent value="insumo" className="space-y-4 mt-4">
                     <div className="space-y-2">
-                      <Label>Insumo *</Label>
+                      <Label>Produto ou Insumo *</Label>
                       <Select
                         value={itemSelecionadoId}
                         onValueChange={(id) => {
@@ -428,7 +430,7 @@ export default function NovoRecebimento() {
                         }}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecionar insumo..." />
+                          <SelectValue placeholder="Selecionar produto/insumo..." />
                         </SelectTrigger>
                         <SelectContent>
                           {insumos.map((i) => (
@@ -516,9 +518,8 @@ export default function NovoRecebimento() {
                         <p className="font-medium text-foreground">{item.nome}</p>
                         <p className="text-sm text-muted-foreground">
                           {item.quantidade} {item.unidade}
-                          {item.porte && ` • Porte ${item.porte}`}
-                          {item.alturaCm && ` • ${item.alturaCm}cm`}
-                          {item.dapCm && ` • DAP ${item.dapCm}cm`}
+                          {item.altura && ` • ${item.altura}${item.alturaUnidade}`}
+                          {item.dap && ` • DAP ${item.dap}`}
                         </p>
                       </div>
                     </div>
