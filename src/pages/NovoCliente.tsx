@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { formatCPFCNPJ, formatCEP, formatPhone, formatIE, capitalizeWords } from "@/hooks/useInputMasks";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Proprietario {
   nome: string;
@@ -45,6 +46,9 @@ interface DataImportante {
 export default function NovoCliente() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState("ativo");
+  const [estado, setEstado] = useState("");
 
   const [proprietarios, setProprietarios] = useState<Proprietario[]>([
     { nome: "", telefone: "", email: "", pontoContato: false }
@@ -62,14 +66,59 @@ export default function NovoCliente() {
   const [cpfCnpj, setCpfCnpj] = useState("");
   const [inscricaoEstadual, setInscricaoEstadual] = useState("");
   const [cep, setCep] = useState("");
+  const [particularidades, setParticularidades] = useState("");
+  const [notas, setNotas] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Cliente cadastrado!",
-      description: "O cliente foi adicionado com sucesso.",
-    });
-    navigate("/");
+    
+    if (!nome.trim()) {
+      toast({
+        title: "Erro",
+        description: "O nome da propriedade é obrigatório.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const { error } = await supabase.from("clientes").insert({
+        nome: nome.trim(),
+        status,
+        cpf_cnpj: cpfCnpj || null,
+        inscricao_estadual: inscricaoEstadual || null,
+        endereco: endereco || null,
+        bairro: bairro || null,
+        cidade: cidade || null,
+        estado: estado || null,
+        cep: cep || null,
+        condominio: condominio || null,
+        proprietarios: JSON.parse(JSON.stringify(proprietarios.filter(p => p.nome.trim()))),
+        funcionarios_casa: JSON.parse(JSON.stringify(funcionarios.filter(f => f.nome.trim()))),
+        assessores: JSON.parse(JSON.stringify(assessores.filter(a => a.nome.trim()))),
+        datas_importantes: JSON.parse(JSON.stringify(datasImportantes.filter(d => d.data || d.descricao))),
+        particularidades: particularidades || null,
+        notas: notas || null,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Cliente cadastrado!",
+        description: "O cliente foi adicionado com sucesso.",
+      });
+      navigate("/");
+    } catch (error: any) {
+      toast({
+        title: "Erro ao cadastrar",
+        description: error.message || "Não foi possível salvar o cliente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Proprietários
@@ -162,7 +211,7 @@ export default function NovoCliente() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
-                <Select defaultValue="ativo">
+                <Select value={status} onValueChange={setStatus}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -229,7 +278,7 @@ export default function NovoCliente() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="estado">Estado</Label>
-                <Select>
+                <Select value={estado} onValueChange={setEstado}>
                   <SelectTrigger>
                     <SelectValue placeholder="UF" />
                   </SelectTrigger>
@@ -513,6 +562,8 @@ export default function NovoCliente() {
                   id="particularidades" 
                   placeholder="Ex: Cachorros soltos, portão automático, horário de acesso..."
                   rows={3}
+                  value={particularidades}
+                  onChange={(e) => setParticularidades(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -521,6 +572,8 @@ export default function NovoCliente() {
                   id="notas" 
                   placeholder="Observações sobre o cliente, preferências..."
                   rows={3}
+                  value={notas}
+                  onChange={(e) => setNotas(e.target.value)}
                 />
               </div>
             </div>
@@ -528,11 +581,11 @@ export default function NovoCliente() {
 
           {/* Actions */}
           <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4 border-t border-primary/20">
-            <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+            <Button type="button" variant="outline" onClick={() => navigate(-1)} disabled={isLoading}>
               Cancelar
             </Button>
-            <Button type="submit" variant="terracota">
-              Salvar Cliente
+            <Button type="submit" variant="terracota" disabled={isLoading}>
+              {isLoading ? "Salvando..." : "Salvar Cliente"}
             </Button>
           </div>
         </form>
