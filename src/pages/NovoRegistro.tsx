@@ -175,9 +175,9 @@ export default function NovoRegistro() {
           {/* ===================== */}
           {/* SEÇÃO 1: DADOS DA DIÁRIA */}
           {/* ===================== */}
-          <section className="space-y-6 p-6 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/50 dark:border-emerald-800/30">
+          <section className="space-y-6 p-6 rounded-xl bg-primary/10 border border-primary/20">
             <div className="flex items-center gap-2 mb-2">
-              <Leaf className="w-5 h-5 text-emerald-600" />
+              <Leaf className="w-5 h-5 text-primary" />
               <h2 className="font-display text-lg font-semibold text-foreground">
                 Dados da Diária
               </h2>
