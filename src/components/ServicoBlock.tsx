@@ -101,19 +101,35 @@ export function ServicoBlock({
   const [novaMaquinaId, setNovaMaquinaId] = useState("");
   const [novaMaquinaHoras, setNovaMaquinaHoras] = useState("");
 
-  // Dados do banco
-  const { data: categorias = [], isLoading: loadingCategorias } = useCategorias();
-  const { data: colaboradores = [], isLoading: loadingColaboradores } = useColaboradores();
-  const { data: insumos = [], isLoading: loadingInsumos } = useInsumos();
-  const { data: maquinas = [], isLoading: loadingMaquinas } = useMaquinas();
-  const { data: trechos = [] } = useTrechosCliente(clienteId);
+  // Dados do banco - ordenados alfabeticamente
+  const { data: categoriasRaw = [], isLoading: loadingCategorias } = useCategorias();
+  const { data: colaboradoresRaw = [], isLoading: loadingColaboradores } = useColaboradores();
+  const { data: insumosRaw = [], isLoading: loadingInsumos } = useInsumos();
+  const { data: maquinasRaw = [], isLoading: loadingMaquinas } = useMaquinas();
+  const { data: trechosRaw = [] } = useTrechosCliente(clienteId);
   const { data: cliente } = useCliente(clienteId);
 
-  // Montar lista de solicitantes a partir do cliente (proprietários + funcionários)
+  // Ordenar todos os dados alfabeticamente
+  const categorias = [...categoriasRaw].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  const colaboradores = [...colaboradoresRaw]
+    .filter(c => c.ativo)
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  const insumos = [...insumosRaw]
+    .filter(i => i.ativo)
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  const maquinas = [...maquinasRaw]
+    .filter(m => m.ativo)
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  const trechos = [...trechosRaw].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
+  // Montar lista de solicitantes a partir do cliente (proprietários + funcionários) - ordenada
   const solicitantes = [
     ...(cliente?.proprietarios || []).map((p, i) => ({ id: `prop-${i}`, nome: p.nome, tipo: "proprietario" })),
     ...(cliente?.funcionarios_casa || []).map((f, i) => ({ id: `func-${i}`, nome: f.nome, tipo: "funcionario" })),
-  ];
+  ].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  
+  // Filtrar executores apenas pela equipe presente na diária
+  const executoresDisponiveis = colaboradores.filter(c => equipePresenteIds.includes(c.id));
 
   const isLoading = loadingCategorias || loadingColaboradores || loadingInsumos || loadingMaquinas;
 
@@ -338,30 +354,28 @@ export function ServicoBlock({
               </div>
             </div>
 
-            {/* Responsáveis pela Execução */}
-            {equipePresenteIds.length > 0 && (
+            {/* Responsáveis pela Execução - Filtrados pela equipe presente */}
+            {executoresDisponiveis.length > 0 && (
               <div className="space-y-2">
                 <Label>Responsáveis pela execução</Label>
                 <p className="text-xs text-muted-foreground mb-2">
-                  Quem executou este serviço específico?
+                  Quem executou este serviço específico? (apenas membros da equipe presente)
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {colaboradores
-                    .filter((c) => equipePresenteIds.includes(c.id))
-                    .map((c) => (
-                      <button
-                        key={c.id}
-                        type="button"
-                        onClick={() => toggleExecutor(c.id)}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                          servico.executoresIds.includes(c.id)
-                            ? "bg-secondary text-secondary-foreground"
-                            : "bg-muted text-muted-foreground hover:bg-muted/80"
-                        }`}
-                      >
-                        {c.nome}
-                      </button>
-                    ))}
+                  {executoresDisponiveis.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => toggleExecutor(c.id)}
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                        servico.executoresIds.includes(c.id)
+                          ? "bg-secondary text-secondary-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      }`}
+                    >
+                      {c.nome}
+                    </button>
+                  ))}
                 </div>
               </div>
             )}
