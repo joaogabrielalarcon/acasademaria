@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { formatCPFCNPJ, formatCEP, formatPhone, formatIE } from "@/hooks/useInputMasks";
 
 interface Proprietario {
   nome: string;
@@ -48,6 +49,12 @@ export default function NovoCliente() {
   const [funcionarios, setFuncionarios] = useState<FuncionarioCasa[]>([]);
   const [assessores, setAssessores] = useState<Assessor[]>([]);
   const [datasImportantes, setDatasImportantes] = useState<DataImportante[]>([]);
+
+  // Estados para campos formatados
+  const [cpfCnpj, setCpfCnpj] = useState("");
+  const [inscricaoEstadual, setInscricaoEstadual] = useState("");
+  const [cep, setCep] = useState("");
+  const [telefone, setTelefone] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,11 +162,21 @@ export default function NovoCliente() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="cpf_cnpj">CPF / CNPJ</Label>
-                <Input id="cpf_cnpj" placeholder="Para emissão de nota fiscal" />
+                <Input 
+                  id="cpf_cnpj" 
+                  placeholder="000.000.000-00 ou 00.000.000/0000-00" 
+                  value={cpfCnpj}
+                  onChange={(e) => setCpfCnpj(formatCPFCNPJ(e.target.value))}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="inscricao_estadual">Inscrição Estadual</Label>
-                <Input id="inscricao_estadual" placeholder="Se aplicável" />
+                <Input 
+                  id="inscricao_estadual" 
+                  placeholder="000.000.000.000"
+                  value={inscricaoEstadual}
+                  onChange={(e) => setInscricaoEstadual(formatIE(e.target.value))}
+                />
               </div>
             </div>
           </section>
@@ -200,7 +217,12 @@ export default function NovoCliente() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="cep">CEP</Label>
-                <Input id="cep" placeholder="00000-000" />
+                <Input 
+                  id="cep" 
+                  placeholder="00000-000"
+                  value={cep}
+                  onChange={(e) => setCep(formatCEP(e.target.value))}
+                />
               </div>
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="condominio">Condomínio (opcional)</Label>
@@ -217,7 +239,13 @@ export default function NovoCliente() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="telefone">Telefone</Label>
-                <Input id="telefone" type="tel" placeholder="(11) 99999-0000" />
+                <Input 
+                  id="telefone" 
+                  type="tel" 
+                  placeholder="(11) 99999-0000"
+                  value={telefone}
+                  onChange={(e) => setTelefone(formatPhone(e.target.value))}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -261,7 +289,7 @@ export default function NovoCliente() {
                   <Input 
                     placeholder="Telefone"
                     value={prop.telefone}
-                    onChange={(e) => updateProprietario(index, "telefone", e.target.value)}
+                    onChange={(e) => updateProprietario(index, "telefone", formatPhone(e.target.value))}
                   />
                   <Input 
                     placeholder="Email"
@@ -314,7 +342,7 @@ export default function NovoCliente() {
                     <Input 
                       placeholder="Telefone"
                       value={func.telefone}
-                      onChange={(e) => updateFuncionario(index, "telefone", e.target.value)}
+                      onChange={(e) => updateFuncionario(index, "telefone", formatPhone(e.target.value))}
                     />
                   </div>
                 </div>
@@ -363,7 +391,7 @@ export default function NovoCliente() {
                     <Input 
                       placeholder="Telefone"
                       value={ass.telefone}
-                      onChange={(e) => updateAssessor(index, "telefone", e.target.value)}
+                      onChange={(e) => updateAssessor(index, "telefone", formatPhone(e.target.value))}
                     />
                   </div>
                 </div>

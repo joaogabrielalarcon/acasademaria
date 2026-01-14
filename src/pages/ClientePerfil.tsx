@@ -19,13 +19,16 @@ import {
   DollarSign,
   Clock,
   List,
-  CalendarDays
+  CalendarDays,
+  X,
+  Check
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CalendarioDiario } from "@/components/CalendarioDiario";
+import { useToast } from "@/hooks/use-toast";
 // Mock data expandido
 const mockCliente = {
   id: "1",
@@ -160,8 +163,21 @@ export default function ClientePerfil() {
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get("tab") || "cadastro";
   const [diarioView, setDiarioView] = useState<'feed' | 'calendario'>('feed');
+  const { toast } = useToast();
   const cliente = mockCliente;
   const status = statusConfig[cliente.status];
+
+  const handleEditarRegistro = (registroId: string) => {
+    // Navegar para edição
+    window.location.href = `/registros/${registroId}/editar`;
+  };
+
+  const handleCancelarRegistro = (registroId: string) => {
+    toast({
+      title: "Registro cancelado",
+      description: "O registro foi marcado como cancelado.",
+    });
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -565,13 +581,41 @@ export default function ClientePerfil() {
 
                           {/* Insumos */}
                           {registro.insumos.length > 0 && (
-                            <div className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                            <div className="flex items-start gap-1.5 text-xs text-muted-foreground mb-3">
                               <Package className="w-3.5 h-3.5 mt-0.5" />
                               <span className="text-foreground">
                                 {registro.insumos.map(i => `${i.nome} (${i.quantidade} ${i.unidade})`).join(", ")}
                               </span>
                             </div>
                           )}
+
+                          {/* Ações de editar/cancelar */}
+                          <div className="flex gap-2 pt-3 border-t border-border">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="gap-1.5"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleEditarRegistro(registro.id);
+                              }}
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                              Editar
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="gap-1.5 text-destructive hover:text-destructive"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleCancelarRegistro(registro.id);
+                              }}
+                            >
+                              <X className="w-3.5 h-3.5" />
+                              Cancelar
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </article>
