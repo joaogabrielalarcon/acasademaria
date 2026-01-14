@@ -181,6 +181,7 @@ export type Database = {
           cpf: string | null
           created_at: string
           data_nascimento: string | null
+          email: string | null
           endereco: string | null
           estado: string | null
           foto_url: string | null
@@ -192,6 +193,8 @@ export type Database = {
           tamanho_calcado: string | null
           tamanho_camiseta: string | null
           telefone: string | null
+          user_id: string | null
+          username: string | null
         }
         Insert: {
           area?: string | null
@@ -203,6 +206,7 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           data_nascimento?: string | null
+          email?: string | null
           endereco?: string | null
           estado?: string | null
           foto_url?: string | null
@@ -214,6 +218,8 @@ export type Database = {
           tamanho_calcado?: string | null
           tamanho_camiseta?: string | null
           telefone?: string | null
+          user_id?: string | null
+          username?: string | null
         }
         Update: {
           area?: string | null
@@ -225,6 +231,7 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           data_nascimento?: string | null
+          email?: string | null
           endereco?: string | null
           estado?: string | null
           foto_url?: string | null
@@ -236,6 +243,8 @@ export type Database = {
           tamanho_calcado?: string | null
           tamanho_camiseta?: string | null
           telefone?: string | null
+          user_id?: string | null
+          username?: string | null
         }
         Relationships: [
           {
@@ -992,8 +1001,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_manage_users: { Args: { _user_id: string }; Returns: boolean }
       check_inactive_clients: { Args: never; Returns: undefined }
       get_user_area: { Args: { _user_id: string }; Returns: string }
+      get_user_id_by_username: { Args: { _username: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]
@@ -1001,6 +1012,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_colaborador_ativo: { Args: { _user_id: string }; Returns: boolean }
       is_manager_or_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
