@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -133,12 +133,16 @@ export default function Insumos() {
     saveMutation.mutate(formData);
   };
 
-  const filteredInsumos = insumos.filter((i) => {
-    const matchesSearch = i.nome.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategoria =
-      filterCategoria === "todas" || i.categoria === filterCategoria;
-    return matchesSearch && matchesCategoria;
-  });
+  // Filtrar e ordenar alfabeticamente
+  const filteredInsumos = useMemo(() => {
+    const filtered = insumos.filter((i) => {
+      const matchesSearch = i.nome.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategoria =
+        filterCategoria === "todas" || i.categoria === filterCategoria;
+      return matchesSearch && matchesCategoria;
+    });
+    return filtered.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  }, [insumos, searchTerm, filterCategoria]);
 
   return (
     <AppLayout>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -118,11 +118,15 @@ export default function Fornecedores() {
     saveMutation.mutate(formData);
   };
 
-  const filteredFornecedores = fornecedores.filter((f) => {
-    const matchesSearch = f.nome.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === "todos" || f.status === filterStatus;
-    return matchesSearch && matchesStatus;
-  });
+  // Filtrar e ordenar alfabeticamente
+  const filteredFornecedores = useMemo(() => {
+    const filtered = fornecedores.filter((f) => {
+      const matchesSearch = f.nome.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = filterStatus === "todos" || f.status === filterStatus;
+      return matchesSearch && matchesStatus;
+    });
+    return filtered.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  }, [fornecedores, searchTerm, filterStatus]);
 
   return (
     <AppLayout>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil, GripVertical } from "lucide-react";
+import { Plus, Pencil, Search } from "lucide-react";
 import { useAllAreas, Area } from "@/hooks/useAreas";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -30,6 +30,7 @@ import { capitalizeWords } from "@/hooks/useInputMasks";
 export default function Areas() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingArea, setEditingArea] = useState<Area | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const { data: areas = [], isLoading } = useAllAreas();
   const queryClient = useQueryClient();
@@ -41,6 +42,15 @@ export default function Areas() {
     ativo: true,
     ordem: 0,
   });
+
+  // Filtrar e ordenar alfabeticamente
+  const filteredAreas = useMemo(() => {
+    const filtered = areas.filter((area) =>
+      area.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (area.descricao?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
+    );
+    return filtered.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  }, [areas, searchTerm]);
 
   const resetForm = () => {
     setFormData({
@@ -221,6 +231,17 @@ export default function Areas() {
           </Dialog>
         </div>
 
+        {/* Search */}
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome ou descrição..."
+            className="pl-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
         {/* Tabela */}
         <div className="card-botanical overflow-hidden">
           <Table>
@@ -240,14 +261,14 @@ export default function Areas() {
                     Carregando...
                   </TableCell>
                 </TableRow>
-              ) : areas.length === 0 ? (
+              ) : filteredAreas.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                    Nenhuma área cadastrada
+                    {searchTerm ? "Nenhuma área encontrada" : "Nenhuma área cadastrada"}
                   </TableCell>
                 </TableRow>
               ) : (
-                areas.map((area) => (
+                filteredAreas.map((area) => (
                   <TableRow key={area.id}>
                     <TableCell>
                       <div 

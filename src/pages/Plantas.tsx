@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -35,16 +35,20 @@ export default function Plantas() {
   const categoriasMap = new Map(categorias.map((c) => [c.id, c.nome]));
   const fornecedoresMap = new Map(fornecedores.map((f) => [f.id, f.nome]));
 
-  const filteredPlantas = plantas.filter((p) => {
-    const matchesSearch =
-      p.nome_popular.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (p.nome_cientifico?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
-    const matchesCategoria =
-      filterCategoria === "todas" || p.categoria_id === filterCategoria;
-    const matchesFornecedor =
-      filterFornecedor === "todos" || p.fornecedor_id === filterFornecedor;
-    return matchesSearch && matchesCategoria && matchesFornecedor;
-  });
+  // Filtrar e ordenar alfabeticamente
+  const filteredPlantas = useMemo(() => {
+    const filtered = plantas.filter((p) => {
+      const matchesSearch =
+        p.nome_popular.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (p.nome_cientifico?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
+      const matchesCategoria =
+        filterCategoria === "todas" || p.categoria_id === filterCategoria;
+      const matchesFornecedor =
+        filterFornecedor === "todos" || p.fornecedor_id === filterFornecedor;
+      return matchesSearch && matchesCategoria && matchesFornecedor;
+    });
+    return filtered.sort((a, b) => a.nome_popular.localeCompare(b.nome_popular, 'pt-BR'));
+  }, [plantas, searchTerm, filterCategoria, filterFornecedor]);
 
   return (
     <AppLayout>

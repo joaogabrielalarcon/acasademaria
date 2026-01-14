@@ -20,6 +20,7 @@ export interface Colaborador {
   data_nascimento: string | null;
   cpf: string | null;
   ativo: boolean;
+  foto_url: string | null;
 }
 
 export function useColaboradores() {
@@ -28,7 +29,7 @@ export function useColaboradores() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("colaboradores")
-        .select("id, nome, cargo, area, area_id, telefone, endereco, cidade, estado, cep, maquinas_ids, tamanho_camiseta, tamanho_calca, tamanho_calcado, observacoes, data_nascimento, cpf, ativo")
+        .select("id, nome, cargo, area, area_id, telefone, endereco, cidade, estado, cep, maquinas_ids, tamanho_camiseta, tamanho_calca, tamanho_calcado, observacoes, data_nascimento, cpf, ativo, foto_url")
         .order("nome", { ascending: true });
 
       if (error) throw error;
@@ -43,7 +44,7 @@ export function useColaboradoresAtivos() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("colaboradores")
-        .select("id, nome, cargo, area, area_id, telefone, endereco, cidade, estado, cep, maquinas_ids, tamanho_camiseta, tamanho_calca, tamanho_calcado, observacoes, data_nascimento, cpf, ativo")
+        .select("id, nome, cargo, area, area_id, telefone, endereco, cidade, estado, cep, maquinas_ids, tamanho_camiseta, tamanho_calca, tamanho_calcado, observacoes, data_nascimento, cpf, ativo, foto_url")
         .eq("ativo", true)
         .order("nome", { ascending: true });
 

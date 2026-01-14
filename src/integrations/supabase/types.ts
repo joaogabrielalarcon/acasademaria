@@ -183,6 +183,7 @@ export type Database = {
           data_nascimento: string | null
           endereco: string | null
           estado: string | null
+          foto_url: string | null
           id: string
           maquinas_ids: string[] | null
           nome: string
@@ -204,6 +205,7 @@ export type Database = {
           data_nascimento?: string | null
           endereco?: string | null
           estado?: string | null
+          foto_url?: string | null
           id?: string
           maquinas_ids?: string[] | null
           nome: string
@@ -225,6 +227,7 @@ export type Database = {
           data_nascimento?: string | null
           endereco?: string | null
           estado?: string | null
+          foto_url?: string | null
           id?: string
           maquinas_ids?: string[] | null
           nome?: string
