@@ -142,25 +142,55 @@ export type Database = {
       }
       colaboradores: {
         Row: {
+          area: string | null
           ativo: boolean
+          cargo: string | null
+          cep: string | null
+          cidade: string | null
           created_at: string
-          funcao: string | null
+          endereco: string | null
+          estado: string | null
           id: string
+          maquinas_ids: string[] | null
           nome: string
+          tamanho_calca: string | null
+          tamanho_calcado: string | null
+          tamanho_camiseta: string | null
+          telefone: string | null
         }
         Insert: {
+          area?: string | null
           ativo?: boolean
+          cargo?: string | null
+          cep?: string | null
+          cidade?: string | null
           created_at?: string
-          funcao?: string | null
+          endereco?: string | null
+          estado?: string | null
           id?: string
+          maquinas_ids?: string[] | null
           nome: string
+          tamanho_calca?: string | null
+          tamanho_calcado?: string | null
+          tamanho_camiseta?: string | null
+          telefone?: string | null
         }
         Update: {
+          area?: string | null
           ativo?: boolean
+          cargo?: string | null
+          cep?: string | null
+          cidade?: string | null
           created_at?: string
-          funcao?: string | null
+          endereco?: string | null
+          estado?: string | null
           id?: string
+          maquinas_ids?: string[] | null
           nome?: string
+          tamanho_calca?: string | null
+          tamanho_calcado?: string | null
+          tamanho_camiseta?: string | null
+          telefone?: string | null
         }
         Relationships: []
       }
@@ -220,6 +250,51 @@ export type Database = {
             columns: ["trecho_id"]
             isOneToOne: false
             referencedRelation: "trechos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entregas_colaborador: {
+        Row: {
+          colaborador_id: string
+          created_at: string
+          data_entrega: string
+          id: string
+          insumo_id: string
+          observacao: string | null
+          quantidade: number
+        }
+        Insert: {
+          colaborador_id: string
+          created_at?: string
+          data_entrega?: string
+          id?: string
+          insumo_id: string
+          observacao?: string | null
+          quantidade?: number
+        }
+        Update: {
+          colaborador_id?: string
+          created_at?: string
+          data_entrega?: string
+          id?: string
+          insumo_id?: string
+          observacao?: string | null
+          quantidade?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entregas_colaborador_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entregas_colaborador_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "insumos"
             referencedColumns: ["id"]
           },
         ]
