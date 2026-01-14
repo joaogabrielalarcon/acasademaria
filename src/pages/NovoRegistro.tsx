@@ -191,7 +191,7 @@ export default function NovoRegistro() {
             descricao: servico.descricao,
             observacoes_internas: servico.observacoesInternas || null,
             categorias_ids: servico.categoriasIds,
-            trecho_id: servico.trechoId || null,
+            trecho_id: servico.trechoId && servico.trechoId !== "geral" ? servico.trechoId : null,
             executores_ids: servico.executoresIds,
             equipe_presente_ids: equipePresente,
             solicitante: servico.solicitante === "outro" ? servico.solicitanteOutro : servico.solicitante || null,
