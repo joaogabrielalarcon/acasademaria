@@ -137,8 +137,10 @@ export default function NovoRegistro() {
     }
 
     toast({
-      title: "Diária registrada!",
-      description: `${servicos.length} serviço(s) salvos com sucesso.`,
+      title: statusDiaria === "agendado" ? "Diária agendada!" : "Diária registrada!",
+      description: statusDiaria === "agendado" 
+        ? `${servicos.length} serviço(s) agendado(s) para ${new Date(dataVisita).toLocaleDateString('pt-BR')}.`
+        : `${servicos.length} serviço(s) salvos com sucesso.`,
     });
 
     if (clienteIdFromUrl) {
@@ -165,10 +167,13 @@ export default function NovoRegistro() {
 
       <div className="max-w-3xl">
         <h1 className="font-display text-2xl lg:text-3xl font-bold text-foreground mb-2">
-          Nova Diária
+          {statusDiaria === "agendado" ? "Agendar Diária" : "Nova Diária"}
         </h1>
         <p className="text-muted-foreground mb-8">
-          Registre a visita do dia e todos os serviços realizados
+          {statusDiaria === "agendado" 
+            ? "Agende uma visita futura com os serviços a serem realizados"
+            : "Registre a visita do dia e todos os serviços realizados"
+          }
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-8">
@@ -346,7 +351,7 @@ export default function NovoRegistro() {
             <div className="flex items-center justify-between">
               <h2 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
                 <Calendar className="w-5 h-5" />
-                Serviços Realizados
+                {statusDiaria === "agendado" ? "Serviços a Realizar" : "Serviços Realizados"}
               </h2>
               <Button type="button" variant="outline" size="sm" onClick={addServico}>
                 <Plus className="w-4 h-4 mr-1" />
@@ -355,8 +360,10 @@ export default function NovoRegistro() {
             </div>
 
             <p className="text-sm text-muted-foreground">
-              Adicione todos os serviços executados nesta visita. Cada serviço pode ter seus
-              próprios responsáveis, insumos e fotos.
+              {statusDiaria === "agendado"
+                ? "Liste os serviços previstos para esta visita. Você poderá registrar a execução depois."
+                : "Adicione todos os serviços executados nesta visita. Cada serviço pode ter seus próprios responsáveis, insumos e fotos."
+              }
             </p>
 
             <div className="space-y-4">
@@ -392,7 +399,7 @@ export default function NovoRegistro() {
               Cancelar
             </Button>
             <Button type="submit" variant="terracota" className="flex-1 sm:flex-none">
-              Salvar Diária
+              {statusDiaria === "agendado" ? "Agendar Diária" : "Salvar Diária"}
             </Button>
           </div>
         </form>
