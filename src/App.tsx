@@ -16,6 +16,7 @@ import Plantas from "./pages/Plantas";
 import NovaPlanta from "./pages/NovaPlanta";
 import Insumos from "./pages/Insumos";
 import Login from "./pages/Login";
+import AlterarSenha from "./pages/AlterarSenha";
 import Areas from "./pages/Areas";
 import NotFound from "./pages/NotFound";
 
@@ -30,6 +31,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Clientes />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/alterar-senha" element={<AlterarSenha />} />
           <Route path="/clientes/novo" element={<NovoCliente />} />
           <Route path="/clientes/:id" element={<ClientePerfil />} />
           <Route path="/equipe" element={<Equipe />} />

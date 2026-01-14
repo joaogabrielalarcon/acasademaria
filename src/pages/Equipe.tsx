@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Search, Plus, UserCircle, MoreVertical, Pencil, ChevronDown, Package, Trash2, Calendar } from "lucide-react";
+import { Search, Plus, UserCircle, MoreVertical, Pencil, ChevronDown, Package, Trash2, Calendar, Key, RefreshCw } from "lucide-react";
+import { useAuth, useIsManager } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -100,11 +101,23 @@ export default function Equipe() {
   const [fotoUrl, setFotoUrl] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   
+  // Campos de acesso ao sistema
+  const [acessoOpen, setAcessoOpen] = useState(false);
+  const [username, setUsername] = useState("");
+  const [emailAcesso, setEmailAcesso] = useState("");
+  const [senhaInicial, setSenhaInicial] = useState("");
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [novaSenhaReset, setNovaSenhaReset] = useState("");
+  
   // Collapsible sections
   const [enderecoOpen, setEnderecoOpen] = useState(false);
   const [uniformeOpen, setUniformeOpen] = useState(false);
   const [maquinasOpen, setMaquinasOpen] = useState(false);
 
+  const { user } = useAuth();
+  const canManageUsers = useIsManager(user?.id);
+  
   const { data: colaboradores = [], isLoading } = useColaboradores();
   const { data: maquinas = [] } = useMaquinas();
   const { data: insumos = [] } = useInsumos();
@@ -159,9 +172,14 @@ export default function Equipe() {
     setObservacoes("");
     setAtivo(true);
     setFotoUrl(null);
+    setUsername("");
+    setEmailAcesso("");
+    setSenhaInicial("");
+    setNovaSenhaReset("");
     setEnderecoOpen(false);
     setUniformeOpen(false);
     setMaquinasOpen(false);
+    setAcessoOpen(false);
   };
 
   const handleOpenNew = () => {
@@ -189,14 +207,115 @@ export default function Equipe() {
     setObservacoes(colaborador.observacoes || "");
     setAtivo(colaborador.ativo);
     setFotoUrl(colaborador.foto_url || null);
+    setUsername(colaborador.username || "");
+    setEmailAcesso(colaborador.email || "");
+    setSenhaInicial("");
+    setNovaSenhaReset("");
     setEnderecoOpen(!!colaborador.endereco || !!colaborador.cidade);
     setUniformeOpen(!!colaborador.tamanho_camiseta || !!colaborador.tamanho_calca || !!colaborador.tamanho_calcado);
     setMaquinasOpen((colaborador.maquinas_ids?.length || 0) > 0);
+    setAcessoOpen(!!colaborador.user_id);
     setDialogOpen(true);
   };
 
+  const handleCreateUserAccess = async () => {
+    if (!editingColaborador) return;
+    
+    if (!username.trim() || !emailAcesso.trim() || !senhaInicial.trim()) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Preencha usuário, email e senha inicial.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (senhaInicial.length < 6) {
+      toast({
+        title: "Senha muito curta",
+        description: "A senha deve ter pelo menos 6 caracteres.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsCreatingUser(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-user", {
+        body: {
+          email: emailAcesso.toLowerCase(),
+          password: senhaInicial,
+          username: username.toLowerCase(),
+          colaboradorId: editingColaborador.id,
+        },
+      });
+
+      if (error || data?.error) {
+        throw new Error(data?.error || error?.message || "Erro ao criar acesso");
+      }
+
+      toast({
+        title: "Acesso criado!",
+        description: `O colaborador ${editingColaborador.nome} agora pode acessar o sistema.`,
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["colaboradores"] });
+      setSenhaInicial("");
+    } catch (error: any) {
+      toast({
+        title: "Erro ao criar acesso",
+        description: error.message || "Não foi possível criar o acesso.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingUser(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!editingColaborador || !editingColaborador.user_id) return;
+
+    if (!novaSenhaReset.trim() || novaSenhaReset.length < 6) {
+      toast({
+        title: "Senha inválida",
+        description: "A nova senha deve ter pelo menos 6 caracteres.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsResettingPassword(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("reset-user-password", {
+        body: {
+          userId: editingColaborador.user_id,
+          newPassword: novaSenhaReset,
+        },
+      });
+
+      if (error || data?.error) {
+        throw new Error(data?.error || error?.message || "Erro ao resetar senha");
+      }
+
+      toast({
+        title: "Senha resetada!",
+        description: "A nova senha foi definida com sucesso.",
+      });
+
+      setNovaSenhaReset("");
+    } catch (error: any) {
+      toast({
+        title: "Erro ao resetar senha",
+        description: error.message || "Não foi possível resetar a senha.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
   const handleMaquinaToggle = (maquinaId: string) => {
-    setMaquinasIds(prev => 
+    setMaquinasIds(prev =>
       prev.includes(maquinaId) 
         ? prev.filter(id => id !== maquinaId)
         : [...prev, maquinaId]
@@ -720,6 +839,114 @@ export default function Equipe() {
                 )}
               </CollapsibleContent>
             </Collapsible>
+
+            {/* Acesso ao Sistema - Collapsible (apenas para gestores) */}
+            {canManageUsers && editingColaborador && (
+              <Collapsible open={acessoOpen} onOpenChange={setAcessoOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" className="w-full justify-between p-0 h-auto hover:bg-transparent">
+                    <span className="text-sm font-medium flex items-center gap-2">
+                      <Key className="w-4 h-4" />
+                      Acesso ao Sistema
+                    </span>
+                    <ChevronDown className={`w-4 h-4 transition-transform ${acessoOpen ? "rotate-180" : ""}`} />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-4 pt-4">
+                  {editingColaborador.user_id ? (
+                    // Colaborador já tem acesso - mostrar opção de reset
+                    <div className="space-y-4">
+                      <div className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
+                        <p className="text-sm text-green-700 dark:text-green-300">
+                          ✓ Este colaborador possui acesso ao sistema
+                        </p>
+                        {username && (
+                          <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                            Usuário: <strong>{username}</strong>
+                          </p>
+                        )}
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Resetar Senha</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            type="password"
+                            placeholder="Nova senha (mín. 6 caracteres)"
+                            value={novaSenhaReset}
+                            onChange={(e) => setNovaSenhaReset(e.target.value)}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleResetPassword}
+                            disabled={isResettingPassword || !novaSenhaReset}
+                          >
+                            {isResettingPassword ? (
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                            ) : (
+                              "Resetar"
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    // Colaborador não tem acesso - mostrar formulário de criação
+                    <div className="space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        Criar acesso para que o colaborador possa entrar no sistema.
+                      </p>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="username">Nome de Usuário *</Label>
+                        <Input
+                          id="username"
+                          placeholder="ex: joao.silva"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/\s/g, ""))}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="emailAcesso">Email *</Label>
+                        <Input
+                          id="emailAcesso"
+                          type="email"
+                          placeholder="email@empresa.com"
+                          value={emailAcesso}
+                          onChange={(e) => setEmailAcesso(e.target.value)}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="senhaInicial">Senha Inicial *</Label>
+                        <Input
+                          id="senhaInicial"
+                          type="password"
+                          placeholder="Mín. 6 caracteres"
+                          value={senhaInicial}
+                          onChange={(e) => setSenhaInicial(e.target.value)}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          O colaborador poderá alterar a senha após o primeiro login.
+                        </p>
+                      </div>
+                      
+                      <Button
+                        type="button"
+                        variant="terracota"
+                        onClick={handleCreateUserAccess}
+                        disabled={isCreatingUser}
+                        className="w-full"
+                      >
+                        {isCreatingUser ? "Criando acesso..." : "Criar Acesso ao Sistema"}
+                      </Button>
+                    </div>
+                  )}
+                </CollapsibleContent>
+              </Collapsible>
+            )}
 
             {/* Observações */}
             <div className="space-y-2 pt-2">
