@@ -799,7 +799,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      check_inactive_clients: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
