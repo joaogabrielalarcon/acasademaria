@@ -10,7 +10,9 @@ import {
   Package,
   Truck,
   Tags,
-  Building2
+  Building2,
+  ChevronDown,
+  FolderOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
@@ -20,6 +22,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { useAuth } from "@/hooks/useAuth";
 
 const navigationItems = [
@@ -56,9 +63,6 @@ const cadastrosItems = [
     icon: Tags,
     href: "/categorias-plantas",
   },
-];
-
-const configItems = [
   {
     title: "Áreas",
     icon: Building2,
@@ -72,9 +76,15 @@ interface AppSidebarProps {
 
 export function AppSidebar({ className }: AppSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const [cadastrosOpen, setCadastrosOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+
+  // Auto-expand cadastros if current route is inside
+  const isCadastrosActive = cadastrosItems.some(
+    item => location.pathname === item.href || location.pathname.startsWith(item.href)
+  );
 
   const handleLogout = async () => {
     await signOut();
@@ -140,102 +150,82 @@ export function AppSidebar({ className }: AppSidebarProps) {
           })}
         </ul>
 
-        {/* Cadastros Section */}
-        {!collapsed && (
-          <div className="mt-6 px-2">
-            <p className="px-3 mb-2 text-xs font-semibold text-sidebar-foreground/50 uppercase tracking-wider">
-              Cadastros
-            </p>
-          </div>
-        )}
-        <ul className="space-y-1 px-2">
-          {cadastrosItems.map((item) => {
-            const isActive = location.pathname === item.href || 
-              location.pathname.startsWith(item.href);
+        {/* Cadastros Collapsible Section */}
+        <div className="mt-4 px-2">
+          <Collapsible 
+            open={collapsed ? false : (cadastrosOpen || isCadastrosActive)} 
+            onOpenChange={setCadastrosOpen}
+          >
+            {collapsed ? (
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <Link
+                    to="/plantas"
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
+                      isCadastrosActive 
+                        ? "bg-sidebar-accent text-sidebar-foreground" 
+                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                    )}
+                  >
+                    <FolderOpen className="w-5 h-5 flex-shrink-0" />
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="ml-2">
+                  Cadastros
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <CollapsibleTrigger asChild>
+                <button
+                  className={cn(
+                    "flex items-center justify-between w-full px-3 py-2.5 rounded-lg transition-all duration-200",
+                    isCadastrosActive 
+                      ? "bg-sidebar-accent/50 text-sidebar-foreground" 
+                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <FolderOpen className="w-5 h-5 flex-shrink-0" />
+                    <span className="font-medium text-sm">Cadastros</span>
+                  </div>
+                  <ChevronDown 
+                    className={cn(
+                      "w-4 h-4 transition-transform duration-200",
+                      (cadastrosOpen || isCadastrosActive) && "rotate-180"
+                    )} 
+                  />
+                </button>
+              </CollapsibleTrigger>
+            )}
             
-            const linkContent = (
-              <Link
-                to={item.href}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
-                  isActive 
-                    ? "bg-sidebar-accent text-sidebar-foreground" 
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                )}
-              >
-                <item.icon className="w-5 h-5 flex-shrink-0" />
-                {!collapsed && (
-                  <span className="font-medium text-sm">{item.title}</span>
-                )}
-              </Link>
-            );
-
-            if (collapsed) {
-              return (
-                <li key={item.title}>
-                  <Tooltip delayDuration={0}>
-                    <TooltipTrigger asChild>
-                      {linkContent}
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="ml-2">
-                      {item.title}
-                    </TooltipContent>
-                  </Tooltip>
-                </li>
-              );
-            }
-
-            return <li key={item.title}>{linkContent}</li>;
-          })}
-        </ul>
-
-        {/* Configurações Section */}
-        {!collapsed && (
-          <div className="mt-6 px-2">
-            <p className="px-3 mb-2 text-xs font-semibold text-sidebar-foreground/50 uppercase tracking-wider">
-              Configurações
-            </p>
-          </div>
-        )}
-        <ul className="space-y-1 px-2">
-          {configItems.map((item) => {
-            const isActive = location.pathname === item.href;
-            
-            const linkContent = (
-              <Link
-                to={item.href}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
-                  isActive 
-                    ? "bg-sidebar-accent text-sidebar-foreground" 
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                )}
-              >
-                <item.icon className="w-5 h-5 flex-shrink-0" />
-                {!collapsed && (
-                  <span className="font-medium text-sm">{item.title}</span>
-                )}
-              </Link>
-            );
-
-            if (collapsed) {
-              return (
-                <li key={item.title}>
-                  <Tooltip delayDuration={0}>
-                    <TooltipTrigger asChild>
-                      {linkContent}
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="ml-2">
-                      {item.title}
-                    </TooltipContent>
-                  </Tooltip>
-                </li>
-              );
-            }
-
-            return <li key={item.title}>{linkContent}</li>;
-          })}
-        </ul>
+            <CollapsibleContent className="mt-1">
+              <ul className="space-y-1 pl-4">
+                {cadastrosItems.map((item) => {
+                  const isActive = location.pathname === item.href || 
+                    location.pathname.startsWith(item.href);
+                  
+                  return (
+                    <li key={item.title}>
+                      <Link
+                        to={item.href}
+                        className={cn(
+                          "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm",
+                          isActive 
+                            ? "bg-sidebar-accent text-sidebar-foreground" 
+                            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                        )}
+                      >
+                        <item.icon className="w-4 h-4 flex-shrink-0" />
+                        <span className="font-medium">{item.title}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
       </nav>
 
       {/* Footer */}
