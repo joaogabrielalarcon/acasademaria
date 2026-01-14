@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Plus, Users, Calendar, Bell, Leaf } from "lucide-react";
+import { ArrowLeft, Plus, Users, Calendar, Bell, Leaf, Package } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -152,6 +152,21 @@ export default function NovoRegistro() {
 
   const clienteNome = mockClientes.find((c) => c.id === selectedCliente)?.nome;
 
+  // Tipo de registro selecionado
+  const [tipoRegistro, setTipoRegistro] = useState<"servico" | "recebimento" | null>(null);
+
+  // Se selecionou recebimento, redirecionar
+  const handleSelectTipoRegistro = (tipo: "servico" | "recebimento") => {
+    if (tipo === "recebimento") {
+      const params = new URLSearchParams();
+      if (clienteIdFromUrl) params.set("cliente", clienteIdFromUrl);
+      params.set("data", dataVisita);
+      navigate(`/recebimentos/novo?${params.toString()}`);
+    } else {
+      setTipoRegistro(tipo);
+    }
+  };
+
   return (
     <AppLayout>
       {/* Back Button */}
@@ -166,15 +181,77 @@ export default function NovoRegistro() {
       </Link>
 
       <div className="max-w-3xl">
-        <h1 className="font-display text-2xl lg:text-3xl font-bold text-foreground mb-2">
-          {statusDiaria === "agendado" ? "Agendar Diária" : "Nova Diária"}
-        </h1>
-        <p className="text-muted-foreground mb-8">
-          {statusDiaria === "agendado" 
-            ? "Agende uma visita futura com os serviços a serem realizados"
-            : "Registre a visita do dia e todos os serviços realizados"
-          }
-        </p>
+        {/* Seletor de tipo de registro */}
+        {!tipoRegistro ? (
+          <>
+            <h1 className="font-display text-2xl lg:text-3xl font-bold text-foreground mb-2">
+              Novo Registro
+            </h1>
+            <p className="text-muted-foreground mb-8">
+              Escolha o tipo de registro que deseja criar
+            </p>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => handleSelectTipoRegistro("servico")}
+                className="card-botanical p-6 text-left hover:border-primary/50 transition-colors group"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-3 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                    <Leaf className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-display text-lg font-semibold text-foreground">
+                    {statusDiaria === "agendado" ? "Agendar Diária" : "Registrar Diária"}
+                  </h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {statusDiaria === "agendado" 
+                    ? "Agende uma visita futura com os serviços a serem realizados"
+                    : "Registre a visita do dia e todos os serviços realizados"
+                  }
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSelectTipoRegistro("recebimento")}
+                className="card-botanical p-6 text-left hover:border-primary/50 transition-colors group"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-3 rounded-lg bg-amber-500/10 text-amber-600 group-hover:bg-amber-500 group-hover:text-white transition-colors">
+                    <Package className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-display text-lg font-semibold text-foreground">
+                    Recebimento de Materiais
+                  </h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Registre a chegada de plantas, insumos e outros materiais
+                </p>
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="flex items-center gap-4 mb-2">
+              <button
+                type="button"
+                onClick={() => setTipoRegistro(null)}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+              <h1 className="font-display text-2xl lg:text-3xl font-bold text-foreground">
+                {statusDiaria === "agendado" ? "Agendar Diária" : "Nova Diária"}
+              </h1>
+            </div>
+            <p className="text-muted-foreground mb-8">
+              {statusDiaria === "agendado" 
+                ? "Agende uma visita futura com os serviços a serem realizados"
+                : "Registre a visita do dia e todos os serviços realizados"
+              }
+            </p>
 
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* ===================== */}
@@ -403,6 +480,8 @@ export default function NovoRegistro() {
             </Button>
           </div>
         </form>
+          </>
+        )}
       </div>
     </AppLayout>
   );
