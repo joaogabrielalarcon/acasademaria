@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Plus, MapPin, FileText, Building2, Loader2 } from "lucide-react";
+import { Search, Plus, MapPin, Loader2 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,31 +24,38 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 interface Cliente {
   id: string;
   nome: string;
+  endereco: string | null;
   bairro: string | null;
+  condominio: string | null;
+  cidade: string | null;
+  cep: string | null;
   status: string;
 }
 
 function ClienteCard({ cliente }: { cliente: Cliente }) {
   const status = statusConfig[cliente.status] || statusConfig.ativo;
 
+  // Monta o endereço completo
+  const enderecoCompleto = [
+    cliente.endereco,
+    cliente.bairro,
+    cliente.condominio,
+    cliente.cidade,
+    cliente.cep,
+  ].filter(Boolean).join(" • ");
+
   return (
     <Link to={`/clientes/${cliente.id}`} className="block">
       <article className="card-botanical p-5 h-full animate-fade-in hover:shadow-card transition-all group">
-        {/* Icon */}
-        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-          <Building2 className="w-6 h-6 text-primary" />
-        </div>
-
-        {/* Content */}
         <div className="space-y-3">
           <div>
             <h3 className="font-display text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
               {cliente.nome}
             </h3>
-            {cliente.bairro && (
-              <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
-                <MapPin className="w-3.5 h-3.5" />
-                <span>{cliente.bairro}</span>
+            {enderecoCompleto && (
+              <div className="flex items-start gap-1.5 text-sm text-muted-foreground mt-2">
+                <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                <span className="line-clamp-2">{enderecoCompleto}</span>
               </div>
             )}
           </div>
@@ -68,7 +75,7 @@ function EmptyState() {
   return (
     <div className="empty-state py-24 col-span-full">
       <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-6">
-        <Building2 className="w-10 h-10 text-muted-foreground" />
+        <MapPin className="w-10 h-10 text-muted-foreground" />
       </div>
       <h3 className="font-display text-xl font-semibold mb-2 text-foreground">
         Nenhum cliente cadastrado
@@ -95,7 +102,7 @@ export default function Clientes() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clientes")
-        .select("id, nome, bairro, status")
+        .select("id, nome, endereco, bairro, condominio, cidade, cep, status")
         .order("nome");
       
       if (error) throw error;
