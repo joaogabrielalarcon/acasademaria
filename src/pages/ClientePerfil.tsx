@@ -9,7 +9,6 @@ import {
   Users,
   Plus,
   Pencil,
-  Image as ImageIcon,
   Building2,
   FileText,
   User,
@@ -477,129 +476,120 @@ export default function ClientePerfil() {
               <div className="timeline-line" />
 
               {/* Timeline Items */}
-              <div className="space-y-4 pl-10">
+              <div className="space-y-3 pl-8">
                 {registros.map((registro) => (
-                  <Link 
+                  <article 
                     key={registro.id} 
-                    to={`/registros/${registro.id}`}
-                    className="block"
+                    className="card-botanical p-4 relative animate-fade-in hover:shadow-card transition-all"
                   >
-                    <article className="card-botanical p-4 relative animate-fade-in hover:shadow-card transition-all">
-                      {/* Timeline Dot */}
-                      <div className="timeline-dot absolute -left-[2.15rem] top-5" />
+                    {/* Timeline Dot */}
+                    <div className="timeline-dot absolute -left-[1.65rem] top-5" />
 
-                      <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                        {/* Photo Placeholder */}
-                        <div className="w-full sm:w-24 h-20 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                          <ImageIcon className="w-6 h-6 text-muted-foreground" />
-                        </div>
-
-                        {/* Content */}
-                        <div className="flex-1">
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="tag-primary text-xs">
-                                {tipoLabels[registro.tipo] || registro.tipo}
-                              </span>
-                              {registro.proposta && (
-                                <Badge variant="outline" className="text-xs">
-                                  {registro.proposta.codigo}
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                              <Calendar className="w-3.5 h-3.5" />
-                              {new Date(registro.data_servico).toLocaleDateString('pt-BR')}
-                            </div>
-                          </div>
-                          
-                          {registro.trecho && (
-                            <p className="text-sm font-medium text-foreground mb-1">
-                              {registro.trecho}
-                            </p>
-                          )}
-                          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                            {registro.descricao}
-                          </p>
-
-                          {/* Proposta */}
+                    <div className="flex flex-col gap-3">
+                      {/* Header Row */}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                            {tipoLabels[registro.tipo] || registro.tipo}
+                          </span>
                           {registro.proposta && (
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
-                              <FileText className="w-3.5 h-3.5 text-primary" />
-                              <span className="text-primary font-medium">
-                                {registro.proposta.codigo} / {registro.proposta.titulo}
-                              </span>
-                            </div>
+                            <Badge variant="outline" className="text-xs">
+                              {registro.proposta.codigo}
+                            </Badge>
                           )}
-
-                          {/* Equipe do Dia */}
-                          {registro.equipePresente.length > 0 && (
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-                              <Users className="w-3.5 h-3.5" />
-                              <span>Equipe do dia: </span>
-                              <span className="text-foreground">{registro.equipePresente.join(", ")}</span>
-                            </div>
-                          )}
-
-                          {/* Executores */}
-                          {registro.executores.length > 0 && (
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-                              <User className="w-3.5 h-3.5" />
-                              <span>Executores: </span>
-                              <span className="text-foreground">{registro.executores.join(", ")}</span>
-                            </div>
-                          )}
-
-                          {/* Solicitante */}
-                          {registro.solicitante && (
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
-                              <Briefcase className="w-3.5 h-3.5" />
-                              <span>Solicitante: </span>
-                              <span className="text-foreground">{registro.solicitante}</span>
-                            </div>
-                          )}
-
-                          {/* Insumos */}
-                          {registro.insumos.length > 0 && (
-                            <div className="flex items-start gap-1.5 text-xs text-muted-foreground mb-3">
-                              <Package className="w-3.5 h-3.5 mt-0.5" />
-                              <span className="text-foreground">
-                                {registro.insumos.map(i => `${i.nome} (${i.quantidade} ${i.unidade})`).join(", ")}
-                              </span>
-                            </div>
-                          )}
-
-                          {/* Ações de editar/cancelar */}
-                          <div className="flex gap-2 pt-3 border-t border-border">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="gap-1.5"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleEditarRegistro(registro.id);
-                              }}
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                              Editar
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="gap-1.5 text-destructive hover:text-destructive"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleCancelarRegistro(registro.id);
-                              }}
-                            >
-                              <X className="w-3.5 h-3.5" />
-                              Cancelar
-                            </Button>
-                          </div>
                         </div>
+                        <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(registro.data_servico).toLocaleDateString('pt-BR')}
+                        </span>
                       </div>
-                    </article>
-                  </Link>
+                      
+                      {/* Categorias/Tags - novo */}
+                      {registro.categorias && registro.categorias.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {registro.categorias.map((cat, idx) => (
+                            <span 
+                              key={idx}
+                              className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                              style={{ 
+                                backgroundColor: `${cat.cor}20`,
+                                color: cat.cor,
+                                border: `1px solid ${cat.cor}40`
+                              }}
+                            >
+                              {cat.nome}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Trecho */}
+                      {registro.trecho && (
+                        <p className="text-sm font-medium text-foreground">
+                          📍 {registro.trecho}
+                        </p>
+                      )}
+
+                      {/* Descrição */}
+                      <p className="text-sm text-muted-foreground">
+                        {registro.descricao}
+                      </p>
+
+                      {/* Metadados compactos */}
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                        {registro.equipePresente.length > 0 && (
+                          <span className="flex items-center gap-1">
+                            <Users className="w-3 h-3" />
+                            {registro.equipePresente.join(", ")}
+                          </span>
+                        )}
+                        {registro.executores.length > 0 && (
+                          <span className="flex items-center gap-1">
+                            <User className="w-3 h-3" />
+                            {registro.executores.join(", ")}
+                          </span>
+                        )}
+                        {registro.solicitante && (
+                          <span className="flex items-center gap-1">
+                            <Briefcase className="w-3 h-3" />
+                            {registro.solicitante}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Insumos */}
+                      {registro.insumos.length > 0 && (
+                        <div className="text-xs text-muted-foreground flex items-start gap-1">
+                          <Package className="w-3 h-3 mt-0.5 shrink-0" />
+                          <span>
+                            {registro.insumos.map(i => `${i.nome} (${i.quantidade} ${i.unidade})`).join(", ")}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Ações */}
+                      <div className="flex gap-2 pt-2 border-t border-border">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="gap-1 h-7 text-xs"
+                          onClick={() => handleEditarRegistro(registro.id)}
+                        >
+                          <Pencil className="w-3 h-3" />
+                          Editar
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="gap-1 h-7 text-xs text-destructive hover:text-destructive"
+                          onClick={() => handleCancelarRegistro(registro.id)}
+                        >
+                          <X className="w-3 h-3" />
+                          Cancelar
+                        </Button>
+                      </div>
+                    </div>
+                  </article>
                 ))}
               </div>
             </div>

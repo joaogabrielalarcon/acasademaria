@@ -90,6 +90,8 @@ export interface Registro {
   proposta_id: string | null;
   equipe_presente_ids: string[];
   executores_ids: string[];
+  categorias_ids: string[];
+  midia: { url: string; type: string }[] | null;
   trecho?: {
     nome: string;
   };
@@ -188,7 +190,9 @@ export function useRegistrosCliente(clienteId: string | undefined) {
           trecho_id,
           proposta_id,
           equipe_presente_ids,
-          executores_ids
+          executores_ids,
+          categorias_ids,
+          midia
         `)
         .eq("cliente_id", clienteId)
         .order("data_servico", { ascending: false });
@@ -200,7 +204,7 @@ export function useRegistrosCliente(clienteId: string | undefined) {
   });
 }
 
-// Fetch additional data for registros (trechos, propostas, insumos, colaboradores)
+// Fetch additional data for registros (trechos, propostas, insumos, colaboradores, categorias)
 export function useRegistrosComDetalhes(clienteId: string | undefined) {
   const { data: registros = [], isLoading: loadingRegistros } = useRegistrosCliente(clienteId);
   const { data: trechos = [] } = useTrechosCliente(clienteId);
@@ -213,6 +217,19 @@ export function useRegistrosComDetalhes(clienteId: string | undefined) {
       const { data, error } = await supabase
         .from("colaboradores")
         .select("id, nome");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Get all categorias_servico
+  const { data: categorias = [] } = useQuery({
+    queryKey: ["categorias-servico-all"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("categorias_servico")
+        .select("id, nome, cor")
+        .order("ordem");
       if (error) throw error;
       return data;
     },
@@ -265,6 +282,7 @@ export function useRegistrosComDetalhes(clienteId: string | undefined) {
   const trechoMap = new Map(trechos.map(t => [t.id, t.nome]));
   const propostaMap = new Map(propostas.map(p => [p.id, { codigo: p.codigo, titulo: p.titulo }]));
   const insumoMap = new Map(insumos.map(i => [i.id, { nome: i.nome, unidade: i.unidade }]));
+  const categoriaMap = new Map(categorias.map(c => [c.id, { nome: c.nome, cor: c.cor }]));
   
   // Build enriched registros
   const registrosEnriquecidos = registros.map(registro => {
@@ -276,6 +294,7 @@ export function useRegistrosComDetalhes(clienteId: string | undefined) {
       proposta: registro.proposta_id ? propostaMap.get(registro.proposta_id) : null,
       equipePresente: (registro.equipe_presente_ids || []).map(id => colaboradorMap.get(id) || "Desconhecido"),
       executores: (registro.executores_ids || []).map(id => colaboradorMap.get(id) || "Desconhecido"),
+      categorias: (registro.categorias_ids || []).map(id => categoriaMap.get(id)).filter(Boolean) as { nome: string; cor: string }[],
       insumos: registroInsumosFiltered.map(ri => {
         const insumo = insumoMap.get(ri.insumo_id);
         return {
