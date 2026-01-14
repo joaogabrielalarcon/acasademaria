@@ -109,6 +109,7 @@ export function ServicoBlock({
   const [isOpen, setIsOpen] = useState(true);
   const [novoInsumoId, setNovoInsumoId] = useState("");
   const [novoInsumoQtd, setNovoInsumoQtd] = useState("");
+  const [novoInsumoUnidade, setNovoInsumoUnidade] = useState("");
 
   const toggleExecutor = (id: string) => {
     if (!equipePresenteIds.includes(id)) return;
@@ -119,7 +120,7 @@ export function ServicoBlock({
   };
 
   const addInsumo = () => {
-    if (!novoInsumoId || !novoInsumoQtd) return;
+    if (!novoInsumoId || !novoInsumoQtd || !novoInsumoUnidade) return;
     const insumo = mockInsumos.find((i) => i.id === novoInsumoId);
     if (!insumo) return;
     if (servico.insumos.some((i) => i.insumoId === novoInsumoId)) return;
@@ -131,12 +132,22 @@ export function ServicoBlock({
           insumoId: insumo.id,
           nome: insumo.nome,
           quantidade: parseFloat(novoInsumoQtd),
-          unidade: insumo.unidade,
+          unidade: novoInsumoUnidade,
         },
       ],
     });
     setNovoInsumoId("");
     setNovoInsumoQtd("");
+    setNovoInsumoUnidade("");
+  };
+
+  // Ao selecionar um insumo, preencher a unidade sugerida
+  const handleInsumoSelect = (insumoId: string) => {
+    setNovoInsumoId(insumoId);
+    const insumo = mockInsumos.find((i) => i.id === insumoId);
+    if (insumo) {
+      setNovoInsumoUnidade(insumo.unidade);
+    }
   };
 
   const removeInsumo = (insumoId: string) => {
@@ -319,14 +330,14 @@ export function ServicoBlock({
             <div className="space-y-2">
               <Label>Insumos utilizados</Label>
               <div className="flex flex-col sm:flex-row gap-2">
-                <Select value={novoInsumoId} onValueChange={setNovoInsumoId}>
+                <Select value={novoInsumoId} onValueChange={handleInsumoSelect}>
                   <SelectTrigger className="flex-1">
                     <SelectValue placeholder="Buscar insumo..." />
                   </SelectTrigger>
                   <SelectContent>
                     {mockInsumos.map((i) => (
                       <SelectItem key={i.id} value={i.id}>
-                        {i.nome} ({i.unidade})
+                        {i.nome}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -340,12 +351,19 @@ export function ServicoBlock({
                   min="0"
                   step="0.01"
                 />
+                <Input
+                  type="text"
+                  placeholder="Unid."
+                  className="w-24"
+                  value={novoInsumoUnidade}
+                  onChange={(e) => setNovoInsumoUnidade(e.target.value)}
+                />
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={addInsumo}
-                  disabled={!novoInsumoId || !novoInsumoQtd}
+                  disabled={!novoInsumoId || !novoInsumoQtd || !novoInsumoUnidade}
                 >
                   <Plus className="w-4 h-4" />
                 </Button>
