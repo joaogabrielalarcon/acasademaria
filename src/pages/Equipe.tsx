@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Search, Plus, UserCircle, MoreVertical, Pencil, ChevronDown } from "lucide-react";
+import { Search, Plus, UserCircle, MoreVertical, Pencil, ChevronDown, Package, Trash2, Calendar } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,13 +30,29 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useColaboradores, Colaborador } from "@/hooks/useColaboradores";
 import { useMaquinas } from "@/hooks/useMaquinas";
+import { useInsumos } from "@/hooks/useInsumos";
+import { useEntregasColaborador, useCreateEntrega, useDeleteEntrega } from "@/hooks/useEntregasColaborador";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const ESTADOS_BRASIL = [
   "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA",
@@ -51,6 +68,15 @@ export default function Equipe() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingColaborador, setEditingColaborador] = useState<Colaborador | null>(null);
   
+  // Dialog de entregas
+  const [entregasDialogOpen, setEntregasDialogOpen] = useState(false);
+  const [selectedColaboradorEntrega, setSelectedColaboradorEntrega] = useState<Colaborador | null>(null);
+  const [entregaInsumoId, setEntregaInsumoId] = useState("");
+  const [entregaQuantidade, setEntregaQuantidade] = useState("1");
+  const [entregaData, setEntregaData] = useState<Date>(new Date());
+  const [entregaObservacao, setEntregaObservacao] = useState("");
+  const [entregaToDelete, setEntregaToDelete] = useState<{ id: string; colaboradorId: string } | null>(null);
+  
   // Form fields
   const [nome, setNome] = useState("");
   const [cargo, setCargo] = useState("");
@@ -64,6 +90,7 @@ export default function Equipe() {
   const [tamanhoCamiseta, setTamanhoCamiseta] = useState("");
   const [tamanhoCalca, setTamanhoCalca] = useState("");
   const [tamanhoCalcado, setTamanhoCalcado] = useState("");
+  const [observacoes, setObservacoes] = useState("");
   const [ativo, setAtivo] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   
@@ -74,8 +101,13 @@ export default function Equipe() {
 
   const { data: colaboradores = [], isLoading } = useColaboradores();
   const { data: maquinas = [] } = useMaquinas();
+  const { data: insumos = [] } = useInsumos();
+  const { data: entregas = [], isLoading: isLoadingEntregas } = useEntregasColaborador(selectedColaboradorEntrega?.id);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  
+  const createEntregaMutation = useCreateEntrega();
+  const deleteEntregaMutation = useDeleteEntrega();
 
   const capitalizeWords = (text: string) => {
     return text
@@ -131,6 +163,7 @@ export default function Equipe() {
     setTamanhoCamiseta("");
     setTamanhoCalca("");
     setTamanhoCalcado("");
+    setObservacoes("");
     setAtivo(true);
     setEnderecoOpen(false);
     setUniformeOpen(false);
@@ -157,6 +190,7 @@ export default function Equipe() {
     setTamanhoCamiseta(colaborador.tamanho_camiseta || "");
     setTamanhoCalca(colaborador.tamanho_calca || "");
     setTamanhoCalcado(colaborador.tamanho_calcado || "");
+    setObservacoes(colaborador.observacoes || "");
     setAtivo(colaborador.ativo);
     setEnderecoOpen(!!colaborador.endereco || !!colaborador.cidade);
     setUniformeOpen(!!colaborador.tamanho_camiseta || !!colaborador.tamanho_calca || !!colaborador.tamanho_calcado);
@@ -197,6 +231,7 @@ export default function Equipe() {
       tamanho_camiseta: tamanhoCamiseta || null,
       tamanho_calca: tamanhoCalca || null,
       tamanho_calcado: tamanhoCalcado || null,
+      observacoes: observacoes.trim() || null,
       ativo,
     };
 
@@ -245,6 +280,73 @@ export default function Equipe() {
     (c.cargo && c.cargo.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (c.area && c.area.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  const handleOpenEntregas = (colaborador: Colaborador) => {
+    setSelectedColaboradorEntrega(colaborador);
+    setEntregaInsumoId("");
+    setEntregaQuantidade("1");
+    setEntregaData(new Date());
+    setEntregaObservacao("");
+    setEntregasDialogOpen(true);
+  };
+
+  const handleSaveEntrega = async () => {
+    if (!entregaInsumoId || !selectedColaboradorEntrega) {
+      toast({
+        title: "Campo obrigatório",
+        description: "Selecione um item para registrar a entrega.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await createEntregaMutation.mutateAsync({
+        colaborador_id: selectedColaboradorEntrega.id,
+        insumo_id: entregaInsumoId,
+        quantidade: parseFloat(entregaQuantidade) || 1,
+        data_entrega: format(entregaData, "yyyy-MM-dd"),
+        observacao: entregaObservacao.trim() || null,
+      });
+
+      toast({
+        title: "Entrega registrada",
+        description: "O material foi registrado com sucesso.",
+      });
+
+      setEntregaInsumoId("");
+      setEntregaQuantidade("1");
+      setEntregaObservacao("");
+    } catch (error) {
+      console.error("Erro ao registrar entrega:", error);
+      toast({
+        title: "Erro ao registrar",
+        description: "Não foi possível registrar a entrega.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteEntrega = async () => {
+    if (!entregaToDelete) return;
+
+    try {
+      await deleteEntregaMutation.mutateAsync(entregaToDelete);
+      toast({
+        title: "Entrega excluída",
+        description: "O registro foi removido.",
+      });
+    } catch (error) {
+      console.error("Erro ao excluir entrega:", error);
+      toast({
+        title: "Erro ao excluir",
+        description: "Não foi possível excluir o registro.",
+        variant: "destructive",
+      });
+    } finally {
+      setEntregaToDelete(null);
+    }
+  };
 
   return (
     <AppLayout>
@@ -334,6 +436,10 @@ export default function Equipe() {
                       <DropdownMenuItem onClick={() => handleEdit(colaborador)}>
                         <Pencil className="w-4 h-4 mr-2" />
                         Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleOpenEntregas(colaborador)}>
+                        <Package className="w-4 h-4 mr-2" />
+                        Entregas
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -546,6 +652,18 @@ export default function Equipe() {
               </CollapsibleContent>
             </Collapsible>
 
+            {/* Observações */}
+            <div className="space-y-2 pt-2">
+              <Label htmlFor="observacoes">Observações</Label>
+              <Textarea
+                id="observacoes"
+                placeholder="Anotações gerais sobre o colaborador..."
+                value={observacoes}
+                onChange={(e) => setObservacoes(e.target.value)}
+                rows={3}
+              />
+            </div>
+
             {/* Status */}
             <div className="flex items-center justify-between pt-2">
               <Label htmlFor="ativo">Colaborador ativo</Label>
@@ -575,6 +693,159 @@ export default function Equipe() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de Entregas ao Colaborador */}
+      <Dialog open={entregasDialogOpen} onOpenChange={setEntregasDialogOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Entregas - {selectedColaboradorEntrega?.nome}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            {/* Formulário de nova entrega */}
+            <div className="p-4 bg-muted/30 rounded-lg space-y-4">
+              <h4 className="font-medium text-sm">Registrar Nova Entrega</h4>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Item *</Label>
+                  <Select value={entregaInsumoId} onValueChange={setEntregaInsumoId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o item" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {insumos.map((insumo) => (
+                        <SelectItem key={insumo.id} value={insumo.id}>
+                          {insumo.nome}
+                          {insumo.categoria && <span className="text-muted-foreground"> ({insumo.categoria})</span>}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Quantidade</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={entregaQuantidade}
+                    onChange={(e) => setEntregaQuantidade(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Data da Entrega</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-start text-left font-normal">
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {format(entregaData, "dd/MM/yyyy", { locale: ptBR })}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={entregaData}
+                        onSelect={(date) => date && setEntregaData(date)}
+                        initialFocus
+                        locale={ptBR}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Observação</Label>
+                  <Input
+                    placeholder="Ex: Reposição"
+                    value={entregaObservacao}
+                    onChange={(e) => setEntregaObservacao(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <Button 
+                variant="terracota" 
+                onClick={handleSaveEntrega}
+                disabled={createEntregaMutation.isPending}
+              >
+                {createEntregaMutation.isPending ? "Salvando..." : "Registrar Entrega"}
+              </Button>
+            </div>
+
+            {/* Histórico de entregas */}
+            <div className="space-y-3">
+              <h4 className="font-medium text-sm">Histórico de Entregas</h4>
+              
+              {isLoadingEntregas ? (
+                <div className="space-y-2">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} className="h-12 w-full" />
+                  ))}
+                </div>
+              ) : entregas.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Nenhuma entrega registrada.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {entregas.map((entrega) => (
+                    <div 
+                      key={entrega.id}
+                      className="flex items-center justify-between p-3 bg-background border rounded-lg"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm">
+                            {entrega.insumo?.nome || "Item removido"}
+                          </span>
+                          <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                            x{entrega.quantidade}
+                          </span>
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {format(new Date(entrega.data_entrega), "dd/MM/yyyy", { locale: ptBR })}
+                          {entrega.observacao && ` • ${entrega.observacao}`}
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => setEntregaToDelete({ id: entrega.id, colaboradorId: entrega.colaborador_id })}
+                      >
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Alert de confirmação de exclusão */}
+      <AlertDialog open={!!entregaToDelete} onOpenChange={() => setEntregaToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir registro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. O registro de entrega será removido permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteEntrega}>
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }
