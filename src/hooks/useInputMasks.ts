@@ -95,6 +95,23 @@ export function unformat(value: string): string {
 }
 
 /**
+ * Capitaliza a primeira letra de cada palavra
+ */
+export function capitalizeWords(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/(^|\s|-)(\S)/g, (match, separator, char) => separator + char.toUpperCase());
+}
+
+/**
+ * Capitaliza apenas a primeira letra da string
+ */
+export function capitalizeFirst(value: string): string {
+  if (!value) return '';
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+/**
  * Hook para gerenciar input com máscara
  */
 export function handleMaskedInput(
