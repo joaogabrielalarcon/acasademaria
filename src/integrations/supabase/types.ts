@@ -940,6 +940,39 @@ export type Database = {
           },
         ]
       }
+      registros_historico: {
+        Row: {
+          acao: string
+          campos_alterados: string[] | null
+          created_at: string
+          dados_anteriores: Json | null
+          dados_novos: Json | null
+          id: string
+          registro_id: string
+          usuario_id: string | null
+        }
+        Insert: {
+          acao: string
+          campos_alterados?: string[] | null
+          created_at?: string
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          id?: string
+          registro_id: string
+          usuario_id?: string | null
+        }
+        Update: {
+          acao?: string
+          campos_alterados?: string[] | null
+          created_at?: string
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          id?: string
+          registro_id?: string
+          usuario_id?: string | null
+        }
+        Relationships: []
+      }
       trechos: {
         Row: {
           cliente_id: string

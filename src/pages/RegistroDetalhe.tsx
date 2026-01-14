@@ -14,13 +14,20 @@ import {
   ChevronLeft,
   ChevronRight,
   Image as ImageIcon,
-  Play
+  Play,
+  History,
+  Clock
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { 
+  Collapsible, 
+  CollapsibleContent, 
+  CollapsibleTrigger 
+} from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -50,6 +57,14 @@ interface RegistroCompleto {
   insumos: { nome: string; quantidade: number; unidade: string }[];
 }
 
+interface HistoricoItem {
+  id: string;
+  acao: string;
+  campos_alterados: string[] | null;
+  created_at: string;
+  usuario_nome: string | null;
+}
+
 const tipoLabels: Record<string, string> = {
   manutenção: "Manutenção",
   manutencao: "Manutenção",
@@ -64,6 +79,26 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   realizado: { label: "Realizado", className: "bg-green-500/20 text-green-700 border-green-500/30" },
   agendado: { label: "Agendado", className: "bg-blue-500/20 text-blue-700 border-blue-500/30" },
   cancelado: { label: "Cancelado", className: "bg-red-500/20 text-red-700 border-red-500/30" },
+};
+
+const campoLabels: Record<string, string> = {
+  descricao: "Descrição",
+  status: "Status",
+  tipo: "Tipo",
+  data_servico: "Data",
+  trecho_id: "Trecho",
+  categorias_ids: "Categorias",
+  executores_ids: "Executores",
+  equipe_presente_ids: "Equipe",
+  solicitante: "Solicitante",
+  observacoes_internas: "Observações",
+  midia: "Fotos/Vídeos",
+};
+
+const acaoConfig: Record<string, { label: string; className: string }> = {
+  criado: { label: "Criado", className: "bg-green-500/20 text-green-700" },
+  atualizado: { label: "Editado", className: "bg-blue-500/20 text-blue-700" },
+  cancelado: { label: "Cancelado", className: "bg-red-500/20 text-red-700" },
 };
 
 export default function RegistroDetalhe() {
@@ -207,6 +242,43 @@ export default function RegistroDetalhe() {
         executores: (reg.executores_ids || []).map((id: string) => colaboradorMap.get(id) || "Desconhecido"),
         insumos,
       } as RegistroCompleto;
+    },
+    enabled: !!id,
+  });
+
+  // Buscar histórico de alterações
+  const { data: historico = [] } = useQuery({
+    queryKey: ["registro-historico", id],
+    queryFn: async () => {
+      if (!id) return [];
+
+      const { data: hist, error } = await supabase
+        .from("registros_historico")
+        .select("id, acao, campos_alterados, created_at, usuario_id")
+        .eq("registro_id", id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      // Buscar nomes dos usuários
+      const userIds = [...new Set((hist || []).map(h => h.usuario_id).filter(Boolean))];
+      let userMap = new Map<string, string>();
+      
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, nome")
+          .in("id", userIds);
+        userMap = new Map((profiles || []).map(p => [p.id, p.nome]));
+      }
+
+      return (hist || []).map(h => ({
+        id: h.id,
+        acao: h.acao,
+        campos_alterados: h.campos_alterados,
+        created_at: h.created_at,
+        usuario_nome: h.usuario_id ? userMap.get(h.usuario_id) || null : null,
+      })) as HistoricoItem[];
     },
     enabled: !!id,
   });
@@ -487,6 +559,60 @@ export default function RegistroDetalhe() {
                   ))}
                 </ul>
               </section>
+            )}
+
+            {/* Histórico de Alterações */}
+            {historico.length > 0 && (
+              <Collapsible>
+                <CollapsibleTrigger asChild>
+                  <button className="card-botanical p-4 w-full text-left hover:bg-muted/50 transition-colors">
+                    <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                      <History className="w-4 h-4" />
+                      Histórico de Alterações ({historico.length})
+                    </h3>
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="card-botanical p-4 pt-0 space-y-3">
+                    {historico.map((item) => {
+                      const acaoInfo = acaoConfig[item.acao] || acaoConfig.atualizado;
+                      return (
+                        <div key={item.id} className="flex items-start gap-3 py-2 border-b border-border last:border-0">
+                          <div className="flex-shrink-0 mt-0.5">
+                            <Clock className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Badge className={`text-xs ${acaoInfo.className}`}>
+                                {acaoInfo.label}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(item.created_at).toLocaleDateString('pt-BR', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: '2-digit',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </span>
+                            </div>
+                            {item.usuario_nome && (
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                por {item.usuario_nome}
+                              </p>
+                            )}
+                            {item.campos_alterados && item.campos_alterados.length > 0 && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Alterou: {item.campos_alterados.map(c => campoLabels[c] || c).join(", ")}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             )}
           </div>
         </div>
