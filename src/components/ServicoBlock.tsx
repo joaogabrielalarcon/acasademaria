@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Trash2, Upload, Plus, Wrench } from "lucide-react";
+import { ChevronDown, ChevronUp, Trash2, Upload, Plus, Wrench, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,14 +17,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-// Mock data (mover para hooks/context depois)
-const mockColaboradores = [
-  { id: "1", nome: "João Silva" },
-  { id: "2", nome: "Maria Santos" },
-  { id: "3", nome: "Pedro Oliveira" },
-  { id: "4", nome: "Maria Fernanda" },
-];
+import { useCategorias } from "@/hooks/useCategorias";
+import { useColaboradores } from "@/hooks/useColaboradores";
+import { useInsumos } from "@/hooks/useInsumos";
+import { useMaquinas } from "@/hooks/useMaquinas";
 
+// Mock data que ainda não tem tabela no banco
 const mockSolicitantes = [
   { id: "prop-1", nome: "Roberto Silveira", tipo: "proprietario" },
   { id: "prop-2", nome: "Ana Silveira", tipo: "proprietario" },
@@ -32,47 +30,11 @@ const mockSolicitantes = [
   { id: "func-2", nome: "Maria (Governanta)", tipo: "funcionario" },
 ];
 
-const mockInsumos = [
-  { id: "1", nome: "Adubo NPK 10-10-10", categoria: "adubo", unidade: "kg" },
-  { id: "2", nome: "Terra vegetal", categoria: "substrato", unidade: "sacos" },
-  { id: "3", nome: "Calcário dolomítico", categoria: "adubo", unidade: "kg" },
-  { id: "4", nome: "Casca de pinus", categoria: "substrato", unidade: "sacos" },
-  { id: "5", nome: "Muda de Ipe", categoria: "planta", unidade: "un" },
-  { id: "6", nome: "Palmeira Imperial", categoria: "planta", unidade: "un" },
-  { id: "7", nome: "Forração Amendoim", categoria: "planta", unidade: "mudas" },
-  { id: "8", nome: "Roçadeira", categoria: "ferramenta", unidade: "un" },
-  { id: "9", nome: "Soprador", categoria: "maquina", unidade: "un" },
-];
-
 const mockTrechos = [
   { id: "1", nome: "Jardim Frontal", clienteId: "1" },
   { id: "2", nome: "Piscina", clienteId: "1" },
   { id: "3", nome: "Horta", clienteId: "2" },
   { id: "4", nome: "Área de lazer", clienteId: "1" },
-];
-
-// Mock de máquinas (conectar ao banco depois)
-const mockMaquinas = [
-  { id: "1", nome: "Roçadeira Stihl FS 220", categoria: "roçadeira" },
-  { id: "2", nome: "Soprador Stihl BR 600", categoria: "soprador" },
-  { id: "3", nome: "Motosserra Stihl MS 170", categoria: "motosserra" },
-  { id: "4", nome: "Cortador de Grama Honda HRX 217", categoria: "cortador" },
-  { id: "5", nome: "Podador de Cerca Viva Stihl HS 45", categoria: "podador" },
-  { id: "6", nome: "Pulverizador Jacto PJH 20", categoria: "pulverizador" },
-];
-
-// Mock de categorias de serviço (conectar ao banco depois)
-const mockCategoriasServico = [
-  { id: "1", nome: "Manutenção" },
-  { id: "2", nome: "Poda" },
-  { id: "3", nome: "Irrigação" },
-  { id: "4", nome: "Plantio" },
-  { id: "5", nome: "Adubação" },
-  { id: "6", nome: "Implantação" },
-  { id: "7", nome: "Visita Técnica" },
-  { id: "8", nome: "Entrega" },
-  { id: "9", nome: "Limpeza" },
-  { id: "10", nome: "Controle de Espontâneas" },
 ];
 
 const periodoOptions = [
@@ -151,6 +113,14 @@ export function ServicoBlock({
   const [novaMaquinaId, setNovaMaquinaId] = useState("");
   const [novaMaquinaHoras, setNovaMaquinaHoras] = useState("");
 
+  // Dados do banco
+  const { data: categorias = [], isLoading: loadingCategorias } = useCategorias();
+  const { data: colaboradores = [], isLoading: loadingColaboradores } = useColaboradores();
+  const { data: insumos = [], isLoading: loadingInsumos } = useInsumos();
+  const { data: maquinas = [], isLoading: loadingMaquinas } = useMaquinas();
+
+  const isLoading = loadingCategorias || loadingColaboradores || loadingInsumos || loadingMaquinas;
+
   const toggleExecutor = (id: string) => {
     if (!equipePresenteIds.includes(id)) return;
     const newExecutores = servico.executoresIds.includes(id)
@@ -170,7 +140,7 @@ export function ServicoBlock({
 
   const addInsumo = () => {
     if (!novoInsumoId || !novoInsumoQtd || !novoInsumoUnidade) return;
-    const insumo = mockInsumos.find((i) => i.id === novoInsumoId);
+    const insumo = insumos.find((i) => i.id === novoInsumoId);
     if (!insumo) return;
     if (servico.insumos.some((i) => i.insumoId === novoInsumoId)) return;
 
@@ -190,11 +160,10 @@ export function ServicoBlock({
     setNovoInsumoUnidade("");
   };
 
-  // Ao selecionar um insumo, preencher a unidade sugerida
   const handleInsumoSelect = (insumoId: string) => {
     setNovoInsumoId(insumoId);
-    const insumo = mockInsumos.find((i) => i.id === insumoId);
-    if (insumo) {
+    const insumo = insumos.find((i) => i.id === insumoId);
+    if (insumo && insumo.unidade) {
       setNovoInsumoUnidade(insumo.unidade);
     }
   };
@@ -207,7 +176,7 @@ export function ServicoBlock({
 
   const addMaquina = () => {
     if (!novaMaquinaId || !novaMaquinaHoras) return;
-    const maquina = mockMaquinas.find((m) => m.id === novaMaquinaId);
+    const maquina = maquinas.find((m) => m.id === novaMaquinaId);
     if (!maquina) return;
     if (servico.maquinas.some((m) => m.maquinaId === novaMaquinaId)) return;
 
@@ -233,9 +202,18 @@ export function ServicoBlock({
   };
 
   const categoriasLabel = servico.categoriasIds
-    .map((id) => mockCategoriasServico.find((c) => c.id === id)?.nome)
+    .map((id) => categorias.find((c) => c.id === id)?.nome)
     .filter(Boolean)
     .join(", ");
+
+  if (isLoading) {
+    return (
+      <div className="border border-primary/20 rounded-lg p-8 bg-card flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+        <span className="ml-2 text-muted-foreground">Carregando dados...</span>
+      </div>
+    );
+  }
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -292,7 +270,7 @@ export function ServicoBlock({
                     <SelectValue placeholder="Selecionar categoria..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {mockCategoriasServico
+                    {categorias
                       .filter((cat) => !servico.categoriasIds.includes(cat.id))
                       .map((cat) => (
                         <SelectItem key={cat.id} value={cat.id}>
@@ -305,7 +283,7 @@ export function ServicoBlock({
               {servico.categoriasIds.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
                   {servico.categoriasIds.map((catId) => {
-                    const cat = mockCategoriasServico.find((c) => c.id === catId);
+                    const cat = categorias.find((c) => c.id === catId);
                     return cat ? (
                       <Badge
                         key={catId}
@@ -372,7 +350,7 @@ export function ServicoBlock({
                   Quem executou este serviço específico?
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {mockColaboradores
+                  {colaboradores
                     .filter((c) => equipePresenteIds.includes(c.id))
                     .map((c) => (
                       <button
@@ -434,7 +412,7 @@ export function ServicoBlock({
                     <SelectValue placeholder="Buscar insumo..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {mockInsumos.map((i) => (
+                    {insumos.map((i) => (
                       <SelectItem key={i.id} value={i.id}>
                         {i.nome}
                       </SelectItem>
@@ -511,7 +489,7 @@ export function ServicoBlock({
                     <SelectValue placeholder="Selecionar máquina..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {mockMaquinas.map((m) => (
+                    {maquinas.map((m) => (
                       <SelectItem key={m.id} value={m.id}>
                         {m.nome}
                       </SelectItem>
