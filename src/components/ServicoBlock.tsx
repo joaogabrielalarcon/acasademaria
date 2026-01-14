@@ -61,13 +61,18 @@ const mockMaquinas = [
   { id: "6", nome: "Pulverizador Jacto PJH 20", categoria: "pulverizador" },
 ];
 
-const tipoOptions = [
-  { value: "manutencao", label: "Manutenção" },
-  { value: "implantacao", label: "Implantação" },
-  { value: "entrega", label: "Entrega" },
-  { value: "visita_tecnica", label: "Visita Técnica" },
-  { value: "reuniao", label: "Reunião" },
-  { value: "outro", label: "Outro" },
+// Mock de categorias de serviço (conectar ao banco depois)
+const mockCategoriasServico = [
+  { id: "1", nome: "Manutenção" },
+  { id: "2", nome: "Poda" },
+  { id: "3", nome: "Irrigação" },
+  { id: "4", nome: "Plantio" },
+  { id: "5", nome: "Adubação" },
+  { id: "6", nome: "Implantação" },
+  { id: "7", nome: "Visita Técnica" },
+  { id: "8", nome: "Entrega" },
+  { id: "9", nome: "Limpeza" },
+  { id: "10", nome: "Controle de Pragas" },
 ];
 
 const periodoOptions = [
@@ -109,7 +114,7 @@ interface MaquinaSelecionada {
 
 export interface ServicoData {
   id: string;
-  tipo: string;
+  categoriasIds: string[];
   periodo: string;
   trechoId: string;
   executoresIds: string[];
@@ -119,7 +124,6 @@ export interface ServicoData {
   maquinas: MaquinaSelecionada[];
   descricao: string;
   observacoesInternas: string;
-  tags: string;
   midia: File[];
 }
 
@@ -153,6 +157,13 @@ export function ServicoBlock({
       ? servico.executoresIds.filter((e) => e !== id)
       : [...servico.executoresIds, id];
     onUpdate(servico.id, { executoresIds: newExecutores });
+  };
+
+  const toggleCategoria = (id: string) => {
+    const newCategorias = servico.categoriasIds.includes(id)
+      ? servico.categoriasIds.filter((c) => c !== id)
+      : [...servico.categoriasIds, id];
+    onUpdate(servico.id, { categoriasIds: newCategorias });
   };
 
   const addInsumo = () => {
@@ -219,7 +230,10 @@ export function ServicoBlock({
     });
   };
 
-  const tipoLabel = tipoOptions.find((t) => t.value === servico.tipo)?.label || "Serviço";
+  const categoriasLabel = servico.categoriasIds
+    .map((id) => mockCategoriasServico.find((c) => c.id === id)?.nome)
+    .filter(Boolean)
+    .join(", ");
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -234,9 +248,9 @@ export function ServicoBlock({
               <span className="font-medium text-foreground">
                 {index + 1} - Serviço
               </span>
-              {servico.descricao && (
+              {categoriasLabel && (
                 <span className="text-sm text-muted-foreground truncate max-w-[200px]">
-                  — {servico.descricao.substring(0, 40)}...
+                  — {categoriasLabel.substring(0, 40)}{categoriasLabel.length > 40 ? "..." : ""}
                 </span>
               )}
             </div>
@@ -267,27 +281,32 @@ export function ServicoBlock({
         {/* Content */}
         <CollapsibleContent>
           <div className="p-4 space-y-4 border-t border-primary/10">
-            {/* Tipo de Serviço, Período e Trecho */}
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="space-y-2">
-                <Label>Tipo de Serviço *</Label>
-                <Select
-                  value={servico.tipo}
-                  onValueChange={(value) => onUpdate(servico.id, { tipo: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tipoOptions.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>
-                        {t.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {/* Categorias do Serviço */}
+            <div className="space-y-2">
+              <Label>Categorias do Serviço *</Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Selecione uma ou mais categorias que descrevem este serviço
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {mockCategoriasServico.map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => toggleCategoria(cat.id)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                      servico.categoriasIds.includes(cat.id)
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    }`}
+                  >
+                    {cat.nome}
+                  </button>
+                ))}
               </div>
+            </div>
 
+            {/* Período e Trecho */}
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Período</Label>
                 <Select
@@ -555,24 +574,6 @@ export function ServicoBlock({
               />
             </div>
 
-            {/* Tags */}
-            <div className="space-y-2">
-              <Label>Tags</Label>
-              <Input
-                placeholder="poda, irrigação, plantio..."
-                value={servico.tags}
-                onChange={(e) => onUpdate(servico.id, { tags: e.target.value })}
-              />
-              {servico.tags && (
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {servico.tags.split(",").map((tag, i) => (
-                    <Badge key={i} variant="secondary" className="text-xs">
-                      {tag.trim()}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
 
             {/* Upload de Mídia */}
             <div className="space-y-2">
@@ -600,7 +601,7 @@ export function ServicoBlock({
 export function createEmptyServico(): ServicoData {
   return {
     id: crypto.randomUUID(),
-    tipo: "",
+    categoriasIds: [],
     periodo: "",
     trechoId: "",
     executoresIds: [],
@@ -610,7 +611,6 @@ export function createEmptyServico(): ServicoData {
     maquinas: [],
     descricao: "",
     observacoesInternas: "",
-    tags: "",
     midia: [],
   };
 }

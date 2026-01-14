@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      categorias_servico: {
+        Row: {
+          ativo: boolean
+          cor: string | null
+          created_at: string
+          id: string
+          nome: string
+          ordem: number | null
+        }
+        Insert: {
+          ativo?: boolean
+          cor?: string | null
+          created_at?: string
+          id?: string
+          nome: string
+          ordem?: number | null
+        }
+        Update: {
+          ativo?: boolean
+          cor?: string | null
+          created_at?: string
+          id?: string
+          nome?: string
+          ordem?: number | null
+        }
+        Relationships: []
+      }
       clientes: {
         Row: {
           assessores: Json | null
@@ -394,6 +421,7 @@ export type Database = {
       registros: {
         Row: {
           area_funcional: string | null
+          categorias_ids: string[] | null
           cliente_id: string
           colaboradores_ids: string[] | null
           created_at: string
@@ -418,6 +446,7 @@ export type Database = {
         }
         Insert: {
           area_funcional?: string | null
+          categorias_ids?: string[] | null
           cliente_id: string
           colaboradores_ids?: string[] | null
           created_at?: string
@@ -442,6 +471,7 @@ export type Database = {
         }
         Update: {
           area_funcional?: string | null
+          categorias_ids?: string[] | null
           cliente_id?: string
           colaboradores_ids?: string[] | null
           created_at?: string
