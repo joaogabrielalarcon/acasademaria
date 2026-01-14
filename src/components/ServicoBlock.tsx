@@ -21,21 +21,7 @@ import { useCategorias } from "@/hooks/useCategorias";
 import { useColaboradores } from "@/hooks/useColaboradores";
 import { useInsumos } from "@/hooks/useInsumos";
 import { useMaquinas } from "@/hooks/useMaquinas";
-
-// Mock data que ainda não tem tabela no banco
-const mockSolicitantes = [
-  { id: "prop-1", nome: "Roberto Silveira", tipo: "proprietario" },
-  { id: "prop-2", nome: "Ana Silveira", tipo: "proprietario" },
-  { id: "func-1", nome: "José Carlos (Caseiro)", tipo: "funcionario" },
-  { id: "func-2", nome: "Maria (Governanta)", tipo: "funcionario" },
-];
-
-const mockTrechos = [
-  { id: "1", nome: "Jardim Frontal", clienteId: "1" },
-  { id: "2", nome: "Piscina", clienteId: "1" },
-  { id: "3", nome: "Horta", clienteId: "2" },
-  { id: "4", nome: "Área de lazer", clienteId: "1" },
-];
+import { useTrechosCliente, useCliente } from "@/hooks/useCliente";
 
 const periodoOptions = [
   { value: "manha", label: "Manhã" },
@@ -93,6 +79,7 @@ interface ServicoBlockProps {
   servico: ServicoData;
   index: number;
   equipePresenteIds: string[];
+  clienteId?: string;
   onUpdate: (id: string, data: Partial<ServicoData>) => void;
   onRemove: (id: string) => void;
   isOnly: boolean;
@@ -102,6 +89,7 @@ export function ServicoBlock({
   servico,
   index,
   equipePresenteIds,
+  clienteId,
   onUpdate,
   onRemove,
   isOnly,
@@ -118,6 +106,14 @@ export function ServicoBlock({
   const { data: colaboradores = [], isLoading: loadingColaboradores } = useColaboradores();
   const { data: insumos = [], isLoading: loadingInsumos } = useInsumos();
   const { data: maquinas = [], isLoading: loadingMaquinas } = useMaquinas();
+  const { data: trechos = [] } = useTrechosCliente(clienteId);
+  const { data: cliente } = useCliente(clienteId);
+
+  // Montar lista de solicitantes a partir do cliente (proprietários + funcionários)
+  const solicitantes = [
+    ...(cliente?.proprietarios || []).map((p, i) => ({ id: `prop-${i}`, nome: p.nome, tipo: "proprietario" })),
+    ...(cliente?.funcionarios_casa || []).map((f, i) => ({ id: `func-${i}`, nome: f.nome, tipo: "funcionario" })),
+  ];
 
   const isLoading = loadingCategorias || loadingColaboradores || loadingInsumos || loadingMaquinas;
 
@@ -332,7 +328,7 @@ export function ServicoBlock({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="geral">Área geral / Todo o jardim</SelectItem>
-                    {mockTrechos.map((t) => (
+                    {trechos.map((t) => (
                       <SelectItem key={t.id} value={t.id}>
                         {t.nome}
                       </SelectItem>
@@ -382,8 +378,8 @@ export function ServicoBlock({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="nenhum">Serviço de rotina (sem solicitação)</SelectItem>
-                  {mockSolicitantes.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
+                  {solicitantes.map((s) => (
+                    <SelectItem key={s.id} value={s.nome}>
                       {s.nome}
                       {s.tipo === "proprietario" && " (Proprietário)"}
                     </SelectItem>

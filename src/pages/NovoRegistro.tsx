@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Plus, Users, Calendar, Bell, Leaf, Package } from "lucide-react";
+import { ArrowLeft, Plus, Users, Calendar, Bell, Leaf, Package, Loader2 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,23 +16,10 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { ServicoBlock, ServicoData, createEmptyServico } from "@/components/ServicoBlock";
-import { parseISO, isAfter, startOfDay } from "date-fns";
-
-// Mock data
-const mockClientes = [
-  { id: "1", nome: "Família Silveira" },
-  { id: "2", nome: "Residência Campos" },
-  { id: "3", nome: "Edifício Aurora" },
-];
-
-// Trechos movidos para ServicoBlock
-
-const mockColaboradores = [
-  { id: "1", nome: "João Silva" },
-  { id: "2", nome: "Maria Santos" },
-  { id: "3", nome: "Pedro Oliveira" },
-  { id: "4", nome: "Maria Fernanda" },
-];
+import { parseISO, isAfter, startOfDay, format, subDays, addWeeks } from "date-fns";
+import { useClientesSimples } from "@/hooks/useClientes";
+import { useColaboradores } from "@/hooks/useColaboradores";
+import { supabase } from "@/integrations/supabase/client";
 
 const periodoOptions = [
   { value: "manha", label: "Manhã" },
@@ -56,6 +43,10 @@ export default function NovoRegistro() {
   const clienteIdFromUrl = searchParams.get("cliente") || "";
   const dataFromUrl = searchParams.get("data") || new Date().toISOString().split("T")[0];
 
+  // Dados reais do banco
+  const { data: clientes = [], isLoading: loadingClientes } = useClientesSimples();
+  const { data: colaboradores = [], isLoading: loadingColaboradores } = useColaboradores();
+
   // === SEÇÃO 1: Dados da Diária ===
   const [selectedCliente, setSelectedCliente] = useState(clienteIdFromUrl);
   
@@ -66,6 +57,7 @@ export default function NovoRegistro() {
   const [observacoesGerais, setObservacoesGerais] = useState("");
   const [statusDiaria, setStatusDiaria] = useState("realizado");
   const [alertaOpcao, setAlertaOpcao] = useState("nenhum");
+  const [isSaving, setIsSaving] = useState(false);
 
   // === SEÇÃO 2: Serviços ===
   const [servicos, setServicos] = useState<ServicoData[]>([createEmptyServico()]);
@@ -114,7 +106,26 @@ export default function NovoRegistro() {
     setServicos((prev) => prev.filter((s) => s.id !== id));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Calcular data de alerta baseado na opção selecionada
+  const calcularDataAlerta = (): string | null => {
+    if (alertaOpcao === "nenhum") return null;
+    const dataVisitaDate = parseISO(dataVisita);
+    
+    switch (alertaOpcao) {
+      case "no_dia":
+        return format(dataVisitaDate, "yyyy-MM-dd'T'08:00:00");
+      case "1_dia":
+        return format(subDays(dataVisitaDate, 1), "yyyy-MM-dd'T'08:00:00");
+      case "3_dias":
+        return format(subDays(dataVisitaDate, 3), "yyyy-MM-dd'T'08:00:00");
+      case "1_semana":
+        return format(subDays(dataVisitaDate, 7), "yyyy-MM-dd'T'08:00:00");
+      default:
+        return null;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validação básica
@@ -136,21 +147,110 @@ export default function NovoRegistro() {
       return;
     }
 
-    toast({
-      title: statusDiaria === "agendado" ? "Diária agendada!" : "Diária registrada!",
-      description: statusDiaria === "agendado" 
-        ? `${servicos.length} serviço(s) agendado(s) para ${new Date(dataVisita).toLocaleDateString('pt-BR')}.`
-        : `${servicos.length} serviço(s) salvos com sucesso.`,
-    });
+    setIsSaving(true);
 
-    if (clienteIdFromUrl) {
-      navigate(`/clientes/${clienteIdFromUrl}`);
-    } else {
-      navigate("/");
+    try {
+      // 1. Criar a diária primeiro
+      const dataAlerta = calcularDataAlerta();
+      
+      const { data: diaria, error: diariaError } = await supabase
+        .from("diarias")
+        .insert({
+          cliente_id: selectedCliente,
+          data_visita: dataVisita,
+          periodo,
+          status: statusDiaria,
+          equipe_presente_ids: equipePresente,
+          comentarios_jardim: comentariosJardim || null,
+          observacoes_internas: observacoesGerais || null,
+          data_alerta: dataAlerta,
+        })
+        .select()
+        .single();
+
+      if (diariaError) throw diariaError;
+
+      // 2. Criar cada serviço (registro) vinculado à diária
+      for (const servico of servicos) {
+        const { data: registro, error: registroError } = await supabase
+          .from("registros")
+          .insert({
+            cliente_id: selectedCliente,
+            diaria_id: diaria.id,
+            data_servico: dataVisita,
+            tipo: "servico",
+            status: statusDiaria,
+            descricao: servico.descricao,
+            observacoes_internas: servico.observacoesInternas || null,
+            categorias_ids: servico.categoriasIds,
+            trecho_id: servico.trechoId || null,
+            executores_ids: servico.executoresIds,
+            equipe_presente_ids: equipePresente,
+            solicitante: servico.solicitante === "outro" ? servico.solicitanteOutro : servico.solicitante || null,
+          })
+          .select()
+          .single();
+
+        if (registroError) throw registroError;
+
+        // 3. Inserir insumos do serviço
+        if (servico.insumos.length > 0) {
+          const insumosToInsert = servico.insumos.map((i) => ({
+            registro_id: registro.id,
+            insumo_id: i.insumoId,
+            quantidade: i.quantidade,
+            observacao: null,
+          }));
+
+          const { error: insumosError } = await supabase
+            .from("registro_insumos")
+            .insert(insumosToInsert);
+
+          if (insumosError) throw insumosError;
+        }
+
+        // 4. Inserir máquinas do serviço
+        if (servico.maquinas.length > 0) {
+          const maquinasToInsert = servico.maquinas.map((m) => ({
+            registro_id: registro.id,
+            maquina_id: m.maquinaId,
+            horas_utilizadas: m.horasUtilizadas,
+            observacao: m.observacao || null,
+          }));
+
+          const { error: maquinasError } = await supabase
+            .from("registro_maquinas")
+            .insert(maquinasToInsert);
+
+          if (maquinasError) throw maquinasError;
+        }
+      }
+
+      toast({
+        title: statusDiaria === "agendado" ? "Diária agendada!" : "Diária registrada!",
+        description: statusDiaria === "agendado" 
+          ? `${servicos.length} serviço(s) agendado(s) para ${new Date(dataVisita).toLocaleDateString('pt-BR')}.`
+          : `${servicos.length} serviço(s) salvos com sucesso.`,
+      });
+
+      if (clienteIdFromUrl) {
+        navigate(`/clientes/${clienteIdFromUrl}`);
+      } else {
+        navigate("/");
+      }
+    } catch (error) {
+      console.error("Erro ao salvar diária:", error);
+      toast({
+        title: "Erro ao salvar",
+        description: "Não foi possível salvar a diária. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const clienteNome = mockClientes.find((c) => c.id === selectedCliente)?.nome;
+  const clienteNome = clientes.find((c) => c.id === selectedCliente)?.nome;
 
   // Tipo de registro selecionado
   const [tipoRegistro, setTipoRegistro] = useState<"servico" | "recebimento" | null>(null);
@@ -273,11 +373,17 @@ export default function NovoRegistro() {
                   <SelectValue placeholder="Selecione o cliente" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockClientes.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.nome}
-                    </SelectItem>
-                  ))}
+                  {loadingClientes ? (
+                    <div className="flex items-center justify-center py-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    </div>
+                  ) : (
+                    clientes.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.nome}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -325,20 +431,26 @@ export default function NovoRegistro() {
                 Selecione todos que foram ao local no dia
               </p>
               <div className="flex flex-wrap gap-2">
-                {mockColaboradores.map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => toggleEquipePresente(c.id)}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                      equipePresente.includes(c.id)
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80"
-                    }`}
-                  >
-                    {c.nome}
-                  </button>
-                ))}
+                {loadingColaboradores ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : colaboradores.filter(c => c.ativo).length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhum colaborador ativo cadastrado</p>
+                ) : (
+                  colaboradores.filter(c => c.ativo).map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => toggleEquipePresente(c.id)}
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                        equipePresente.includes(c.id)
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      }`}
+                    >
+                      {c.nome}
+                    </button>
+                  ))
+                )}
               </div>
             </div>
 
@@ -450,6 +562,7 @@ export default function NovoRegistro() {
                   servico={servico}
                   index={index}
                   equipePresenteIds={equipePresente}
+                  clienteId={selectedCliente}
                   onUpdate={updateServico}
                   onRemove={removeServico}
                   isOnly={servicos.length === 1}

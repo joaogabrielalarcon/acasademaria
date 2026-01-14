@@ -28,6 +28,7 @@ import { usePlantas } from "@/hooks/usePlantas";
 import { useInsumos } from "@/hooks/useInsumos";
 import { useFornecedores } from "@/hooks/useFornecedores";
 import { useCategoriasPlantas } from "@/hooks/useCategoriasPlantas";
+import { useClientesSimples } from "@/hooks/useClientes";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -44,13 +45,6 @@ interface ItemRecebido {
   dap?: string;
   observacao?: string;
 }
-
-// Mock clientes - depois puxar do banco
-const mockClientes = [
-  { id: "1", nome: "Fazenda Boa Vista" },
-  { id: "2", nome: "Sítio Recanto Verde" },
-  { id: "3", nome: "Chácara Primavera" },
-];
 
 const unidadeOptions = [
   { value: "un", label: "Unidade" },
@@ -101,6 +95,7 @@ export default function NovoRecebimento() {
   const { data: insumos = [], isLoading: loadingInsumos } = useInsumos();
   const { data: fornecedores = [] } = useFornecedores();
   const { data: categoriasPlantas = [] } = useCategoriasPlantas();
+  const { data: clientes = [], isLoading: loadingClientes } = useClientesSimples();
 
   const isLoading = loadingPlantas || loadingInsumos;
 
@@ -263,11 +258,17 @@ export default function NovoRecebimento() {
                     <SelectValue placeholder="Selecione o cliente" />
                   </SelectTrigger>
                   <SelectContent>
-                    {mockClientes.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.nome}
-                      </SelectItem>
-                    ))}
+                    {loadingClientes ? (
+                      <div className="flex items-center justify-center py-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      </div>
+                    ) : (
+                      clientes.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.nome}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Save, X, Calendar, DollarSign, FileText } from "lucide-react";
+import { ArrowLeft, Save, X, Calendar, DollarSign, FileText, Loader2 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,13 +13,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-// Mock data - será substituído por dados reais do Supabase
-const mockClientes = [
-  { id: "1", nome: "Residência Silva" },
-  { id: "2", nome: "Fazenda Boa Vista" },
-  { id: "3", nome: "Condomínio Verde" },
-];
+import { useClientesSimples } from "@/hooks/useClientes";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const statusOptions = [
   { value: "rascunho", label: "Rascunho" },
@@ -32,6 +29,10 @@ export default function NovaProposta() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const clienteIdFromUrl = searchParams.get("cliente");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: clientes = [], isLoading: loadingClientes } = useClientesSimples();
 
   const [formData, setFormData] = useState({
     cliente_id: clienteIdFromUrl || "",
@@ -43,16 +44,57 @@ export default function NovaProposta() {
     valor: "",
     observacoes: "",
   });
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Salvar no Supabase
-    console.log("Salvando proposta:", formData);
-    
-    if (clienteIdFromUrl) {
-      navigate(`/clientes/${clienteIdFromUrl}?tab=propostas`);
-    } else {
-      navigate("/");
+
+    if (!formData.cliente_id || !formData.codigo || !formData.titulo) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Preencha cliente, código e título da proposta.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const { error } = await supabase.from("propostas").insert({
+        cliente_id: formData.cliente_id,
+        codigo: formData.codigo,
+        titulo: formData.titulo,
+        descricao: formData.descricao || null,
+        status: formData.status,
+        data_envio: formData.data_envio || null,
+        valor: formData.valor ? parseFloat(formData.valor) : null,
+        observacoes: formData.observacoes || null,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Proposta salva!",
+        description: "A proposta foi criada com sucesso.",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["propostas", clienteIdFromUrl] });
+
+      if (clienteIdFromUrl) {
+        navigate(`/clientes/${clienteIdFromUrl}?tab=propostas`);
+      } else {
+        navigate("/");
+      }
+    } catch (error) {
+      console.error("Erro ao salvar proposta:", error);
+      toast({
+        title: "Erro ao salvar",
+        description: "Não foi possível salvar a proposta.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -110,11 +152,17 @@ export default function NovaProposta() {
                     <SelectValue placeholder="Selecione o cliente" />
                   </SelectTrigger>
                   <SelectContent>
-                    {mockClientes.map((cliente) => (
-                      <SelectItem key={cliente.id} value={cliente.id}>
-                        {cliente.nome}
-                      </SelectItem>
-                    ))}
+                    {loadingClientes ? (
+                      <div className="flex items-center justify-center py-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      </div>
+                    ) : (
+                      clientes.map((cliente) => (
+                        <SelectItem key={cliente.id} value={cliente.id}>
+                          {cliente.nome}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
