@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      areas: {
+        Row: {
+          ativo: boolean
+          cor: string | null
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          ordem: number | null
+        }
+        Insert: {
+          ativo?: boolean
+          cor?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          ordem?: number | null
+        }
+        Update: {
+          ativo?: boolean
+          cor?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          ordem?: number | null
+        }
+        Relationships: []
+      }
       categorias_plantas: {
         Row: {
           ativo: boolean
@@ -143,6 +173,7 @@ export type Database = {
       colaboradores: {
         Row: {
           area: string | null
+          area_id: string | null
           ativo: boolean
           cargo: string | null
           cep: string | null
@@ -163,6 +194,7 @@ export type Database = {
         }
         Insert: {
           area?: string | null
+          area_id?: string | null
           ativo?: boolean
           cargo?: string | null
           cep?: string | null
@@ -183,6 +215,7 @@ export type Database = {
         }
         Update: {
           area?: string | null
+          area_id?: string | null
           ativo?: boolean
           cargo?: string | null
           cep?: string | null
@@ -201,7 +234,15 @@ export type Database = {
           tamanho_camiseta?: string | null
           telefone?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "colaboradores_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "areas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       diarias: {
         Row: {
@@ -528,6 +569,50 @@ export type Database = {
             columns: ["fornecedor_id"]
             isOneToOne: false
             referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          area_id: string | null
+          ativo: boolean
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          id: string
+          nome: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          area_id?: string | null
+          ativo?: boolean
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          id: string
+          nome: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          area_id?: string | null
+          ativo?: boolean
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "areas"
             referencedColumns: ["id"]
           },
         ]
@@ -878,15 +963,45 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       check_inactive_clients: { Args: never; Returns: undefined }
+      get_user_area: { Args: { _user_id: string }; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["user_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_manager_or_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      user_role: "admin" | "gestor" | "operador"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1013,6 +1128,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["admin", "gestor", "operador"],
+    },
   },
 } as const

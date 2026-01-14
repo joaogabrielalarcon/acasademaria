@@ -46,6 +46,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useColaboradores, Colaborador } from "@/hooks/useColaboradores";
 import { useMaquinas } from "@/hooks/useMaquinas";
 import { useInsumos } from "@/hooks/useInsumos";
+import { useAreas } from "@/hooks/useAreas";
 import { useEntregasColaborador, useCreateEntrega, useDeleteEntrega } from "@/hooks/useEntregasColaborador";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -83,7 +84,7 @@ export default function Equipe() {
   const [cpf, setCpf] = useState("");
   const [dataNascimento, setDataNascimento] = useState<Date | undefined>(undefined);
   const [cargo, setCargo] = useState("");
-  const [area, setArea] = useState("");
+  const [areaId, setAreaId] = useState("");
   const [telefone, setTelefone] = useState("");
   const [endereco, setEndereco] = useState("");
   const [cidade, setCidade] = useState("");
@@ -105,9 +106,13 @@ export default function Equipe() {
   const { data: colaboradores = [], isLoading } = useColaboradores();
   const { data: maquinas = [] } = useMaquinas();
   const { data: insumos = [] } = useInsumos();
+  const { data: areas = [] } = useAreas();
   const { data: entregas = [], isLoading: isLoadingEntregas } = useEntregasColaborador(selectedColaboradorEntrega?.id);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  
+  // Criar mapa de áreas para exibir nome
+  const areasMap = new Map(areas.map(a => [a.id, a]));
   
   const createEntregaMutation = useCreateEntrega();
   const deleteEntregaMutation = useDeleteEntrega();
@@ -139,7 +144,7 @@ export default function Equipe() {
     setCpf("");
     setDataNascimento(undefined);
     setCargo("");
-    setArea("");
+    setAreaId("");
     setTelefone("");
     setEndereco("");
     setCidade("");
@@ -168,7 +173,7 @@ export default function Equipe() {
     setCpf(colaborador.cpf || "");
     setDataNascimento(colaborador.data_nascimento ? new Date(colaborador.data_nascimento + "T00:00:00") : undefined);
     setCargo(colaborador.cargo || "");
-    setArea(colaborador.area || "");
+    setAreaId(colaborador.area_id || "");
     setTelefone(colaborador.telefone || "");
     setEndereco(colaborador.endereco || "");
     setCidade(colaborador.cidade || "");
@@ -211,7 +216,7 @@ export default function Equipe() {
       cpf: cpf.trim() || null,
       data_nascimento: dataNascimento ? format(dataNascimento, "yyyy-MM-dd") : null,
       cargo: cargo.trim() ? capitalizeWords(cargo.trim()) : null,
-      area: area.trim() ? capitalizeWords(area.trim()) : null,
+      area_id: areaId || null,
       telefone: telefone.trim() || null,
       endereco: endereco.trim() ? capitalizeWords(endereco.trim()) : null,
       cidade: cidade.trim() ? capitalizeWords(cidade.trim()) : null,
@@ -265,11 +270,12 @@ export default function Equipe() {
     }
   };
 
-  const filteredColaboradores = colaboradores.filter((c) =>
-    c.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (c.cargo && c.cargo.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (c.area && c.area.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredColaboradores = colaboradores.filter((c) => {
+    const areaNome = c.area_id ? areasMap.get(c.area_id)?.nome : c.area;
+    return c.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (c.cargo && c.cargo.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (areaNome && areaNome.toLowerCase().includes(searchTerm.toLowerCase()));
+  });
 
   const handleOpenEntregas = (colaborador: Colaborador) => {
     setSelectedColaboradorEntrega(colaborador);
@@ -398,7 +404,10 @@ export default function Equipe() {
                     {colaborador.nome}
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    {[colaborador.cargo, colaborador.area].filter(Boolean).join(" • ") || "—"}
+                    {[
+                      colaborador.cargo, 
+                      colaborador.area_id ? areasMap.get(colaborador.area_id)?.nome : colaborador.area
+                    ].filter(Boolean).join(" • ") || "—"}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -507,12 +516,24 @@ export default function Equipe() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="area">Área</Label>
-                <Input
-                  id="area"
-                  placeholder="Ex: Operações"
-                  value={area}
-                  onChange={(e) => setArea(capitalizeWords(e.target.value))}
-                />
+                <Select value={areaId} onValueChange={setAreaId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a área" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {areas.map((area) => (
+                      <SelectItem key={area.id} value={area.id}>
+                        <div className="flex items-center gap-2">
+                          <span 
+                            className="w-2 h-2 rounded-full" 
+                            style={{ backgroundColor: area.cor || '#22c55e' }}
+                          />
+                          {area.nome}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
