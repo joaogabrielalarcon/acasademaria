@@ -67,6 +67,23 @@ const periodoOptions = [
   { value: "dia_inteiro", label: "Dia Inteiro" },
 ];
 
+const unidadeOptions = [
+  { value: "un", label: "un (unidade)" },
+  { value: "kg", label: "kg (quilograma)" },
+  { value: "g", label: "g (grama)" },
+  { value: "L", label: "L (litro)" },
+  { value: "mL", label: "mL (mililitro)" },
+  { value: "m", label: "m (metro)" },
+  { value: "m²", label: "m² (metro quadrado)" },
+  { value: "m³", label: "m³ (metro cúbico)" },
+  { value: "sacos", label: "sacos" },
+  { value: "mudas", label: "mudas" },
+  { value: "caixas", label: "caixas" },
+  { value: "pacotes", label: "pacotes" },
+  { value: "galões", label: "galões" },
+  { value: "horas", label: "horas" },
+];
+
 interface InsumoSelecionado {
   insumoId: string;
   nome: string;
@@ -351,13 +368,18 @@ export function ServicoBlock({
                   min="0"
                   step="0.01"
                 />
-                <Input
-                  type="text"
-                  placeholder="Unid."
-                  className="w-24"
-                  value={novoInsumoUnidade}
-                  onChange={(e) => setNovoInsumoUnidade(e.target.value)}
-                />
+                <Select value={novoInsumoUnidade} onValueChange={setNovoInsumoUnidade}>
+                  <SelectTrigger className="w-28">
+                    <SelectValue placeholder="Unid." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {unidadeOptions.map((u) => (
+                      <SelectItem key={u.value} value={u.value}>
+                        {u.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Button
                   type="button"
                   variant="outline"
