@@ -43,9 +43,17 @@ export default function NovoRegistro() {
   const clienteIdFromUrl = searchParams.get("cliente") || "";
   const dataFromUrl = searchParams.get("data") || new Date().toISOString().split("T")[0];
 
-  // Dados reais do banco
-  const { data: clientes = [], isLoading: loadingClientes } = useClientesSimples();
-  const { data: colaboradores = [], isLoading: loadingColaboradores } = useColaboradores();
+  // Dados reais do banco - ordenados alfabeticamente
+  const { data: clientesRaw = [], isLoading: loadingClientes } = useClientesSimples();
+  const { data: colaboradoresRaw = [], isLoading: loadingColaboradores } = useColaboradores();
+
+  // Ordenar clientes alfabeticamente
+  const clientes = [...clientesRaw].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  
+  // Ordenar colaboradores alfabeticamente e filtrar ativos
+  const colaboradores = [...colaboradoresRaw]
+    .filter(c => c.ativo)
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
   // === SEÇÃO 1: Dados da Diária ===
   const [selectedCliente, setSelectedCliente] = useState(clienteIdFromUrl);
@@ -433,10 +441,10 @@ export default function NovoRegistro() {
               <div className="flex flex-wrap gap-2">
                 {loadingColaboradores ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
-                ) : colaboradores.filter(c => c.ativo).length === 0 ? (
+                ) : colaboradores.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Nenhum colaborador ativo cadastrado</p>
                 ) : (
-                  colaboradores.filter(c => c.ativo).map((c) => (
+                  colaboradores.map((c) => (
                     <button
                       key={c.id}
                       type="button"
