@@ -186,7 +186,7 @@ export default function NovoRegistro() {
             cliente_id: selectedCliente,
             diaria_id: diaria.id,
             data_servico: dataVisita,
-            tipo: "servico",
+            tipo: "manutencao", // Valor válido da constraint
             status: statusDiaria,
             descricao: servico.descricao,
             observacoes_internas: servico.observacoesInternas || null,
@@ -195,6 +195,7 @@ export default function NovoRegistro() {
             executores_ids: servico.executoresIds,
             equipe_presente_ids: equipePresente,
             solicitante: servico.solicitante === "outro" ? servico.solicitanteOutro : servico.solicitante || null,
+            midia: servico.midia, // Agora suporta mídia
           })
           .select()
           .single();
