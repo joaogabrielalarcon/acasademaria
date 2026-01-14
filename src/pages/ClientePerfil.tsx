@@ -20,7 +20,9 @@ import {
   List,
   CalendarDays,
   X,
-  Loader2
+  Loader2,
+  Image as ImageIcon,
+  Play
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -477,120 +479,163 @@ export default function ClientePerfil() {
 
               {/* Timeline Items */}
               <div className="space-y-3 pl-8">
-                {registros.map((registro) => (
-                  <article 
-                    key={registro.id} 
-                    className="card-botanical p-4 relative animate-fade-in hover:shadow-card transition-all"
-                  >
-                    {/* Timeline Dot */}
-                    <div className="timeline-dot absolute -left-[1.65rem] top-5" />
+                {registros.map((registro) => {
+                  // Parse midia
+                  const midiaArray = registro.midia && Array.isArray(registro.midia) 
+                    ? registro.midia.map((m: any) => typeof m === 'string' ? { url: m } : m)
+                    : [];
+                  const hasMedia = midiaArray.length > 0;
+                  
+                  return (
+                    <article 
+                      key={registro.id} 
+                      className="card-botanical p-4 relative animate-fade-in hover:shadow-card transition-all cursor-pointer"
+                      onClick={() => navigate(`/registros/${registro.id}`)}
+                    >
+                      {/* Timeline Dot */}
+                      <div className="timeline-dot absolute -left-[1.65rem] top-5" />
 
-                    <div className="flex flex-col gap-3">
-                      {/* Header Row */}
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                            {tipoLabels[registro.tipo] || registro.tipo}
-                          </span>
-                          {registro.proposta && (
-                            <Badge variant="outline" className="text-xs">
-                              {registro.proposta.codigo}
-                            </Badge>
+                      <div className="flex gap-4">
+                        {/* Main Content */}
+                        <div className="flex-1 flex flex-col gap-2">
+                          {/* Header Row */}
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                                {tipoLabels[registro.tipo] || registro.tipo}
+                              </span>
+                              {registro.proposta && (
+                                <Badge variant="outline" className="text-xs">
+                                  {registro.proposta.codigo}
+                                </Badge>
+                              )}
+                            </div>
+                            <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
+                              <Calendar className="w-3 h-3" />
+                              {new Date(registro.data_servico).toLocaleDateString('pt-BR')}
+                            </span>
+                          </div>
+                          
+                          {/* Categorias/Tags */}
+                          {registro.categorias && registro.categorias.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5">
+                              {registro.categorias.map((cat, idx) => (
+                                <span 
+                                  key={idx}
+                                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                                  style={{ 
+                                    backgroundColor: `${cat.cor}20`,
+                                    color: cat.cor,
+                                    border: `1px solid ${cat.cor}40`
+                                  }}
+                                >
+                                  {cat.nome}
+                                </span>
+                              ))}
+                            </div>
                           )}
-                        </div>
-                        <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
-                          <Calendar className="w-3 h-3" />
-                          {new Date(registro.data_servico).toLocaleDateString('pt-BR')}
-                        </span>
-                      </div>
-                      
-                      {/* Categorias/Tags - novo */}
-                      {registro.categorias && registro.categorias.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
-                          {registro.categorias.map((cat, idx) => (
-                            <span 
-                              key={idx}
-                              className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                              style={{ 
-                                backgroundColor: `${cat.cor}20`,
-                                color: cat.cor,
-                                border: `1px solid ${cat.cor}40`
+
+                          {/* Trecho */}
+                          {registro.trecho && (
+                            <p className="text-sm font-medium text-foreground">
+                              📍 {registro.trecho}
+                            </p>
+                          )}
+
+                          {/* Descrição */}
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {registro.descricao}
+                          </p>
+
+                          {/* Metadados compactos */}
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                            {registro.equipePresente.length > 0 && (
+                              <span className="flex items-center gap-1">
+                                <Users className="w-3 h-3" />
+                                {registro.equipePresente.slice(0, 2).join(", ")}
+                                {registro.equipePresente.length > 2 && ` +${registro.equipePresente.length - 2}`}
+                              </span>
+                            )}
+                            {registro.insumos.length > 0 && (
+                              <span className="flex items-center gap-1">
+                                <Package className="w-3 h-3" />
+                                {registro.insumos.length} insumo{registro.insumos.length > 1 ? 's' : ''}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Ações */}
+                          <div className="flex gap-2 pt-2 border-t border-border">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="gap-1 h-7 text-xs"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditarRegistro(registro.id);
                               }}
                             >
-                              {cat.nome}
-                            </span>
-                          ))}
+                              <Pencil className="w-3 h-3" />
+                              Editar
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="gap-1 h-7 text-xs text-destructive hover:text-destructive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCancelarRegistro(registro.id);
+                              }}
+                            >
+                              <X className="w-3 h-3" />
+                              Cancelar
+                            </Button>
+                          </div>
                         </div>
-                      )}
 
-                      {/* Trecho */}
-                      {registro.trecho && (
-                        <p className="text-sm font-medium text-foreground">
-                          📍 {registro.trecho}
-                        </p>
-                      )}
-
-                      {/* Descrição */}
-                      <p className="text-sm text-muted-foreground">
-                        {registro.descricao}
-                      </p>
-
-                      {/* Metadados compactos */}
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                        {registro.equipePresente.length > 0 && (
-                          <span className="flex items-center gap-1">
-                            <Users className="w-3 h-3" />
-                            {registro.equipePresente.join(", ")}
-                          </span>
-                        )}
-                        {registro.executores.length > 0 && (
-                          <span className="flex items-center gap-1">
-                            <User className="w-3 h-3" />
-                            {registro.executores.join(", ")}
-                          </span>
-                        )}
-                        {registro.solicitante && (
-                          <span className="flex items-center gap-1">
-                            <Briefcase className="w-3 h-3" />
-                            {registro.solicitante}
-                          </span>
+                        {/* Media Preview - Right Side */}
+                        {hasMedia && (
+                          <div className="flex-shrink-0 w-20 sm:w-24">
+                            <div className="grid grid-cols-1 gap-1">
+                              {midiaArray.slice(0, 2).map((m: any, idx: number) => {
+                                const isVideo = m.type?.startsWith('video') || m.url?.match(/\.(mp4|webm|mov)$/i);
+                                return (
+                                  <div 
+                                    key={idx} 
+                                    className="relative aspect-square rounded-lg overflow-hidden bg-muted"
+                                  >
+                                    {isVideo ? (
+                                      <div className="w-full h-full flex items-center justify-center bg-black/20">
+                                        <Play className="w-4 h-4 text-white" />
+                                        <video 
+                                          src={m.url} 
+                                          className="absolute inset-0 w-full h-full object-cover -z-10" 
+                                        />
+                                      </div>
+                                    ) : (
+                                      <img 
+                                        src={m.url} 
+                                        alt=""
+                                        className="w-full h-full object-cover"
+                                      />
+                                    )}
+                                    {idx === 1 && midiaArray.length > 2 && (
+                                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                        <span className="text-white text-xs font-medium">
+                                          +{midiaArray.length - 2}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
                         )}
                       </div>
-
-                      {/* Insumos */}
-                      {registro.insumos.length > 0 && (
-                        <div className="text-xs text-muted-foreground flex items-start gap-1">
-                          <Package className="w-3 h-3 mt-0.5 shrink-0" />
-                          <span>
-                            {registro.insumos.map(i => `${i.nome} (${i.quantidade} ${i.unidade})`).join(", ")}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Ações */}
-                      <div className="flex gap-2 pt-2 border-t border-border">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="gap-1 h-7 text-xs"
-                          onClick={() => handleEditarRegistro(registro.id)}
-                        >
-                          <Pencil className="w-3 h-3" />
-                          Editar
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="gap-1 h-7 text-xs text-destructive hover:text-destructive"
-                          onClick={() => handleCancelarRegistro(registro.id)}
-                        >
-                          <X className="w-3 h-3" />
-                          Cancelar
-                        </Button>
-                      </div>
-                    </div>
-                  </article>
-                ))}
+                    </article>
+                  );
+                })}
               </div>
             </div>
           ) : (
