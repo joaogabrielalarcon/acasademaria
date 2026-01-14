@@ -14,7 +14,7 @@ export function useColaboradores() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("colaboradores")
-        .select("*")
+        .select("id, nome, funcao, ativo")
         .eq("ativo", true)
         .order("nome", { ascending: true });
 
