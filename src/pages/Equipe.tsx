@@ -79,6 +79,8 @@ export default function Equipe() {
   
   // Form fields
   const [nome, setNome] = useState("");
+  const [cpf, setCpf] = useState("");
+  const [dataNascimento, setDataNascimento] = useState<Date | undefined>(undefined);
   const [cargo, setCargo] = useState("");
   const [area, setArea] = useState("");
   const [telefone, setTelefone] = useState("");
@@ -130,6 +132,14 @@ export default function Equipe() {
     return `${numbers.slice(0, 5)}-${numbers.slice(5, 8)}`;
   };
 
+  const formatCpf = (value: string) => {
+    const numbers = value.replace(/\D/g, "");
+    if (numbers.length <= 3) return numbers;
+    if (numbers.length <= 6) return `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
+    if (numbers.length <= 9) return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`;
+    return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9, 11)}`;
+  };
+
   const toggleAtivoMutation = useMutation({
     mutationFn: async ({ id, ativo }: { id: string; ativo: boolean }) => {
       const { error } = await supabase
@@ -152,6 +162,8 @@ export default function Equipe() {
 
   const resetForm = () => {
     setNome("");
+    setCpf("");
+    setDataNascimento(undefined);
     setCargo("");
     setArea("");
     setTelefone("");
@@ -179,6 +191,8 @@ export default function Equipe() {
   const handleEdit = (colaborador: Colaborador) => {
     setEditingColaborador(colaborador);
     setNome(colaborador.nome);
+    setCpf(colaborador.cpf || "");
+    setDataNascimento(colaborador.data_nascimento ? new Date(colaborador.data_nascimento + "T00:00:00") : undefined);
     setCargo(colaborador.cargo || "");
     setArea(colaborador.area || "");
     setTelefone(colaborador.telefone || "");
@@ -220,6 +234,8 @@ export default function Equipe() {
 
     const payload = {
       nome: capitalizeWords(nome.trim()),
+      cpf: cpf.trim() || null,
+      data_nascimento: dataNascimento ? format(dataNascimento, "yyyy-MM-dd") : null,
       cargo: cargo.trim() ? capitalizeWords(cargo.trim()) : null,
       area: area.trim() ? capitalizeWords(area.trim()) : null,
       telefone: telefone.trim() || null,
@@ -468,6 +484,42 @@ export default function Equipe() {
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
               />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="cpf">CPF</Label>
+                <Input
+                  id="cpf"
+                  placeholder="000.000.000-00"
+                  value={cpf}
+                  onChange={(e) => setCpf(formatCpf(e.target.value))}
+                  maxLength={14}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Data de Nascimento</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {dataNascimento ? format(dataNascimento, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={dataNascimento}
+                      onSelect={setDataNascimento}
+                      initialFocus
+                      locale={ptBR}
+                      captionLayout="dropdown-buttons"
+                      fromYear={1950}
+                      toYear={new Date().getFullYear()}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
