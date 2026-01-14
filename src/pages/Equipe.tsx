@@ -332,6 +332,18 @@ export default function Equipe() {
       return;
     }
 
+    // Validar campos de acesso se preenchidos
+    const shouldCreateAccess = canManageUsers && !editingColaborador && username.trim() && emailAcesso.trim() && senhaInicial.trim();
+    
+    if (shouldCreateAccess && senhaInicial.length < 6) {
+      toast({
+        title: "Senha muito curta",
+        description: "A senha deve ter pelo menos 6 caracteres.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSaving(true);
 
     const payload = {
@@ -368,16 +380,51 @@ export default function Equipe() {
           description: "As informações foram salvas com sucesso.",
         });
       } else {
-        const { error } = await supabase
+        const { data: newColaborador, error } = await supabase
           .from("colaboradores")
-          .insert(payload);
+          .insert(payload)
+          .select()
+          .single();
 
         if (error) throw error;
 
-        toast({
-          title: "Colaborador cadastrado",
-          description: "O colaborador foi adicionado à equipe.",
-        });
+        // Se campos de acesso preenchidos, criar acesso automaticamente
+        if (shouldCreateAccess && newColaborador) {
+          try {
+            const { data: accessData, error: accessError } = await supabase.functions.invoke("create-user", {
+              body: {
+                email: emailAcesso.toLowerCase(),
+                password: senhaInicial,
+                username: username.toLowerCase(),
+                colaboradorId: newColaborador.id,
+              },
+            });
+
+            if (accessError || accessData?.error) {
+              toast({
+                title: "Colaborador cadastrado, mas erro no acesso",
+                description: accessData?.error || accessError?.message || "Não foi possível criar o acesso. Edite o colaborador para tentar novamente.",
+                variant: "destructive",
+              });
+            } else {
+              toast({
+                title: "Colaborador cadastrado com acesso!",
+                description: "O colaborador foi adicionado e já pode acessar o sistema.",
+              });
+            }
+          } catch (accessErr: any) {
+            toast({
+              title: "Colaborador cadastrado, mas erro no acesso",
+              description: accessErr.message || "Edite o colaborador para criar o acesso.",
+              variant: "destructive",
+            });
+          }
+        } else {
+          toast({
+            title: "Colaborador cadastrado",
+            description: "O colaborador foi adicionado à equipe.",
+          });
+        }
       }
 
       queryClient.invalidateQueries({ queryKey: ["colaboradores"] });
@@ -841,7 +888,7 @@ export default function Equipe() {
             </Collapsible>
 
             {/* Acesso ao Sistema - Collapsible (apenas para gestores) */}
-            {canManageUsers && editingColaborador && (
+            {canManageUsers && (
               <Collapsible open={acessoOpen} onOpenChange={setAcessoOpen}>
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" className="w-full justify-between p-0 h-auto hover:bg-transparent">
@@ -853,7 +900,7 @@ export default function Equipe() {
                   </Button>
                 </CollapsibleTrigger>
                 <CollapsibleContent className="space-y-4 pt-4">
-                  {editingColaborador.user_id ? (
+                  {editingColaborador?.user_id ? (
                     // Colaborador já tem acesso - mostrar opção de reset
                     <div className="space-y-4">
                       <div className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
@@ -894,12 +941,18 @@ export default function Equipe() {
                   ) : (
                     // Colaborador não tem acesso - mostrar formulário de criação
                     <div className="space-y-4">
-                      <p className="text-sm text-muted-foreground">
-                        Criar acesso para que o colaborador possa entrar no sistema.
-                      </p>
+                      {editingColaborador ? (
+                        <p className="text-sm text-muted-foreground">
+                          Criar acesso para que o colaborador possa entrar no sistema.
+                        </p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          Preencha para criar o acesso automaticamente ao salvar. Deixe em branco para criar apenas o cadastro.
+                        </p>
+                      )}
                       
                       <div className="space-y-2">
-                        <Label htmlFor="username">Nome de Usuário *</Label>
+                        <Label htmlFor="username">Nome de Usuário {editingColaborador ? "*" : "(opcional)"}</Label>
                         <Input
                           id="username"
                           placeholder="ex: joao.silva"
@@ -909,7 +962,7 @@ export default function Equipe() {
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="emailAcesso">Email *</Label>
+                        <Label htmlFor="emailAcesso">Email {editingColaborador ? "*" : "(opcional)"}</Label>
                         <Input
                           id="emailAcesso"
                           type="email"
@@ -920,7 +973,7 @@ export default function Equipe() {
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="senhaInicial">Senha Inicial *</Label>
+                        <Label htmlFor="senhaInicial">Senha Inicial {editingColaborador ? "*" : "(opcional)"}</Label>
                         <Input
                           id="senhaInicial"
                           type="password"
@@ -933,15 +986,17 @@ export default function Equipe() {
                         </p>
                       </div>
                       
-                      <Button
-                        type="button"
-                        variant="terracota"
-                        onClick={handleCreateUserAccess}
-                        disabled={isCreatingUser}
-                        className="w-full"
-                      >
-                        {isCreatingUser ? "Criando acesso..." : "Criar Acesso ao Sistema"}
-                      </Button>
+                      {editingColaborador && (
+                        <Button
+                          type="button"
+                          variant="terracota"
+                          onClick={handleCreateUserAccess}
+                          disabled={isCreatingUser}
+                          className="w-full"
+                        >
+                          {isCreatingUser ? "Criando acesso..." : "Criar Acesso ao Sistema"}
+                        </Button>
+                      )}
                     </div>
                   )}
                 </CollapsibleContent>
