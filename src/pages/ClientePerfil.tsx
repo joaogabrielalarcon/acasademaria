@@ -438,7 +438,7 @@ export default function ClientePerfil() {
         </TabsContent>
 
         {/* Tab Diário */}
-        <TabsContent value="diario" className="bg-rose-50/60 dark:bg-rose-950/20 rounded-xl p-6 -mx-1">
+        <TabsContent value="diario" className="bg-card rounded-xl p-6 -mx-1 border border-primary/20">
           {/* Header do Diário */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-2">
