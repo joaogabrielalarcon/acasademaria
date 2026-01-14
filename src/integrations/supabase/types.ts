@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      categorias_plantas: {
+        Row: {
+          ativo: boolean
+          campos_obrigatorios: Json | null
+          created_at: string
+          id: string
+          nome: string
+          ordem: number | null
+        }
+        Insert: {
+          ativo?: boolean
+          campos_obrigatorios?: Json | null
+          created_at?: string
+          id?: string
+          nome: string
+          ordem?: number | null
+        }
+        Update: {
+          ativo?: boolean
+          campos_obrigatorios?: Json | null
+          created_at?: string
+          id?: string
+          nome?: string
+          ordem?: number | null
+        }
+        Relationships: []
+      }
       categorias_servico: {
         Row: {
           ativo: boolean
@@ -197,32 +224,97 @@ export type Database = {
           },
         ]
       }
+      fornecedores: {
+        Row: {
+          cidade: string | null
+          cnpj: string | null
+          created_at: string
+          email: string | null
+          endereco: string | null
+          estado: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          status: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          cidade?: string | null
+          cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cidade?: string | null
+          cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       insumos: {
         Row: {
           ativo: boolean
           categoria: string | null
           created_at: string
+          fornecedor_id: string | null
           id: string
           nome: string
+          observacoes: string | null
+          preco_unitario: number | null
+          ultima_compra: string | null
           unidade: string | null
         }
         Insert: {
           ativo?: boolean
           categoria?: string | null
           created_at?: string
+          fornecedor_id?: string | null
           id?: string
           nome: string
+          observacoes?: string | null
+          preco_unitario?: number | null
+          ultima_compra?: string | null
           unidade?: string | null
         }
         Update: {
           ativo?: boolean
           categoria?: string | null
           created_at?: string
+          fornecedor_id?: string | null
           id?: string
           nome?: string
+          observacoes?: string | null
+          preco_unitario?: number | null
+          ultima_compra?: string | null
           unidade?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "insumos_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       maquinas: {
         Row: {
@@ -281,6 +373,81 @@ export type Database = {
         }
         Relationships: []
       }
+      plantas: {
+        Row: {
+          altura_cm: number | null
+          ativo: boolean
+          categoria_id: string | null
+          created_at: string
+          dap_cm: number | null
+          fornecedor_id: string | null
+          id: string
+          midia: Json | null
+          nome_cientifico: string | null
+          nome_popular: string
+          nota_qualidade: number | null
+          observacoes: string | null
+          porte: string | null
+          preco_unitario: number | null
+          ultima_compra: string | null
+          unidade: string | null
+          updated_at: string
+        }
+        Insert: {
+          altura_cm?: number | null
+          ativo?: boolean
+          categoria_id?: string | null
+          created_at?: string
+          dap_cm?: number | null
+          fornecedor_id?: string | null
+          id?: string
+          midia?: Json | null
+          nome_cientifico?: string | null
+          nome_popular: string
+          nota_qualidade?: number | null
+          observacoes?: string | null
+          porte?: string | null
+          preco_unitario?: number | null
+          ultima_compra?: string | null
+          unidade?: string | null
+          updated_at?: string
+        }
+        Update: {
+          altura_cm?: number | null
+          ativo?: boolean
+          categoria_id?: string | null
+          created_at?: string
+          dap_cm?: number | null
+          fornecedor_id?: string | null
+          id?: string
+          midia?: Json | null
+          nome_cientifico?: string | null
+          nome_popular?: string
+          nota_qualidade?: number | null
+          observacoes?: string | null
+          porte?: string | null
+          preco_unitario?: number | null
+          ultima_compra?: string | null
+          unidade?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plantas_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias_plantas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plantas_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       propostas: {
         Row: {
           cliente_id: string
@@ -330,6 +497,73 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recebimento_itens: {
+        Row: {
+          altura_cm: number | null
+          created_at: string
+          dap_cm: number | null
+          id: string
+          insumo_id: string | null
+          observacao: string | null
+          planta_id: string | null
+          porte: string | null
+          quantidade: number
+          registro_id: string
+          tipo_item: string
+          unidade: string | null
+        }
+        Insert: {
+          altura_cm?: number | null
+          created_at?: string
+          dap_cm?: number | null
+          id?: string
+          insumo_id?: string | null
+          observacao?: string | null
+          planta_id?: string | null
+          porte?: string | null
+          quantidade: number
+          registro_id: string
+          tipo_item: string
+          unidade?: string | null
+        }
+        Update: {
+          altura_cm?: number | null
+          created_at?: string
+          dap_cm?: number | null
+          id?: string
+          insumo_id?: string | null
+          observacao?: string | null
+          planta_id?: string | null
+          porte?: string | null
+          quantidade?: number
+          registro_id?: string
+          tipo_item?: string
+          unidade?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recebimento_itens_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "insumos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recebimento_itens_planta_id_fkey"
+            columns: ["planta_id"]
+            isOneToOne: false
+            referencedRelation: "plantas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recebimento_itens_registro_id_fkey"
+            columns: ["registro_id"]
+            isOneToOne: false
+            referencedRelation: "registros"
             referencedColumns: ["id"]
           },
         ]

@@ -32,7 +32,7 @@ const tipoLabels: Record<string, string> = {
   manutencao: "Manutenção",
   implantação: "Implantação",
   implantacao: "Implantação",
-  entrega: "Entrega",
+  recebimento_materiais: "Recebimento de Materiais",
   visita_tecnica: "Visita Técnica",
   reuniao: "Reunião",
   outro: "Outro",
@@ -198,12 +198,20 @@ export function CalendarioDiario({ registros, clienteId }: CalendarioDiarioProps
               <CalendarIcon className="w-5 h-5 text-primary" />
               {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
             </h3>
-            <Button variant="outline" size="sm" asChild>
-              <Link to={`/registros/novo?cliente=${clienteId}&data=${format(selectedDate, 'yyyy-MM-dd')}`}>
-                <Plus className="w-4 h-4" />
-                {isAfter(startOfDay(selectedDate), today) ? "Agendar Serviço" : "Novo Registro"}
-              </Link>
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" asChild>
+                <Link to={`/recebimentos/novo?cliente=${clienteId}&data=${format(selectedDate, 'yyyy-MM-dd')}`}>
+                  <Package className="w-4 h-4" />
+                  Recebimento
+                </Link>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link to={`/registros/novo?cliente=${clienteId}&data=${format(selectedDate, 'yyyy-MM-dd')}`}>
+                  <Plus className="w-4 h-4" />
+                  {isAfter(startOfDay(selectedDate), today) ? "Agendar" : "Registro"}
+                </Link>
+              </Button>
+            </div>
           </div>
           
           {registrosDoDia.length === 0 ? (
