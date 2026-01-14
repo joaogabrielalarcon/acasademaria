@@ -5,7 +5,11 @@ import {
   UserCircle,
   ChevronLeft,
   ChevronRight,
-  LogOut
+  LogOut,
+  Leaf,
+  Package,
+  Truck,
+  Tags
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
@@ -26,6 +30,29 @@ const navigationItems = [
     title: "Equipe",
     icon: UserCircle,
     href: "/equipe",
+  },
+];
+
+const cadastrosItems = [
+  {
+    title: "Plantas",
+    icon: Leaf,
+    href: "/plantas",
+  },
+  {
+    title: "Produtos e Insumos",
+    icon: Package,
+    href: "/insumos",
+  },
+  {
+    title: "Fornecedores",
+    icon: Truck,
+    href: "/fornecedores",
+  },
+  {
+    title: "Categorias de Plantas",
+    icon: Tags,
+    href: "/categorias-plantas",
   },
 ];
 
@@ -59,6 +86,55 @@ export function AppSidebar({ className }: AppSidebarProps) {
           {navigationItems.map((item) => {
             const isActive = location.pathname === item.href || 
               (item.href !== "/" && location.pathname.startsWith(item.href));
+            
+            const linkContent = (
+              <Link
+                to={item.href}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
+                  isActive 
+                    ? "bg-sidebar-accent text-sidebar-foreground" 
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                )}
+              >
+                <item.icon className="w-5 h-5 flex-shrink-0" />
+                {!collapsed && (
+                  <span className="font-medium text-sm">{item.title}</span>
+                )}
+              </Link>
+            );
+
+            if (collapsed) {
+              return (
+                <li key={item.title}>
+                  <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      {linkContent}
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="ml-2">
+                      {item.title}
+                    </TooltipContent>
+                  </Tooltip>
+                </li>
+              );
+            }
+
+            return <li key={item.title}>{linkContent}</li>;
+          })}
+        </ul>
+
+        {/* Cadastros Section */}
+        {!collapsed && (
+          <div className="mt-6 px-2">
+            <p className="px-3 mb-2 text-xs font-semibold text-sidebar-foreground/50 uppercase tracking-wider">
+              Cadastros
+            </p>
+          </div>
+        )}
+        <ul className="space-y-1 px-2">
+          {cadastrosItems.map((item) => {
+            const isActive = location.pathname === item.href || 
+              location.pathname.startsWith(item.href);
             
             const linkContent = (
               <Link
