@@ -127,10 +127,10 @@ export default function NovoRegistro() {
       return;
     }
 
-    if (servicos.some((s) => !s.tipo || !s.descricao)) {
+    if (servicos.some((s) => s.categoriasIds.length === 0 || !s.descricao)) {
       toast({
         title: "Serviços incompletos",
-        description: "Preencha o tipo e descrição de todos os serviços.",
+        description: "Preencha as categorias e descrição de todos os serviços.",
         variant: "destructive",
       });
       return;
