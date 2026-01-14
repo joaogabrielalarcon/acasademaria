@@ -61,6 +61,12 @@ const tipoOptions = [
   { value: "outro", label: "Outro" },
 ];
 
+const periodoOptions = [
+  { value: "manha", label: "Manhã" },
+  { value: "tarde", label: "Tarde" },
+  { value: "dia_inteiro", label: "Dia Inteiro" },
+];
+
 interface InsumoSelecionado {
   insumoId: string;
   nome: string;
@@ -71,6 +77,7 @@ interface InsumoSelecionado {
 export interface ServicoData {
   id: string;
   tipo: string;
+  periodo: string;
   trechoId: string;
   executoresIds: string[];
   solicitante: string;
@@ -186,8 +193,8 @@ export function ServicoBlock({
         {/* Content */}
         <CollapsibleContent>
           <div className="p-4 space-y-4 border-t border-primary/10">
-            {/* Tipo de Serviço e Trecho */}
-            <div className="grid gap-4 sm:grid-cols-2">
+            {/* Tipo de Serviço, Período e Trecho */}
+            <div className="grid gap-4 sm:grid-cols-3">
               <div className="space-y-2">
                 <Label>Tipo de Serviço *</Label>
                 <Select
@@ -201,6 +208,25 @@ export function ServicoBlock({
                     {tipoOptions.map((t) => (
                       <SelectItem key={t.value} value={t.value}>
                         {t.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Período</Label>
+                <Select
+                  value={servico.periodo}
+                  onValueChange={(value) => onUpdate(servico.id, { periodo: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Quando foi feito?" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {periodoOptions.map((p) => (
+                      <SelectItem key={p.value} value={p.value}>
+                        {p.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -421,6 +447,7 @@ export function createEmptyServico(): ServicoData {
   return {
     id: crypto.randomUUID(),
     tipo: "",
+    periodo: "",
     trechoId: "",
     executoresIds: [],
     solicitante: "",
