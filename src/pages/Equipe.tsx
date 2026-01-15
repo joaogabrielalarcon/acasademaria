@@ -185,6 +185,7 @@ export default function Equipe() {
   const handleOpenNew = () => {
     setEditingColaborador(null);
     resetForm();
+    setAcessoOpen(true); // Abrir seção de acesso por padrão em novos cadastros
     setDialogOpen(true);
   };
 
@@ -332,17 +333,47 @@ export default function Equipe() {
       return;
     }
 
-    // Validar campos de acesso se preenchidos
-    const shouldCreateAccess = canManageUsers && !editingColaborador && username.trim() && emailAcesso.trim() && senhaInicial.trim();
-    
-    if (shouldCreateAccess && senhaInicial.length < 6) {
-      toast({
-        title: "Senha muito curta",
-        description: "A senha deve ter pelo menos 6 caracteres.",
-        variant: "destructive",
-      });
-      return;
+    // Para novos colaboradores, acesso é obrigatório
+    if (!editingColaborador && canManageUsers) {
+      if (!username.trim()) {
+        toast({
+          title: "Campo obrigatório",
+          description: "Informe o nome de usuário para acesso ao sistema.",
+          variant: "destructive",
+        });
+        setAcessoOpen(true);
+        return;
+      }
+      if (!emailAcesso.trim()) {
+        toast({
+          title: "Campo obrigatório",
+          description: "Informe o email para acesso ao sistema.",
+          variant: "destructive",
+        });
+        setAcessoOpen(true);
+        return;
+      }
+      if (!senhaInicial.trim()) {
+        toast({
+          title: "Campo obrigatório",
+          description: "Informe a senha inicial para acesso ao sistema.",
+          variant: "destructive",
+        });
+        setAcessoOpen(true);
+        return;
+      }
+      if (senhaInicial.length < 6) {
+        toast({
+          title: "Senha muito curta",
+          description: "A senha deve ter pelo menos 6 caracteres.",
+          variant: "destructive",
+        });
+        setAcessoOpen(true);
+        return;
+      }
     }
+
+    const shouldCreateAccess = canManageUsers && !editingColaborador && username.trim() && emailAcesso.trim() && senhaInicial.trim();
 
     setIsSaving(true);
 
@@ -946,40 +977,43 @@ export default function Equipe() {
                           Criar acesso para que o colaborador possa entrar no sistema.
                         </p>
                       ) : (
-                        <p className="text-sm text-muted-foreground">
-                          Preencha para criar o acesso automaticamente ao salvar. Deixe em branco para criar apenas o cadastro.
+                        <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">
+                          * Campos obrigatórios para finalizar o cadastro
                         </p>
                       )}
                       
                       <div className="space-y-2">
-                        <Label htmlFor="username">Nome de Usuário {editingColaborador ? "*" : "(opcional)"}</Label>
+                        <Label htmlFor="username">Nome de Usuário *</Label>
                         <Input
                           id="username"
                           placeholder="ex: joao.silva"
                           value={username}
                           onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/\s/g, ""))}
+                          required
                         />
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="emailAcesso">Email {editingColaborador ? "*" : "(opcional)"}</Label>
+                        <Label htmlFor="emailAcesso">Email *</Label>
                         <Input
                           id="emailAcesso"
                           type="email"
                           placeholder="email@empresa.com"
                           value={emailAcesso}
                           onChange={(e) => setEmailAcesso(e.target.value)}
+                          required
                         />
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="senhaInicial">Senha Inicial {editingColaborador ? "*" : "(opcional)"}</Label>
+                        <Label htmlFor="senhaInicial">Senha Inicial *</Label>
                         <Input
                           id="senhaInicial"
                           type="password"
                           placeholder="Mín. 6 caracteres"
                           value={senhaInicial}
                           onChange={(e) => setSenhaInicial(e.target.value)}
+                          required
                         />
                         <p className="text-xs text-muted-foreground">
                           O colaborador poderá alterar a senha após o primeiro login.
