@@ -27,8 +27,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Pencil, Search } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Pencil, Search, Trash2 } from "lucide-react";
 import { useFornecedores, Fornecedor } from "@/hooks/useFornecedores";
+import { useAuth, useIsAdmin } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatCNPJ, formatPhone, capitalizeWords } from "@/hooks/useInputMasks";
@@ -38,6 +49,10 @@ export default function Fornecedores() {
   const [editingFornecedor, setEditingFornecedor] = useState<Fornecedor | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("ativo");
+  const [itemToDelete, setItemToDelete] = useState<Fornecedor | null>(null);
+
+  const { user } = useAuth();
+  const isAdmin = useIsAdmin(user?.id);
 
   const { data: fornecedores = [], isLoading } = useFornecedores();
   const queryClient = useQueryClient();
@@ -116,6 +131,27 @@ export default function Fornecedores() {
       return;
     }
     saveMutation.mutate(formData);
+  };
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("fornecedores").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["fornecedores"] });
+      toast.success("Fornecedor excluído!");
+      setItemToDelete(null);
+    },
+    onError: (error) => {
+      toast.error("Erro ao excluir: " + error.message);
+    },
+  });
+
+  const handleDelete = () => {
+    if (itemToDelete) {
+      deleteMutation.mutate(itemToDelete.id);
+    }
   };
 
   // Filtrar e ordenar alfabeticamente
@@ -343,13 +379,25 @@ export default function Fornecedores() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => handleEdit(fornecedor)}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => handleEdit(fornecedor)}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        {isAdmin && (
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => setItemToDelete(fornecedor)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -358,6 +406,24 @@ export default function Fornecedores() {
           </Table>
         </div>
       </div>
+
+      {/* Dialog de confirmação de exclusão */}
+      <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir fornecedor?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. O fornecedor "{itemToDelete?.nome}" será removido permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }

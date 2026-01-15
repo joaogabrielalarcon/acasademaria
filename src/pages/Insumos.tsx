@@ -27,9 +27,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Pencil, Search } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Pencil, Search, Trash2 } from "lucide-react";
 import { useInsumos, Insumo } from "@/hooks/useInsumos";
 import { useFornecedores } from "@/hooks/useFornecedores";
+import { useAuth, useIsAdmin } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { capitalizeWords } from "@/hooks/useInputMasks";
@@ -50,6 +61,10 @@ export default function Insumos() {
   const [editingInsumo, setEditingInsumo] = useState<Insumo | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategoria, setFilterCategoria] = useState<string>("todas");
+  const [itemToDelete, setItemToDelete] = useState<Insumo | null>(null);
+
+  const { user } = useAuth();
+  const isAdmin = useIsAdmin(user?.id);
 
   const { data: insumos = [], isLoading } = useInsumos();
   const { data: fornecedores = [] } = useFornecedores();
@@ -131,6 +146,27 @@ export default function Insumos() {
       return;
     }
     saveMutation.mutate(formData);
+  };
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("insumos").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["insumos"] });
+      toast.success("Insumo excluído!");
+      setItemToDelete(null);
+    },
+    onError: (error) => {
+      toast.error("Erro ao excluir: " + error.message);
+    },
+  });
+
+  const handleDelete = () => {
+    if (itemToDelete) {
+      deleteMutation.mutate(itemToDelete.id);
+    }
   };
 
   // Filtrar e ordenar alfabeticamente
@@ -329,13 +365,25 @@ export default function Insumos() {
                     <TableCell>{insumo.categoria || "-"}</TableCell>
                     <TableCell>{insumo.unidade || "-"}</TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => handleEdit(insumo)}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => handleEdit(insumo)}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        {isAdmin && (
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => setItemToDelete(insumo)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -344,6 +392,24 @@ export default function Insumos() {
           </Table>
         </div>
       </div>
+
+      {/* Dialog de confirmação de exclusão */}
+      <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir insumo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. O insumo "{itemToDelete?.nome}" será removido permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }

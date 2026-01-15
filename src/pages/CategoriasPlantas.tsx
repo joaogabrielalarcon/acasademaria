@@ -19,9 +19,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil, Search } from "lucide-react";
+import { Plus, Pencil, Search, Trash2 } from "lucide-react";
 import { useCategoriasPlantas, CategoriaPlanta } from "@/hooks/useCategoriasPlantas";
+import { useAuth, useIsAdmin } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -29,6 +40,10 @@ export default function CategoriasPlantas() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCategoria, setEditingCategoria] = useState<CategoriaPlanta | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [itemToDelete, setItemToDelete] = useState<CategoriaPlanta | null>(null);
+
+  const { user } = useAuth();
+  const isAdmin = useIsAdmin(user?.id);
 
   const { data: categorias = [], isLoading } = useCategoriasPlantas();
   const queryClient = useQueryClient();
@@ -114,6 +129,27 @@ export default function CategoriasPlantas() {
       return;
     }
     saveMutation.mutate(formData);
+  };
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("categorias_plantas").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categorias_plantas"] });
+      toast.success("Categoria excluída!");
+      setItemToDelete(null);
+    },
+    onError: (error) => {
+      toast.error("Erro ao excluir: " + error.message);
+    },
+  });
+
+  const handleDelete = () => {
+    if (itemToDelete) {
+      deleteMutation.mutate(itemToDelete.id);
+    }
   };
 
   return (
@@ -245,13 +281,25 @@ export default function CategoriasPlantas() {
                       />
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => handleEdit(categoria)}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => handleEdit(categoria)}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        {isAdmin && (
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => setItemToDelete(categoria)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -260,6 +308,24 @@ export default function CategoriasPlantas() {
           </Table>
         </div>
       </div>
+
+      {/* Dialog de confirmação de exclusão */}
+      <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir categoria?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. A categoria "{itemToDelete?.nome}" será removida permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }

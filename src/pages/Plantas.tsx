@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,19 +19,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Pencil, Search } from "lucide-react";
-import { usePlantas } from "@/hooks/usePlantas";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Pencil, Search, Trash2 } from "lucide-react";
+import { usePlantas, Planta } from "@/hooks/usePlantas";
 import { useCategoriasPlantas } from "@/hooks/useCategoriasPlantas";
 import { useFornecedores } from "@/hooks/useFornecedores";
+import { useAuth, useIsAdmin } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export default function Plantas() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategoria, setFilterCategoria] = useState<string>("todas");
   const [filterFornecedor, setFilterFornecedor] = useState<string>("todos");
+  const [itemToDelete, setItemToDelete] = useState<Planta | null>(null);
+
+  const { user } = useAuth();
+  const isAdmin = useIsAdmin(user?.id);
 
   const { data: plantas = [], isLoading } = usePlantas();
   const { data: categorias = [] } = useCategoriasPlantas();
   const { data: fornecedores = [] } = useFornecedores();
+  const queryClient = useQueryClient();
 
   const categoriasMap = new Map(categorias.map((c) => [c.id, c.nome]));
   const fornecedoresMap = new Map(fornecedores.map((f) => [f.id, f.nome]));
@@ -49,6 +68,27 @@ export default function Plantas() {
     });
     return filtered.sort((a, b) => a.nome_popular.localeCompare(b.nome_popular, 'pt-BR'));
   }, [plantas, searchTerm, filterCategoria, filterFornecedor]);
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("plantas").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["plantas"] });
+      toast.success("Planta excluída!");
+      setItemToDelete(null);
+    },
+    onError: (error) => {
+      toast.error("Erro ao excluir: " + error.message);
+    },
+  });
+
+  const handleDelete = () => {
+    if (itemToDelete) {
+      deleteMutation.mutate(itemToDelete.id);
+    }
+  };
 
   return (
     <AppLayout>
@@ -153,11 +193,23 @@ export default function Plantas() {
                     <TableCell>{planta.porte || "-"}</TableCell>
                     <TableCell>{planta.unidade || "-"}</TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="icon-sm" asChild>
-                        <Link to={`/plantas/${planta.id}/editar`}>
-                          <Pencil className="w-4 h-4" />
-                        </Link>
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon-sm" asChild>
+                          <Link to={`/plantas/${planta.id}/editar`}>
+                            <Pencil className="w-4 h-4" />
+                          </Link>
+                        </Button>
+                        {isAdmin && (
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => setItemToDelete(planta)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -166,6 +218,24 @@ export default function Plantas() {
           </Table>
         </div>
       </div>
+
+      {/* Dialog de confirmação de exclusão */}
+      <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir planta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. A planta "{itemToDelete?.nome_popular}" será removida permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }
