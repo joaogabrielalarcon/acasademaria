@@ -13,7 +13,8 @@ import {
   Settings,
   ChevronDown,
   Building2,
-  Shield
+  Shield,
+  Wrench
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
@@ -68,6 +69,12 @@ const allNavigationItems = [
     title: "Fornecedores",
     icon: Truck,
     href: "/fornecedores",
+    roles: ["admin"] as UserRole[],
+  },
+  {
+    title: "Máquinas",
+    icon: Wrench,
+    href: "/maquinas",
     roles: ["admin"] as UserRole[],
   },
   {

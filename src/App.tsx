@@ -16,6 +16,7 @@ import CategoriasPlantas from "./pages/CategoriasPlantas";
 import Plantas from "./pages/Plantas";
 import NovaPlanta from "./pages/NovaPlanta";
 import Insumos from "./pages/Insumos";
+import Maquinas from "./pages/Maquinas";
 import Login from "./pages/Login";
 import AlterarSenha from "./pages/AlterarSenha";
 import Areas from "./pages/Areas";
@@ -51,6 +52,7 @@ const App = () => (
           <Route path="/plantas/nova" element={<NovaPlanta />} />
           <Route path="/plantas/:id/editar" element={<NovaPlanta />} />
           <Route path="/insumos" element={<Insumos />} />
+          <Route path="/maquinas" element={<Maquinas />} />
           <Route path="/areas" element={<Areas />} />
           <Route path="/acessos" element={<ControleAcessos />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
