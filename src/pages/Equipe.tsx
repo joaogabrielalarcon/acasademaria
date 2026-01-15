@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Search, Plus, UserCircle, MoreVertical, Pencil, ChevronDown, Package, Trash2, Calendar, Key, RefreshCw } from "lucide-react";
-import { useAuth, useIsManager } from "@/hooks/useAuth";
+import { useAuth, useIsManager, useIsAdmin } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -117,6 +117,8 @@ export default function Equipe() {
 
   const { user } = useAuth();
   const canManageUsers = useIsManager(user?.id);
+  const isAdmin = useIsAdmin(user?.id);
+  const [colaboradorToDelete, setColaboradorToDelete] = useState<Colaborador | null>(null);
   
   const { data: colaboradores = [], isLoading } = useColaboradores();
   const { data: maquinas = [] } = useMaquinas();
@@ -149,6 +151,30 @@ export default function Equipe() {
       toast({
         title: "Erro",
         description: "Não foi possível atualizar o status.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteColaboradorMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("colaboradores")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["colaboradores"] });
+      toast({
+        title: "Colaborador excluído",
+        description: "O cadastro foi removido permanentemente.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro ao excluir",
+        description: "Não foi possível excluir o colaborador.",
         variant: "destructive",
       });
     },
@@ -650,6 +676,15 @@ export default function Equipe() {
                         <Package className="w-4 h-4 mr-2" />
                         Entregas
                       </DropdownMenuItem>
+                      {isAdmin && (
+                        <DropdownMenuItem 
+                          onClick={() => setColaboradorToDelete(colaborador)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Excluir
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -1214,7 +1249,7 @@ export default function Equipe() {
         </DialogContent>
       </Dialog>
 
-      {/* Alert de confirmação de exclusão */}
+      {/* Alert de confirmação de exclusão de entrega */}
       <AlertDialog open={!!entregaToDelete} onOpenChange={() => setEntregaToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1226,6 +1261,32 @@ export default function Equipe() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteEntrega}>
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Alert de confirmação de exclusão de colaborador */}
+      <AlertDialog open={!!colaboradorToDelete} onOpenChange={() => setColaboradorToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir colaborador?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. O colaborador "{colaboradorToDelete?.nome}" será removido permanentemente do sistema.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                if (colaboradorToDelete) {
+                  deleteColaboradorMutation.mutate(colaboradorToDelete.id);
+                  setColaboradorToDelete(null);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>

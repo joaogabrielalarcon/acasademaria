@@ -22,7 +22,8 @@ import {
   X,
   Loader2,
   Image as ImageIcon,
-  Play
+  Play,
+  Trash2
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,19 @@ import {
   usePropostasCliente, 
   useRegistrosComDetalhes 
 } from "@/hooks/useCliente";
+import { useAuth, useIsAdmin } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   ativo: { label: "Ativo", className: "bg-primary/20 text-primary border-primary/30" },
@@ -67,12 +81,71 @@ export default function ClientePerfil() {
   const defaultTab = searchParams.get("tab") || "cadastro";
   const [diarioView, setDiarioView] = useState<'feed' | 'calendario'>('feed');
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  // Auth and permissions
+  const { user } = useAuth();
+  const isAdmin = useIsAdmin(user?.id);
+  
+  // Delete states
+  const [clienteToDelete, setClienteToDelete] = useState(false);
+  const [registroToDelete, setRegistroToDelete] = useState<{ id: string; descricao: string } | null>(null);
   
   // Fetch real data from database
   const { data: cliente, isLoading: loadingCliente, error: clienteError } = useCliente(id);
   const { data: trechos = [] } = useTrechosCliente(id);
   const { data: propostas = [] } = usePropostasCliente(id);
   const { registros, isLoading: loadingRegistros } = useRegistrosComDetalhes(id);
+  
+  // Delete mutations
+  const deleteClienteMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("clientes")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["clientes"] });
+      toast({
+        title: "Cliente excluído",
+        description: "O cadastro foi removido permanentemente.",
+      });
+      navigate("/");
+    },
+    onError: () => {
+      toast({
+        title: "Erro ao excluir",
+        description: "Não foi possível excluir o cliente. Verifique se há registros vinculados.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const deleteRegistroMutation = useMutation({
+    mutationFn: async (registroId: string) => {
+      const { error } = await supabase
+        .from("registros")
+        .delete()
+        .eq("id", registroId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["registros", id] });
+      toast({
+        title: "Registro excluído",
+        description: "O registro foi removido permanentemente.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro ao excluir",
+        description: "Não foi possível excluir o registro.",
+        variant: "destructive",
+      });
+    },
+  });
   
   const handleEditarRegistro = (registroId: string) => {
     navigate(`/registros/${registroId}/editar`);
@@ -182,12 +255,24 @@ export default function ClientePerfil() {
             </div>
           </div>
         </div>
-        <Button variant="outline" asChild>
-          <Link to={`/clientes/${id}/editar`}>
-            <Pencil className="w-4 h-4" />
-            Editar Cadastro
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" asChild>
+            <Link to={`/clientes/${id}/editar`}>
+              <Pencil className="w-4 h-4" />
+              Editar Cadastro
+            </Link>
+          </Button>
+          {isAdmin && (
+            <Button 
+              variant="outline" 
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={() => setClienteToDelete(true)}
+            >
+              <Trash2 className="w-4 h-4" />
+              Excluir
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Tabs */}
@@ -581,7 +666,7 @@ export default function ClientePerfil() {
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="gap-1 h-7 text-xs text-destructive hover:text-destructive"
+                              className="gap-1 h-7 text-xs text-muted-foreground hover:text-muted-foreground"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleCancelarRegistro(registro.id);
@@ -590,6 +675,20 @@ export default function ClientePerfil() {
                               <X className="w-3 h-3" />
                               Cancelar
                             </Button>
+                            {isAdmin && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="gap-1 h-7 text-xs text-destructive hover:text-destructive"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setRegistroToDelete({ id: registro.id, descricao: registro.descricao });
+                                }}
+                              >
+                                <Trash2 className="w-3 h-3" />
+                                Excluir
+                              </Button>
+                            )}
                           </div>
                         </div>
 
@@ -754,6 +853,53 @@ export default function ClientePerfil() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Alert de confirmação de exclusão de cliente */}
+      <AlertDialog open={clienteToDelete} onOpenChange={setClienteToDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir cliente?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. O cliente "{cliente.nome}" e todos os dados relacionados serão removidos permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => deleteClienteMutation.mutate()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Alert de confirmação de exclusão de registro */}
+      <AlertDialog open={!!registroToDelete} onOpenChange={() => setRegistroToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir registro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. O registro "{registroToDelete?.descricao?.slice(0, 50)}..." será removido permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                if (registroToDelete) {
+                  deleteRegistroMutation.mutate(registroToDelete.id);
+                  setRegistroToDelete(null);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }
