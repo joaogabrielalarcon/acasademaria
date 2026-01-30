@@ -36,8 +36,41 @@ export function useColaboradores() {
         .select("id, nome, cargo, area, area_id, telefone, endereco, cidade, estado, cep, maquinas_ids, tamanho_camiseta, tamanho_calca, tamanho_calcado, observacoes, data_nascimento, cpf, ativo, foto_url, user_id, email, username")
         .order("nome", { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching colaboradores:", error);
+        // Return empty array if permission denied (non-admin users)
+        if (error.code === "42501" || error.message.includes("permission")) {
+          return [];
+        }
+        throw error;
+      }
       return data as Colaborador[];
+    },
+  });
+}
+
+// Hook for basic colaborador info (accessible to all authenticated users)
+export interface ColaboradorBasico {
+  id: string;
+  nome: string;
+  cargo: string | null;
+  area: string | null;
+  area_id: string | null;
+  ativo: boolean;
+  foto_url: string | null;
+}
+
+export function useColaboradoresBasico() {
+  return useQuery({
+    queryKey: ["colaboradores", "basico"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("colaboradores_basico")
+        .select("*")
+        .order("nome", { ascending: true });
+
+      if (error) throw error;
+      return data as ColaboradorBasico[];
     },
   });
 }
@@ -52,8 +85,31 @@ export function useColaboradoresAtivos() {
         .eq("ativo", true)
         .order("nome", { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching colaboradores ativos:", error);
+        if (error.code === "42501" || error.message.includes("permission")) {
+          return [];
+        }
+        throw error;
+      }
       return data as Colaborador[];
+    },
+  });
+}
+
+// Hook for basic active colaboradores (accessible to all authenticated users)
+export function useColaboradoresAtivosBasico() {
+  return useQuery({
+    queryKey: ["colaboradores", "ativos", "basico"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("colaboradores_basico")
+        .select("*")
+        .eq("ativo", true)
+        .order("nome", { ascending: true });
+
+      if (error) throw error;
+      return data as ColaboradorBasico[];
     },
   });
 }

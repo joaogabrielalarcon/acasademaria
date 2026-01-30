@@ -10,6 +10,17 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Security: Check if bootstrap is disabled via environment variable
+  if (Deno.env.get("BOOTSTRAP_DISABLED") === "true") {
+    return new Response(
+      JSON.stringify({ error: "Bootstrap já foi realizado e está desabilitado." }),
+      { 
+        status: 403, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      }
+    );
+  }
+
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
