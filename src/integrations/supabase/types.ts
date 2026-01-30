@@ -371,6 +371,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "entregas_colaborador_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "entregas_colaborador_insumo_id_fkey"
             columns: ["insumo_id"]
             isOneToOne: false
@@ -1091,7 +1098,44 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      colaboradores_basico: {
+        Row: {
+          area: string | null
+          area_id: string | null
+          ativo: boolean | null
+          cargo: string | null
+          foto_url: string | null
+          id: string | null
+          nome: string | null
+        }
+        Insert: {
+          area?: string | null
+          area_id?: string | null
+          ativo?: boolean | null
+          cargo?: string | null
+          foto_url?: string | null
+          id?: string | null
+          nome?: string | null
+        }
+        Update: {
+          area?: string | null
+          area_id?: string | null
+          ativo?: boolean | null
+          cargo?: string | null
+          foto_url?: string | null
+          id?: string | null
+          nome?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "colaboradores_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "areas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       can_manage_users: { Args: { _user_id: string }; Returns: boolean }
