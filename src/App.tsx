@@ -11,6 +11,7 @@ import NovoRegistro from "./pages/NovoRegistro";
 import RegistroDetalhe from "./pages/RegistroDetalhe";
 import NovaProposta from "./pages/NovaProposta";
 import NovoRecebimento from "./pages/NovoRecebimento";
+import NovaSolicitacao from "./pages/NovaSolicitacao";
 import Fornecedores from "./pages/Fornecedores";
 import CategoriasPlantas from "./pages/CategoriasPlantas";
 import Plantas from "./pages/Plantas";
@@ -45,6 +46,7 @@ const App = () => (
           <Route path="/registros/:id" element={<RegistroDetalhe />} />
           <Route path="/registros/:id/editar" element={<RegistroDetalhe />} />
           <Route path="/recebimentos/novo" element={<NovoRecebimento />} />
+          <Route path="/solicitacoes/nova" element={<NovaSolicitacao />} />
           <Route path="/propostas/nova" element={<NovaProposta />} />
           <Route path="/fornecedores" element={<Fornecedores />} />
           <Route path="/categorias-plantas" element={<CategoriasPlantas />} />

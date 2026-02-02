@@ -92,6 +92,8 @@ export interface Registro {
   executores_ids: string[];
   categorias_ids: string[];
   midia: { url: string; type: string }[] | null;
+  prioridade: string | null;
+  status_solicitacao: string | null;
   trecho?: {
     nome: string;
   };
@@ -192,7 +194,9 @@ export function useRegistrosCliente(clienteId: string | undefined) {
           equipe_presente_ids,
           executores_ids,
           categorias_ids,
-          midia
+          midia,
+          prioridade,
+          status_solicitacao
         `)
         .eq("cliente_id", clienteId)
         .order("data_servico", { ascending: false });
@@ -303,6 +307,8 @@ export function useRegistrosComDetalhes(clienteId: string | undefined) {
           unidade: insumo?.unidade || "un",
         };
       }),
+      prioridade: registro.prioridade || null,
+      statusSolicitacao: registro.status_solicitacao || null,
     };
   });
   
