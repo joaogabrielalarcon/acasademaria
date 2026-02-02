@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Plus, Users, Calendar, Bell, Leaf, Package, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, Users, Calendar, Bell, Leaf, Package, Loader2, MessageSquare } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -262,15 +262,18 @@ export default function NovoRegistro() {
   const clienteNome = clientes.find((c) => c.id === selectedCliente)?.nome;
 
   // Tipo de registro selecionado
-  const [tipoRegistro, setTipoRegistro] = useState<"servico" | "recebimento" | null>(null);
+  const [tipoRegistro, setTipoRegistro] = useState<"servico" | "recebimento" | "solicitacao" | null>(null);
 
-  // Se selecionou recebimento, redirecionar
-  const handleSelectTipoRegistro = (tipo: "servico" | "recebimento") => {
+  // Se selecionou recebimento ou solicitação, redirecionar
+  const handleSelectTipoRegistro = (tipo: "servico" | "recebimento" | "solicitacao") => {
+    const params = new URLSearchParams();
+    if (clienteIdFromUrl) params.set("cliente", clienteIdFromUrl);
+    params.set("data", dataVisita);
+    
     if (tipo === "recebimento") {
-      const params = new URLSearchParams();
-      if (clienteIdFromUrl) params.set("cliente", clienteIdFromUrl);
-      params.set("data", dataVisita);
       navigate(`/recebimentos/novo?${params.toString()}`);
+    } else if (tipo === "solicitacao") {
+      navigate(`/solicitacoes/nova?${params.toString()}`);
     } else {
       setTipoRegistro(tipo);
     }
@@ -300,7 +303,7 @@ export default function NovoRegistro() {
               Escolha o tipo de registro que deseja criar
             </p>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <button
                 type="button"
                 onClick={() => handleSelectTipoRegistro("servico")}
@@ -337,6 +340,24 @@ export default function NovoRegistro() {
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Registre a chegada de plantas, insumos e outros materiais
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSelectTipoRegistro("solicitacao")}
+                className="card-botanical p-6 text-left hover:border-blue-500/50 transition-colors group"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-3 rounded-lg bg-blue-500/10 text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                    <MessageSquare className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-display text-lg font-semibold text-foreground">
+                    Solicitação / Observação
+                  </h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Registre solicitações do cliente ou comentários importantes
                 </p>
               </button>
             </div>

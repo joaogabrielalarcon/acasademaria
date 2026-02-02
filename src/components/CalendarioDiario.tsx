@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { format, isSameDay, isSameMonth, parseISO, isAfter, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon, Plus, FileText, Users, User, Package, Briefcase, Image as ImageIcon, Check, X, Clock } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, FileText, Users, User, Package, Briefcase, Image as ImageIcon, Check, X, Clock, MessageSquare, AlertTriangle, ArrowUp } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,8 @@ interface Registro {
   solicitante: string | null;
   descricao: string;
   insumos: { nome: string; quantidade: number; unidade: string }[];
+  prioridade?: string | null;
+  statusSolicitacao?: string | null;
 }
 
 interface CalendarioDiarioProps {
@@ -33,9 +35,24 @@ const tipoLabels: Record<string, string> = {
   implantação: "Implantação",
   implantacao: "Implantação",
   recebimento_materiais: "Recebimento de Materiais",
+  recebimento: "Recebimento",
   visita_tecnica: "Visita Técnica",
   reuniao: "Reunião",
+  solicitacao: "Solicitação",
   outro: "Outro",
+};
+
+const prioridadeConfig: Record<string, { label: string; className: string; icon?: React.ReactNode }> = {
+  baixa: { label: "Baixa", className: "bg-muted text-muted-foreground" },
+  normal: { label: "Normal", className: "bg-blue-500/20 text-blue-700 dark:text-blue-300" },
+  alta: { label: "Alta", className: "bg-amber-500/20 text-amber-700 dark:text-amber-300", icon: <ArrowUp className="w-3 h-3" /> },
+  urgente: { label: "Urgente", className: "bg-destructive/20 text-destructive", icon: <AlertTriangle className="w-3 h-3" /> },
+};
+
+const statusSolicitacaoConfig: Record<string, { label: string; className: string }> = {
+  pendente: { label: "Pendente", className: "bg-amber-500/20 text-amber-700 dark:text-amber-300" },
+  em_analise: { label: "Em Análise", className: "bg-blue-500/20 text-blue-700 dark:text-blue-300" },
+  resolvido: { label: "Resolvido", className: "bg-green-500/20 text-green-700 dark:text-green-300" },
 };
 
 const statusConfig: Record<string, { label: string; className: string; icon: React.ReactNode }> = {
@@ -198,7 +215,13 @@ export function CalendarioDiario({ registros, clienteId }: CalendarioDiarioProps
               <CalendarIcon className="w-5 h-5 text-primary" />
               {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
             </h3>
-            <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+              <Button variant="outline" size="sm" asChild>
+                <Link to={`/solicitacoes/nova?cliente=${clienteId}&data=${format(selectedDate, 'yyyy-MM-dd')}`}>
+                  <MessageSquare className="w-4 h-4" />
+                  Solicitação
+                </Link>
+              </Button>
               <Button variant="outline" size="sm" asChild>
                 <Link to={`/recebimentos/novo?cliente=${clienteId}&data=${format(selectedDate, 'yyyy-MM-dd')}`}>
                   <Package className="w-4 h-4" />
@@ -208,7 +231,7 @@ export function CalendarioDiario({ registros, clienteId }: CalendarioDiarioProps
               <Button variant="outline" size="sm" asChild>
                 <Link to={`/registros/novo?cliente=${clienteId}&data=${format(selectedDate, 'yyyy-MM-dd')}`}>
                   <Plus className="w-4 h-4" />
-                  {isAfter(startOfDay(selectedDate), today) ? "Agendar" : "Registro"}
+                  {isAfter(startOfDay(selectedDate), today) ? "Agendar" : "Diária"}
                 </Link>
               </Button>
             </div>
@@ -230,6 +253,10 @@ export function CalendarioDiario({ registros, clienteId }: CalendarioDiarioProps
             <div className="space-y-3">
               {registrosDoDia.map((registro) => {
                 const statusInfo = statusConfig[registro.status || 'realizado'];
+                const isSolicitacao = registro.tipo === 'solicitacao';
+                const prioridadeInfo = registro.prioridade ? prioridadeConfig[registro.prioridade] : null;
+                const statusSolInfo = registro.statusSolicitacao ? statusSolicitacaoConfig[registro.statusSolicitacao] : null;
+                
                 return (
                   <Link 
                     key={registro.id} 
@@ -238,22 +265,46 @@ export function CalendarioDiario({ registros, clienteId }: CalendarioDiarioProps
                   >
                     <article className="card-botanical p-4 animate-fade-in hover:shadow-card transition-all">
                       <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                        {/* Photo Placeholder */}
-                        <div className="w-full sm:w-24 h-20 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                          <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                        {/* Icon or Photo Placeholder */}
+                        <div className={cn(
+                          "w-full sm:w-24 h-20 rounded-lg flex items-center justify-center flex-shrink-0",
+                          isSolicitacao ? "bg-blue-500/10" : "bg-muted"
+                        )}>
+                          {isSolicitacao ? (
+                            <MessageSquare className="w-6 h-6 text-blue-600" />
+                          ) : (
+                            <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                          )}
                         </div>
 
                         {/* Content */}
                         <div className="flex-1">
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <Badge className={cn("gap-1", statusInfo.className)}>
-                                {statusInfo.icon}
-                                {statusInfo.label}
-                              </Badge>
-                              <span className="tag-primary text-xs">
+                              {/* Para solicitações, mostrar status de acompanhamento */}
+                              {isSolicitacao && statusSolInfo ? (
+                                <Badge className={cn("gap-1", statusSolInfo.className)}>
+                                  {statusSolInfo.label}
+                                </Badge>
+                              ) : (
+                                <Badge className={cn("gap-1", statusInfo.className)}>
+                                  {statusInfo.icon}
+                                  {statusInfo.label}
+                                </Badge>
+                              )}
+                              <span className={cn(
+                                "tag-primary text-xs",
+                                isSolicitacao && "bg-blue-500/10 text-blue-700 dark:text-blue-300"
+                              )}>
                                 {tipoLabels[registro.tipo] || registro.tipo}
                               </span>
+                              {/* Prioridade para solicitações */}
+                              {isSolicitacao && prioridadeInfo && registro.prioridade !== 'normal' && (
+                                <Badge className={cn("gap-1 text-xs", prioridadeInfo.className)}>
+                                  {prioridadeInfo.icon}
+                                  {prioridadeInfo.label}
+                                </Badge>
+                              )}
                               {registro.proposta && (
                                 <Badge variant="outline" className="text-xs">
                                   {registro.proposta.codigo}
@@ -262,9 +313,11 @@ export function CalendarioDiario({ registros, clienteId }: CalendarioDiarioProps
                             </div>
                           </div>
                           
-                          <p className="text-sm font-medium text-foreground mb-1">
-                            {registro.trecho}
-                          </p>
+                          {registro.trecho && (
+                            <p className="text-sm font-medium text-foreground mb-1">
+                              {registro.trecho}
+                            </p>
+                          )}
                           <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
                             {registro.descricao}
                           </p>
@@ -279,19 +332,23 @@ export function CalendarioDiario({ registros, clienteId }: CalendarioDiarioProps
                             </div>
                           )}
 
-                          {/* Equipe do Dia */}
-                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-                            <Users className="w-3.5 h-3.5" />
-                            <span>Equipe: </span>
-                            <span className="text-foreground">{registro.equipePresente.join(", ")}</span>
-                          </div>
+                          {/* Equipe do Dia - não mostrar para solicitações */}
+                          {!isSolicitacao && registro.equipePresente.length > 0 && (
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+                              <Users className="w-3.5 h-3.5" />
+                              <span>Equipe: </span>
+                              <span className="text-foreground">{registro.equipePresente.join(", ")}</span>
+                            </div>
+                          )}
 
-                          {/* Executores */}
-                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-                            <User className="w-3.5 h-3.5" />
-                            <span>Executores: </span>
-                            <span className="text-foreground">{registro.executores.join(", ")}</span>
-                          </div>
+                          {/* Executores - não mostrar para solicitações */}
+                          {!isSolicitacao && registro.executores.length > 0 && (
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+                              <User className="w-3.5 h-3.5" />
+                              <span>Executores: </span>
+                              <span className="text-foreground">{registro.executores.join(", ")}</span>
+                            </div>
+                          )}
 
                           {/* Solicitante */}
                           {registro.solicitante && (
@@ -313,7 +370,7 @@ export function CalendarioDiario({ registros, clienteId }: CalendarioDiarioProps
                           )}
                           
                           {/* Ações para serviços agendados */}
-                          {registro.status === 'agendado' && (
+                          {registro.status === 'agendado' && !isSolicitacao && (
                             <div className="flex gap-2 mt-3 pt-3 border-t border-border">
                               <Button variant="success" size="sm" className="gap-1" onClick={(e) => e.preventDefault()}>
                                 <Check className="w-3.5 h-3.5" />

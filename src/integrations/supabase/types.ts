@@ -907,9 +907,11 @@ export type Database = {
           id: string
           midia: Json | null
           observacoes_internas: string | null
+          prioridade: string | null
           proposta_id: string | null
           solicitante: string | null
           status: string
+          status_solicitacao: string | null
           tags: string[] | null
           tipo: string
           trecho_id: string | null
@@ -934,9 +936,11 @@ export type Database = {
           id?: string
           midia?: Json | null
           observacoes_internas?: string | null
+          prioridade?: string | null
           proposta_id?: string | null
           solicitante?: string | null
           status?: string
+          status_solicitacao?: string | null
           tags?: string[] | null
           tipo: string
           trecho_id?: string | null
@@ -961,9 +965,11 @@ export type Database = {
           id?: string
           midia?: Json | null
           observacoes_internas?: string | null
+          prioridade?: string | null
           proposta_id?: string | null
           solicitante?: string | null
           status?: string
+          status_solicitacao?: string | null
           tags?: string[] | null
           tipo?: string
           trecho_id?: string | null

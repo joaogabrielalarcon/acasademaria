@@ -72,6 +72,20 @@ const tipoLabels: Record<string, string> = {
   entrega: "Entrega",
   visita_tecnica: "Visita Técnica",
   recebimento: "Recebimento",
+  solicitacao: "Solicitação",
+};
+
+const prioridadeConfig: Record<string, { label: string; className: string }> = {
+  baixa: { label: "Baixa", className: "bg-muted text-muted-foreground" },
+  normal: { label: "Normal", className: "bg-blue-500/20 text-blue-700 dark:text-blue-300" },
+  alta: { label: "Alta", className: "bg-amber-500/20 text-amber-700 dark:text-amber-300" },
+  urgente: { label: "Urgente", className: "bg-destructive/20 text-destructive" },
+};
+
+const statusSolicitacaoConfig: Record<string, { label: string; className: string }> = {
+  pendente: { label: "Pendente", className: "bg-amber-500/20 text-amber-700 dark:text-amber-300" },
+  em_analise: { label: "Em Análise", className: "bg-blue-500/20 text-blue-700 dark:text-blue-300" },
+  resolvido: { label: "Resolvido", className: "bg-green-500/20 text-green-700 dark:text-green-300" },
 };
 
 export default function ClientePerfil() {
@@ -220,6 +234,8 @@ export default function ClientePerfil() {
     solicitante: r.solicitante || undefined,
     descricao: r.descricao,
     insumos: r.insumos,
+    prioridade: r.prioridade || undefined,
+    statusSolicitacao: r.statusSolicitacao || undefined,
   }));
 
   return (
