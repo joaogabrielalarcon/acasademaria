@@ -16,8 +16,8 @@ const buttonVariants = cva(
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-sm",
         ghost: "text-foreground hover:bg-accent",
         link: "text-foreground underline-offset-4 hover:underline",
-        // Terracota sólido: fundo terracota, texto creme
-        terracota: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg",
+        // Terracota: mesmo estilo outline com hover invertido
+        terracota: "bg-background text-foreground border border-primary hover:bg-primary hover:text-primary-foreground shadow-sm",
         success: "bg-success text-success-foreground hover:bg-success/90 shadow-sm",
         botanical: "bg-background text-foreground border border-primary hover:bg-primary hover:text-primary-foreground shadow-sm",
         soft: "bg-muted text-foreground hover:bg-muted/80",
