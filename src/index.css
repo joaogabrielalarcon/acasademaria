@@ -5,101 +5,95 @@
 @tailwind utilities;
 
 /* MFM Design System - Maria Fernanda Marques Paisagismo */
-/* Esquema Monocromático: Terracota (#9E3722) + Creme (#FFF0E5) */
+/* Paleta: Fundo #fff0e5 (creme claro) + Detalhes #9e3722 (terracota) */
 
 @layer base {
   :root {
-    /* Brand Colors - Core Palette (apenas terracota e creme) */
-    --terracota: 11 77% 38%; /* #9E3722 */
-    --terracota-dark: 11 77% 30%; /* variação escura */
-    --terracota-darker: 11 77% 24%; /* variação mais escura */
-    --creme: 21 100% 95%; /* #FFF0E5 */
+    /* Brand Colors */
+    --terracota: 11 66% 38%; /* #9e3722 */
+    --terracota-dark: 11 66% 30%;
+    --terracota-darker: 11 66% 24%;
+    --creme: 21 100% 95%; /* #fff0e5 */
+    --creme-alt: 25 80% 96%; /* #fdf5ef - linhas alternadas */
+    --creme-active: 18 68% 87%; /* #f5d9c8 - item ativo */
     
-    /* Semantic Tokens - Terracota como fundo principal */
-    --background: 11 77% 38%; /* terracota */
-    --foreground: 21 100% 95%; /* creme */
+    /* Semantic Tokens - Fundo claro */
+    --background: 21 100% 95%; /* #fff0e5 */
+    --foreground: 11 66% 38%; /* #9e3722 */
     
-    --card: 11 77% 32%; /* terracota escuro */
-    --card-foreground: 21 100% 95%; /* creme */
+    --card: 21 100% 95%; /* #fff0e5 */
+    --card-foreground: 11 66% 38%; /* #9e3722 */
     
-    --popover: 11 77% 28%; /* terracota mais escuro */
-    --popover-foreground: 21 100% 95%; /* creme */
+    --popover: 21 100% 95%;
+    --popover-foreground: 11 66% 38%;
     
-    --primary: 21 100% 95%; /* creme (invertido - agora é destaque) */
-    --primary-foreground: 11 77% 38%; /* terracota */
+    --primary: 11 66% 38%; /* #9e3722 - cor primária agora é terracota */
+    --primary-foreground: 21 100% 95%; /* #fff0e5 */
     
-    --secondary: 21 100% 95%; /* creme */
-    --secondary-foreground: 11 77% 38%; /* terracota */
+    --secondary: 18 68% 87%; /* #f5d9c8 */
+    --secondary-foreground: 11 66% 38%;
     
-    --muted: 11 60% 28%; /* terracota escuro */
-    --muted-foreground: 21 80% 80%; /* creme com opacidade */
+    --muted: 25 80% 96%; /* #fdf5ef */
+    --muted-foreground: 11 66% 38% / 0.6; /* terracota 60% */
     
-    --accent: 21 100% 95%; /* creme */
-    --accent-foreground: 11 77% 38%; /* terracota */
+    --accent: 18 68% 87%; /* #f5d9c8 */
+    --accent-foreground: 11 66% 38%;
     
-    --success: 21 100% 95%; /* creme */
-    --success-foreground: 11 77% 38%; /* terracota */
+    --success: 142 60% 40%;
+    --success-foreground: 0 0% 100%;
     
-    --destructive: 21 100% 95%;
-    --destructive-foreground: 11 77% 38%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
     
-    --border: 21 50% 75%; /* creme com opacidade */
-    --input: 21 50% 75%; /* creme com opacidade */
-    --ring: 21 100% 95%; /* creme */
+    --border: 11 66% 38% / 0.2; /* #9e3722 com 20% opacidade */
+    --input: 11 66% 38% / 0.3; /* #9e3722 com 30% opacidade */
+    --ring: 11 66% 38%;
     
     --radius: 0.5rem;
     
-    /* Sidebar - terracota oficial */
-    --sidebar-background: 11 77% 38%; /* terracota oficial #9E3722 */
-    --sidebar-foreground: 21 100% 95%; /* creme */
-    --sidebar-primary: 21 100% 95%; /* creme */
-    --sidebar-primary-foreground: 11 77% 38%; /* terracota */
-    --sidebar-accent: 11 77% 32%; /* terracota levemente escuro */
-    --sidebar-accent-foreground: 21 100% 95%; /* creme */
-    --sidebar-border: 21 50% 70%; /* creme com opacidade */
-    --sidebar-ring: 21 100% 95%; /* creme */
+    /* Sidebar */
+    --sidebar-background: 21 100% 95%; /* #fff0e5 */
+    --sidebar-foreground: 11 66% 38%; /* #9e3722 */
+    --sidebar-primary: 11 66% 38%;
+    --sidebar-primary-foreground: 21 100% 95%;
+    --sidebar-accent: 18 68% 87%; /* #f5d9c8 */
+    --sidebar-accent-foreground: 11 66% 38%;
+    --sidebar-border: 11 66% 38% / 0.15;
+    --sidebar-ring: 11 66% 38%;
     
     /* Custom Properties */
-    --shadow-subtle: 0 2px 8px -2px hsl(11 77% 20% / 0.2);
-    --shadow-card: 0 4px 16px -4px hsl(11 77% 20% / 0.25);
-    --shadow-elevated: 0 8px 32px -8px hsl(11 77% 20% / 0.35);
+    --shadow-subtle: 0 2px 8px -2px hsl(11 66% 38% / 0.08);
+    --shadow-card: 0 4px 16px -4px hsl(11 66% 38% / 0.1);
+    --shadow-elevated: 0 8px 32px -8px hsl(11 66% 38% / 0.15);
     --transition-smooth: 250ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dark {
-    /* Dark mode - mesmo esquema terracota/creme */
-    --background: 11 77% 28%;
-    --foreground: 21 100% 95%;
-    
-    --card: 11 77% 24%;
-    --card-foreground: 21 100% 95%;
-    
-    --popover: 11 77% 22%;
-    --popover-foreground: 21 100% 95%;
-    
-    --primary: 21 100% 95%;
-    --primary-foreground: 11 77% 38%;
-    
-    --secondary: 21 100% 90%;
-    --secondary-foreground: 11 77% 38%;
-    
-    --muted: 11 50% 22%;
-    --muted-foreground: 21 70% 75%;
-    
-    --accent: 21 100% 95%;
-    --accent-foreground: 11 77% 38%;
-    
-    --border: 21 30% 40%;
-    --input: 21 30% 40%;
-    --ring: 21 100% 95%;
-    
-    --sidebar-background: 11 77% 32%;
-    --sidebar-foreground: 21 100% 95%;
-    --sidebar-primary: 21 100% 95%;
-    --sidebar-primary-foreground: 11 77% 38%;
-    --sidebar-accent: 11 77% 26%;
-    --sidebar-accent-foreground: 21 100% 95%;
-    --sidebar-border: 21 40% 50%;
+    /* Dark mode mantém o mesmo tema por enquanto */
+    --background: 21 100% 95%;
+    --foreground: 11 66% 38%;
+    --card: 21 100% 95%;
+    --card-foreground: 11 66% 38%;
+    --popover: 21 100% 95%;
+    --popover-foreground: 11 66% 38%;
+    --primary: 11 66% 38%;
+    --primary-foreground: 21 100% 95%;
+    --secondary: 18 68% 87%;
+    --secondary-foreground: 11 66% 38%;
+    --muted: 25 80% 96%;
+    --muted-foreground: 11 66% 38% / 0.6;
+    --accent: 18 68% 87%;
+    --accent-foreground: 11 66% 38%;
+    --border: 11 66% 38% / 0.2;
+    --input: 11 66% 38% / 0.3;
+    --ring: 11 66% 38%;
+    --sidebar-background: 21 100% 95%;
+    --sidebar-foreground: 11 66% 38%;
+    --sidebar-primary: 11 66% 38%;
+    --sidebar-primary-foreground: 21 100% 95%;
+    --sidebar-accent: 18 68% 87%;
+    --sidebar-accent-foreground: 11 66% 38%;
+    --sidebar-border: 11 66% 38% / 0.15;
   }
 }
 
@@ -115,62 +109,61 @@
   
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Playfair Display', 'Georgia', serif;
-    @apply font-semibold tracking-tight;
+    @apply font-semibold tracking-tight text-foreground;
   }
 }
 
 @layer components {
-  /* Editorial Card Style - fundo terracota escuro sobre terracota */
+  /* Card style - fundo creme, borda terracota sutil */
   .card-botanical {
     @apply bg-card rounded-lg border;
-    border-color: hsl(21 100% 95% / 0.15);
+    border-color: hsl(11 66% 38% / 0.2);
     box-shadow: var(--shadow-subtle);
     transition: all var(--transition-smooth);
   }
   
   .card-botanical:hover {
     box-shadow: var(--shadow-card);
-    border-color: hsl(21 100% 95% / 0.25);
+    border-color: hsl(11 66% 38% / 0.3);
   }
   
-  /* Timeline Vertical Line - creme */
+  /* Timeline */
   .timeline-line {
     @apply absolute left-4 top-0 bottom-0 w-0.5;
     background: linear-gradient(
       to bottom,
-      hsl(21 100% 95% / 0.2),
-      hsl(21 100% 95% / 0.5),
-      hsl(21 100% 95% / 0.2)
+      hsl(11 66% 38% / 0.1),
+      hsl(11 66% 38% / 0.3),
+      hsl(11 66% 38% / 0.1)
     );
   }
   
-  /* Timeline Dot - creme */
   .timeline-dot {
     @apply w-3 h-3 rounded-full shadow-sm;
-    background: hsl(21 100% 95%);
-    border: 2px solid hsl(11 77% 38%);
+    background: hsl(11 66% 38%);
+    border: 2px solid hsl(21 100% 95%);
   }
   
-  /* Tag Styles - creme translúcido */
+  /* Tags */
   .tag-primary {
     @apply inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium;
-    background: hsl(21 100% 95% / 0.15);
+    background: hsl(11 66% 38%);
     color: hsl(21 100% 95%);
   }
   
   .tag-secondary {
     @apply inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium;
-    background: hsl(21 100% 95% / 0.1);
-    color: hsl(21 100% 95% / 0.8);
+    background: hsl(18 68% 87%);
+    color: hsl(11 66% 38%);
   }
   
   .tag-accent {
     @apply inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium;
-    background: hsl(21 100% 95% / 0.2);
-    color: hsl(21 100% 95%);
+    background: hsl(11 66% 38% / 0.15);
+    color: hsl(11 66% 38%);
   }
   
-  /* Photo Gallery Style */
+  /* Photo Gallery */
   .photo-frame {
     @apply relative overflow-hidden rounded-lg;
     aspect-ratio: 4/3;
@@ -190,9 +183,9 @@
     @apply animate-pulse rounded-lg;
     background: linear-gradient(
       90deg,
-      hsl(21 100% 95% / 0.1),
-      hsl(21 100% 95% / 0.15),
-      hsl(21 100% 95% / 0.1)
+      hsl(11 66% 38% / 0.05),
+      hsl(11 66% 38% / 0.1),
+      hsl(11 66% 38% / 0.05)
     );
   }
   
@@ -203,21 +196,21 @@
   
   .empty-state-icon {
     @apply w-16 h-16 mb-4;
-    color: hsl(21 100% 95% / 0.4);
+    color: hsl(11 66% 38% / 0.4);
   }
   
-  /* Floating Action Button - invertido: fundo creme, ícone terracota */
+  /* FAB */
   .fab {
     @apply fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-elevated flex items-center justify-center;
-    background: hsl(21 100% 95%);
-    color: hsl(11 77% 38%);
+    background: hsl(11 66% 38%);
+    color: hsl(21 100% 95%);
     transition: all var(--transition-smooth);
     z-index: 50;
   }
   
   .fab:hover {
     transform: scale(1.05);
-    box-shadow: 0 12px 40px -8px hsl(11 77% 38% / 0.4);
+    box-shadow: 0 12px 40px -8px hsl(11 66% 38% / 0.3);
   }
   
   .fab:active {
@@ -226,45 +219,30 @@
 }
 
 @layer utilities {
-  /* Fade In Animation */
   .animate-fade-in {
     animation: fadeIn var(--transition-smooth) ease-out;
   }
   
   @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(8px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
   }
   
-  /* Slide In Animation */
   .animate-slide-in {
     animation: slideIn var(--transition-smooth) ease-out;
   }
   
   @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateX(-16px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
+    from { opacity: 0; transform: translateX(-16px); }
+    to { opacity: 1; transform: translateX(0); }
   }
   
-  /* Gradient Text - terracota to creme */
   .text-botanical {
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(
       to right,
-      hsl(21 100% 95%),
-      hsl(21 100% 85%)
+      hsl(11 66% 38%),
+      hsl(11 66% 30%)
     );
   }
 }

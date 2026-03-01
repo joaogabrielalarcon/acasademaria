@@ -9,21 +9,18 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // Primário: fundo creme, texto terracota
-        default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md",
+        // Padrão: borda terracota, fundo creme, hover inverte
+        default: "bg-background text-foreground border border-primary hover:bg-primary hover:text-primary-foreground shadow-sm",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm",
-        // Outline: borda creme, texto creme
-        outline: "border border-primary/50 bg-transparent text-primary hover:bg-primary/10 hover:border-primary",
-        // Secondary: creme com opacidade
-        secondary: "bg-primary/20 text-primary hover:bg-primary/30 shadow-sm",
-        // Ghost: texto creme
-        ghost: "text-primary hover:bg-primary/10",
-        link: "text-primary underline-offset-4 hover:underline",
-        // Terracota (invertido): agora é fundo creme, texto terracota
+        outline: "border border-primary bg-transparent text-foreground hover:bg-primary hover:text-primary-foreground",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-sm",
+        ghost: "text-foreground hover:bg-accent",
+        link: "text-foreground underline-offset-4 hover:underline",
+        // Terracota sólido: fundo terracota, texto creme
         terracota: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg",
-        success: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
-        botanical: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
-        soft: "bg-muted text-muted-foreground hover:bg-muted/80",
+        success: "bg-success text-success-foreground hover:bg-success/90 shadow-sm",
+        botanical: "bg-background text-foreground border border-primary hover:bg-primary hover:text-primary-foreground shadow-sm",
+        soft: "bg-muted text-foreground hover:bg-muted/80",
       },
       size: {
         default: "h-10 px-4 py-2",
