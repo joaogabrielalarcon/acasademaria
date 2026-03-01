@@ -57,7 +57,8 @@ Deno.serve(async (req) => {
     const { data: existingUsers, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
 
     if (usersError) {
-      throw new Error(`Erro ao verificar usuários: ${usersError.message}`);
+      console.error("Erro ao verificar usuários:", usersError);
+      throw new Error("Erro ao verificar usuários");
     }
 
     if (existingUsers.users && existingUsers.users.length > 0) {
@@ -131,8 +132,9 @@ Deno.serve(async (req) => {
     });
 
     if (createError) {
+      console.error("Erro ao criar usuário:", createError);
       return new Response(
-        JSON.stringify({ error: `Erro ao criar usuário: ${createError.message}` }),
+        JSON.stringify({ error: "Não foi possível criar o usuário" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -148,9 +150,10 @@ Deno.serve(async (req) => {
       .eq("id", colaboradorId);
 
     if (updateError) {
+      console.error("Erro ao vincular usuário:", updateError);
       await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
       return new Response(
-        JSON.stringify({ error: `Erro ao vincular usuário: ${updateError.message}` }),
+        JSON.stringify({ error: "Não foi possível vincular o usuário" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
