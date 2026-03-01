@@ -268,6 +268,54 @@ export type Database = {
           },
         ]
       }
+      custos_equipe: {
+        Row: {
+          colaborador_id: string
+          created_at: string
+          created_by: string | null
+          custo_dia_util: number | null
+          data_vigencia: string
+          id: string
+          observacoes: string | null
+          salario_mensal: number
+        }
+        Insert: {
+          colaborador_id: string
+          created_at?: string
+          created_by?: string | null
+          custo_dia_util?: number | null
+          data_vigencia?: string
+          id?: string
+          observacoes?: string | null
+          salario_mensal?: number
+        }
+        Update: {
+          colaborador_id?: string
+          created_at?: string
+          created_by?: string | null
+          custo_dia_util?: number | null
+          data_vigencia?: string
+          id?: string
+          observacoes?: string | null
+          salario_mensal?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custos_equipe_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custos_equipe_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       diarias: {
         Row: {
           cliente_id: string
@@ -497,6 +545,51 @@ export type Database = {
             columns: ["planta_id"]
             isOneToOne: false
             referencedRelation: "plantas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      historico_salarios: {
+        Row: {
+          colaborador_id: string
+          data_alteracao: string
+          id: string
+          observacao: string | null
+          salario_anterior: number | null
+          salario_novo: number
+          usuario_id: string | null
+        }
+        Insert: {
+          colaborador_id: string
+          data_alteracao?: string
+          id?: string
+          observacao?: string | null
+          salario_anterior?: number | null
+          salario_novo: number
+          usuario_id?: string | null
+        }
+        Update: {
+          colaborador_id?: string
+          data_alteracao?: string
+          id?: string
+          observacao?: string | null
+          salario_anterior?: number | null
+          salario_novo?: number
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historico_salarios_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "historico_salarios_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
             referencedColumns: ["id"]
           },
         ]

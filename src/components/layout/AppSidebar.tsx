@@ -14,7 +14,8 @@ import {
   ChevronDown,
   Building2,
   Shield,
-  Wrench
+  Wrench,
+  DollarSign
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
@@ -96,6 +97,12 @@ const configItems = [
     title: "Controle de Acessos",
     icon: Shield,
     href: "/acessos",
+    roles: ["admin"] as UserRole[],
+  },
+  {
+    title: "Custos da Equipe",
+    icon: DollarSign,
+    href: "/custos-equipe",
     roles: ["admin"] as UserRole[],
   },
 ];
