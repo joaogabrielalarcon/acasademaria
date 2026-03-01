@@ -117,7 +117,8 @@ Deno.serve(async (req) => {
     });
 
     if (createError) {
-      return new Response(JSON.stringify({ error: createError.message }), {
+      console.error("Erro ao criar usuário:", createError);
+      return new Response(JSON.stringify({ error: "Não foi possível criar o usuário" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -134,9 +135,10 @@ Deno.serve(async (req) => {
       .eq("id", colaboradorId);
 
     if (updateError) {
+      console.error("Erro ao vincular usuário:", updateError);
       // Rollback: deletar usuário criado
       await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
-      return new Response(JSON.stringify({ error: updateError.message }), {
+      return new Response(JSON.stringify({ error: "Não foi possível vincular o usuário" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
