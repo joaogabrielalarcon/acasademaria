@@ -12,6 +12,7 @@ export interface Planta {
   dap_cm: number | null;
   unidade: string | null;
   nota_qualidade: number | null;
+  midia: { url: string; tipo: string; nome: string }[] | null;
   ativo: boolean;
 }
 
@@ -26,7 +27,7 @@ export function usePlantas() {
         .order("nome_popular", { ascending: true });
 
       if (error) throw error;
-      return data as Planta[];
+      return (data ?? []) as unknown as Planta[];
     },
   });
 }

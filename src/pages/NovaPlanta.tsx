@@ -19,6 +19,7 @@ import { useFornecedores } from "@/hooks/useFornecedores";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { capitalizeWords } from "@/hooks/useInputMasks";
+import { MidiaUpload } from "@/components/MidiaUpload";
 
 export default function NovaPlanta() {
   const navigate = useNavigate();
@@ -42,6 +43,7 @@ export default function NovaPlanta() {
     preco_unitario: "",
     observacoes: "",
   });
+  const [midia, setMidia] = useState<{ url: string; tipo: string; nome: string }[]>([]);
 
   // Fetch existing plant data if editing
   const { data: plantaExistente } = useQuery({
@@ -74,6 +76,7 @@ export default function NovaPlanta() {
         preco_unitario: plantaExistente.preco_unitario?.toString() || "",
         observacoes: plantaExistente.observacoes || "",
       });
+      setMidia((plantaExistente.midia as any) || []);
     }
   }, [plantaExistente]);
 
@@ -94,6 +97,7 @@ export default function NovaPlanta() {
         nota_qualidade: formData.nota_qualidade ? parseInt(formData.nota_qualidade) : null,
         preco_unitario: formData.preco_unitario ? parseFloat(formData.preco_unitario) : null,
         observacoes: formData.observacoes || null,
+        midia: midia as any,
       };
 
       if (isEditing && id) {
@@ -289,6 +293,15 @@ export default function NovaPlanta() {
                 onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
                 placeholder="Observações sobre a planta"
                 rows={3}
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <MidiaUpload
+                value={midia}
+                onChange={setMidia}
+                folder="plantas"
+                label="Fotos e Vídeos"
               />
             </div>
           </div>
