@@ -183,7 +183,7 @@ export default function RegistroDetalhe() {
       let colaboradorMap = new Map<string, string>();
       if (allIds.length > 0) {
         const { data: cols } = await supabase
-          .from("colaboradores")
+          .from("colaboradores_basico")
           .select("id, nome")
           .in("id", allIds);
         colaboradorMap = new Map((cols || []).map(c => [c.id, c.nome]));

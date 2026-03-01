@@ -5,6 +5,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+function validatePassword(password: string): boolean {
+  return typeof password === "string" && password.length >= 8 && password.length <= 128 && /[a-zA-Z]/.test(password) && /[0-9]/.test(password);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -54,6 +58,13 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (!validatePassword(newPassword)) {
+      return new Response(JSON.stringify({ error: "Senha deve ter min 8 caracteres com letras e números" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Cliente admin para resetar senha
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
@@ -64,7 +75,7 @@ Deno.serve(async (req) => {
     });
 
     if (updateError) {
-      return new Response(JSON.stringify({ error: updateError.message }), {
+      return new Response(JSON.stringify({ error: "Erro ao atualizar senha" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -75,8 +86,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Erro desconhecido";
-    return new Response(JSON.stringify({ error: message }), {
+    return new Response(JSON.stringify({ error: "Erro interno do servidor" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

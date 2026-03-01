@@ -5,6 +5,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const GENERIC_AUTH_ERROR = "Usuário ou senha inválidos";
+
+function validateUsername(username: string): boolean {
+  return typeof username === "string" && username.length >= 3 && username.length <= 30 && /^[a-zA-Z0-9._-]+$/.test(username);
+}
+
+function validatePassword(password: string): boolean {
+  return typeof password === "string" && password.length >= 6 && password.length <= 128;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -24,6 +34,20 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (!validateUsername(username)) {
+      return new Response(JSON.stringify({ error: "Formato de usuário inválido" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (!validatePassword(password)) {
+      return new Response(JSON.stringify({ error: "Formato de senha inválido" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Cliente admin para buscar email pelo username
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
@@ -36,22 +60,9 @@ Deno.serve(async (req) => {
       .eq("username", username.toLowerCase())
       .maybeSingle();
 
-    if (searchError || !colaborador) {
-      return new Response(JSON.stringify({ error: "Usuário não encontrado" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    if (!colaborador.ativo) {
-      return new Response(JSON.stringify({ error: "Usuário inativo. Entre em contato com a administração." }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    if (!colaborador.email || !colaborador.user_id) {
-      return new Response(JSON.stringify({ error: "Usuário não possui acesso ao sistema" }), {
+    // Generic error for all auth failures - prevents username enumeration
+    if (searchError || !colaborador || !colaborador.ativo || !colaborador.email || !colaborador.user_id) {
+      return new Response(JSON.stringify({ error: GENERIC_AUTH_ERROR }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -66,7 +77,7 @@ Deno.serve(async (req) => {
     });
 
     if (authError) {
-      return new Response(JSON.stringify({ error: "Senha incorreta" }), {
+      return new Response(JSON.stringify({ error: GENERIC_AUTH_ERROR }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -80,8 +91,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Erro desconhecido";
-    return new Response(JSON.stringify({ error: message }), {
+    return new Response(JSON.stringify({ error: "Erro interno do servidor" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

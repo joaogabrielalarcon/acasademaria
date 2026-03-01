@@ -219,7 +219,7 @@ export function useRegistrosComDetalhes(clienteId: string | undefined) {
     queryKey: ["colaboradores-all"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("colaboradores")
+        .from("colaboradores_basico")
         .select("id, nome");
       if (error) throw error;
       return data;
