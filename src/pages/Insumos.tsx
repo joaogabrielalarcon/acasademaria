@@ -271,7 +271,7 @@ export default function Insumos() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="preco_unitario">Preço Unitário (R$)</Label>
+                    <Label htmlFor="preco_unitario">Preço de Referência (R$)</Label>
                     <Input
                       id="preco_unitario"
                       type="number"
@@ -281,6 +281,9 @@ export default function Insumos() {
                       min={0}
                       step="0.01"
                     />
+                    <p className="text-xs text-foreground/50">
+                      Valor estimado de referência. O preço real é registrado em cada cotação de projeto.
+                    </p>
                   </div>
                 </div>
 
