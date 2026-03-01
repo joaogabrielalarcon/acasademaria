@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
+import { HistoricoPrecos } from "@/components/HistoricoPrecos";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -318,6 +319,15 @@ export default function NovaPlanta() {
             </Button>
           </div>
         </form>
+
+        {isEditing && id && (
+          <div className="space-y-3">
+            <h2 className="font-display text-lg font-bold text-foreground">
+              Histórico de Preços
+            </h2>
+            <HistoricoPrecos tipo="planta" itemId={id} />
+          </div>
+        )}
       </div>
     </AppLayout>
   );

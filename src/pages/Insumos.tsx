@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { HistoricoPrecos } from "@/components/HistoricoPrecos";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -37,7 +38,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Search, Trash2 } from "lucide-react";
+import { Plus, Pencil, Search, Trash2, History } from "lucide-react";
 import { useInsumos, Insumo } from "@/hooks/useInsumos";
 import { useFornecedores } from "@/hooks/useFornecedores";
 import { useAuth, useIsAdmin } from "@/hooks/useAuth";
@@ -376,6 +377,14 @@ export default function Insumos() {
                         >
                           <Pencil className="w-4 h-4" />
                         </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => { setEditingInsumo(insumo); setDialogOpen(false); }}
+                          title="Ver histórico de preços"
+                        >
+                          <History className="w-4 h-4" />
+                        </Button>
                         {isAdmin && (
                           <Button
                             variant="ghost"
@@ -395,6 +404,26 @@ export default function Insumos() {
           </Table>
         </div>
       </div>
+
+      {/* Histórico de preços do insumo selecionado para edição */}
+      {editingInsumo && (
+        <Dialog open={!!editingInsumo && !dialogOpen} onOpenChange={() => {}}>
+          {/* Inline: shown below table when editing */}
+        </Dialog>
+      )}
+
+      {/* Seção de histórico inline */}
+      {editingInsumo && !dialogOpen && (
+        <div className="space-y-3 mt-6">
+          <h2 className="font-display text-lg font-bold text-foreground">
+            Histórico de Preços — {editingInsumo.nome}
+          </h2>
+          <HistoricoPrecos tipo="insumo" itemId={editingInsumo.id} />
+          <Button variant="outline" size="sm" onClick={() => setEditingInsumo(null)}>
+            Fechar histórico
+          </Button>
+        </div>
+      )}
 
       {/* Dialog de confirmação de exclusão */}
       <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
