@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Clientes from "./pages/Clientes";
 import ClientePerfil from "./pages/ClientePerfil";
 import NovoCliente from "./pages/NovoCliente";
@@ -35,30 +36,30 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Clientes />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/alterar-senha" element={<AlterarSenha />} />
           <Route path="/bootstrap" element={<BootstrapAdmin />} />
-          <Route path="/clientes/novo" element={<NovoCliente />} />
-          <Route path="/clientes/:id" element={<ClientePerfil />} />
-          <Route path="/clientes/:id/editar" element={<NovoCliente />} />
-          <Route path="/equipe" element={<Equipe />} />
-          <Route path="/registros/novo" element={<NovoRegistro />} />
-          <Route path="/registros/:id" element={<RegistroDetalhe />} />
-          <Route path="/registros/:id/editar" element={<RegistroDetalhe />} />
-          <Route path="/recebimentos/novo" element={<NovoRecebimento />} />
-          <Route path="/solicitacoes/nova" element={<NovaSolicitacao />} />
-          <Route path="/propostas/nova" element={<NovaProposta />} />
-          <Route path="/fornecedores" element={<Fornecedores />} />
-          <Route path="/categorias-plantas" element={<CategoriasPlantas />} />
-          <Route path="/plantas" element={<Plantas />} />
-          <Route path="/plantas/nova" element={<NovaPlanta />} />
-          <Route path="/plantas/:id/editar" element={<NovaPlanta />} />
-          <Route path="/insumos" element={<Insumos />} />
-          <Route path="/maquinas" element={<Maquinas />} />
-          <Route path="/areas" element={<Areas />} />
-          <Route path="/acessos" element={<ControleAcessos />} />
-          <Route path="/custos-equipe" element={<CustosEquipe />} />
+          <Route path="/" element={<ProtectedRoute><Clientes /></ProtectedRoute>} />
+          <Route path="/alterar-senha" element={<ProtectedRoute><AlterarSenha /></ProtectedRoute>} />
+          <Route path="/clientes/novo" element={<ProtectedRoute><NovoCliente /></ProtectedRoute>} />
+          <Route path="/clientes/:id" element={<ProtectedRoute><ClientePerfil /></ProtectedRoute>} />
+          <Route path="/clientes/:id/editar" element={<ProtectedRoute><NovoCliente /></ProtectedRoute>} />
+          <Route path="/equipe" element={<ProtectedRoute><Equipe /></ProtectedRoute>} />
+          <Route path="/registros/novo" element={<ProtectedRoute><NovoRegistro /></ProtectedRoute>} />
+          <Route path="/registros/:id" element={<ProtectedRoute><RegistroDetalhe /></ProtectedRoute>} />
+          <Route path="/registros/:id/editar" element={<ProtectedRoute><RegistroDetalhe /></ProtectedRoute>} />
+          <Route path="/recebimentos/novo" element={<ProtectedRoute><NovoRecebimento /></ProtectedRoute>} />
+          <Route path="/solicitacoes/nova" element={<ProtectedRoute><NovaSolicitacao /></ProtectedRoute>} />
+          <Route path="/propostas/nova" element={<ProtectedRoute><NovaProposta /></ProtectedRoute>} />
+          <Route path="/fornecedores" element={<ProtectedRoute><Fornecedores /></ProtectedRoute>} />
+          <Route path="/categorias-plantas" element={<ProtectedRoute><CategoriasPlantas /></ProtectedRoute>} />
+          <Route path="/plantas" element={<ProtectedRoute><Plantas /></ProtectedRoute>} />
+          <Route path="/plantas/nova" element={<ProtectedRoute><NovaPlanta /></ProtectedRoute>} />
+          <Route path="/plantas/:id/editar" element={<ProtectedRoute><NovaPlanta /></ProtectedRoute>} />
+          <Route path="/insumos" element={<ProtectedRoute><Insumos /></ProtectedRoute>} />
+          <Route path="/maquinas" element={<ProtectedRoute><Maquinas /></ProtectedRoute>} />
+          <Route path="/areas" element={<ProtectedRoute><Areas /></ProtectedRoute>} />
+          <Route path="/acessos" element={<ProtectedRoute><ControleAcessos /></ProtectedRoute>} />
+          <Route path="/custos-equipe" element={<ProtectedRoute><CustosEquipe /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

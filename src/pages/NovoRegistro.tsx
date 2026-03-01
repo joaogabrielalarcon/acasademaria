@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ServicoBlock, ServicoData, createEmptyServico } from "@/components/ServicoBlock";
 import { parseISO, isAfter, startOfDay, format, subDays, addWeeks } from "date-fns";
 import { useClientesSimples } from "@/hooks/useClientes";
-import { useColaboradores } from "@/hooks/useColaboradores";
+import { useColaboradoresAtivosBasico } from "@/hooks/useColaboradores";
 import { supabase } from "@/integrations/supabase/client";
 
 const periodoOptions = [
@@ -45,7 +45,7 @@ export default function NovoRegistro() {
 
   // Dados reais do banco - ordenados alfabeticamente
   const { data: clientesRaw = [], isLoading: loadingClientes } = useClientesSimples();
-  const { data: colaboradoresRaw = [], isLoading: loadingColaboradores } = useColaboradores();
+  const { data: colaboradoresRaw = [], isLoading: loadingColaboradores } = useColaboradoresAtivosBasico();
 
   // Ordenar clientes alfabeticamente
   const clientes = [...clientesRaw].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));

@@ -74,7 +74,7 @@ export default function CustosEquipe() {
     queryKey: ["colaboradores-ativos"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("colaboradores")
+        .from("colaboradores_basico")
         .select("id, nome, cargo, ativo")
         .eq("ativo", true)
         .order("nome");
