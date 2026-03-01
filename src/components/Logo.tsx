@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import logoMfm from "@/assets/logo-mfm.png";
+import logoMfm from "@/assets/logo-mfm-raiz.png";
 
 interface LogoProps {
   variant?: "full" | "compact" | "icon";
