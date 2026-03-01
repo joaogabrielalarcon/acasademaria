@@ -1197,6 +1197,24 @@ export type Database = {
         }
         Relationships: []
       }
+      system_state: {
+        Row: {
+          created_at: string
+          key: string
+          value: boolean
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          value?: boolean
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          value?: boolean
+        }
+        Relationships: []
+      }
       trechos: {
         Row: {
           cliente_id: string
