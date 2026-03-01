@@ -19,6 +19,8 @@ export default {
         "terracota-dark": "hsl(var(--terracota-dark))",
         "terracota-darker": "hsl(var(--terracota-darker))",
         creme: "hsl(var(--creme))",
+        "creme-alt": "hsl(var(--creme-alt))",
+        "creme-active": "hsl(var(--creme-active))",
         
         // Semantic Colors
         border: "hsl(var(--border))",

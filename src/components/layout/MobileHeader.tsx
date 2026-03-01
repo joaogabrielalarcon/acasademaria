@@ -11,21 +11,21 @@ import { MobileNav } from "./MobileNav";
 
 export function MobileHeader() {
   return (
-    <header className="fixed top-0 left-0 right-0 h-14 bg-sidebar text-sidebar-foreground border-b border-sidebar-border flex items-center justify-between px-4 z-50 lg:hidden">
+    <header className="fixed top-0 left-0 right-0 h-14 bg-background text-foreground border-b border-primary/15 flex items-center justify-between px-4 z-50 lg:hidden">
       <Sheet>
         <SheetTrigger asChild>
-          <Button variant="ghost" size="icon-sm" className="text-foreground hover:bg-sidebar-accent">
+          <Button variant="ghost" size="icon-sm" className="text-foreground hover:bg-secondary">
             <Menu className="w-5 h-5" />
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-72 p-0 bg-sidebar border-sidebar-border">
+        <SheetContent side="left" className="w-72 p-0 bg-background border-primary/15">
           <MobileNav />
         </SheetContent>
       </Sheet>
 
       <Logo variant="compact" />
 
-      <Button variant="ghost" size="icon-sm" className="text-foreground hover:bg-sidebar-accent" asChild>
+      <Button variant="ghost" size="icon-sm" className="text-foreground hover:bg-secondary" asChild>
         <Link to="/registros/novo">
           <Plus className="w-5 h-5" />
         </Link>

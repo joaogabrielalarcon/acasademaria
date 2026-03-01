@@ -153,8 +153,8 @@ export function AppSidebar({ className }: AppSidebarProps) {
           "flex items-center gap-3 rounded-lg transition-all duration-200",
           isSubItem ? "px-3 py-2 text-sm" : "px-3 py-2.5",
           isActive 
-            ? "bg-sidebar-accent text-sidebar-foreground" 
-            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+            ? "bg-secondary text-foreground font-bold" 
+            : "text-foreground hover:bg-secondary/50"
         )}
       >
         <item.icon className={cn("flex-shrink-0", isSubItem ? "w-4 h-4" : "w-5 h-5")} />
@@ -219,8 +219,8 @@ export function AppSidebar({ className }: AppSidebarProps) {
                       className={cn(
                         "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
                         isConfigActive 
-                          ? "bg-sidebar-accent text-sidebar-foreground" 
-                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                          ? "bg-secondary text-foreground font-bold" 
+                          : "text-foreground hover:bg-secondary/50"
                       )}
                     >
                       <Settings className="w-5 h-5 flex-shrink-0" />
@@ -236,8 +236,8 @@ export function AppSidebar({ className }: AppSidebarProps) {
                     className={cn(
                       "flex items-center justify-between w-full px-3 py-2.5 rounded-lg transition-all duration-200",
                       isConfigActive 
-                        ? "bg-sidebar-accent/50 text-sidebar-foreground" 
-                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                        ? "bg-secondary/50 text-foreground" 
+                        : "text-foreground hover:bg-secondary/50"
                     )}
                   >
                     <div className="flex items-center gap-3">
@@ -271,7 +271,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
           variant="ghost"
           size="icon-sm"
           onClick={() => setCollapsed(!collapsed)}
-          className="w-full text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 mb-2"
+          className="w-full text-foreground/70 hover:text-foreground hover:bg-secondary/50 mb-2"
         >
           {collapsed ? (
             <ChevronRight className="w-4 h-4" />
@@ -285,18 +285,18 @@ export function AppSidebar({ className }: AppSidebarProps) {
 
         {/* User Info */}
         {!collapsed && (
-          <div className="flex items-center gap-3 px-2 py-2 rounded-lg bg-sidebar-accent/30">
-            <div className="w-8 h-8 rounded-full bg-sidebar-primary/20 flex items-center justify-center">
-              <UserCircle className="w-5 h-5 text-sidebar-primary" />
+          <div className="flex items-center gap-3 px-2 py-2 rounded-lg bg-secondary/50">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <UserCircle className="w-5 h-5 text-foreground" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user?.email?.split('@')[0] || "Usuário"}</p>
-              <p className="text-xs text-sidebar-foreground/60 truncate">{user?.email || "Não logado"}</p>
+              <p className="text-sm font-medium truncate text-foreground">{user?.email?.split('@')[0] || "Usuário"}</p>
+              <p className="text-xs text-foreground/60 truncate">{user?.email || "Não logado"}</p>
             </div>
             <Button 
               variant="ghost" 
               size="icon-sm" 
-              className="text-sidebar-foreground/50 hover:text-sidebar-foreground"
+              className="text-foreground/50 hover:text-foreground"
               onClick={handleLogout}
             >
               <LogOut className="w-4 h-4" />
