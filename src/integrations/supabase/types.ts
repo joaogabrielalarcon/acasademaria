@@ -437,6 +437,70 @@ export type Database = {
         }
         Relationships: []
       }
+      historico_precos: {
+        Row: {
+          created_at: string
+          data_alteracao: string
+          fornecedor_id: string | null
+          id: string
+          insumo_id: string | null
+          observacao: string | null
+          planta_id: string | null
+          preco_anterior: number | null
+          preco_novo: number | null
+          tipo_item: string
+          usuario_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          data_alteracao?: string
+          fornecedor_id?: string | null
+          id?: string
+          insumo_id?: string | null
+          observacao?: string | null
+          planta_id?: string | null
+          preco_anterior?: number | null
+          preco_novo?: number | null
+          tipo_item: string
+          usuario_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          data_alteracao?: string
+          fornecedor_id?: string | null
+          id?: string
+          insumo_id?: string | null
+          observacao?: string | null
+          planta_id?: string | null
+          preco_anterior?: number | null
+          preco_novo?: number | null
+          tipo_item?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historico_precos_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "historico_precos_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "insumos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "historico_precos_planta_id_fkey"
+            columns: ["planta_id"]
+            isOneToOne: false
+            referencedRelation: "plantas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       insumos: {
         Row: {
           ativo: boolean
