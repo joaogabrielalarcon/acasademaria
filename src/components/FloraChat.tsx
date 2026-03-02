@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { Send, Loader2, User, Mic, Square, Minimize2, Maximize2, X, MessageCircle } from "lucide-react";
-import mafeAvatar from "@/assets/flora-avatar.png";
+import mafeAvatar from "@/assets/flora-avatar.webp";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
