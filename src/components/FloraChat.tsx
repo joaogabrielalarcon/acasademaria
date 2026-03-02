@@ -72,6 +72,7 @@ export function MafeChat() {
   const [hasUnread, setHasUnread] = useState(false);
   const [isGuiding, setIsGuiding] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastMsgStartRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const prevRouteRef = useRef(location.pathname);
 
@@ -80,14 +81,17 @@ export function MafeChat() {
 
   const currentPage = getRouteLabel(location.pathname);
 
+  // Scroll to the START of the last assistant message
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (!isLoading) {
+      lastMsgStartRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [messages, isLoading]);
 
   useEffect(() => {
     if (isLoading) {
       const interval = setInterval(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        lastMsgStartRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 300);
       return () => clearInterval(interval);
     }
@@ -319,29 +323,36 @@ export function MafeChat() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
-        {messages.filter(msg => !msg.content.startsWith("[Naveguei para:")).map((msg, i) => (
-          <div key={i} className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-            {msg.role === "assistant" && (
-              <img src={mafeAvatar} alt="Mafe" className="w-6 h-6 rounded-full object-cover object-top shrink-0 mt-1" />
-            )}
-            <div className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
-              msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
-            }`}>
-              {msg.role === "assistant" ? (
-                <div className="prose prose-sm dark:prose-invert max-w-none leading-relaxed [&>p]:my-1.5 [&>ul]:my-1.5 [&>ol]:my-1.5 [&>li]:my-0.5 [&>h1]:mt-2 [&>h2]:mt-2 [&>h3]:mt-1.5 [&>strong]:text-foreground">
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+        {messages.filter(msg => !msg.content.startsWith("[Naveguei para:")).map((msg, i, arr) => {
+          const isLastAssistant = msg.role === "assistant" && 
+            arr.slice(i + 1).every(m => m.role === "user" || m.content.startsWith("[Naveguei para:"));
+          return (
+            <div key={i} className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+              {msg.role === "assistant" && (
+                <>
+                  {isLastAssistant && <div ref={lastMsgStartRef} />}
+                  <img src={mafeAvatar} alt="Mafe" className="w-6 h-6 rounded-full object-cover object-top shrink-0 mt-1" />
+                </>
+              )}
+              <div className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
+                msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
+              }`}>
+                {msg.role === "assistant" ? (
+                  <div className="prose prose-sm dark:prose-invert max-w-none leading-relaxed [&>p]:my-1.5 [&>ul]:my-1.5 [&>ol]:my-1.5 [&>li]:my-0.5 [&>h1]:mt-2 [&>h2]:mt-2 [&>h3]:mt-1.5 [&>strong]:text-foreground">
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                )}
+              </div>
+              {msg.role === "user" && (
+                <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center shrink-0 mt-1">
+                  <User className="w-3.5 h-3.5 text-foreground" />
                 </div>
-              ) : (
-                <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
               )}
             </div>
-            {msg.role === "user" && (
-              <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center shrink-0 mt-1">
-                <User className="w-3.5 h-3.5 text-foreground" />
-              </div>
-            )}
-          </div>
-        ))}
+          );
+        })}
         {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
           <div className="flex gap-2">
             <img src={mafeAvatar} alt="Mafe" className="w-6 h-6 rounded-full object-cover object-top shrink-0" />
