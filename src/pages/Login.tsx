@@ -102,16 +102,16 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted/30 p-4">
-      <div className="w-full max-w-sm space-y-6">
+      <div className="w-full max-w-xs space-y-8">
         {/* Logo grande */}
-        <div className="flex justify-center mb-2">
-          <img src={logoMfm} alt="MFM Paisagismo" className="w-64 h-auto object-contain" />
+        <div className="flex justify-center">
+          <img src={logoMfm} alt="MFM Paisagismo" className="w-96 h-auto object-contain" />
         </div>
 
         {/* Formulário compacto */}
-        <form onSubmit={handleSubmit} className="card-botanical p-5 space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="username" className="text-xs">Usuário</Label>
+        <form onSubmit={handleSubmit} className="card-botanical p-4 space-y-2.5">
+          <div className="space-y-1">
+            <Label htmlFor="username" className="text-[11px]">Usuário</Label>
             <Input
               id="username"
               type="text"
@@ -120,12 +120,12 @@ export default function Login() {
               onChange={(e) => setUsername(e.target.value)}
               disabled={isLoading}
               autoComplete="username"
-              className="h-9 text-sm"
+              className="h-8 text-xs"
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="password" className="text-xs">Senha</Label>
+          <div className="space-y-1">
+            <Label htmlFor="password" className="text-[11px]">Senha</Label>
             <Input
               id="password"
               type="password"
@@ -134,7 +134,7 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
               autoComplete="current-password"
-              className="h-9 text-sm"
+              className="h-8 text-xs"
             />
           </div>
 
@@ -144,20 +144,20 @@ export default function Login() {
               checked={rememberMe}
               onCheckedChange={(checked) => setRememberMe(checked === true)}
             />
-            <Label htmlFor="remember" className="text-xs font-normal cursor-pointer">
+            <Label htmlFor="remember" className="text-[11px] font-normal cursor-pointer">
               Lembrar meu usuário
             </Label>
           </div>
 
           <Button 
             type="submit" 
-            className="w-full h-9 text-sm" 
+            className="w-full h-8 text-xs" 
             variant="terracota"
             disabled={isLoading}
           >
             {isLoading ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
                 Entrando...
               </>
             ) : (
@@ -166,7 +166,7 @@ export default function Login() {
           </Button>
         </form>
 
-        <p className="text-center text-xs text-muted-foreground">
+        <p className="text-center text-[11px] text-muted-foreground">
           Não tem acesso? Entre em contato com a administração.
         </p>
       </div>
