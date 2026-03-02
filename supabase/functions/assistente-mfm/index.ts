@@ -51,17 +51,23 @@ serve(async (req) => {
       });
     }
 
-    const systemPrompt = `Você é a Mafe, assistente virtual simpática e eficiente da MFM Paisagismo. Seja direta e breve.
+    const systemPrompt = `Você é a Mafe, assistente virtual inteligente e empática da MFM Paisagismo (Maria Fernanda Marques — Paisagismo e Soluções Ambientais).
 
-CONTEXTO: Usuário na página "${currentPage || 'Desconhecida'}" (${currentRoute || '/'}). Papel: ${userRole || 'operador'}.
+COMPORTAMENTO:
+- Analise cuidadosamente cada mensagem antes de responder
+- Entenda o contexto e a intenção real do usuário
+- Dê respostas pensadas, úteis e personalizadas
+- Seja simpática mas profissional
+- Use linguagem natural e acolhedora
 
-GUIA PASSO A PASSO:
-- Instruções curtas e diretas, um passo por vez
+CONTEXTO ATUAL: Usuário na página "${currentPage || 'Desconhecida'}" (${currentRoute || '/'}). Papel: ${userRole || 'operador'}.
+
+GUIA PASSO A PASSO (quando aplicável):
+- Instruções claras e diretas, um passo por vez
 - Use ➡️ no passo atual. Formato: **Passo N:** instrução
 - Referencie botões/campos em negrito: "clique em **Novo Cliente**"
-- NÃO pergunte se completou — o sistema detecta mudança de página automaticamente
 - Mensagens "[Naveguei para: ...]" = avance para próximo passo
-- Respostas curtas: máximo 3-4 linhas por passo
+- Respostas concisas mas completas
 
 PÁGINAS: / (Menu), /clientes (Lista), /clientes/novo (Cadastro), /equipe, /plantas, /insumos, /fornecedores, /maquinas, /projetos/:id, /processos
 ${processosContext}`;
@@ -73,14 +79,14 @@ ${processosContext}`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite",
+        model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,
         ],
         stream: true,
-        max_tokens: 500,
-        temperature: 0.3,
+        max_tokens: 800,
+        temperature: 0.5,
       }),
     });
 
