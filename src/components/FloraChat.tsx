@@ -70,8 +70,10 @@ export function FloraChat() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
+  const [isGuiding, setIsGuiding] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const prevRouteRef = useRef(location.pathname);
 
   const userRole = userRoles.some(r => r.role === "admin") ? "admin"
     : userRoles.some(r => r.role === "gestor") ? "gestor" : "operador";
@@ -91,54 +93,37 @@ export function FloraChat() {
     }
   }, [isLoading]);
 
-  // Speech recognition
-  const startRecording = useCallback(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      toast({ title: "Não suportado", description: "Tente o Google Chrome.", variant: "destructive" });
-      return;
+  // Detect route changes and auto-notify Flora during guided sessions
+  useEffect(() => {
+    const prevRoute = prevRouteRef.current;
+    const newRoute = location.pathname;
+    prevRouteRef.current = newRoute;
+
+    if (prevRoute === newRoute) return;
+    
+    // Only auto-send if there's an active conversation beyond the intro
+    const hasConversation = messages.length > 1;
+    if (!hasConversation || isLoading) return;
+
+    // Check if last assistant message contained step-by-step guidance
+    const lastAssistantMsg = [...messages].reverse().find(m => m.role === "assistant");
+    const hasSteps = lastAssistantMsg?.content && /passo|etapa|clique|navegue|acesse|abra/i.test(lastAssistantMsg.content);
+    
+    if (hasSteps) {
+      setIsGuiding(true);
+      const newPageLabel = getRouteLabel(newRoute);
+      // Auto-send a system-like message informing the route change
+      const navMsg: Message = { role: "user", content: `[Naveguei para: ${newPageLabel}]` };
+      setMessages(prev => [...prev, navMsg]);
+      
+      // Trigger Flora response with updated context
+      sendToFlora([...messages.filter((m, i) => !(i === 0 && m.content === FLORA_INTRO)), navMsg], newRoute, newPageLabel);
     }
-    const recognition = new SpeechRecognition();
-    recognition.lang = "pt-BR";
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    let finalTranscript = "";
-    recognition.onresult = (event: any) => {
-      let interimTranscript = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) finalTranscript += transcript + " ";
-        else interimTranscript = transcript;
-      }
-      setInput(finalTranscript + interimTranscript);
-    };
-    recognition.onerror = () => setIsRecording(false);
-    recognition.onend = () => setIsRecording(false);
-    recognitionRef.current = recognition;
-    recognition.start();
-    setIsRecording(true);
-  }, [toast]);
+  }, [location.pathname]);
 
-  const stopRecording = useCallback(() => {
-    recognitionRef.current?.stop();
-    recognitionRef.current = null;
-    setIsRecording(false);
-  }, []);
-
-  const handleSubmit = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    const trimmed = input.trim();
-    if (!trimmed || isLoading) return;
-    if (isRecording) stopRecording();
-    if (!isOpen) setIsOpen(true);
-
-    const userMsg: Message = { role: "user", content: trimmed };
-    setMessages((prev) => [...prev, userMsg]);
-    setInput("");
+  const sendToFlora = async (allMessages: Message[], route?: string, page?: string) => {
     setIsLoading(true);
-
     let assistantSoFar = "";
-    const allMessages = [...messages.filter((m, i) => !(i === 0 && m.content === FLORA_INTRO)), userMsg];
 
     try {
       const resp = await fetch(CHAT_URL, {
@@ -150,8 +135,8 @@ export function FloraChat() {
         body: JSON.stringify({
           messages: allMessages,
           userRole,
-          currentPage,
-          currentRoute: location.pathname,
+          currentPage: page || currentPage,
+          currentRoute: route || location.pathname,
         }),
       });
 
@@ -207,6 +192,55 @@ export function FloraChat() {
     }
   };
 
+  // Speech recognition
+  const startRecording = useCallback(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast({ title: "Não suportado", description: "Tente o Google Chrome.", variant: "destructive" });
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = "pt-BR";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    let finalTranscript = "";
+    recognition.onresult = (event: any) => {
+      let interimTranscript = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) finalTranscript += transcript + " ";
+        else interimTranscript = transcript;
+      }
+      setInput(finalTranscript + interimTranscript);
+    };
+    recognition.onerror = () => setIsRecording(false);
+    recognition.onend = () => setIsRecording(false);
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsRecording(true);
+  }, [toast]);
+
+  const stopRecording = useCallback(() => {
+    recognitionRef.current?.stop();
+    recognitionRef.current = null;
+    setIsRecording(false);
+  }, []);
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const trimmed = input.trim();
+    if (!trimmed || isLoading) return;
+    if (isRecording) stopRecording();
+    if (!isOpen) setIsOpen(true);
+
+    const userMsg: Message = { role: "user", content: trimmed };
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
+
+    const allMessages = [...messages.filter((m, i) => !(i === 0 && m.content === FLORA_INTRO)), userMsg];
+    await sendToFlora(allMessages);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); }
   };
@@ -240,7 +274,7 @@ export function FloraChat() {
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-foreground leading-none">Flora</p>
           <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-            📍 {currentPage}
+            Assistente virtual — MFM Paisagismo
           </p>
         </div>
         <div className="flex items-center gap-1">
@@ -255,7 +289,7 @@ export function FloraChat() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
-        {messages.map((msg, i) => (
+        {messages.filter(msg => !msg.content.startsWith("[Naveguei para:")).map((msg, i) => (
           <div key={i} className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
             {msg.role === "assistant" && (
               <img src={floraAvatar} alt="Flora" className="w-6 h-6 rounded-full object-cover object-top shrink-0 mt-1" />
