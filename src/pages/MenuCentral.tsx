@@ -9,6 +9,7 @@ import {
   Wrench,
   Settings,
   BookOpen,
+  CalendarDays,
   Send,
   Mic,
   Square,
@@ -24,6 +25,7 @@ type UserRole = "admin" | "gestor" | "operador";
 const menuItems = [
   { title: "Clientes", description: "Gerenciar clientes e perfis", icon: Users, href: "/clientes", roles: ["admin", "gestor", "operador"] as UserRole[] },
   { title: "Equipe", description: "Colaboradores e equipes", icon: UserCircle, href: "/equipe", roles: ["admin", "gestor", "operador"] as UserRole[] },
+  { title: "Calendário", description: "Datas importantes e feriados", icon: CalendarDays, href: "/calendario", roles: ["admin", "gestor"] as UserRole[] },
   { title: "Plantas", description: "Catálogo de plantas", icon: Leaf, href: "/plantas", roles: ["admin"] as UserRole[] },
   { title: "Produtos e Insumos", description: "Materiais e insumos", icon: Package, href: "/insumos", roles: ["admin"] as UserRole[] },
   { title: "Fornecedores", description: "Cadastro de fornecedores", icon: Truck, href: "/fornecedores", roles: ["admin"] as UserRole[] },
