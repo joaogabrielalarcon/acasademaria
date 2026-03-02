@@ -897,7 +897,7 @@ export default function ClientePerfil() {
                 return (
                   <Link
                     key={projeto.id}
-                    to={`/projetos/${projeto.id}/editar`}
+                    to={`/projetos/${projeto.id}`}
                     className="card-botanical p-4 block hover:border-primary/40 transition-colors"
                   >
                     <div className="flex items-center justify-between">
