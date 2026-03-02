@@ -63,6 +63,7 @@ export function useAuth() {
   };
 
   const signOut = async () => {
+    localStorage.removeItem("mfm_remember_user");
     const { error } = await supabase.auth.signOut();
     return { error };
   };
