@@ -3,6 +3,7 @@ import { useParams, Link, useSearchParams, useNavigate } from "react-router-dom"
 import { 
   ArrowLeft, 
   MapPin, 
+  FolderKanban,
   Phone, 
   Mail, 
   Calendar,
@@ -38,6 +39,7 @@ import {
   useRegistrosComDetalhes 
 } from "@/hooks/useCliente";
 import { useAuth, useIsAdmin } from "@/hooks/useAuth";
+import { useProjetosCliente, projetoStatusConfig } from "@/hooks/useProjetos";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -110,6 +112,7 @@ export default function ClientePerfil() {
   const { data: trechos = [] } = useTrechosCliente(id);
   const { data: propostas = [] } = usePropostasCliente(id);
   const { registros, isLoading: loadingRegistros } = useRegistrosComDetalhes(id);
+  const { data: projetos = [] } = useProjetosCliente(id);
   
   // Delete mutations
   const deleteClienteMutation = useMutation({
@@ -305,6 +308,10 @@ export default function ClientePerfil() {
           <TabsTrigger value="propostas" className="gap-2">
             <DollarSign className="w-4 h-4" />
             Propostas
+          </TabsTrigger>
+          <TabsTrigger value="projetos" className="gap-2">
+            <FolderKanban className="w-4 h-4" />
+            Projetos
           </TabsTrigger>
         </TabsList>
 
@@ -865,6 +872,72 @@ export default function ClientePerfil() {
                   Criar primeira proposta
                 </Link>
               </Button>
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Tab Projetos */}
+        <TabsContent value="projetos">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="font-display text-xl font-semibold text-foreground">Projetos</h2>
+            {isAdmin && (
+              <Button variant="terracota" asChild>
+                <Link to={`/projetos/novo?cliente_id=${id}`}>
+                  <Plus className="w-4 h-4" />
+                  Novo Projeto
+                </Link>
+              </Button>
+            )}
+          </div>
+
+          {projetos.length > 0 ? (
+            <div className="space-y-3">
+              {projetos.map((projeto) => {
+                const statusInfo = projetoStatusConfig[projeto.status] || projetoStatusConfig.orcamento;
+                return (
+                  <Link
+                    key={projeto.id}
+                    to={`/projetos/${projeto.id}/editar`}
+                    className="card-botanical p-4 block hover:border-primary/40 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-display font-semibold text-foreground">{projeto.titulo}</h3>
+                        {projeto.descricao && (
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{projeto.descricao}</p>
+                        )}
+                        <div className="flex items-center gap-3 mt-2">
+                          <Badge variant="outline" className={statusInfo.className}>
+                            {statusInfo.label}
+                          </Badge>
+                          {projeto.data_previsao && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              Previsão: {new Date(projeto.data_previsao + "T12:00:00").toLocaleDateString("pt-BR")}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {projeto.valor_total != null && projeto.valor_total > 0 && (
+                        <p className="text-lg font-bold text-primary">{formatCurrency(projeto.valor_total)}</p>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <FolderKanban className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
+              <p className="text-muted-foreground mb-4">Nenhum projeto encontrado</p>
+              {isAdmin && (
+                <Button variant="terracota" asChild>
+                  <Link to={`/projetos/novo?cliente_id=${id}`}>
+                    <Plus className="w-4 h-4" />
+                    Criar primeiro projeto
+                  </Link>
+                </Button>
+              )}
             </div>
           )}
         </TabsContent>
