@@ -1,25 +1,43 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Calendar, ChevronLeft, ChevronRight, Gift, Loader2 } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Gift, Loader2, Plus, Trash2, Flag, MapPin, Building2 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useQuery } from "@tanstack/react-query";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, addMonths, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
+import { getFeriados, type Feriado } from "@/lib/feriados";
+import { useAuth, useUserRoles } from "@/hooks/useAuth";
 
 interface EventoCalendario {
-  data: string; // MM-DD format for recurrence
-  dataOriginal: string; // full date
+  data: string; // MM-DD
+  dataOriginal: string;
   descricao: string;
   clienteNome: string;
   clienteId: string;
-  tipo: "aniversario" | "data_importante";
+  tipo: "aniversario" | "data_importante" | "evento_manual" | "feriado_nacional" | "feriado_estadual" | "feriado_municipal";
+  eventoId?: string; // for manual events (deletable)
 }
 
 export default function Calendario() {
-  const { data: clientes = [], isLoading } = useQuery({
+  const { user } = useAuth();
+  const { data: roles = [] } = useUserRoles(user?.id);
+  const queryClient = useQueryClient();
+  const canManage = roles.some(r => r.role === "admin" || r.role === "gestor");
+
+  const [mesAtual, setMesAtual] = useState(new Date());
+  const [novoEvento, setNovoEvento] = useState({ titulo: "", descricao: "", data: "", recorrente: false });
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const { data: clientes = [], isLoading: loadingClientes } = useQuery({
     queryKey: ["clientes-calendario"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -31,83 +49,125 @@ export default function Calendario() {
       return data;
     },
   });
-  const [mesAtual, setMesAtual] = useState(new Date());
 
-  // Consolidate all important dates from all active clients
+  const { data: eventosManuals = [], isLoading: loadingEventos } = useQuery({
+    queryKey: ["calendario-eventos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("calendario_eventos")
+        .select("*")
+        .order("data");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const addEvento = useMutation({
+    mutationFn: async (evt: typeof novoEvento) => {
+      const { error } = await supabase.from("calendario_eventos").insert({
+        titulo: evt.titulo,
+        descricao: evt.descricao || null,
+        data: evt.data,
+        recorrente: evt.recorrente,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["calendario-eventos"] });
+      setNovoEvento({ titulo: "", descricao: "", data: "", recorrente: false });
+      setDialogOpen(false);
+      toast.success("Evento adicionado ao calendário");
+    },
+    onError: () => toast.error("Erro ao adicionar evento"),
+  });
+
+  const deleteEvento = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("calendario_eventos").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["calendario-eventos"] });
+      toast.success("Evento removido");
+    },
+    onError: () => toast.error("Erro ao remover evento"),
+  });
+
+  const isLoading = loadingClientes || loadingEventos;
+
+  // Build all events
   const eventos = useMemo(() => {
     const result: EventoCalendario[] = [];
+    const anoAtual = mesAtual.getFullYear();
 
-    clientes
-      .forEach((cliente: any) => {
-        // Birthdays from proprietários
-        if (cliente.proprietarios?.length) {
-          cliente.proprietarios.forEach((p: any) => {
-            if (p.dataNascimento) {
-              result.push({
-                data: p.dataNascimento.substring(5), // MM-DD
-                dataOriginal: p.dataNascimento,
-                descricao: `🎂 Aniversário de ${p.nome} (Proprietário)`,
-                clienteNome: cliente.nome,
-                clienteId: cliente.id,
-                tipo: "aniversario",
-              });
-            }
-          });
-        }
+    // Client birthdays and important dates
+    clientes.forEach((cliente: any) => {
+      const addBirthdays = (arr: any[], label: string) => {
+        arr?.forEach((p: any) => {
+          if (p.dataNascimento) {
+            result.push({
+              data: p.dataNascimento.substring(5),
+              dataOriginal: p.dataNascimento,
+              descricao: `🎂 Aniversário de ${p.nome} (${label})`,
+              clienteNome: cliente.nome,
+              clienteId: cliente.id,
+              tipo: "aniversario",
+            });
+          }
+        });
+      };
+      addBirthdays(cliente.proprietarios, "Proprietário");
+      addBirthdays(cliente.funcionarios_casa, "Funcionário");
+      addBirthdays(cliente.assessores, "Assessor");
 
-        // Birthdays from funcionários
-        if (cliente.funcionarios_casa?.length) {
-          cliente.funcionarios_casa.forEach((f: any) => {
-            if (f.dataNascimento) {
-              result.push({
-                data: f.dataNascimento.substring(5),
-                dataOriginal: f.dataNascimento,
-                descricao: `🎂 Aniversário de ${f.nome} (Funcionário)`,
-                clienteNome: cliente.nome,
-                clienteId: cliente.id,
-                tipo: "aniversario",
-              });
-            }
-          });
-        }
-
-        // Birthdays from assessores
-        if (cliente.assessores?.length) {
-          cliente.assessores.forEach((a: any) => {
-            if (a.dataNascimento) {
-              result.push({
-                data: a.dataNascimento.substring(5),
-                dataOriginal: a.dataNascimento,
-                descricao: `🎂 Aniversário de ${a.nome} (Assessor)`,
-                clienteNome: cliente.nome,
-                clienteId: cliente.id,
-                tipo: "aniversario",
-              });
-            }
-          });
-        }
-
-        // Other important dates
-        if (cliente.datas_importantes?.length) {
-          cliente.datas_importantes.forEach((d: any) => {
-            if (d.data && !d.descricao?.startsWith("Aniversário - ")) {
-              result.push({
-                data: d.data.substring(5),
-                dataOriginal: d.data,
-                descricao: d.descricao || "Data importante",
-                clienteNome: cliente.nome,
-                clienteId: cliente.id,
-                tipo: "data_importante",
-              });
-            }
+      cliente.datas_importantes?.forEach((d: any) => {
+        if (d.data && !d.descricao?.startsWith("Aniversário - ")) {
+          result.push({
+            data: d.data.substring(5),
+            dataOriginal: d.data,
+            descricao: d.descricao || "Data importante",
+            clienteNome: cliente.nome,
+            clienteId: cliente.id,
+            tipo: "data_importante",
           });
         }
       });
+    });
+
+    // Manual events
+    eventosManuals.forEach((evt: any) => {
+      const mmdd = evt.recorrente
+        ? evt.data.substring(5)
+        : evt.data.substring(5);
+      result.push({
+        data: mmdd,
+        dataOriginal: evt.data,
+        descricao: `📋 ${evt.titulo}`,
+        clienteNome: evt.descricao || "Evento da empresa",
+        clienteId: "",
+        tipo: "evento_manual",
+        eventoId: evt.id,
+      });
+    });
+
+    // Feriados
+    const feriados = getFeriados(anoAtual);
+    feriados.forEach((f: Feriado) => {
+      const tipoMap = { nacional: "feriado_nacional", estadual: "feriado_estadual", municipal: "feriado_municipal" } as const;
+      result.push({
+        data: f.data,
+        dataOriginal: `${anoAtual}-${f.data}`,
+        descricao: f.nome,
+        clienteNome: f.tipo === "nacional" ? "Feriado Nacional" : f.tipo === "estadual" ? "Feriado Estadual (SP)" : "Feriado Municipal (Jarinu)",
+        clienteId: "",
+        tipo: tipoMap[f.tipo],
+      });
+    });
 
     return result;
-  }, [clientes]);
+  }, [clientes, eventosManuals, mesAtual]);
 
-  // Filter events for the current month view
+  // Filter for current month
   const eventosMes = useMemo(() => {
     const mesStr = format(mesAtual, "MM");
     return eventos
@@ -115,61 +175,68 @@ export default function Calendario() {
       .sort((a, b) => a.data.localeCompare(b.data));
   }, [eventos, mesAtual]);
 
-  // Get upcoming events (next 30 days from today)
+  // Next 30 days
   const proximosEventos = useMemo(() => {
     const hoje = new Date();
     const anoAtual = hoje.getFullYear();
-    
+
     return eventos
       .map((e) => {
-        // Create date in current year for comparison
         const dateThisYear = new Date(`${anoAtual}-${e.data}T12:00:00`);
         const diffDays = Math.ceil((dateThisYear.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
-        
-        // Check next year too
         const dateNextYear = new Date(`${anoAtual + 1}-${e.data}T12:00:00`);
         const diffDaysNext = Math.ceil((dateNextYear.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
-        
-        const finalDiff = diffDays >= 0 && diffDays <= 30 ? diffDays : 
-                          diffDaysNext >= 0 && diffDaysNext <= 30 ? diffDaysNext : -1;
-        
+        const finalDiff = diffDays >= 0 && diffDays <= 30 ? diffDays : diffDaysNext >= 0 && diffDaysNext <= 30 ? diffDaysNext : -1;
         return { ...e, diasRestantes: finalDiff };
       })
       .filter((e) => e.diasRestantes >= 0)
       .sort((a, b) => a.diasRestantes - b.diasRestantes);
   }, [eventos]);
 
-  // Generate calendar grid
+  // Calendar grid
   const diasDoMes = useMemo(() => {
     const year = mesAtual.getFullYear();
     const month = mesAtual.getMonth();
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
-    const startPad = firstDay.getDay(); // 0=Sun
-    
+    const startPad = firstDay.getDay();
     const days: { day: number; eventos: EventoCalendario[] }[] = [];
-    
-    // Pad start
-    for (let i = 0; i < startPad; i++) {
-      days.push({ day: 0, eventos: [] });
-    }
-    
+    for (let i = 0; i < startPad; i++) days.push({ day: 0, eventos: [] });
     const mesStr = format(mesAtual, "MM");
     for (let d = 1; d <= lastDay.getDate(); d++) {
       const dayStr = d.toString().padStart(2, "0");
       const key = `${mesStr}-${dayStr}`;
-      const dayEvents = eventos.filter((e) => e.data === key);
-      days.push({ day: d, eventos: dayEvents });
+      days.push({ day: d, eventos: eventos.filter((e) => e.data === key) });
     }
-    
     return days;
   }, [mesAtual, eventos]);
 
   const hoje = new Date();
-  const isHoje = (day: number) => {
-    return day === hoje.getDate() && 
-           mesAtual.getMonth() === hoje.getMonth() && 
-           mesAtual.getFullYear() === hoje.getFullYear();
+  const isHoje = (day: number) =>
+    day === hoje.getDate() && mesAtual.getMonth() === hoje.getMonth() && mesAtual.getFullYear() === hoje.getFullYear();
+
+  const getEventIcon = (tipo: string) => {
+    if (tipo === "aniversario") return "🎂";
+    if (tipo === "data_importante") return "📌";
+    if (tipo === "evento_manual") return "📋";
+    if (tipo === "feriado_nacional") return "🇧🇷";
+    if (tipo === "feriado_estadual") return "🏛️";
+    if (tipo === "feriado_municipal") return "📍";
+    return "📌";
+  };
+
+  const getEventColor = (tipo: string) => {
+    if (tipo.startsWith("feriado")) return "bg-destructive/10 text-destructive";
+    if (tipo === "evento_manual") return "bg-accent/50 text-accent-foreground";
+    return "bg-primary/15 text-primary";
+  };
+
+  const getBadgeForTipo = (tipo: string) => {
+    if (tipo === "feriado_nacional") return <Badge variant="outline" className="text-[10px] px-1 py-0 border-destructive/30 text-destructive"><Flag className="w-3 h-3 mr-0.5 inline" />Nacional</Badge>;
+    if (tipo === "feriado_estadual") return <Badge variant="outline" className="text-[10px] px-1 py-0 border-destructive/30 text-destructive"><Building2 className="w-3 h-3 mr-0.5 inline" />SP</Badge>;
+    if (tipo === "feriado_municipal") return <Badge variant="outline" className="text-[10px] px-1 py-0 border-destructive/30 text-destructive"><MapPin className="w-3 h-3 mr-0.5 inline" />Jarinu</Badge>;
+    if (tipo === "evento_manual") return <Badge variant="outline" className="text-[10px] px-1 py-0">Evento</Badge>;
+    return null;
   };
 
   if (isLoading) {
@@ -186,17 +253,79 @@ export default function Calendario() {
     <AppLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="font-display text-2xl lg:text-3xl font-bold text-foreground flex items-center gap-3">
-            <Calendar className="w-7 h-7 text-primary" />
-            Calendário da Empresa
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Datas importantes de todos os clientes ativos
-          </p>
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h1 className="font-display text-2xl lg:text-3xl font-bold text-foreground flex items-center gap-3">
+              <Calendar className="w-7 h-7 text-primary" />
+              Calendário da Empresa
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Datas importantes, feriados e eventos da empresa
+            </p>
+          </div>
+          {canManage && (
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Novo Evento
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Adicionar Evento ao Calendário</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-2">
+                  <div className="space-y-2">
+                    <Label>Título *</Label>
+                    <Input
+                      value={novoEvento.titulo}
+                      onChange={(e) => setNovoEvento((p) => ({ ...p, titulo: e.target.value }))}
+                      placeholder="Ex: Reunião de planejamento"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Data *</Label>
+                    <Input
+                      type="date"
+                      value={novoEvento.data}
+                      onChange={(e) => setNovoEvento((p) => ({ ...p, data: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Descrição</Label>
+                    <Textarea
+                      value={novoEvento.descricao}
+                      onChange={(e) => setNovoEvento((p) => ({ ...p, descricao: e.target.value }))}
+                      placeholder="Detalhes do evento (opcional)"
+                      rows={3}
+                    />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Switch
+                      checked={novoEvento.recorrente}
+                      onCheckedChange={(v) => setNovoEvento((p) => ({ ...p, recorrente: v }))}
+                    />
+                    <Label>Repetir todo ano</Label>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button variant="ghost">Cancelar</Button>
+                  </DialogClose>
+                  <Button
+                    onClick={() => addEvento.mutate(novoEvento)}
+                    disabled={!novoEvento.titulo || !novoEvento.data || addEvento.isPending}
+                  >
+                    {addEvento.isPending ? "Salvando..." : "Salvar"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
-        {/* Próximos eventos */}
+        {/* Upcoming events */}
         {proximosEventos.length > 0 && (
           <section className="card-botanical p-5">
             <h2 className="font-display text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
@@ -204,34 +333,48 @@ export default function Calendario() {
               Próximas Datas (30 dias)
             </h2>
             <div className="space-y-2">
-              {proximosEventos.slice(0, 10).map((e, i) => (
-                <Link
-                  key={i}
-                  to={`/clientes/${e.clienteId}`}
-                  className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{e.descricao}</p>
-                    <p className="text-xs text-muted-foreground">{e.clienteNome}</p>
+              {proximosEventos.slice(0, 12).map((e, i) => {
+                const isLink = !!e.clienteId;
+                const content = (
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                    <div className="flex-1 min-w-0 flex items-center gap-2">
+                      <span className="text-base">{getEventIcon(e.tipo)}</span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {e.descricao.replace(/^🎂 |^📌 |^📋 /, "")}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{e.clienteNome}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {getBadgeForTipo(e.tipo)}
+                      <Badge
+                        variant="outline"
+                        className={
+                          e.diasRestantes === 0
+                            ? "bg-primary/20 text-primary border-primary/30"
+                            : e.diasRestantes <= 7
+                            ? "bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30"
+                            : ""
+                        }
+                      >
+                        {e.diasRestantes === 0 ? "Hoje!" : `em ${e.diasRestantes} dia${e.diasRestantes > 1 ? "s" : ""}`}
+                      </Badge>
+                    </div>
                   </div>
-                  <Badge variant="outline" className={
-                    e.diasRestantes === 0 
-                      ? "bg-primary/20 text-primary border-primary/30" 
-                      : e.diasRestantes <= 7 
-                        ? "bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30" 
-                        : ""
-                  }>
-                    {e.diasRestantes === 0 ? "Hoje!" : `em ${e.diasRestantes} dia${e.diasRestantes > 1 ? "s" : ""}`}
-                  </Badge>
-                </Link>
-              ))}
+                );
+                return isLink ? (
+                  <Link key={i} to={`/clientes/${e.clienteId}`}>{content}</Link>
+                ) : (
+                  <div key={i}>{content}</div>
+                );
+              })}
             </div>
           </section>
         )}
 
         {/* Calendar Grid */}
         <section className="card-botanical p-5">
-          {/* Month navigation */}
           <div className="flex items-center justify-between mb-6">
             <Button variant="ghost" size="icon-sm" onClick={() => setMesAtual(subMonths(mesAtual, 1))}>
               <ChevronLeft className="w-5 h-5" />
@@ -244,16 +387,12 @@ export default function Calendario() {
             </Button>
           </div>
 
-          {/* Weekday headers */}
           <div className="grid grid-cols-7 gap-1 mb-2">
             {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((d) => (
-              <div key={d} className="text-center text-xs font-medium text-muted-foreground py-1">
-                {d}
-              </div>
+              <div key={d} className="text-center text-xs font-medium text-muted-foreground py-1">{d}</div>
             ))}
           </div>
 
-          {/* Days grid */}
           <div className="grid grid-cols-7 gap-1">
             {diasDoMes.map((d, i) => (
               <div
@@ -263,26 +402,40 @@ export default function Calendario() {
                     ? ""
                     : isHoje(d.day)
                     ? "bg-primary/10 border border-primary/30"
+                    : d.eventos.some((e) => e.tipo.startsWith("feriado"))
+                    ? "bg-destructive/5 border border-destructive/15"
                     : "bg-muted/30 hover:bg-muted/50"
                 }`}
               >
                 {d.day > 0 && (
                   <>
-                    <span className={`text-xs font-medium ${isHoje(d.day) ? "text-primary" : "text-foreground"}`}>
+                    <span className={`text-xs font-medium ${isHoje(d.day) ? "text-primary" : d.eventos.some((e) => e.tipo.startsWith("feriado")) ? "text-destructive" : "text-foreground"}`}>
                       {d.day}
                     </span>
                     {d.eventos.length > 0 && (
                       <div className="mt-0.5 space-y-0.5">
-                        {d.eventos.slice(0, 2).map((ev, j) => (
-                          <Link
-                            key={j}
-                            to={`/clientes/${ev.clienteId}`}
-                            className="block text-[10px] leading-tight truncate px-1 py-0.5 rounded bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
-                            title={`${ev.descricao} — ${ev.clienteNome}`}
-                          >
-                            {ev.tipo === "aniversario" ? "🎂" : "📌"} {ev.descricao.replace(/🎂 |📌 /, "").split("(")[0].trim()}
-                          </Link>
-                        ))}
+                        {d.eventos.slice(0, 2).map((ev, j) => {
+                          const label = ev.descricao.replace(/^🎂 |^📌 |^📋 /, "").split("(")[0].trim();
+                          const colorClass = getEventColor(ev.tipo);
+                          return ev.clienteId ? (
+                            <Link
+                              key={j}
+                              to={`/clientes/${ev.clienteId}`}
+                              className={`block text-[10px] leading-tight truncate px-1 py-0.5 rounded ${colorClass} hover:opacity-80 transition-colors`}
+                              title={`${ev.descricao} — ${ev.clienteNome}`}
+                            >
+                              {getEventIcon(ev.tipo)} {label}
+                            </Link>
+                          ) : (
+                            <span
+                              key={j}
+                              className={`block text-[10px] leading-tight truncate px-1 py-0.5 rounded ${colorClass}`}
+                              title={`${ev.descricao} — ${ev.clienteNome}`}
+                            >
+                              {getEventIcon(ev.tipo)} {label}
+                            </span>
+                          );
+                        })}
                         {d.eventos.length > 2 && (
                           <span className="text-[10px] text-muted-foreground px-1">+{d.eventos.length - 2}</span>
                         )}
@@ -302,21 +455,43 @@ export default function Calendario() {
               Eventos de {format(mesAtual, "MMMM", { locale: ptBR })}
             </h2>
             <div className="space-y-2">
-              {eventosMes.map((e, i) => (
-                <Link
-                  key={i}
-                  to={`/clientes/${e.clienteId}`}
-                  className="flex items-center gap-4 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                >
-                  <span className="text-sm font-medium text-primary whitespace-nowrap">
-                    {e.data.split("-")[1]}/{e.data.split("-")[0]}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{e.descricao}</p>
-                    <p className="text-xs text-muted-foreground">{e.clienteNome}</p>
+              {eventosMes.map((e, i) => {
+                const isLink = !!e.clienteId;
+                const row = (
+                  <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                    <span className="text-sm font-medium text-primary whitespace-nowrap">
+                      {e.data.split("-")[1]}/{e.data.split("-")[0]}
+                    </span>
+                    <span className="text-base">{getEventIcon(e.tipo)}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{e.descricao.replace(/^🎂 |^📌 |^📋 /, "")}</p>
+                      <p className="text-xs text-muted-foreground">{e.clienteNome}</p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {getBadgeForTipo(e.tipo)}
+                      {e.eventoId && canManage && (
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          className="text-muted-foreground hover:text-destructive"
+                          onClick={(ev) => {
+                            ev.preventDefault();
+                            ev.stopPropagation();
+                            deleteEvento.mutate(e.eventoId!);
+                          }}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </Link>
-              ))}
+                );
+                return isLink ? (
+                  <Link key={i} to={`/clientes/${e.clienteId}`}>{row}</Link>
+                ) : (
+                  <div key={i}>{row}</div>
+                );
+              })}
             </div>
           </section>
         )}
