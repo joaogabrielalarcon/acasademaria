@@ -145,9 +145,10 @@ export default function MenuCentral() {
       <div className="flex flex-col gap-8 py-4">
         {/* Greeting + Mafe */}
         <div className="card-botanical p-8 max-w-3xl mx-auto w-full">
-          <h1 className="text-2xl font-semibold text-foreground font-serif mb-2">
+          <h1 className="text-2xl font-semibold text-foreground font-serif mb-1">
             {getGreeting()}, {firstName}! 👋🌳
           </h1>
+          <p className="text-lg font-semibold text-foreground font-serif mb-2">Espero que esteja bem!</p>
           <p className="text-sm text-muted-foreground italic mb-6">{quote}</p>
 
           <div className="flex flex-col items-center mb-6">
@@ -176,14 +177,13 @@ export default function MenuCentral() {
             >
               {isRecording ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
             </Button>
-            <Button
+            <button
               type="submit"
-              size="icon"
               disabled={!inlineInput.trim()}
-              className="rounded-xl h-10 w-10 shrink-0"
+              className="inline-flex items-center justify-center rounded-xl h-10 w-10 shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:pointer-events-none transition-colors"
             >
               <Send className="w-4 h-4" />
-            </Button>
+            </button>
           </form>
         </div>
 
