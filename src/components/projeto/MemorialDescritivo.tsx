@@ -478,12 +478,19 @@ export function MemorialDescritivo({ projetoId, isAdmin }: MemorialDescritivoPro
   };
 
   const updateItem = (tipo: string) => (localIdx: number, field: keyof MemorialItem, value: string | number | null) => {
-    if (!editingItems) return;
-    const globalIdx = getGlobalIndex(tipo, localIdx);
-    if (globalIdx === -1) return;
-    const updated = [...editingItems];
-    updated[globalIdx] = { ...updated[globalIdx], [field]: value };
-    setEditingItems(updated);
+    setEditingItems((prev) => {
+      if (!prev) return prev;
+
+      const filtered = prev
+        .map((item, i) => ({ item, i }))
+        .filter((x) => x.item.tipo === tipo);
+      const globalIdx = filtered[localIdx]?.i ?? -1;
+      if (globalIdx === -1) return prev;
+
+      const updated = [...prev];
+      updated[globalIdx] = { ...updated[globalIdx], [field]: value };
+      return updated;
+    });
   };
 
   const removeItem = (tipo: string) => (localIdx: number) => {
