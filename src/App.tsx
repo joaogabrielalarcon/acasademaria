@@ -41,8 +41,9 @@ const App = () => (
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/bootstrap" element={<BootstrapAdmin />} />
-          <Route path="/" element={<ProtectedRoute><Clientes /></ProtectedRoute>} />
-          <Route path="/menu" element={<ProtectedRoute><MenuCentral /></ProtectedRoute>} />
+          <Route path="/" element={<ProtectedRoute><MenuCentral /></ProtectedRoute>} />
+          <Route path="/clientes" element={<ProtectedRoute><Clientes /></ProtectedRoute>} />
+          
           <Route path="/alterar-senha" element={<ProtectedRoute><AlterarSenha /></ProtectedRoute>} />
           <Route path="/clientes/novo" element={<ProtectedRoute><NovoCliente /></ProtectedRoute>} />
           <Route path="/clientes/:id" element={<ProtectedRoute><ClientePerfil /></ProtectedRoute>} />

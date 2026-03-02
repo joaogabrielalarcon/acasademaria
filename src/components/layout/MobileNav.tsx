@@ -74,7 +74,7 @@ export function MobileNav() {
   return (
     <div className="flex flex-col h-full text-foreground">
       {/* Logo */}
-      <Link to="/menu" className="flex items-center justify-center py-6 border-b border-border hover:bg-secondary/50 transition-colors">
+      <Link to="/" className="flex items-center justify-center py-6 border-b border-border hover:bg-secondary/50 transition-colors">
         <Logo variant="compact" />
       </Link>
 

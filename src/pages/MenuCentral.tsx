@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 type UserRole = "admin" | "gestor" | "operador";
 
 const menuItems = [
-  { title: "Clientes", description: "Gerenciar clientes e perfis", icon: Users, href: "/", roles: ["admin", "gestor", "operador"] as UserRole[] },
+  { title: "Clientes", description: "Gerenciar clientes e perfis", icon: Users, href: "/clientes", roles: ["admin", "gestor", "operador"] as UserRole[] },
   { title: "Equipe", description: "Colaboradores e equipes", icon: UserCircle, href: "/equipe", roles: ["admin", "gestor", "operador"] as UserRole[] },
   { title: "Plantas", description: "Catálogo de plantas", icon: Leaf, href: "/plantas", roles: ["admin"] as UserRole[] },
   { title: "Produtos e Insumos", description: "Materiais e insumos", icon: Package, href: "/insumos", roles: ["admin"] as UserRole[] },
