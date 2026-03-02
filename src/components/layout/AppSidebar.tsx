@@ -198,12 +198,12 @@ export function AppSidebar({ className }: AppSidebarProps) {
       )}
     >
       {/* Logo */}
-      <div className={cn(
-        "flex items-center justify-center py-6 border-b border-sidebar-border",
+      <Link to="/menu" className={cn(
+        "flex items-center justify-center py-6 border-b border-sidebar-border hover:bg-secondary/50 transition-colors",
         collapsed ? "px-2" : "px-4"
       )}>
         <Logo variant={collapsed ? "icon" : "compact"} />
-      </div>
+      </Link>
 
       {/* Navigation */}
       <nav className="flex-1 py-6 overflow-y-auto">
