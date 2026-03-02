@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Send, Loader2, User, Mic, MicOff, Square } from "lucide-react";
+import floraAvatar from "@/assets/flora-avatar.png";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
@@ -23,7 +24,7 @@ interface AssistenteChatProps {
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/assistente-mfm`;
 
-const FLORA_INTRO = `Olá! Eu sou a **Flora** 👩‍🦱, assistente de inteligência artificial da **Maria Fernanda Marques — Paisagismo e Soluções Ambientais**.
+const FLORA_INTRO = `Olá! Eu sou a **Flora**, assistente de inteligência artificial da **Maria Fernanda Marques — Paisagismo e Soluções Ambientais**.
 
 Me explique o que você precisa que eu vou te ajudar a fazer! Você pode digitar ou enviar um áudio 🎙️`;
 
@@ -261,7 +262,7 @@ export function AssistenteChat({ userName, userRole }: AssistenteChatProps) {
       <SheetContent side="right" className="w-full sm:max-w-md flex flex-col p-0">
         <SheetHeader className="px-5 pt-5 pb-3 border-b border-border">
           <div className="flex items-center gap-2.5">
-            <span className="text-2xl">👩‍🦱</span>
+            <img src={floraAvatar} alt="Flora" className="w-9 h-9 rounded-full object-cover" />
             <div>
               <SheetTitle className="text-base">Flora</SheetTitle>
               <SheetDescription className="text-xs">
@@ -279,7 +280,7 @@ export function AssistenteChat({ userName, userRole }: AssistenteChatProps) {
               className={`flex gap-2.5 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
               {msg.role === "assistant" && (
-                <span className="text-lg shrink-0 mt-1">👩‍🦱</span>
+                <img src={floraAvatar} alt="Flora" className="w-7 h-7 rounded-full object-cover shrink-0 mt-1" />
               )}
               <div
                 className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm ${
@@ -306,7 +307,7 @@ export function AssistenteChat({ userName, userRole }: AssistenteChatProps) {
 
           {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
             <div className="flex gap-2.5">
-              <span className="text-lg shrink-0">👩‍🦱</span>
+              <img src={floraAvatar} alt="Flora" className="w-7 h-7 rounded-full object-cover shrink-0" />
               <div className="bg-muted rounded-xl px-3.5 py-2.5">
                 <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
               </div>
