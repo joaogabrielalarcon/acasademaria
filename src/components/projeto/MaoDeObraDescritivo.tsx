@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef } from "react";
 import { Plus, Trash2, Users, Loader2, HardHat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,8 +26,6 @@ interface MaoDeObraItem {
 export function MaoDeObraDescritivo({ projetoId, isAdmin }: MaoDeObraDescritivoProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editValues, setEditValues] = useState<Partial<MaoDeObraItem>>({});
 
   const { data: itens = [], isLoading } = useQuery({
     queryKey: ["projeto-mao-de-obra", projetoId],
@@ -69,8 +67,6 @@ export function MaoDeObraDescritivo({ projetoId, isAdmin }: MaoDeObraDescritivoP
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projeto-mao-de-obra", projetoId] });
-      setEditingId(null);
-      setEditValues({});
     },
   });
 
@@ -88,19 +84,13 @@ export function MaoDeObraDescritivo({ projetoId, isAdmin }: MaoDeObraDescritivoP
     },
   });
 
-  const startEdit = (item: MaoDeObraItem) => {
-    setEditingId(item.id);
-    setEditValues({
-      descricao: item.descricao,
-      quantidade_funcionarios: item.quantidade_funcionarios,
-      dias_previstos: item.dias_previstos,
-      observacoes: item.observacoes,
-    });
+  const handleInlineUpdate = (id: string, field: string, value: string) => {
+    const numVal = parseInt(value) || 1;
+    updateMutation.mutate({ id, [field]: numVal });
   };
 
-  const saveEdit = () => {
-    if (!editingId) return;
-    updateMutation.mutate({ id: editingId, ...editValues });
+  const handleDescricaoUpdate = (id: string, value: string) => {
+    updateMutation.mutate({ id, descricao: value });
   };
 
   const calcSemanas = (dias: number) => {
@@ -152,71 +142,63 @@ export function MaoDeObraDescritivo({ projetoId, isAdmin }: MaoDeObraDescritivoP
 
           {itens.map((item) => (
             <div key={item.id} className="grid grid-cols-12 gap-2 items-center p-3 rounded-lg bg-muted/50">
-              {editingId === item.id ? (
-                <>
-                  <div className="col-span-4">
-                    <Input
-                      value={editValues.descricao || ""}
-                      onChange={(e) => setEditValues((v) => ({ ...v, descricao: e.target.value }))}
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Input
-                      type="number"
-                      min={1}
-                      value={editValues.quantidade_funcionarios || 1}
-                      onChange={(e) => setEditValues((v) => ({ ...v, quantidade_funcionarios: parseInt(e.target.value) || 1 }))}
-                      className="h-8 text-sm text-center"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Input
-                      type="number"
-                      min={1}
-                      value={editValues.dias_previstos || 1}
-                      onChange={(e) => setEditValues((v) => ({ ...v, dias_previstos: parseInt(e.target.value) || 1 }))}
-                      className="h-8 text-sm text-center"
-                    />
-                  </div>
-                  <div className="col-span-3 text-center text-sm text-muted-foreground">
-                    {calcSemanas(editValues.dias_previstos || 1)}
-                  </div>
-                  <div className="col-span-1 flex gap-1 justify-end">
-                    <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={saveEdit} disabled={updateMutation.isPending}>
-                      OK
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="col-span-4 text-sm font-medium text-foreground cursor-pointer" onClick={() => isAdmin && startEdit(item)}>
-                    {item.descricao || "—"}
-                  </div>
-                  <div className="col-span-2 text-center">
-                    <span className="inline-flex items-center gap-1 text-sm">
-                      <Users className="w-3.5 h-3.5 text-muted-foreground" />
-                      {item.quantidade_funcionarios}
-                    </span>
-                  </div>
-                  <div className="col-span-2 text-center text-sm">{item.dias_previstos} dias</div>
-                  <div className="col-span-3 text-center text-sm text-muted-foreground">
-                    {calcSemanas(item.dias_previstos)}
-                  </div>
-                  <div className="col-span-1 flex justify-end">
-                    {isAdmin && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                        onClick={() => deleteMutation.mutate(item.id)}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    )}
-                  </div>
-                </>
-              )}
+              <div className="col-span-4">
+                {isAdmin ? (
+                  <Input
+                    defaultValue={item.descricao}
+                    onBlur={(e) => {
+                      if (e.target.value !== item.descricao) handleDescricaoUpdate(item.id, e.target.value);
+                    }}
+                    className="h-8 text-sm border-transparent hover:border-primary/30 focus-visible:border-primary"
+                  />
+                ) : (
+                  <span className="text-sm font-medium text-foreground">{item.descricao || "—"}</span>
+                )}
+              </div>
+              <div className="col-span-2">
+                {isAdmin ? (
+                  <Input
+                    type="number"
+                    min={1}
+                    defaultValue={item.quantidade_funcionarios}
+                    onBlur={(e) => handleInlineUpdate(item.id, "quantidade_funcionarios", e.target.value)}
+                    className="h-8 text-sm text-center border-transparent hover:border-primary/30 focus-visible:border-primary"
+                  />
+                ) : (
+                  <span className="flex items-center justify-center gap-1 text-sm">
+                    <Users className="w-3.5 h-3.5 text-muted-foreground" />
+                    {item.quantidade_funcionarios}
+                  </span>
+                )}
+              </div>
+              <div className="col-span-2">
+                {isAdmin ? (
+                  <Input
+                    type="number"
+                    min={1}
+                    defaultValue={item.dias_previstos}
+                    onBlur={(e) => handleInlineUpdate(item.id, "dias_previstos", e.target.value)}
+                    className="h-8 text-sm text-center border-transparent hover:border-primary/30 focus-visible:border-primary"
+                  />
+                ) : (
+                  <span className="text-sm text-center block">{item.dias_previstos} dias</span>
+                )}
+              </div>
+              <div className="col-span-3 text-center text-sm text-muted-foreground">
+                {calcSemanas(item.dias_previstos)}
+              </div>
+              <div className="col-span-1 flex justify-end">
+                {isAdmin && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                    onClick={() => deleteMutation.mutate(item.id)}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                )}
+              </div>
             </div>
           ))}
 
