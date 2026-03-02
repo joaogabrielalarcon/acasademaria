@@ -3,7 +3,7 @@ import { Plus, Trash2, Save, Loader2, FileText, Search, Leaf, Package } from "lu
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -46,7 +46,7 @@ function AutocompleteInput({
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState(value);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setSearch(value);
@@ -56,53 +56,59 @@ function AutocompleteInput({
     s.label.toLowerCase().includes(search.toLowerCase())
   ).slice(0, 8);
 
+  const showDropdown = open && filtered.length > 0 && search.length > 0;
+
+  // Close on outside click
+  useEffect(() => {
+    if (!showDropdown) return;
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showDropdown]);
+
   return (
-    <Popover open={open && filtered.length > 0 && search.length > 0} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <div className="relative">
-          <Input
-            ref={inputRef}
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              onChange(e.target.value);
-              setOpen(true);
-            }}
-            onFocus={() => search.length > 0 && setOpen(true)}
-            onBlur={() => setTimeout(() => setOpen(false), 200)}
-            className="h-8 text-sm pr-7"
-            placeholder={placeholder}
-            disabled={disabled}
-          />
-          <Search className="w-3 h-3 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+    <div ref={containerRef} className="relative">
+      <Input
+        value={search}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          onChange(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => search.length > 0 && setOpen(true)}
+        className="h-8 text-sm pr-7"
+        placeholder={placeholder}
+        disabled={disabled}
+      />
+      <Search className="w-3 h-3 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+      {showDropdown && (
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-md overflow-hidden">
+          <ScrollArea className="max-h-48">
+            <div className="py-1">
+              {filtered.map((s, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors truncate cursor-pointer"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    s.onSelect();
+                    setOpen(false);
+                  }}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </ScrollArea>
         </div>
-      </PopoverTrigger>
-      <PopoverContent
-        className="p-0 w-[var(--radix-popover-trigger-width)]"
-        align="start"
-        sideOffset={4}
-        onOpenAutoFocus={(e) => e.preventDefault()}
-      >
-        <ScrollArea className="max-h-48">
-          <div className="py-1">
-            {filtered.map((s, i) => (
-              <button
-                key={i}
-                type="button"
-                className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors truncate"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  s.onSelect();
-                  setOpen(false);
-                }}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-        </ScrollArea>
-      </PopoverContent>
-    </Popover>
+      )}
+    </div>
   );
 }
 
@@ -125,6 +131,13 @@ function PlantasSection({
     label: `${p.nome_popular}${p.nome_cientifico ? ` (${p.nome_cientifico})` : ""}`,
     planta: p,
   }));
+
+  const plantaCientificoSuggestions = plantas
+    .filter((p) => !!p.nome_cientifico)
+    .map((p) => ({
+      label: `${p.nome_cientifico} (${p.nome_popular})`,
+      planta: p,
+    }));
 
   return (
     <div>
@@ -176,11 +189,23 @@ function PlantasSection({
                   </TableCell>
                   <TableCell>
                     {isEditing ? (
-                      <Input
+                      <AutocompleteInput
                         value={item.nome_cientifico}
-                        onChange={(e) => onUpdate(idx, "nome_cientifico", e.target.value)}
-                        className="h-8 text-sm italic"
+                        onChange={(v) => {
+                          onUpdate(idx, "nome_cientifico", v);
+                          onUpdate(idx, "planta_id", null);
+                        }}
                         placeholder="Nome científico"
+                        suggestions={plantaCientificoSuggestions.map((ps) => ({
+                          label: ps.label,
+                          onSelect: () => {
+                            onUpdate(idx, "nome_popular", ps.planta.nome_popular);
+                            onUpdate(idx, "nome_cientifico", ps.planta.nome_cientifico || "");
+                            onUpdate(idx, "porte", ps.planta.porte || "");
+                            onUpdate(idx, "unidade", ps.planta.unidade || "un");
+                            onUpdate(idx, "planta_id", ps.planta.id);
+                          },
+                        }))}
                       />
                     ) : (
                       <span className="italic">{item.nome_cientifico || "—"}</span>
