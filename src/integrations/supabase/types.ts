@@ -98,6 +98,50 @@ export type Database = {
         }
         Relationships: []
       }
+      cliente_atividades: {
+        Row: {
+          acao: string
+          cliente_id: string
+          created_at: string
+          dados_extras: Json | null
+          descricao: string
+          entidade_id: string | null
+          id: string
+          tipo: string
+          usuario_id: string | null
+        }
+        Insert: {
+          acao: string
+          cliente_id: string
+          created_at?: string
+          dados_extras?: Json | null
+          descricao: string
+          entidade_id?: string | null
+          id?: string
+          tipo: string
+          usuario_id?: string | null
+        }
+        Update: {
+          acao?: string
+          cliente_id?: string
+          created_at?: string
+          dados_extras?: Json | null
+          descricao?: string
+          entidade_id?: string | null
+          id?: string
+          tipo?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cliente_atividades_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clientes: {
         Row: {
           assessores: Json | null
