@@ -1,20 +1,42 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { Logo } from "@/components/Logo";
+
+const REMEMBER_KEY = "mfm_remember_user";
 
 export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
   
   const [isLoading, setIsLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+
+  // Check existing session — if remembered user has active session, redirect
+  useEffect(() => {
+    const remembered = localStorage.getItem(REMEMBER_KEY);
+    if (remembered) {
+      setUsername(remembered);
+      setRememberMe(true);
+    }
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session && remembered) {
+        // User has active session and chose to be remembered
+        navigate("/", { replace: true });
+      }
+      setCheckingSession(false);
+    });
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +69,13 @@ export default function Login() {
         });
       }
 
+      // Save or clear remember preference
+      if (rememberMe) {
+        localStorage.setItem(REMEMBER_KEY, username);
+      } else {
+        localStorage.removeItem(REMEMBER_KEY);
+      }
+
       toast({
         title: "Bem-vindo!",
         description: "Login realizado com sucesso.",
@@ -62,6 +91,14 @@ export default function Login() {
       setIsLoading(false);
     }
   };
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/30">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/30 p-4">
@@ -105,6 +142,17 @@ export default function Login() {
               disabled={isLoading}
               autoComplete="current-password"
             />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="remember"
+              checked={rememberMe}
+              onCheckedChange={(checked) => setRememberMe(checked === true)}
+            />
+            <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">
+              Lembrar meu usuário
+            </Label>
           </div>
 
           <Button 
