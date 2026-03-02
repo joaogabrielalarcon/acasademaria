@@ -13,6 +13,9 @@ import {
   ChevronDown,
   ChevronRight,
   Check,
+  FileText,
+  BarChart3,
+  ClipboardList,
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -56,6 +59,9 @@ import { useInsumos } from "@/hooks/useInsumos";
 import { useFornecedores } from "@/hooks/useFornecedores";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { ResumoFinanceiroTab } from "@/components/projeto/ResumoFinanceiroTab";
+import { ExecucaoTab } from "@/components/projeto/ExecucaoTab";
+import { DashboardTab } from "@/components/projeto/DashboardTab";
 
 export default function ProjetoDetalhe() {
   const { id } = useParams();
@@ -352,10 +358,22 @@ export default function ProjetoDetalhe() {
 
       {/* Tabs */}
       <Tabs defaultValue="orcamento" className="w-full">
-        <TabsList className="mb-6">
+        <TabsList className="mb-6 flex-wrap">
           <TabsTrigger value="orcamento" className="gap-2">
             <DollarSign className="w-4 h-4" />
             Orçamento
+          </TabsTrigger>
+          <TabsTrigger value="resumo" className="gap-2">
+            <FileText className="w-4 h-4" />
+            Resumo Financeiro
+          </TabsTrigger>
+          <TabsTrigger value="execucao" className="gap-2">
+            <ClipboardList className="w-4 h-4" />
+            Execução
+          </TabsTrigger>
+          <TabsTrigger value="dashboard" className="gap-2">
+            <BarChart3 className="w-4 h-4" />
+            Dashboard
           </TabsTrigger>
         </TabsList>
 
@@ -531,6 +549,26 @@ export default function ProjetoDetalhe() {
               <p className="text-muted-foreground">Nenhum item no orçamento</p>
             </div>
           )}
+        </TabsContent>
+
+        {/* Resumo Financeiro */}
+        <TabsContent value="resumo">
+          <ResumoFinanceiroTab itens={itens} />
+        </TabsContent>
+
+        {/* Execução */}
+        <TabsContent value="execucao">
+          <ExecucaoTab projetoId={id!} clienteId={projeto.cliente_id} />
+        </TabsContent>
+
+        {/* Dashboard */}
+        <TabsContent value="dashboard">
+          <DashboardTab
+            itens={itens}
+            projetoStatus={projeto.status}
+            dataCriacao={projeto.created_at}
+            dataPrevisao={projeto.data_previsao}
+          />
         </TabsContent>
       </Tabs>
 
