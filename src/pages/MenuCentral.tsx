@@ -5,11 +5,9 @@ import {
   Leaf, 
   Package, 
   Truck, 
-  Tags, 
   Wrench, 
-  Building2, 
-  Shield, 
-  DollarSign 
+  Settings,
+  ChevronRight
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Logo } from "@/components/Logo";
@@ -25,10 +23,7 @@ const menuItems = [
   { title: "Produtos e Insumos", description: "Materiais e insumos", icon: Package, href: "/insumos", roles: ["admin"] as UserRole[] },
   { title: "Fornecedores", description: "Cadastro de fornecedores", icon: Truck, href: "/fornecedores", roles: ["admin"] as UserRole[] },
   { title: "Máquinas", description: "Equipamentos e manutenção", icon: Wrench, href: "/maquinas", roles: ["admin"] as UserRole[] },
-  { title: "Categorias de Plantas", description: "Organizar tipos de plantas", icon: Tags, href: "/categorias-plantas", roles: ["admin"] as UserRole[] },
-  { title: "Áreas Internas", description: "Áreas da empresa", icon: Building2, href: "/areas", roles: ["admin"] as UserRole[] },
-  { title: "Controle de Acessos", description: "Permissões de usuários", icon: Shield, href: "/acessos", roles: ["admin"] as UserRole[] },
-  { title: "Custos da Equipe", description: "Salários e custos", icon: DollarSign, href: "/custos-equipe", roles: ["admin"] as UserRole[] },
+  { title: "Configurações do Sistema", description: "Áreas, acessos e categorias", icon: Settings, href: "/areas", roles: ["admin"] as UserRole[] },
 ];
 
 export default function MenuCentral() {
