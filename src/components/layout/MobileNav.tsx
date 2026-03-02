@@ -12,7 +12,8 @@ import {
   Building2,
   Shield,
   Wrench,
-  DollarSign
+  DollarSign,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
@@ -35,6 +36,7 @@ const allNavigationItems = [
   { title: "Produtos e Insumos", icon: Package, href: "/insumos", roles: ["admin"] as UserRole[] },
   { title: "Fornecedores", icon: Truck, href: "/fornecedores", roles: ["admin"] as UserRole[] },
   { title: "Máquinas", icon: Wrench, href: "/maquinas", roles: ["admin"] as UserRole[] },
+  { title: "Processos Internos", icon: BookOpen, href: "/processos", roles: ["admin", "gestor"] as UserRole[] },
 ];
 
 const configItems = [

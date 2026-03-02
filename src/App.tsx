@@ -29,6 +29,7 @@ import ControleAcessos from "./pages/ControleAcessos";
 import BootstrapAdmin from "./pages/BootstrapAdmin";
 import NotFound from "./pages/NotFound";
 import MenuCentral from "./pages/MenuCentral";
+import ProcessosInternos from "./pages/ProcessosInternos";
 
 const queryClient = new QueryClient();
 
@@ -68,6 +69,7 @@ const App = () => (
           <Route path="/areas" element={<ProtectedRoute><Areas /></ProtectedRoute>} />
           <Route path="/acessos" element={<ProtectedRoute><ControleAcessos /></ProtectedRoute>} />
           <Route path="/custos-equipe" element={<ProtectedRoute><CustosEquipe /></ProtectedRoute>} />
+          <Route path="/processos" element={<ProtectedRoute><ProcessosInternos /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
