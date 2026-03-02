@@ -835,6 +835,68 @@ export type Database = {
           },
         ]
       }
+      projetos: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          created_by: string | null
+          data_conclusao: string | null
+          data_inicio: string | null
+          data_previsao: string | null
+          descricao: string | null
+          id: string
+          observacoes: string | null
+          responsavel_id: string | null
+          status: string
+          titulo: string
+          updated_at: string
+          updated_by: string | null
+          valor_total: number | null
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          created_by?: string | null
+          data_conclusao?: string | null
+          data_inicio?: string | null
+          data_previsao?: string | null
+          descricao?: string | null
+          id?: string
+          observacoes?: string | null
+          responsavel_id?: string | null
+          status?: string
+          titulo: string
+          updated_at?: string
+          updated_by?: string | null
+          valor_total?: number | null
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          created_by?: string | null
+          data_conclusao?: string | null
+          data_inicio?: string | null
+          data_previsao?: string | null
+          descricao?: string | null
+          id?: string
+          observacoes?: string | null
+          responsavel_id?: string | null
+          status?: string
+          titulo?: string
+          updated_at?: string
+          updated_by?: string | null
+          valor_total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projetos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       propostas: {
         Row: {
           cliente_id: string
