@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { Send, Loader2, Bot, User, Sparkles, Flower2 } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Send, Loader2, User, Mic, MicOff, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
@@ -23,20 +23,26 @@ interface AssistenteChatProps {
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/assistente-mfm`;
 
+const FLORA_INTRO = `Olá! Eu sou a **Flora** 👩‍🦱, assistente de inteligência artificial da **Maria Fernanda Marques — Paisagismo e Soluções Ambientais**.
+
+Me explique o que você precisa que eu vou te ajudar a fazer! Você pode digitar ou enviar um áudio 🎙️`;
+
 export function AssistenteChat({ userName, userRole }: AssistenteChatProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([
+    { role: "assistant", content: FLORA_INTRO },
+  ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const recognitionRef = useRef<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Keep input focused/visible while Flora is typing
   useEffect(() => {
     if (isLoading) {
       const interval = setInterval(() => {
@@ -46,11 +52,73 @@ export function AssistenteChat({ userName, userRole }: AssistenteChatProps) {
     }
   }, [isLoading]);
 
+  // Speech recognition setup
+  const startRecording = useCallback(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast({
+        title: "Não suportado",
+        description: "Seu navegador não suporta gravação de áudio. Tente o Google Chrome.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "pt-BR";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    let finalTranscript = "";
+
+    recognition.onresult = (event: any) => {
+      let interimTranscript = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript + " ";
+        } else {
+          interimTranscript = transcript;
+        }
+      }
+      setInput(finalTranscript + interimTranscript);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Speech recognition error:", event.error);
+      setIsRecording(false);
+      if (event.error === "not-allowed") {
+        toast({
+          title: "Permissão negada",
+          description: "Permita o acesso ao microfone para gravar áudio.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsRecording(true);
+  }, [toast]);
+
+  const stopRecording = useCallback(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+    setIsRecording(false);
+  }, []);
+
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     const trimmed = input.trim();
     if (!trimmed || isLoading) return;
 
+    if (isRecording) stopRecording();
     if (!isOpen) setIsOpen(true);
 
     const userMsg: Message = { role: "user", content: trimmed };
@@ -59,7 +127,8 @@ export function AssistenteChat({ userName, userRole }: AssistenteChatProps) {
     setIsLoading(true);
 
     let assistantSoFar = "";
-    const allMessages = [...messages, userMsg];
+    // Don't send the intro message to the API
+    const allMessages = [...messages.filter((m, i) => !(i === 0 && m.content === FLORA_INTRO)), userMsg];
 
     try {
       const resp = await fetch(CHAT_URL, {
@@ -141,15 +210,23 @@ export function AssistenteChat({ userName, userRole }: AssistenteChatProps) {
     }
   };
 
-  // Inline prompt (shown on MenuCentral)
-  const inlinePrompt = (
+  const inputBar = (
     <form onSubmit={handleSubmit} className="flex items-end gap-2">
+      <Button
+        type="button"
+        size="icon"
+        variant={isRecording ? "destructive" : "outline"}
+        onClick={isRecording ? stopRecording : startRecording}
+        className="rounded-xl h-10 w-10 shrink-0"
+        disabled={isLoading}
+      >
+        {isRecording ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+      </Button>
       <textarea
-        ref={inputRef}
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Descreva o que você precisa e a Flora te guia..."
+        placeholder={isRecording ? "🎙️ Gravando... fale agora" : "Descreva o que você precisa..."}
         rows={1}
         className="flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground"
         disabled={isLoading}
@@ -165,19 +242,30 @@ export function AssistenteChat({ userName, userRole }: AssistenteChatProps) {
     </form>
   );
 
-  // Side panel with conversation
+  // Inline prompt shown on MenuCentral
+  const inlinePrompt = (
+    <div>
+      {isRecording && (
+        <div className="flex items-center gap-2 mb-2 text-xs text-destructive animate-pulse">
+          <Mic className="w-3 h-3" />
+          <span>Gravando áudio...</span>
+        </div>
+      )}
+      {inputBar}
+    </div>
+  );
+
+  // Side panel
   const chatPanel = (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetContent side="right" className="w-full sm:max-w-md flex flex-col p-0">
         <SheetHeader className="px-5 pt-5 pb-3 border-b border-border">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-              <Flower2 className="w-5 h-5 text-primary" />
-            </div>
+            <span className="text-2xl">👩‍🦱</span>
             <div>
               <SheetTitle className="text-base">Flora</SheetTitle>
               <SheetDescription className="text-xs">
-                Sua assistente de processos
+                Assistente IA — MFM Paisagismo
               </SheetDescription>
             </div>
           </div>
@@ -185,27 +273,13 @@ export function AssistenteChat({ userName, userRole }: AssistenteChatProps) {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-          {messages.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-full text-center py-8">
-              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                <Flower2 className="w-7 h-7 text-primary" />
-              </div>
-              <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
-                Oi, {userName}! Sou a Flora 🌿<br />
-                Me conta o que você precisa fazer e eu te guio passo a passo.
-              </p>
-            </div>
-          )}
-
           {messages.map((msg, i) => (
             <div
               key={i}
               className={`flex gap-2.5 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
               {msg.role === "assistant" && (
-                <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-1">
-                  <Flower2 className="w-4 h-4 text-primary" />
-                </div>
+                <span className="text-lg shrink-0 mt-1">👩‍🦱</span>
               )}
               <div
                 className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm ${
@@ -232,9 +306,7 @@ export function AssistenteChat({ userName, userRole }: AssistenteChatProps) {
 
           {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
             <div className="flex gap-2.5">
-              <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <Flower2 className="w-4 h-4 text-primary" />
-              </div>
+              <span className="text-lg shrink-0">👩‍🦱</span>
               <div className="bg-muted rounded-xl px-3.5 py-2.5">
                 <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
               </div>
@@ -245,25 +317,13 @@ export function AssistenteChat({ userName, userRole }: AssistenteChatProps) {
 
         {/* Input inside panel */}
         <div className="border-t border-border px-4 py-3">
-          <form onSubmit={handleSubmit} className="flex items-end gap-2">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Digite sua próxima pergunta..."
-              rows={1}
-              className="flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground"
-              disabled={isLoading}
-            />
-            <Button
-              type="submit"
-              size="icon"
-              disabled={!input.trim() || isLoading}
-              className="rounded-xl h-10 w-10 shrink-0"
-            >
-              <Send className="w-4 h-4" />
-            </Button>
-          </form>
+          {isRecording && (
+            <div className="flex items-center gap-2 mb-2 text-xs text-destructive animate-pulse">
+              <Mic className="w-3 h-3" />
+              <span>Gravando áudio...</span>
+            </div>
+          )}
+          {inputBar}
         </div>
       </SheetContent>
     </Sheet>

@@ -59,9 +59,14 @@ export default function MenuCentral() {
           <h1 className="text-2xl font-semibold text-foreground font-serif mb-1">
             {getGreeting()}, {firstName}! 👋
           </h1>
-          <p className="text-sm text-muted-foreground mb-4">
-            Pergunte à <span className="font-medium text-primary">Flora</span> 🌿 — ela te guia passo a passo.
-          </p>
+          <p className="text-sm text-muted-foreground mb-4">Em que posso te ajudar?</p>
+
+          <div className="flex items-start gap-3 mb-4 p-3 rounded-xl bg-muted/50">
+            <span className="text-2xl shrink-0">👩‍🦱</span>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Eu sou a <span className="font-semibold text-foreground">Flora</span>, assistente de IA da Maria Fernanda Marques, Paisagismo e Soluções Ambientais. Me explique o que você precisa que eu vou te ajudar a fazer!
+            </p>
+          </div>
           
           <AssistenteChat userName={firstName} userRole={userRole} />
         </div>
