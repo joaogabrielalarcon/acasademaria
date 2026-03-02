@@ -31,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CalendarioDiario } from "@/components/CalendarioDiario";
+import { FeedCliente } from "@/components/FeedCliente";
 import { useToast } from "@/hooks/use-toast";
 import { 
   useCliente, 
@@ -95,7 +96,7 @@ export default function ClientePerfil() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get("tab") || "cadastro";
-  const [diarioView, setDiarioView] = useState<'feed' | 'calendario'>('feed');
+  const [activeTab, setActiveTab] = useState(defaultTab);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -302,8 +303,8 @@ export default function ClientePerfil() {
             Cadastro
           </TabsTrigger>
           <TabsTrigger value="diario" className="gap-2">
-            <Calendar className="w-4 h-4" />
-            Diário
+            <List className="w-4 h-4" />
+            Feed do Cliente
           </TabsTrigger>
           <TabsTrigger value="propostas" className="gap-2">
             <DollarSign className="w-4 h-4" />
@@ -532,245 +533,14 @@ export default function ClientePerfil() {
           </section>
         </TabsContent>
 
-        {/* Tab Diário */}
+        {/* Tab Feed do Cliente */}
         <TabsContent value="diario" className="bg-card rounded-xl p-6 -mx-1 border border-primary/20">
-          {/* Header do Diário */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div className="flex items-center gap-2">
-              <p className="text-muted-foreground">
-                Histórico de serviços e registros do jardim
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              {/* Toggle Feed/Calendário */}
-              <div className="flex items-center bg-muted rounded-lg p-1">
-                <Button
-                  variant={diarioView === 'feed' ? 'default' : 'ghost'}
-                  size="sm"
-                  className="gap-1.5"
-                  onClick={() => setDiarioView('feed')}
-                >
-                  <List className="w-4 h-4" />
-                  Feed
-                </Button>
-                <Button
-                  variant={diarioView === 'calendario' ? 'default' : 'ghost'}
-                  size="sm"
-                  className="gap-1.5"
-                  onClick={() => setDiarioView('calendario')}
-                >
-                  <CalendarDays className="w-4 h-4" />
-                  Calendário
-                </Button>
-              </div>
-              <Button variant="terracota" asChild>
-                <Link to={`/registros/novo?cliente=${id}`}>
-                  <Plus className="w-4 h-4" />
-                  Novo Registro
-                </Link>
-              </Button>
-            </div>
+            <p className="text-muted-foreground">
+              Todas as movimentações e alterações deste cliente
+            </p>
           </div>
-
-          {/* Conteúdo baseado na visualização */}
-          {loadingRegistros ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-6 h-6 animate-spin text-primary" />
-            </div>
-          ) : diarioView === 'calendario' ? (
-            <CalendarioDiario registros={registrosParaCalendario} clienteId={id || ''} />
-          ) : registros.length > 0 ? (
-            /* Timeline (Feed) */
-            <div className="relative">
-              {/* Timeline Line */}
-              <div className="timeline-line" />
-
-              {/* Timeline Items */}
-              <div className="space-y-3 pl-8">
-                {registros.map((registro) => {
-                  // Parse midia
-                  const midiaArray = registro.midia && Array.isArray(registro.midia) 
-                    ? registro.midia.map((m: any) => typeof m === 'string' ? { url: m } : m)
-                    : [];
-                  const hasMedia = midiaArray.length > 0;
-                  
-                  return (
-                    <article 
-                      key={registro.id} 
-                      className="card-botanical p-4 relative animate-fade-in hover:shadow-card transition-all cursor-pointer"
-                      onClick={() => navigate(`/registros/${registro.id}`)}
-                    >
-                      {/* Timeline Dot */}
-                      <div className="timeline-dot absolute -left-[1.65rem] top-5" />
-
-                      <div className="flex gap-4">
-                        {/* Main Content */}
-                        <div className="flex-1 flex flex-col gap-2">
-                          {/* Header Row */}
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                                {tipoLabels[registro.tipo] || registro.tipo}
-                              </span>
-                              {registro.proposta && (
-                                <Badge variant="outline" className="text-xs">
-                                  {registro.proposta.codigo}
-                                </Badge>
-                              )}
-                            </div>
-                            <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
-                              <Calendar className="w-3 h-3" />
-                              {new Date(registro.data_servico).toLocaleDateString('pt-BR')}
-                            </span>
-                          </div>
-                          
-                          {/* Categorias/Tags */}
-                          {registro.categorias && registro.categorias.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5">
-                              {registro.categorias.map((cat, idx) => (
-                                <span 
-                                  key={idx}
-                                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                                  style={{ 
-                                    backgroundColor: `${cat.cor}20`,
-                                    color: cat.cor,
-                                    border: `1px solid ${cat.cor}40`
-                                  }}
-                                >
-                                  {cat.nome}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* Trecho */}
-                          {registro.trecho && (
-                            <p className="text-sm font-medium text-foreground">
-                              📍 {registro.trecho}
-                            </p>
-                          )}
-
-                          {/* Descrição */}
-                          <p className="text-sm text-muted-foreground line-clamp-2">
-                            {registro.descricao}
-                          </p>
-
-                          {/* Metadados compactos */}
-                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                            {registro.equipePresente.length > 0 && (
-                              <span className="flex items-center gap-1">
-                                <Users className="w-3 h-3" />
-                                {registro.equipePresente.slice(0, 2).join(", ")}
-                                {registro.equipePresente.length > 2 && ` +${registro.equipePresente.length - 2}`}
-                              </span>
-                            )}
-                            {registro.insumos.length > 0 && (
-                              <span className="flex items-center gap-1">
-                                <Package className="w-3 h-3" />
-                                {registro.insumos.length} insumo{registro.insumos.length > 1 ? 's' : ''}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Ações */}
-                          <div className="flex gap-2 pt-2 border-t border-border">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="gap-1 h-7 text-xs"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditarRegistro(registro.id);
-                              }}
-                            >
-                              <Pencil className="w-3 h-3" />
-                              Editar
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="gap-1 h-7 text-xs text-muted-foreground hover:text-muted-foreground"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleCancelarRegistro(registro.id);
-                              }}
-                            >
-                              <X className="w-3 h-3" />
-                              Cancelar
-                            </Button>
-                            {isAdmin && (
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="gap-1 h-7 text-xs text-destructive hover:text-destructive"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setRegistroToDelete({ id: registro.id, descricao: registro.descricao });
-                                }}
-                              >
-                                <Trash2 className="w-3 h-3" />
-                                Excluir
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Media Preview - Right Side */}
-                        {hasMedia && (
-                          <div className="flex-shrink-0 w-20 sm:w-24">
-                            <div className="grid grid-cols-1 gap-1">
-                              {midiaArray.slice(0, 2).map((m: any, idx: number) => {
-                                const isVideo = m.type?.startsWith('video') || m.url?.match(/\.(mp4|webm|mov)$/i);
-                                return (
-                                  <div 
-                                    key={idx} 
-                                    className="relative aspect-square rounded-lg overflow-hidden bg-muted"
-                                  >
-                                    {isVideo ? (
-                                      <div className="w-full h-full flex items-center justify-center bg-black/20">
-                                        <Play className="w-4 h-4 text-white" />
-                                        <video 
-                                          src={m.url} 
-                                          className="absolute inset-0 w-full h-full object-cover -z-10" 
-                                        />
-                                      </div>
-                                    ) : (
-                                      <img 
-                                        src={m.url} 
-                                        alt=""
-                                        className="w-full h-full object-cover"
-                                      />
-                                    )}
-                                    {idx === 1 && midiaArray.length > 2 && (
-                                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                                        <span className="text-white text-xs font-medium">
-                                          +{midiaArray.length - 2}
-                                        </span>
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground mb-4">Nenhum registro encontrado para este cliente</p>
-              <Button variant="terracota" asChild>
-                <Link to={`/registros/novo?cliente=${id}`}>
-                  <Plus className="w-4 h-4" />
-                  Criar primeiro registro
-                </Link>
-              </Button>
-            </div>
-          )}
+          <FeedCliente clienteId={id || ''} />
         </TabsContent>
 
         {/* Tab Propostas */}
