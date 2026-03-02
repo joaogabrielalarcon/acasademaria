@@ -104,8 +104,9 @@ export default function Login() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted/30 p-4">
       <div className="w-full max-w-xs space-y-8">
         {/* Logo grande */}
-        <div className="flex justify-center">
-          <img src={logoMfm} alt="MFM Paisagismo" className="w-96 h-auto object-contain" />
+        <div className="flex flex-col items-center">
+          <img src={logoMfm} alt="MFM Paisagismo" className="w-[500px] h-auto object-contain" />
+          <p className="text-sm font-semibold text-foreground mt-2 tracking-wide">Maria Fernanda Marques — Paisagismo e Soluções Ambientais</p>
         </div>
 
         {/* Formulário compacto */}
