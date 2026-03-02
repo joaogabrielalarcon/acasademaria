@@ -23,7 +23,7 @@ export function MobileHeader() {
         </SheetContent>
       </Sheet>
 
-      <Link to="/menu">
+      <Link to="/">
         <Logo variant="compact" />
       </Link>
 
