@@ -82,20 +82,29 @@ export function MafeChat() {
   const currentPage = getRouteLabel(location.pathname);
 
   // Scroll to the START of the last assistant message
+  const scrollToLastAssistantStart = useCallback(() => {
+    if (lastMsgStartRef.current) {
+      const container = lastMsgStartRef.current.closest('.overflow-y-auto');
+      if (container) {
+        const msgTop = lastMsgStartRef.current.offsetTop - container.getBoundingClientRect().top;
+        container.scrollTo({ top: lastMsgStartRef.current.offsetTop - 12, behavior: "smooth" });
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (!isLoading) {
-      lastMsgStartRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setTimeout(scrollToLastAssistantStart, 50);
     }
-  }, [messages, isLoading]);
+  }, [messages, isLoading, scrollToLastAssistantStart]);
 
   useEffect(() => {
     if (isLoading) {
-      const interval = setInterval(() => {
-        lastMsgStartRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 300);
-      return () => clearInterval(interval);
+      // Only scroll to top of message once when streaming starts
+      const timeout = setTimeout(scrollToLastAssistantStart, 100);
+      return () => clearTimeout(timeout);
     }
-  }, [isLoading]);
+  }, [isLoading, scrollToLastAssistantStart]);
 
   // Listen for inline messages from MenuCentral
   useEffect(() => {
@@ -327,12 +336,13 @@ export function MafeChat() {
           const isLastAssistant = msg.role === "assistant" && 
             arr.slice(i + 1).every(m => m.role === "user" || m.content.startsWith("[Naveguei para:"));
           return (
-            <div key={i} className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+            <div
+              key={i}
+              ref={isLastAssistant && msg.role === "assistant" ? lastMsgStartRef : undefined}
+              className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+            >
               {msg.role === "assistant" && (
-                <>
-                  {isLastAssistant && <div ref={lastMsgStartRef} />}
-                  <img src={mafeAvatar} alt="Mafe" className="w-6 h-6 rounded-full object-cover object-top shrink-0 mt-1" />
-                </>
+                <img src={mafeAvatar} alt="Mafe" className="w-6 h-6 rounded-full object-cover object-top shrink-0 mt-1" />
               )}
               <div className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
                 msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
