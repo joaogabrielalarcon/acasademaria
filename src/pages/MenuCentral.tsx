@@ -64,7 +64,7 @@ export default function MenuCentral() {
           <p className="text-base text-muted-foreground text-center mb-6">Em que posso te ajudar?</p>
 
           <div className="flex flex-col items-center mb-6">
-            <img src={floraAvatar} alt="Flora" className="w-28 h-28 rounded-full object-cover shadow-md mb-4" />
+            <img src={floraAvatar} alt="Flora" className="w-40 h-40 rounded-full object-cover object-top shadow-md mb-4" />
             <p className="text-sm text-muted-foreground leading-relaxed text-center max-w-md">
               Eu sou a <span className="font-semibold text-foreground">Flora</span>, assistente virtual da Maria Fernanda Marques — Paisagismo e Soluções Ambientais. Me conte como posso te ajudar!
             </p>
