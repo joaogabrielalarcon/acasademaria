@@ -23,7 +23,9 @@ export function MobileHeader() {
         </SheetContent>
       </Sheet>
 
-      <Logo variant="compact" />
+      <Link to="/menu">
+        <Logo variant="compact" />
+      </Link>
 
       <Button variant="ghost" size="icon-sm" className="text-foreground hover:bg-secondary" asChild>
         <Link to="/registros/novo">
