@@ -93,12 +93,23 @@ export function MaoDeObraDescritivo({ projetoId, isAdmin }: MaoDeObraDescritivoP
     updateMutation.mutate({ id, descricao: value });
   };
 
-  const calcSemanas = (dias: number) => {
+  const formatSemanas = (dias: number) => {
+    if (dias === 0) return "0 semanas";
     const semanas = dias / 5;
-    const semanasInteiras = Math.floor(semanas);
-    const diasRestantes = dias % 5;
-    if (diasRestantes === 0) return `${semanasInteiras} semana${semanasInteiras !== 1 ? "s" : ""}`;
-    return `${semanasInteiras > 0 ? `${semanasInteiras} semana${semanasInteiras !== 1 ? "s" : ""} e ` : ""}${diasRestantes} dia${diasRestantes !== 1 ? "s" : ""}`;
+    // Frações comuns
+    const fracoes: Record<string, string> = {
+      "0.2": "⅕", "0.4": "⅖", "0.6": "⅗", "0.8": "⅘",
+      "0.25": "¼", "0.5": "½", "0.75": "¾",
+      "0.33": "⅓", "0.67": "⅔",
+    };
+    const inteiras = Math.floor(semanas);
+    const frac = semanas - inteiras;
+    if (frac === 0) return `${inteiras} semana${inteiras !== 1 ? "s" : ""}`;
+    // Tentar achar fração bonita
+    const fracKey = frac.toFixed(2).replace(/0$/, "");
+    const fracStr = fracoes[fracKey] || frac.toFixed(1);
+    if (inteiras === 0) return `${fracStr} semana`;
+    return `${inteiras} e ${fracStr} semana${inteiras + frac !== 1 ? "s" : ""}`;
   };
 
   // Totais
@@ -132,17 +143,18 @@ export function MaoDeObraDescritivo({ projetoId, isAdmin }: MaoDeObraDescritivoP
       ) : itens.length > 0 ? (
         <div className="space-y-2">
           {/* Header */}
-          <div className="grid grid-cols-12 gap-2 text-xs text-muted-foreground font-medium px-3 pb-1">
-            <div className="col-span-4">Descrição</div>
-            <div className="col-span-2 text-center">Funcionários</div>
-            <div className="col-span-2 text-center">Dias</div>
-            <div className="col-span-3 text-center">Semanas</div>
-            <div className="col-span-1" />
+          <div className="grid grid-cols-[3fr_1.5fr_1.5fr_1.5fr_2fr_auto] gap-2 text-xs text-muted-foreground font-medium px-3 pb-1">
+            <div>Descrição</div>
+            <div className="text-center">Funcionários</div>
+            <div className="text-center">Dias</div>
+            <div className="text-center">Presenças</div>
+            <div className="text-center">Semanas</div>
+            <div className="w-7" />
           </div>
 
           {itens.map((item) => (
-            <div key={item.id} className="grid grid-cols-12 gap-2 items-center p-3 rounded-lg bg-muted/50">
-              <div className="col-span-4">
+            <div key={item.id} className="grid grid-cols-[3fr_1.5fr_1.5fr_1.5fr_2fr_auto] gap-2 items-center p-3 rounded-lg bg-muted/50">
+              <div>
                 {isAdmin ? (
                   <Input
                     defaultValue={item.descricao}
@@ -155,7 +167,7 @@ export function MaoDeObraDescritivo({ projetoId, isAdmin }: MaoDeObraDescritivoP
                   <span className="text-sm font-medium text-foreground">{item.descricao || "—"}</span>
                 )}
               </div>
-              <div className="col-span-2">
+              <div>
                 {isAdmin ? (
                   <Input
                     type="number"
@@ -171,7 +183,7 @@ export function MaoDeObraDescritivo({ projetoId, isAdmin }: MaoDeObraDescritivoP
                   </span>
                 )}
               </div>
-              <div className="col-span-2">
+              <div>
                 {isAdmin ? (
                   <Input
                     type="number"
@@ -184,10 +196,13 @@ export function MaoDeObraDescritivo({ projetoId, isAdmin }: MaoDeObraDescritivoP
                   <span className="text-sm text-center block">{item.dias_previstos} dias</span>
                 )}
               </div>
-              <div className="col-span-3 text-center text-sm text-muted-foreground">
-                {calcSemanas(item.dias_previstos)}
+              <div className="text-center text-sm font-medium text-foreground">
+                {item.quantidade_funcionarios * item.dias_previstos}
               </div>
-              <div className="col-span-1 flex justify-end">
+              <div className="text-center text-sm text-muted-foreground">
+                {formatSemanas(item.dias_previstos)}
+              </div>
+              <div className="flex justify-end w-7">
                 {isAdmin && (
                   <Button
                     variant="ghost"
@@ -203,18 +218,19 @@ export function MaoDeObraDescritivo({ projetoId, isAdmin }: MaoDeObraDescritivoP
           ))}
 
           {/* Totais */}
-          <div className="grid grid-cols-12 gap-2 items-center px-3 pt-2 border-t border-border/50">
-            <div className="col-span-4 text-sm font-semibold text-foreground">Total</div>
-            <div className="col-span-2 text-center text-sm font-semibold">—</div>
-            <div className="col-span-2 text-center text-sm font-semibold">{totalDias} dias</div>
-            <div className="col-span-3 text-center text-sm font-semibold text-primary">
-              {calcSemanas(totalDias)}
+          <div className="grid grid-cols-[3fr_1.5fr_1.5fr_1.5fr_2fr_auto] gap-2 items-center px-3 pt-2 border-t border-border/50">
+            <div className="text-sm font-semibold text-foreground">Total</div>
+            <div className="text-center text-sm font-semibold">—</div>
+            <div className="text-center text-sm font-semibold">{totalDias} dias</div>
+            <div className="text-center text-sm font-semibold text-primary">{totalHomemDia}</div>
+            <div className="text-center text-sm font-semibold text-primary">
+              {formatSemanas(totalDias)}
             </div>
-            <div className="col-span-1" />
+            <div className="w-7" />
           </div>
           <div className="px-3 pt-1">
             <p className="text-xs text-muted-foreground">
-              Total homem/dia: <span className="font-medium text-foreground">{totalHomemDia}</span> (funcionários × dias)
+              Presenças = funcionários × dias
             </p>
           </div>
         </div>
