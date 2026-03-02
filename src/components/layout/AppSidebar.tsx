@@ -44,7 +44,7 @@ const allNavigationItems = [
   {
     title: "Clientes",
     icon: Users,
-    href: "/",
+    href: "/clientes",
     roles: ["admin", "gestor", "operador"] as UserRole[],
   },
   {
