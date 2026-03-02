@@ -10,7 +10,6 @@ import {
   ChevronRight
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Logo } from "@/components/Logo";
 import { useAuth, useUserRoles } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
@@ -44,7 +43,6 @@ export default function MenuCentral() {
     <AppLayout>
       <div className="flex flex-col items-center gap-8 py-4">
         <div className="text-center space-y-2">
-          <Logo variant="compact" className="max-w-[160px] mx-auto" />
           <h1 className="text-2xl font-semibold text-foreground font-serif">Menu Principal</h1>
           <p className="text-sm text-muted-foreground">Acesse todas as funcionalidades do sistema</p>
         </div>
