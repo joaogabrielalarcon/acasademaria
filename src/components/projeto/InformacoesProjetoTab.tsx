@@ -19,6 +19,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Projeto } from "@/hooks/useProjetos";
 import { FilePreview } from "./FilePreview";
 import { MemorialDescritivo } from "./MemorialDescritivo";
+import { MaoDeObraDescritivo } from "./MaoDeObraDescritivo";
 
 interface InformacoesProjetoTabProps {
   projeto: Projeto;
@@ -278,6 +279,9 @@ export function InformacoesProjetoTab({ projeto, isAdmin, userId }: InformacoesP
 
       {/* Memorial Descritivo */}
       <MemorialDescritivo projetoId={projeto.id} isAdmin={isAdmin} />
+
+      {/* Mão de Obra */}
+      <MaoDeObraDescritivo projetoId={projeto.id} isAdmin={isAdmin} />
 
       {/* Comentários */}
       <section className="card-botanical p-5">
