@@ -201,6 +201,7 @@ export type Database = {
           tamanho_calcado: string | null
           tamanho_camiseta: string | null
           telefone: string | null
+          updated_at: string
           updated_by: string | null
           user_id: string | null
           username: string | null
@@ -229,6 +230,7 @@ export type Database = {
           tamanho_calcado?: string | null
           tamanho_camiseta?: string | null
           telefone?: string | null
+          updated_at?: string
           updated_by?: string | null
           user_id?: string | null
           username?: string | null
@@ -257,6 +259,7 @@ export type Database = {
           tamanho_calcado?: string | null
           tamanho_camiseta?: string | null
           telefone?: string | null
+          updated_at?: string
           updated_by?: string | null
           user_id?: string | null
           username?: string | null
