@@ -15,6 +15,7 @@ import {
   Building2,
   Shield,
   Wrench,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
@@ -76,6 +77,12 @@ const allNavigationItems = [
     icon: Wrench,
     href: "/maquinas",
     roles: ["admin"] as UserRole[],
+  },
+  {
+    title: "Processos Internos",
+    icon: BookOpen,
+    href: "/processos",
+    roles: ["admin", "gestor"] as UserRole[],
   },
 ];
 
