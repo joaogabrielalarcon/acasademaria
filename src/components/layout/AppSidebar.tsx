@@ -199,9 +199,14 @@ export function AppSidebar({ className }: AppSidebarProps) {
     >
       {/* Logo */}
       <Link to="/" className={cn(
-        "flex items-center justify-center py-6 border-b border-sidebar-border hover:bg-secondary/50 transition-colors",
+        "flex items-center justify-center py-6 border-b border-sidebar-border hover:bg-secondary/50 transition-colors cursor-pointer",
         collapsed ? "px-2" : "px-4"
-      )}>
+      )}
+        onClick={(e) => {
+          e.preventDefault();
+          window.location.href = "/";
+        }}
+      >
         <Logo variant={collapsed ? "icon" : "compact"} />
       </Link>
 

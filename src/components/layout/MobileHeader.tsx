@@ -23,7 +23,7 @@ export function MobileHeader() {
         </SheetContent>
       </Sheet>
 
-      <Link to="/">
+      <Link to="/" onClick={(e) => { e.preventDefault(); window.location.href = "/"; }}>
         <Logo variant="compact" />
       </Link>
 
