@@ -59,7 +59,9 @@ export default function MenuCentral() {
           <h1 className="text-2xl font-semibold text-foreground font-serif mb-1">
             {getGreeting()}, {firstName}! 👋
           </h1>
-          <p className="text-sm text-muted-foreground mb-5">Em que posso te ajudar?</p>
+          <p className="text-sm text-muted-foreground mb-4">
+            Pergunte à <span className="font-medium text-primary">Flora</span> 🌿 — ela te guia passo a passo.
+          </p>
           
           <AssistenteChat userName={firstName} userRole={userRole} />
         </div>
