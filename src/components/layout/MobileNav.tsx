@@ -14,6 +14,7 @@ import {
   Wrench,
   DollarSign,
   BookOpen,
+  CalendarDays,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
@@ -32,6 +33,7 @@ type UserRole = "admin" | "gestor" | "operador";
 const allNavigationItems = [
   { title: "Clientes", icon: Users, href: "/clientes", roles: ["admin", "gestor", "operador"] as UserRole[] },
   { title: "Equipe", icon: UserCircle, href: "/equipe", roles: ["admin", "gestor", "operador"] as UserRole[] },
+  { title: "Calendário", icon: CalendarDays, href: "/calendario", roles: ["admin", "gestor"] as UserRole[] },
   { title: "Plantas", icon: Leaf, href: "/plantas", roles: ["admin"] as UserRole[] },
   { title: "Produtos e Insumos", icon: Package, href: "/insumos", roles: ["admin"] as UserRole[] },
   { title: "Fornecedores", icon: Truck, href: "/fornecedores", roles: ["admin"] as UserRole[] },
