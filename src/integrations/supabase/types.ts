@@ -1294,6 +1294,50 @@ export type Database = {
           },
         ]
       }
+      projeto_mao_de_obra: {
+        Row: {
+          created_at: string
+          descricao: string
+          dias_previstos: number
+          id: string
+          observacoes: string | null
+          ordem: number | null
+          projeto_id: string
+          quantidade_funcionarios: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string
+          dias_previstos?: number
+          id?: string
+          observacoes?: string | null
+          ordem?: number | null
+          projeto_id: string
+          quantidade_funcionarios?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string
+          dias_previstos?: number
+          id?: string
+          observacoes?: string | null
+          ordem?: number | null
+          projeto_id?: string
+          quantidade_funcionarios?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projeto_mao_de_obra_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projetos: {
         Row: {
           cliente_id: string
