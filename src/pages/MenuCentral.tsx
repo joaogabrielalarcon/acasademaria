@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Users,
@@ -72,11 +72,8 @@ function getGreeting(): string {
   return "Boa noite";
 }
 
-function getDailyQuote(): string {
-  // Use date as seed so quote changes daily but is consistent within the day
-  const today = new Date();
-  const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
-  return MOTIVATIONAL_QUOTES[seed % MOTIVATIONAL_QUOTES.length];
+function getRandomQuote(): string {
+  return MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)];
 }
 
 export default function MenuCentral() {
@@ -84,6 +81,9 @@ export default function MenuCentral() {
   const { data: profile } = useProfile(user?.id);
   const { data: userRoles = [] } = useUserRoles(user?.id);
   const [inlineInput, setInlineInput] = useState("");
+  const [quote] = useState(() => getRandomQuote());
+  const [isRecording, setIsRecording] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   const getUserHighestRole = (): UserRole => {
     if (userRoles.length === 0) return "admin";
@@ -95,7 +95,6 @@ export default function MenuCentral() {
   const userRole = getUserHighestRole();
   const visibleItems = menuItems.filter(item => item.roles.includes(userRole));
   const firstName = profile?.nome?.split(" ")[0] || user?.email?.split("@")[0] || "Usuário";
-  const quote = useMemo(() => getDailyQuote(), []);
 
   const handleInlineSend = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -108,6 +107,37 @@ export default function MenuCentral() {
 
   const handleInlineKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleInlineSend(); }
+  };
+
+  const toggleRecording = () => {
+    if (isRecording) {
+      if (recognitionRef.current) {
+        recognitionRef.current.onresult = null;
+        recognitionRef.current.onend = null;
+        recognitionRef.current.stop();
+        recognitionRef.current = null;
+      }
+      setIsRecording(false);
+      return;
+    }
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+    const recognition = new SpeechRecognition();
+    recognition.lang = "pt-BR";
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.onresult = (event: any) => {
+      let transcript = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) transcript += event.results[i][0].transcript;
+      }
+      if (transcript) setInlineInput(prev => (prev ? prev + " " : "") + transcript);
+    };
+    recognition.onend = () => setIsRecording(false);
+    recognition.onerror = () => setIsRecording(false);
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsRecording(true);
   };
 
   return (
@@ -123,7 +153,7 @@ export default function MenuCentral() {
           <div className="flex flex-col items-center mb-6">
             <img src={mafeAvatar} alt="Mafe" className="w-40 h-40 rounded-full object-cover object-top shadow-md mb-4" />
             <p className="text-sm text-muted-foreground leading-relaxed text-center max-w-md">
-              Eu sou a <span className="font-semibold text-foreground">Mafe</span>, assistente virtual da Maria Fernanda Marques — Paisagismo e Soluções Ambientais. Me conte como posso te ajudar!
+              Eu sou a <span className="font-semibold text-foreground">Mafe</span>, assistente virtual da <span className="font-bold text-foreground">Maria Fernanda Marques — Paisagismo e Soluções Ambientais</span>. Me conte como posso te ajudar!
             </p>
           </div>
 
@@ -137,6 +167,15 @@ export default function MenuCentral() {
               rows={1}
               className="flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground"
             />
+            <Button
+              type="button"
+              size="icon"
+              variant={isRecording ? "destructive" : "ghost"}
+              onClick={toggleRecording}
+              className="rounded-xl h-10 w-10 shrink-0"
+            >
+              {isRecording ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+            </Button>
             <Button
               type="submit"
               size="icon"
