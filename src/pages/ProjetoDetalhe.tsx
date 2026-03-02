@@ -15,6 +15,8 @@ import {
   FileText,
   BarChart3,
   ClipboardList,
+  Info,
+  Calendar,
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -62,6 +64,8 @@ import { ResumoFinanceiroTab } from "@/components/projeto/ResumoFinanceiroTab";
 import { ExecucaoTab } from "@/components/projeto/ExecucaoTab";
 import { DashboardTab } from "@/components/projeto/DashboardTab";
 import { CotacaoSheet } from "@/components/projeto/CotacaoSheet";
+import { InformacoesProjetoTab } from "@/components/projeto/InformacoesProjetoTab";
+import { DiarioProjetoTab } from "@/components/projeto/DiarioProjetoTab";
 import { Progress } from "@/components/ui/progress";
 
 export default function ProjetoDetalhe() {
@@ -326,25 +330,48 @@ export default function ProjetoDetalhe() {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="orcamento" className="w-full">
+      <Tabs defaultValue="informacoes" className="w-full">
         <TabsList className="mb-6 flex-wrap">
+          <TabsTrigger value="informacoes" className="gap-2">
+            <Info className="w-4 h-4" />
+            Informações
+          </TabsTrigger>
+          <TabsTrigger value="diario" className="gap-2">
+            <Calendar className="w-4 h-4" />
+            Diário
+          </TabsTrigger>
           <TabsTrigger value="orcamento" className="gap-2">
             <DollarSign className="w-4 h-4" />
             Orçamento
           </TabsTrigger>
-          <TabsTrigger value="resumo" className="gap-2">
-            <FileText className="w-4 h-4" />
-            Resumo Financeiro
-          </TabsTrigger>
           <TabsTrigger value="execucao" className="gap-2">
             <ClipboardList className="w-4 h-4" />
             Execução
+          </TabsTrigger>
+          <TabsTrigger value="resumo" className="gap-2">
+            <FileText className="w-4 h-4" />
+            Resumo Financeiro
           </TabsTrigger>
           <TabsTrigger value="dashboard" className="gap-2">
             <BarChart3 className="w-4 h-4" />
             Dashboard
           </TabsTrigger>
         </TabsList>
+
+        {/* Informações do Projeto */}
+        <TabsContent value="informacoes">
+          <InformacoesProjetoTab
+            projeto={projeto}
+            itens={itens}
+            isAdmin={isAdmin}
+            userId={user?.id}
+          />
+        </TabsContent>
+
+        {/* Diário */}
+        <TabsContent value="diario">
+          <DiarioProjetoTab projetoId={id!} clienteId={projeto.cliente_id} />
+        </TabsContent>
 
         <TabsContent value="orcamento">
           {/* Summary cards */}
@@ -501,7 +528,7 @@ export default function ProjetoDetalhe() {
 
         {/* Execução */}
         <TabsContent value="execucao">
-          <ExecucaoTab projetoId={id!} clienteId={projeto.cliente_id} />
+          <ExecucaoTab projetoId={id!} clienteId={projeto.cliente_id} itens={itens} />
         </TabsContent>
 
         {/* Dashboard */}

@@ -968,6 +968,82 @@ export type Database = {
           },
         ]
       }
+      projeto_arquivos: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          projeto_id: string
+          tamanho: number | null
+          tipo: string | null
+          uploaded_by: string | null
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          projeto_id: string
+          tamanho?: number | null
+          tipo?: string | null
+          uploaded_by?: string | null
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          projeto_id?: string
+          tamanho?: number | null
+          tipo?: string | null
+          uploaded_by?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projeto_arquivos_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projeto_comentarios: {
+        Row: {
+          created_at: string
+          id: string
+          projeto_id: string
+          texto: string
+          updated_at: string
+          usuario_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          projeto_id: string
+          texto: string
+          updated_at?: string
+          usuario_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          projeto_id?: string
+          texto?: string
+          updated_at?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projeto_comentarios_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projetos: {
         Row: {
           cliente_id: string
@@ -1260,6 +1336,7 @@ export type Database = {
           midia: Json | null
           observacoes_internas: string | null
           prioridade: string | null
+          projeto_id: string | null
           proposta_id: string | null
           solicitante: string | null
           status: string
@@ -1289,6 +1366,7 @@ export type Database = {
           midia?: Json | null
           observacoes_internas?: string | null
           prioridade?: string | null
+          projeto_id?: string | null
           proposta_id?: string | null
           solicitante?: string | null
           status?: string
@@ -1318,6 +1396,7 @@ export type Database = {
           midia?: Json | null
           observacoes_internas?: string | null
           prioridade?: string | null
+          projeto_id?: string | null
           proposta_id?: string | null
           solicitante?: string | null
           status?: string
@@ -1341,6 +1420,13 @@ export type Database = {
             columns: ["diaria_id"]
             isOneToOne: false
             referencedRelation: "diarias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
             referencedColumns: ["id"]
           },
           {
