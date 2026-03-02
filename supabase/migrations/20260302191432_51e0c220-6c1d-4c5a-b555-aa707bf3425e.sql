@@ -1,0 +1,1 @@
+ALTER TABLE public.memorial_descritivo ADD COLUMN IF NOT EXISTS dap text DEFAULT '';
