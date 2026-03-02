@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
-import { Logo } from "@/components/Logo";
+import logoMfm from "@/assets/logo-mfm-raiz.png";
 
 const REMEMBER_KEY = "mfm_remember_user";
 
@@ -101,25 +101,17 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/30 p-4">
-      <div className="w-full max-w-md space-y-8">
-        {/* Logo e título */}
-        <div className="text-center">
-          <div className="flex justify-center mb-4">
-            <Logo variant="compact" />
-          </div>
-          <h1 className="font-display text-2xl font-bold text-foreground">
-            Entrar no Sistema
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Acesse sua conta para continuar
-          </p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted/30 p-4">
+      <div className="w-full max-w-sm space-y-6">
+        {/* Logo grande */}
+        <div className="flex justify-center mb-2">
+          <img src={logoMfm} alt="MFM Paisagismo" className="w-64 h-auto object-contain" />
         </div>
 
-        {/* Formulário */}
-        <form onSubmit={handleSubmit} className="card-botanical p-6 space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="username">Usuário</Label>
+        {/* Formulário compacto */}
+        <form onSubmit={handleSubmit} className="card-botanical p-5 space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="username" className="text-xs">Usuário</Label>
             <Input
               id="username"
               type="text"
@@ -128,11 +120,12 @@ export default function Login() {
               onChange={(e) => setUsername(e.target.value)}
               disabled={isLoading}
               autoComplete="username"
+              className="h-9 text-sm"
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="password">Senha</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="password" className="text-xs">Senha</Label>
             <Input
               id="password"
               type="password"
@@ -141,6 +134,7 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
               autoComplete="current-password"
+              className="h-9 text-sm"
             />
           </div>
 
@@ -150,14 +144,14 @@ export default function Login() {
               checked={rememberMe}
               onCheckedChange={(checked) => setRememberMe(checked === true)}
             />
-            <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">
+            <Label htmlFor="remember" className="text-xs font-normal cursor-pointer">
               Lembrar meu usuário
             </Label>
           </div>
 
           <Button 
             type="submit" 
-            className="w-full" 
+            className="w-full h-9 text-sm" 
             variant="terracota"
             disabled={isLoading}
           >
@@ -172,12 +166,9 @@ export default function Login() {
           </Button>
         </form>
 
-        {/* Texto de suporte */}
-        <div className="text-center">
-          <p className="text-sm text-muted-foreground">
-            Não tem acesso? Entre em contato com a administração.
-          </p>
-        </div>
+        <p className="text-center text-xs text-muted-foreground">
+          Não tem acesso? Entre em contato com a administração.
+        </p>
       </div>
     </div>
   );
