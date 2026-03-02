@@ -29,7 +29,7 @@ import { useState } from "react";
 type UserRole = "admin" | "gestor" | "operador";
 
 const allNavigationItems = [
-  { title: "Clientes", icon: Users, href: "/", roles: ["admin", "gestor", "operador"] as UserRole[] },
+  { title: "Clientes", icon: Users, href: "/clientes", roles: ["admin", "gestor", "operador"] as UserRole[] },
   { title: "Equipe", icon: UserCircle, href: "/equipe", roles: ["admin", "gestor", "operador"] as UserRole[] },
   { title: "Plantas", icon: Leaf, href: "/plantas", roles: ["admin"] as UserRole[] },
   { title: "Produtos e Insumos", icon: Package, href: "/insumos", roles: ["admin"] as UserRole[] },
