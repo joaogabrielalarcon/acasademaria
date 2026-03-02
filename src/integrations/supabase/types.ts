@@ -718,42 +718,68 @@ export type Database = {
       }
       memorial_descritivo: {
         Row: {
+          categoria: string | null
           created_at: string
           id: string
+          insumo_id: string | null
           nome_cientifico: string | null
           nome_popular: string
           ordem: number | null
+          planta_id: string | null
           porte: string | null
           projeto_id: string
           quantidade: number
+          tipo: string
           unidade: string | null
           updated_at: string
         }
         Insert: {
+          categoria?: string | null
           created_at?: string
           id?: string
+          insumo_id?: string | null
           nome_cientifico?: string | null
           nome_popular?: string
           ordem?: number | null
+          planta_id?: string | null
           porte?: string | null
           projeto_id: string
           quantidade?: number
+          tipo?: string
           unidade?: string | null
           updated_at?: string
         }
         Update: {
+          categoria?: string | null
           created_at?: string
           id?: string
+          insumo_id?: string | null
           nome_cientifico?: string | null
           nome_popular?: string
           ordem?: number | null
+          planta_id?: string | null
           porte?: string | null
           projeto_id?: string
           quantidade?: number
+          tipo?: string
           unidade?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "memorial_descritivo_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "insumos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memorial_descritivo_planta_id_fkey"
+            columns: ["planta_id"]
+            isOneToOne: false
+            referencedRelation: "plantas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "memorial_descritivo_projeto_id_fkey"
             columns: ["projeto_id"]
