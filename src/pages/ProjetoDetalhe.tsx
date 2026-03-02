@@ -362,7 +362,6 @@ export default function ProjetoDetalhe() {
         <TabsContent value="informacoes">
           <InformacoesProjetoTab
             projeto={projeto}
-            itens={itens}
             isAdmin={isAdmin}
             userId={user?.id}
           />

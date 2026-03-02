@@ -1,31 +1,27 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useRef } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   FileText,
   Upload,
   Trash2,
-  Download,
   MessageSquare,
   Send,
   Loader2,
-  File,
-  Calendar,
   User,
   Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { OrcamentoItem, tipoItemLabels, tipoItemOrder } from "@/hooks/useOrcamento";
 import { Projeto } from "@/hooks/useProjetos";
+import { FilePreview } from "./FilePreview";
+import { MemorialDescritivo } from "./MemorialDescritivo";
 
 interface InformacoesProjetoTabProps {
   projeto: Projeto;
-  itens: OrcamentoItem[];
   isAdmin: boolean;
   userId?: string;
 }
@@ -50,7 +46,7 @@ interface ProjetoComentario {
   updated_at: string;
 }
 
-export function InformacoesProjetoTab({ projeto, itens, isAdmin, userId }: InformacoesProjetoTabProps) {
+export function InformacoesProjetoTab({ projeto, isAdmin, userId }: InformacoesProjetoTabProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -98,15 +94,8 @@ export function InformacoesProjetoTab({ projeto, itens, isAdmin, userId }: Infor
   });
   const profileMap = new Map(profiles.map((p) => [p.id, p.nome]));
 
-  // Memorial descritivo auto-generated
-  const memorial = useMemo(() => {
-    const groups: Record<string, OrcamentoItem[]> = {};
-    for (const tipo of tipoItemOrder) {
-      const filtered = itens.filter((i) => i.tipo === tipo);
-      if (filtered.length > 0) groups[tipo] = filtered;
-    }
-    return groups;
-  }, [itens]);
+
+
 
   // Upload file
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -149,17 +138,6 @@ export function InformacoesProjetoTab({ projeto, itens, isAdmin, userId }: Infor
     }
   };
 
-  // Download file
-  const handleDownload = async (arquivo: ProjetoArquivo) => {
-    const { data, error } = await supabase.storage
-      .from("projeto-arquivos")
-      .createSignedUrl(arquivo.url, 300);
-    if (error || !data?.signedUrl) {
-      toast({ title: "Erro ao baixar arquivo", variant: "destructive" });
-      return;
-    }
-    window.open(data.signedUrl, "_blank");
-  };
 
   // Delete file
   const deleteArquivoMutation = useMutation({
@@ -273,30 +251,23 @@ export function InformacoesProjetoTab({ projeto, itens, isAdmin, userId }: Infor
           <div className="space-y-2">
             {arquivos.map((arq) => (
               <div key={arq.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                <div className="flex items-center gap-3 min-w-0">
-                  <File className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{arq.nome}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatFileSize(arq.tamanho)} · {formatDate(arq.created_at)}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-1 flex-shrink-0">
-                  <Button variant="ghost" size="sm" onClick={() => handleDownload(arq)}>
-                    <Download className="w-4 h-4" />
+                <FilePreview
+                  nome={arq.nome}
+                  url={arq.url}
+                  tipo={arq.tipo}
+                  bucket="projeto-arquivos"
+                  tamanho={arq.tamanho}
+                />
+                {isAdmin && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:text-destructive ml-1"
+                    onClick={() => deleteArquivoMutation.mutate(arq)}
+                  >
+                    <Trash2 className="w-4 h-4" />
                   </Button>
-                  {isAdmin && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => deleteArquivoMutation.mutate(arq)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
+                )}
               </div>
             ))}
           </div>
@@ -306,39 +277,7 @@ export function InformacoesProjetoTab({ projeto, itens, isAdmin, userId }: Infor
       </section>
 
       {/* Memorial Descritivo */}
-      <section className="card-botanical p-5">
-        <h3 className="font-display text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-          <FileText className="w-5 h-5 text-primary" />
-          Memorial Descritivo
-        </h3>
-        {itens.length > 0 ? (
-          <div className="space-y-4">
-            {tipoItemOrder.map((tipo) => {
-              const items = memorial[tipo];
-              if (!items) return null;
-              return (
-                <div key={tipo}>
-                  <h4 className="font-medium text-foreground mb-2">{tipoItemLabels[tipo]}</h4>
-                  <div className="space-y-1">
-                    {items.map((item, idx) => (
-                      <div key={item.id} className="flex items-start gap-2 text-sm pl-4">
-                        <span className="text-muted-foreground">{idx + 1}.</span>
-                        <span className="text-foreground">
-                          {item.descricao} — {item.quantidade} {item.unidade}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="text-muted-foreground text-sm">
-            O memorial será gerado automaticamente a partir dos itens do orçamento.
-          </p>
-        )}
-      </section>
+      <MemorialDescritivo projetoId={projeto.id} isAdmin={isAdmin} />
 
       {/* Comentários */}
       <section className="card-botanical p-5">

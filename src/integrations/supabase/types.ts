@@ -716,6 +716,53 @@ export type Database = {
         }
         Relationships: []
       }
+      memorial_descritivo: {
+        Row: {
+          created_at: string
+          id: string
+          nome_cientifico: string | null
+          nome_popular: string
+          ordem: number | null
+          porte: string | null
+          projeto_id: string
+          quantidade: number
+          unidade: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome_cientifico?: string | null
+          nome_popular?: string
+          ordem?: number | null
+          porte?: string | null
+          projeto_id: string
+          quantidade?: number
+          unidade?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome_cientifico?: string | null
+          nome_popular?: string
+          ordem?: number | null
+          porte?: string | null
+          projeto_id?: string
+          quantidade?: number
+          unidade?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memorial_descritivo_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orcamento_cotacoes: {
         Row: {
           created_at: string
