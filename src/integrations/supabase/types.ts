@@ -710,6 +710,139 @@ export type Database = {
         }
         Relationships: []
       }
+      orcamento_cotacoes: {
+        Row: {
+          created_at: string
+          fornecedor_id: string | null
+          fornecedor_nome: string | null
+          id: string
+          item_id: string
+          observacao: string | null
+          preco_unitario: number
+          selecionada: boolean
+        }
+        Insert: {
+          created_at?: string
+          fornecedor_id?: string | null
+          fornecedor_nome?: string | null
+          id?: string
+          item_id: string
+          observacao?: string | null
+          preco_unitario?: number
+          selecionada?: boolean
+        }
+        Update: {
+          created_at?: string
+          fornecedor_id?: string | null
+          fornecedor_nome?: string | null
+          id?: string
+          item_id?: string
+          observacao?: string | null
+          preco_unitario?: number
+          selecionada?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_cotacoes_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_cotacoes_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_itens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamento_itens: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          descricao: string
+          id: string
+          insumo_id: string | null
+          margem_percentual: number | null
+          observacao: string | null
+          ordem: number | null
+          planta_id: string | null
+          preco_custo: number | null
+          preco_venda: number | null
+          projeto_id: string
+          quantidade: number
+          reserva_valor: number | null
+          tipo: string
+          unidade: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          descricao: string
+          id?: string
+          insumo_id?: string | null
+          margem_percentual?: number | null
+          observacao?: string | null
+          ordem?: number | null
+          planta_id?: string | null
+          preco_custo?: number | null
+          preco_venda?: number | null
+          projeto_id: string
+          quantidade?: number
+          reserva_valor?: number | null
+          tipo?: string
+          unidade?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string
+          id?: string
+          insumo_id?: string | null
+          margem_percentual?: number | null
+          observacao?: string | null
+          ordem?: number | null
+          planta_id?: string | null
+          preco_custo?: number | null
+          preco_venda?: number | null
+          projeto_id?: string
+          quantidade?: number
+          reserva_valor?: number | null
+          tipo?: string
+          unidade?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_itens_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "insumos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_itens_planta_id_fkey"
+            columns: ["planta_id"]
+            isOneToOne: false
+            referencedRelation: "plantas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_itens_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plantas: {
         Row: {
           altura_cm: number | null

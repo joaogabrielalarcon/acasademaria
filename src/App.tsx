@@ -18,6 +18,7 @@ import CategoriasPlantas from "./pages/CategoriasPlantas";
 import Plantas from "./pages/Plantas";
 import NovaPlanta from "./pages/NovaPlanta";
 import NovoProjeto from "./pages/NovoProjeto";
+import ProjetoDetalhe from "./pages/ProjetoDetalhe";
 import Insumos from "./pages/Insumos";
 import CustosEquipe from "./pages/CustosEquipe";
 import Maquinas from "./pages/Maquinas";
@@ -58,6 +59,7 @@ const App = () => (
           <Route path="/plantas/:id/editar" element={<ProtectedRoute><NovaPlanta /></ProtectedRoute>} />
           <Route path="/insumos" element={<ProtectedRoute><Insumos /></ProtectedRoute>} />
           <Route path="/projetos/novo" element={<ProtectedRoute><NovoProjeto /></ProtectedRoute>} />
+          <Route path="/projetos/:id" element={<ProtectedRoute><ProjetoDetalhe /></ProtectedRoute>} />
           <Route path="/projetos/:id/editar" element={<ProtectedRoute><NovoProjeto /></ProtectedRoute>} />
           <Route path="/maquinas" element={<ProtectedRoute><Maquinas /></ProtectedRoute>} />
           <Route path="/areas" element={<ProtectedRoute><Areas /></ProtectedRoute>} />
