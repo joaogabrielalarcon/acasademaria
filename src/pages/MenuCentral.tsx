@@ -14,6 +14,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth, useProfile, useUserRoles } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { AssistenteChat } from "@/components/AssistenteChat";
+import floraAvatar from "@/assets/flora-avatar.png";
 
 type UserRole = "admin" | "gestor" | "operador";
 
@@ -62,7 +63,7 @@ export default function MenuCentral() {
           <p className="text-sm text-muted-foreground mb-4">Em que posso te ajudar?</p>
 
           <div className="flex items-start gap-3 mb-4 p-3 rounded-xl bg-muted/50">
-            <span className="text-2xl shrink-0">👩‍🦱</span>
+            <img src={floraAvatar} alt="Flora" className="w-10 h-10 rounded-full object-cover shrink-0" />
             <p className="text-sm text-muted-foreground leading-relaxed">
               Eu sou a <span className="font-semibold text-foreground">Flora</span>, assistente de IA da Maria Fernanda Marques, Paisagismo e Soluções Ambientais. Me explique o que você precisa que eu vou te ajudar a fazer!
             </p>
