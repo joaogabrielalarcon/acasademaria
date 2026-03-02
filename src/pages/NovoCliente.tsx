@@ -22,6 +22,8 @@ interface Proprietario {
   nome: string;
   telefone: string;
   email: string;
+  dataNascimento: string;
+  cpf: string;
   pontoContato: boolean;
 }
 
@@ -29,6 +31,8 @@ interface FuncionarioCasa {
   nome: string;
   funcao: string;
   telefone: string;
+  dataNascimento: string;
+  cpf: string;
   pontoContato: boolean;
 }
 
@@ -36,6 +40,8 @@ interface Assessor {
   nome: string;
   empresa: string;
   telefone: string;
+  dataNascimento: string;
+  cpf: string;
   pontoContato: boolean;
 }
 
@@ -54,7 +60,7 @@ export default function NovoCliente() {
   const [estado, setEstado] = useState("");
 
   const [proprietarios, setProprietarios] = useState<Proprietario[]>([
-    { nome: "", telefone: "", email: "", pontoContato: false }
+    { nome: "", telefone: "", email: "", dataNascimento: "", cpf: "", pontoContato: false }
   ]);
   const [funcionarios, setFuncionarios] = useState<FuncionarioCasa[]>([]);
   const [assessores, setAssessores] = useState<Assessor[]>([]);
@@ -97,6 +103,8 @@ export default function NovoCliente() {
           nome: p.nome || "",
           telefone: p.telefone || "",
           email: p.email || "",
+          dataNascimento: p.dataNascimento || "",
+          cpf: p.cpf || "",
           pontoContato: p.pontoContato || false,
         })));
       }
@@ -107,6 +115,8 @@ export default function NovoCliente() {
           nome: f.nome || "",
           funcao: f.funcao || "",
           telefone: f.telefone || "",
+          dataNascimento: f.dataNascimento || "",
+          cpf: f.cpf || "",
           pontoContato: f.pontoContato || false,
         })));
       }
@@ -117,6 +127,8 @@ export default function NovoCliente() {
           nome: a.nome || "",
           empresa: a.empresa || "",
           telefone: a.telefone || "",
+          dataNascimento: a.dataNascimento || "",
+          cpf: a.cpf || "",
           pontoContato: a.pontoContato || false,
         })));
       }
@@ -145,24 +157,45 @@ export default function NovoCliente() {
 
     setIsLoading(true);
 
-    const clienteData = {
-      nome: nome.trim(),
-      status,
-      cpf_cnpj: cpfCnpj || null,
-      inscricao_estadual: inscricaoEstadual || null,
-      endereco: endereco || null,
-      bairro: bairro || null,
-      cidade: cidade || null,
-      estado: estado || null,
-      cep: cep || null,
-      condominio: condominio || null,
-      proprietarios: JSON.parse(JSON.stringify(proprietarios.filter(p => p.nome.trim()))),
-      funcionarios_casa: JSON.parse(JSON.stringify(funcionarios.filter(f => f.nome.trim()))),
-      assessores: JSON.parse(JSON.stringify(assessores.filter(a => a.nome.trim()))),
-      datas_importantes: JSON.parse(JSON.stringify(datasImportantes.filter(d => d.data || d.descricao))),
-      particularidades: particularidades || null,
-      notas: notas || null,
-    };
+      const filteredProps = proprietarios.filter(p => p.nome.trim());
+      const filteredFuncs = funcionarios.filter(f => f.nome.trim());
+      const filteredAssessores = assessores.filter(a => a.nome.trim());
+      const manualDatas = datasImportantes.filter(d => d.data || d.descricao);
+
+      // Auto-generate birthday entries from people with dataNascimento
+      const birthdayDatas: DataImportante[] = [];
+      filteredProps.forEach(p => {
+        if (p.dataNascimento) birthdayDatas.push({ data: p.dataNascimento, descricao: `Aniversário - ${p.nome} (Proprietário)` });
+      });
+      filteredFuncs.forEach(f => {
+        if (f.dataNascimento) birthdayDatas.push({ data: f.dataNascimento, descricao: `Aniversário - ${f.nome} (Funcionário)` });
+      });
+      filteredAssessores.forEach(a => {
+        if (a.dataNascimento) birthdayDatas.push({ data: a.dataNascimento, descricao: `Aniversário - ${a.nome} (Assessor)` });
+      });
+
+      // Merge: keep manual entries that aren't auto-generated birthdays, then add birthday entries
+      const nonBirthdayManual = manualDatas.filter(d => !d.descricao.startsWith("Aniversário - "));
+      const allDatas = [...nonBirthdayManual, ...birthdayDatas];
+
+      const clienteData = {
+        nome: nome.trim(),
+        status,
+        cpf_cnpj: cpfCnpj || null,
+        inscricao_estadual: inscricaoEstadual || null,
+        endereco: endereco || null,
+        bairro: bairro || null,
+        cidade: cidade || null,
+        estado: estado || null,
+        cep: cep || null,
+        condominio: condominio || null,
+        proprietarios: JSON.parse(JSON.stringify(filteredProps)),
+        funcionarios_casa: JSON.parse(JSON.stringify(filteredFuncs)),
+        assessores: JSON.parse(JSON.stringify(filteredAssessores)),
+        datas_importantes: JSON.parse(JSON.stringify(allDatas)),
+        particularidades: particularidades || null,
+        notas: notas || null,
+      };
 
     try {
       if (isEditing && id) {
@@ -202,7 +235,7 @@ export default function NovoCliente() {
 
   // Proprietários
   const addProprietario = () => {
-    setProprietarios([...proprietarios, { nome: "", telefone: "", email: "", pontoContato: false }]);
+    setProprietarios([...proprietarios, { nome: "", telefone: "", email: "", dataNascimento: "", cpf: "", pontoContato: false }]);
   };
   const removeProprietario = (index: number) => {
     setProprietarios(proprietarios.filter((_, i) => i !== index));
@@ -215,7 +248,7 @@ export default function NovoCliente() {
 
   // Funcionários
   const addFuncionario = () => {
-    setFuncionarios([...funcionarios, { nome: "", funcao: "", telefone: "", pontoContato: false }]);
+    setFuncionarios([...funcionarios, { nome: "", funcao: "", telefone: "", dataNascimento: "", cpf: "", pontoContato: false }]);
   };
   const removeFuncionario = (index: number) => {
     setFuncionarios(funcionarios.filter((_, i) => i !== index));
@@ -228,7 +261,7 @@ export default function NovoCliente() {
 
   // Assessores
   const addAssessor = () => {
-    setAssessores([...assessores, { nome: "", empresa: "", telefone: "", pontoContato: false }]);
+    setAssessores([...assessores, { nome: "", empresa: "", telefone: "", dataNascimento: "", cpf: "", pontoContato: false }]);
   };
   const removeAssessor = (index: number) => {
     setAssessores(assessores.filter((_, i) => i !== index));
@@ -462,6 +495,24 @@ export default function NovoCliente() {
                     onChange={(e) => updateProprietario(index, "email", e.target.value)}
                   />
                 </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Data de Nascimento</Label>
+                    <Input 
+                      type="date"
+                      value={prop.dataNascimento}
+                      onChange={(e) => updateProprietario(index, "dataNascimento", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">CPF</Label>
+                    <Input 
+                      placeholder="000.000.000-00"
+                      value={prop.cpf}
+                      onChange={(e) => updateProprietario(index, "cpf", formatCPFCNPJ(e.target.value))}
+                    />
+                  </div>
+                </div>
               </div>
             ))}
           </section>
@@ -525,6 +576,24 @@ export default function NovoCliente() {
                       value={func.telefone}
                       onChange={(e) => updateFuncionario(index, "telefone", formatPhone(e.target.value))}
                     />
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Data de Nascimento</Label>
+                      <Input 
+                        type="date"
+                        value={func.dataNascimento}
+                        onChange={(e) => updateFuncionario(index, "dataNascimento", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">CPF</Label>
+                      <Input 
+                        placeholder="000.000.000-00"
+                        value={func.cpf}
+                        onChange={(e) => updateFuncionario(index, "cpf", formatCPFCNPJ(e.target.value))}
+                      />
+                    </div>
                   </div>
                 </div>
               ))
@@ -590,6 +659,24 @@ export default function NovoCliente() {
                       value={ass.telefone}
                       onChange={(e) => updateAssessor(index, "telefone", formatPhone(e.target.value))}
                     />
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Data de Nascimento</Label>
+                      <Input 
+                        type="date"
+                        value={ass.dataNascimento}
+                        onChange={(e) => updateAssessor(index, "dataNascimento", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">CPF</Label>
+                      <Input 
+                        placeholder="000.000.000-00"
+                        value={ass.cpf}
+                        onChange={(e) => updateAssessor(index, "cpf", formatCPFCNPJ(e.target.value))}
+                      />
+                    </div>
                   </div>
                 </div>
               ))

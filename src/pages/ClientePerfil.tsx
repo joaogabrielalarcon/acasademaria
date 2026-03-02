@@ -386,18 +386,30 @@ export default function ClientePerfil() {
             </h2>
             {cliente.proprietarios.length > 0 ? (
               <div className="space-y-3">
-                {cliente.proprietarios.map((prop, index) => (
-                  <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 p-3 rounded-lg bg-muted/50">
-                    <span className="font-medium text-foreground">{prop.nome}</span>
-                    {prop.telefone && (
-                      <span className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Phone className="w-3.5 h-3.5" /> {prop.telefone}
-                      </span>
-                    )}
-                    {prop.email && (
-                      <span className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Mail className="w-3.5 h-3.5" /> {prop.email}
-                      </span>
+                {cliente.proprietarios.map((prop: any, index: number) => (
+                  <div key={index} className="flex flex-col gap-2 p-3 rounded-lg bg-muted/50">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
+                      <span className="font-medium text-foreground">{prop.nome}</span>
+                      {prop.telefone && (
+                        <span className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Phone className="w-3.5 h-3.5" /> {prop.telefone}
+                        </span>
+                      )}
+                      {prop.email && (
+                        <span className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Mail className="w-3.5 h-3.5" /> {prop.email}
+                        </span>
+                      )}
+                    </div>
+                    {(prop.dataNascimento || prop.cpf) && (
+                      <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                        {prop.dataNascimento && (
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" /> {new Date(prop.dataNascimento + 'T12:00:00').toLocaleDateString('pt-BR')}
+                          </span>
+                        )}
+                        {prop.cpf && <span>CPF: {prop.cpf}</span>}
+                      </div>
                     )}
                   </div>
                 ))}
@@ -415,14 +427,26 @@ export default function ClientePerfil() {
             </h2>
             {cliente.funcionarios_casa.length > 0 ? (
               <div className="space-y-3">
-                {cliente.funcionarios_casa.map((func, index) => (
-                  <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 p-3 rounded-lg bg-muted/50">
-                    <span className="font-medium text-foreground">{func.nome}</span>
-                    {func.funcao && <Badge variant="outline" className="w-fit">{func.funcao}</Badge>}
-                    {func.telefone && (
-                      <span className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Phone className="w-3.5 h-3.5" /> {func.telefone}
-                      </span>
+                {cliente.funcionarios_casa.map((func: any, index: number) => (
+                  <div key={index} className="flex flex-col gap-2 p-3 rounded-lg bg-muted/50">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
+                      <span className="font-medium text-foreground">{func.nome}</span>
+                      {func.funcao && <Badge variant="outline" className="w-fit">{func.funcao}</Badge>}
+                      {func.telefone && (
+                        <span className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Phone className="w-3.5 h-3.5" /> {func.telefone}
+                        </span>
+                      )}
+                    </div>
+                    {(func.dataNascimento || func.cpf) && (
+                      <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                        {func.dataNascimento && (
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" /> {new Date(func.dataNascimento + 'T12:00:00').toLocaleDateString('pt-BR')}
+                          </span>
+                        )}
+                        {func.cpf && <span>CPF: {func.cpf}</span>}
+                      </div>
                     )}
                   </div>
                 ))}
@@ -440,14 +464,26 @@ export default function ClientePerfil() {
             </h2>
             {cliente.assessores.length > 0 ? (
               <div className="space-y-3">
-                {cliente.assessores.map((ass, index) => (
-                  <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 p-3 rounded-lg bg-muted/50">
-                    <span className="font-medium text-foreground">{ass.nome}</span>
-                    {ass.empresa && <Badge variant="outline" className="w-fit">{ass.empresa}</Badge>}
-                    {ass.telefone && (
-                      <span className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Phone className="w-3.5 h-3.5" /> {ass.telefone}
-                      </span>
+                {cliente.assessores.map((ass: any, index: number) => (
+                  <div key={index} className="flex flex-col gap-2 p-3 rounded-lg bg-muted/50">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
+                      <span className="font-medium text-foreground">{ass.nome}</span>
+                      {ass.empresa && <Badge variant="outline" className="w-fit">{ass.empresa}</Badge>}
+                      {ass.telefone && (
+                        <span className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Phone className="w-3.5 h-3.5" /> {ass.telefone}
+                        </span>
+                      )}
+                    </div>
+                    {(ass.dataNascimento || ass.cpf) && (
+                      <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                        {ass.dataNascimento && (
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" /> {new Date(ass.dataNascimento + 'T12:00:00').toLocaleDateString('pt-BR')}
+                          </span>
+                        )}
+                        {ass.cpf && <span>CPF: {ass.cpf}</span>}
+                      </div>
                     )}
                   </div>
                 ))}
