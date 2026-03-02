@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePlantas, Planta } from "@/hooks/usePlantas";
 import { useInsumos } from "@/hooks/useInsumos";
+import { useCategoriasPlantas } from "@/hooks/useCategoriasPlantas";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface MemorialItem {
@@ -24,6 +25,7 @@ interface MemorialItem {
   planta_id: string | null;
   insumo_id: string | null;
   categoria: string;
+  dap: string;
 }
 
 interface MemorialDescritivoProps {
@@ -119,6 +121,7 @@ function PlantasSection({
   onRemove,
   onAdd,
   plantas,
+  categoriasMap,
 }: {
   items: MemorialItem[];
   isEditing: boolean;
@@ -126,6 +129,7 @@ function PlantasSection({
   onRemove: (index: number) => void;
   onAdd: () => void;
   plantas: Planta[];
+  categoriasMap: Record<string, string>;
 }) {
   const plantaSuggestions = plantas.map((p) => ({
     label: `${p.nome_popular}${p.nome_cientifico ? ` (${p.nome_cientifico})` : ""}`,
@@ -151,117 +155,143 @@ function PlantasSection({
             <TableHeader>
               <TableRow>
                 <TableHead className="w-8">#</TableHead>
+                <TableHead>Categoria</TableHead>
                 <TableHead>Nome Popular</TableHead>
                 <TableHead>Nome Científico</TableHead>
                 <TableHead>Porte</TableHead>
+                <TableHead className="w-24">DAP</TableHead>
                 <TableHead className="w-20">Qtd</TableHead>
                 <TableHead className="w-20">Unid.</TableHead>
                 {isEditing && <TableHead className="w-10" />}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item, idx) => (
-                <TableRow key={item.id}>
-                  <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
-                  <TableCell>
-                    {isEditing ? (
-                      <AutocompleteInput
-                        value={item.nome_popular}
-                        onChange={(v) => {
-                          onUpdate(idx, "nome_popular", v);
-                          onUpdate(idx, "planta_id", null);
-                        }}
-                        placeholder="Buscar planta..."
-                        suggestions={plantaSuggestions.map((ps) => ({
-                          label: ps.label,
-                          onSelect: () => {
-                            onUpdate(idx, "nome_popular", ps.planta.nome_popular);
-                            onUpdate(idx, "nome_cientifico", ps.planta.nome_cientifico || "");
-                            onUpdate(idx, "porte", ps.planta.porte || "");
-                            onUpdate(idx, "unidade", ps.planta.unidade || "un");
-                            onUpdate(idx, "planta_id", ps.planta.id);
-                          },
-                        }))}
-                      />
-                    ) : (
-                      <span>{item.nome_popular}</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {isEditing ? (
-                      <AutocompleteInput
-                        value={item.nome_cientifico}
-                        onChange={(v) => {
-                          onUpdate(idx, "nome_cientifico", v);
-                          onUpdate(idx, "planta_id", null);
-                        }}
-                        placeholder="Nome científico"
-                        suggestions={plantaCientificoSuggestions.map((ps) => ({
-                          label: ps.label,
-                          onSelect: () => {
-                            onUpdate(idx, "nome_popular", ps.planta.nome_popular);
-                            onUpdate(idx, "nome_cientifico", ps.planta.nome_cientifico || "");
-                            onUpdate(idx, "porte", ps.planta.porte || "");
-                            onUpdate(idx, "unidade", ps.planta.unidade || "un");
-                            onUpdate(idx, "planta_id", ps.planta.id);
-                          },
-                        }))}
-                      />
-                    ) : (
-                      <span className="italic">{item.nome_cientifico || "—"}</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {isEditing ? (
-                      <Input
-                        value={item.porte}
-                        onChange={(e) => onUpdate(idx, "porte", e.target.value)}
-                        className="h-8 text-sm"
-                        placeholder="Porte"
-                      />
-                    ) : (
-                      <span>{item.porte || "—"}</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {isEditing ? (
-                      <Input
-                        type="number"
-                        value={item.quantidade}
-                        onChange={(e) => onUpdate(idx, "quantidade", Number(e.target.value) || 0)}
-                        className="h-8 text-sm w-20"
-                        min={0}
-                      />
-                    ) : (
-                      <span>{item.quantidade}</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {isEditing ? (
-                      <Input
-                        value={item.unidade}
-                        onChange={(e) => onUpdate(idx, "unidade", e.target.value)}
-                        className="h-8 text-sm w-20"
-                        placeholder="un"
-                      />
-                    ) : (
-                      <span>{item.unidade}</span>
-                    )}
-                  </TableCell>
-                  {isEditing && (
+              {items.map((item, idx) => {
+                const selectPlanta = (planta: Planta) => {
+                  onUpdate(idx, "nome_popular", planta.nome_popular);
+                  onUpdate(idx, "nome_cientifico", planta.nome_cientifico || "");
+                  onUpdate(idx, "porte", planta.porte || "");
+                  onUpdate(idx, "unidade", planta.unidade || "un");
+                  onUpdate(idx, "dap", planta.dap_cm ? String(planta.dap_cm) : "");
+                  onUpdate(idx, "categoria", planta.categoria_id ? (categoriasMap[planta.categoria_id] || "") : "");
+                  onUpdate(idx, "planta_id", planta.id);
+                };
+
+                return (
+                  <TableRow key={item.id}>
+                    <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive h-8 w-8 p-0"
-                        onClick={() => onRemove(idx)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      {isEditing ? (
+                        <Input
+                          value={item.categoria}
+                          onChange={(e) => onUpdate(idx, "categoria", e.target.value)}
+                          className="h-8 text-sm"
+                          placeholder="Categoria"
+                        />
+                      ) : (
+                        <span>{item.categoria || "—"}</span>
+                      )}
                     </TableCell>
-                  )}
-                </TableRow>
-              ))}
+                    <TableCell>
+                      {isEditing ? (
+                        <AutocompleteInput
+                          value={item.nome_popular}
+                          onChange={(v) => {
+                            onUpdate(idx, "nome_popular", v);
+                            onUpdate(idx, "planta_id", null);
+                          }}
+                          placeholder="Buscar planta..."
+                          suggestions={plantaSuggestions.map((ps) => ({
+                            label: ps.label,
+                            onSelect: () => selectPlanta(ps.planta),
+                          }))}
+                        />
+                      ) : (
+                        <span>{item.nome_popular}</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {isEditing ? (
+                        <AutocompleteInput
+                          value={item.nome_cientifico}
+                          onChange={(v) => {
+                            onUpdate(idx, "nome_cientifico", v);
+                            onUpdate(idx, "planta_id", null);
+                          }}
+                          placeholder="Nome científico"
+                          suggestions={plantaCientificoSuggestions.map((ps) => ({
+                            label: ps.label,
+                            onSelect: () => selectPlanta(ps.planta),
+                          }))}
+                        />
+                      ) : (
+                        <span className="italic">{item.nome_cientifico || "—"}</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {isEditing ? (
+                        <Input
+                          value={item.porte}
+                          onChange={(e) => onUpdate(idx, "porte", e.target.value)}
+                          className="h-8 text-sm"
+                          placeholder="Porte"
+                        />
+                      ) : (
+                        <span>{item.porte || "—"}</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {isEditing ? (
+                        <Input
+                          value={item.dap}
+                          onChange={(e) => onUpdate(idx, "dap", e.target.value)}
+                          className="h-8 text-sm w-24"
+                          placeholder="DAP"
+                        />
+                      ) : (
+                        <span>{item.dap || "—"}</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {isEditing ? (
+                        <Input
+                          type="number"
+                          value={item.quantidade}
+                          onChange={(e) => onUpdate(idx, "quantidade", Number(e.target.value) || 0)}
+                          className="h-8 text-sm w-20"
+                          min={0}
+                        />
+                      ) : (
+                        <span>{item.quantidade}</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {isEditing ? (
+                        <Input
+                          value={item.unidade}
+                          onChange={(e) => onUpdate(idx, "unidade", e.target.value)}
+                          className="h-8 text-sm w-20"
+                          placeholder="un"
+                        />
+                      ) : (
+                        <span>{item.unidade}</span>
+                      )}
+                    </TableCell>
+                    {isEditing && (
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive h-8 w-8 p-0"
+                          onClick={() => onRemove(idx)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
@@ -309,8 +339,8 @@ function InsumosSection({
             <TableHeader>
               <TableRow>
                 <TableHead className="w-8">#</TableHead>
-                <TableHead>Nome</TableHead>
                 <TableHead>Categoria</TableHead>
+                <TableHead>Nome</TableHead>
                 <TableHead className="w-20">Qtd</TableHead>
                 <TableHead className="w-20">Unid.</TableHead>
                 {isEditing && <TableHead className="w-10" />}
@@ -320,6 +350,18 @@ function InsumosSection({
               {items.map((item, idx) => (
                 <TableRow key={item.id}>
                   <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
+                  <TableCell>
+                    {isEditing ? (
+                      <Input
+                        value={item.categoria}
+                        onChange={(e) => onUpdate(idx, "categoria", e.target.value)}
+                        className="h-8 text-sm"
+                        placeholder="Categoria"
+                      />
+                    ) : (
+                      <span>{item.categoria || "—"}</span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     {isEditing ? (
                       <AutocompleteInput
@@ -341,18 +383,6 @@ function InsumosSection({
                       />
                     ) : (
                       <span>{item.nome_popular}</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {isEditing ? (
-                      <Input
-                        value={item.categoria}
-                        onChange={(e) => onUpdate(idx, "categoria", e.target.value)}
-                        className="h-8 text-sm"
-                        placeholder="Categoria"
-                      />
-                    ) : (
-                      <span>{item.categoria || "—"}</span>
                     )}
                   </TableCell>
                   <TableCell>
@@ -430,6 +460,9 @@ export function MemorialDescritivo({ projetoId, isAdmin }: MemorialDescritivoPro
   });
 
   const { data: plantas = [] } = usePlantas();
+  const { data: categoriasPlantas = [] } = useCategoriasPlantas();
+  const categoriasMap: Record<string, string> = {};
+  categoriasPlantas.forEach((c) => { categoriasMap[c.id] = c.nome; });
   const { data: insumosRaw = [] } = useInsumos();
   const insumos = insumosRaw.map((i: any) => ({
     id: i.id,
@@ -460,6 +493,7 @@ export function MemorialDescritivo({ projetoId, isAdmin }: MemorialDescritivoPro
     planta_id: null,
     insumo_id: null,
     categoria: "",
+    dap: "",
   });
 
   const addPlanta = () => {
@@ -523,6 +557,7 @@ export function MemorialDescritivo({ projetoId, isAdmin }: MemorialDescritivoPro
           planta_id: item.planta_id || null,
           insumo_id: item.insumo_id || null,
           categoria: item.categoria || "",
+          dap: item.dap || "",
         }));
 
         const { error: insertError } = await supabase
@@ -593,6 +628,7 @@ export function MemorialDescritivo({ projetoId, isAdmin }: MemorialDescritivoPro
             onRemove={removeItem("planta")}
             onAdd={addPlanta}
             plantas={plantas}
+            categoriasMap={categoriasMap}
           />
 
           <InsumosSection
