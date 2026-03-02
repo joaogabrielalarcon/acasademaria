@@ -160,7 +160,7 @@ export default function MenuCentral() {
       <div className="flex flex-col gap-6 py-4">
         {/* Greeting + Mafe — full width, no box */}
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-          <div className="w-36 h-36 rounded-full overflow-hidden shadow-md shrink-0">
+          <div className="w-28 h-28 lg:w-44 lg:h-44 rounded-full overflow-hidden shadow-md shrink-0">
             <img src={mafeAvatar} alt="Mafe" className="w-full h-full object-cover scale-[1.15]" style={{ objectPosition: "50% 20%" }} loading="eager" decoding="async" />
           </div>
           <div className="flex-1 min-w-0">
