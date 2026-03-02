@@ -105,7 +105,7 @@ export default function Login() {
       <div className="flex flex-col items-center w-full">
         {/* Logo grande */}
         <div className="flex flex-col items-center mb-8">
-          <img src={logoMfm} alt="MFM Paisagismo" className="w-[585px] max-w-[90vw] h-auto object-contain ml-[60px]" />
+          <img src={logoMfm} alt="MFM Paisagismo" className="w-[585px] max-w-[90vw] h-auto object-contain ml-[30px]" />
           <p className="font-semibold text-foreground mt-2 tracking-wide whitespace-nowrap text-[clamp(8px,2.5vw,14px)]">Maria Fernanda Marques — Paisagismo e Soluções Ambientais</p>
         </div>
 
