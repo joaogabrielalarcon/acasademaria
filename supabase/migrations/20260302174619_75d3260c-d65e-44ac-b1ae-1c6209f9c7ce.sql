@@ -1,0 +1,1 @@
+ALTER TABLE public.colaboradores ADD COLUMN sub_equipe text DEFAULT NULL;

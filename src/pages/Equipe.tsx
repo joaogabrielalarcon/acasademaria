@@ -86,6 +86,7 @@ export default function Equipe() {
   const [cpf, setCpf] = useState("");
   const [dataNascimento, setDataNascimento] = useState<Date | undefined>(undefined);
   const [cargo, setCargo] = useState("");
+  const [subEquipe, setSubEquipe] = useState("");
   const [areaId, setAreaId] = useState("");
   const [telefone, setTelefone] = useState("");
   const [endereco, setEndereco] = useState("");
@@ -185,6 +186,7 @@ export default function Equipe() {
     setCpf("");
     setDataNascimento(undefined);
     setCargo("");
+    setSubEquipe("");
     setAreaId("");
     setTelefone("");
     setEndereco("");
@@ -221,6 +223,7 @@ export default function Equipe() {
     setCpf(colaborador.cpf || "");
     setDataNascimento(colaborador.data_nascimento ? new Date(colaborador.data_nascimento + "T00:00:00") : undefined);
     setCargo(colaborador.cargo || "");
+    setSubEquipe(colaborador.sub_equipe || "");
     setAreaId(colaborador.area_id || "");
     setTelefone(colaborador.telefone || "");
     setEndereco(colaborador.endereco || "");
@@ -408,6 +411,7 @@ export default function Equipe() {
       cpf: cpf.trim() || null,
       data_nascimento: dataNascimento ? format(dataNascimento, "yyyy-MM-dd") : null,
       cargo: cargo.trim() ? capitalizeWords(cargo.trim()) : null,
+      sub_equipe: subEquipe || null,
       area_id: areaId || null,
       telefone: telefone.trim() || null,
       endereco: endereco.trim() ? capitalizeWords(endereco.trim()) : null,
@@ -641,8 +645,9 @@ export default function Equipe() {
                   </h3>
                   <p className="text-sm text-muted-foreground">
                     {[
-                      colaborador.cargo, 
-                      colaborador.area_id ? areasMap.get(colaborador.area_id)?.nome : colaborador.area
+                      colaborador.area_id ? areasMap.get(colaborador.area_id)?.nome : colaborador.area,
+                      colaborador.sub_equipe === 'implantacao' ? 'Implantação' : colaborador.sub_equipe === 'manutencao' ? 'Manutenção' : null,
+                      colaborador.cargo,
                     ].filter(Boolean).join(" • ") || "—"}
                   </p>
                 </div>
@@ -791,6 +796,22 @@ export default function Equipe() {
                 </Select>
               </div>
             </div>
+
+            {/* Sub-equipe - apenas para Time de Campo */}
+            {areaId && areasMap.get(areaId)?.nome?.toLowerCase().includes("campo") && (
+              <div className="space-y-2">
+                <Label>Sub-equipe</Label>
+                <Select value={subEquipe} onValueChange={setSubEquipe}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a sub-equipe" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="implantacao">Implantação</SelectItem>
+                    <SelectItem value="manutencao">Manutenção</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="telefone">Telefone</Label>
