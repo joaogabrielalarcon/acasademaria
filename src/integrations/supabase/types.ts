@@ -196,6 +196,7 @@ export type Database = {
           maquinas_ids: string[] | null
           nome: string
           observacoes: string | null
+          sub_equipe: string | null
           tamanho_calca: string | null
           tamanho_calcado: string | null
           tamanho_camiseta: string | null
@@ -223,6 +224,7 @@ export type Database = {
           maquinas_ids?: string[] | null
           nome: string
           observacoes?: string | null
+          sub_equipe?: string | null
           tamanho_calca?: string | null
           tamanho_calcado?: string | null
           tamanho_camiseta?: string | null
@@ -250,6 +252,7 @@ export type Database = {
           maquinas_ids?: string[] | null
           nome?: string
           observacoes?: string | null
+          sub_equipe?: string | null
           tamanho_calca?: string | null
           tamanho_calcado?: string | null
           tamanho_camiseta?: string | null
