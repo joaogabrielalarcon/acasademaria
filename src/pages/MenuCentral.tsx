@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   Users,
@@ -8,11 +9,15 @@ import {
   Wrench,
   Settings,
   BookOpen,
+  Send,
+  Mic,
+  Square,
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth, useProfile, useUserRoles } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
-import floraAvatar from "@/assets/flora-avatar.png";
+import { Button } from "@/components/ui/button";
+import mafeAvatar from "@/assets/flora-avatar.png";
 
 type UserRole = "admin" | "gestor" | "operador";
 
@@ -27,6 +32,39 @@ const menuItems = [
   { title: "Configurações do Sistema", description: "Áreas, acessos e categorias", icon: Settings, href: "/areas", roles: ["admin"] as UserRole[] },
 ];
 
+const MOTIVATIONAL_QUOTES = [
+  "Cada dia é uma nova oportunidade de fazer algo extraordinário! 🌱",
+  "Você já agradeceu por estar vivo hoje? O dia está lindo! ☀️",
+  "A natureza nos ensina: tudo floresce no tempo certo. Confie no seu processo! 🌸",
+  "Que tal espalhar gentileza por onde passar hoje? O mundo precisa disso! 💚",
+  "Respire fundo, sorria e vá em frente. Você é mais forte do que imagina! 💪",
+  "Hoje é um ótimo dia para plantar boas sementes — no jardim e na vida! 🌻",
+  "Lembre-se: pequenas ações diárias constroem grandes resultados! 🏆",
+  "A gratidão transforma o que temos em suficiente. Seja grato! 🙏",
+  "Você viu só que dia especial que é hoje? Aproveite cada momento! ✨",
+  "O segredo do sucesso é começar. E você já está aqui! 🚀",
+  "Cuide de si como cuida de um jardim: com paciência, amor e dedicação! 🌿",
+  "Hoje pode ser o melhor dia da sua semana. Depende só de você! 😊",
+  "A beleza está nos detalhes. Olhe ao redor e perceba as coisas boas! 🦋",
+  "Trabalhar com propósito faz toda a diferença. Você faz a diferença! 🌟",
+  "Não existe tempo ruim para semear algo bom. Vamos juntos! 🤝",
+  "Sorria! Um sorriso muda o seu dia e o de quem está ao seu lado! 😄",
+  "A vida é como um jardim: precisa de cuidado, mas sempre recompensa! 🌺",
+  "Você é parte essencial dessa equipe. Saiba que você é valorizado! 💛",
+  "Permita-se celebrar as pequenas conquistas. Elas importam! 🎉",
+  "Hoje é perfeito para fazer algo que te orgulhe. Bora lá! 🌈",
+  "Quem planta com amor, colhe com alegria. Continue assim! 🌷",
+  "Cada desafio é uma chance de crescer. Você vai longe! 🗻",
+  "O mundo precisa de mais pessoas como você: dedicadas e carinhosas! 💐",
+  "Respire o ar fresco, sinta a energia do dia. Tudo vai dar certo! 🍃",
+  "Seu trabalho faz diferença na vida das pessoas. Nunca se esqueça disso! 🏡",
+  "A simplicidade é a sofisticação suprema. Faça o simples com excelência! ⭐",
+  "Acredite: o melhor ainda está por vir! Continue caminhando! 🛤️",
+  "Um passo de cada vez. Você está no caminho certo! 👣",
+  "Hoje é dia de gratidão, de sorrisos e de fazer acontecer! 🌞",
+  "Que a sua energia hoje contagie todos ao seu redor! ⚡",
+];
+
 function getGreeting(): string {
   const hour = new Date().getHours();
   if (hour < 12) return "Bom dia";
@@ -34,10 +72,18 @@ function getGreeting(): string {
   return "Boa noite";
 }
 
+function getDailyQuote(): string {
+  // Use date as seed so quote changes daily but is consistent within the day
+  const today = new Date();
+  const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+  return MOTIVATIONAL_QUOTES[seed % MOTIVATIONAL_QUOTES.length];
+}
+
 export default function MenuCentral() {
   const { user } = useAuth();
   const { data: profile } = useProfile(user?.id);
   const { data: userRoles = [] } = useUserRoles(user?.id);
+  const [inlineInput, setInlineInput] = useState("");
 
   const getUserHighestRole = (): UserRole => {
     if (userRoles.length === 0) return "admin";
@@ -49,27 +95,57 @@ export default function MenuCentral() {
   const userRole = getUserHighestRole();
   const visibleItems = menuItems.filter(item => item.roles.includes(userRole));
   const firstName = profile?.nome?.split(" ")[0] || user?.email?.split("@")[0] || "Usuário";
+  const quote = useMemo(() => getDailyQuote(), []);
+
+  const handleInlineSend = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const trimmed = inlineInput.trim();
+    if (!trimmed) return;
+    // Dispatch custom event for FloraChat to pick up
+    window.dispatchEvent(new CustomEvent("mafe-inline-message", { detail: trimmed }));
+    setInlineInput("");
+  };
+
+  const handleInlineKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleInlineSend(); }
+  };
 
   return (
     <AppLayout>
       <div className="flex flex-col gap-8 py-4">
-        {/* Greeting + Flora */}
+        {/* Greeting + Mafe */}
         <div className="card-botanical p-8 max-w-3xl mx-auto w-full">
-          <h1 className="text-2xl font-semibold text-foreground font-serif mb-6">
+          <h1 className="text-2xl font-semibold text-foreground font-serif mb-2">
             {getGreeting()}, {firstName}! 👋🌳
           </h1>
+          <p className="text-sm text-muted-foreground italic mb-6">{quote}</p>
 
-          <p className="text-base text-muted-foreground text-center mb-6">Em que posso te ajudar?</p>
-
-          <div className="flex flex-col items-center mb-4">
-            <img src={floraAvatar} alt="Flora" className="w-40 h-40 rounded-full object-cover object-top shadow-md mb-4" />
+          <div className="flex flex-col items-center mb-6">
+            <img src={mafeAvatar} alt="Mafe" className="w-40 h-40 rounded-full object-cover object-top shadow-md mb-4" />
             <p className="text-sm text-muted-foreground leading-relaxed text-center max-w-md">
-              Eu sou a <span className="font-semibold text-foreground">Flora</span>, assistente virtual da Maria Fernanda Marques — Paisagismo e Soluções Ambientais. Me conte como posso te ajudar!
-            </p>
-            <p className="text-xs text-muted-foreground mt-2">
-              💬 Clique no meu avatar no canto inferior direito para conversar
+              Eu sou a <span className="font-semibold text-foreground">Mafe</span>, assistente virtual da Maria Fernanda Marques — Paisagismo e Soluções Ambientais. Me conte como posso te ajudar!
             </p>
           </div>
+
+          {/* Inline chat input */}
+          <form onSubmit={handleInlineSend} className="flex items-end gap-2">
+            <textarea
+              value={inlineInput}
+              onChange={(e) => setInlineInput(e.target.value)}
+              onKeyDown={handleInlineKeyDown}
+              placeholder="Descreva o que você precisa..."
+              rows={1}
+              className="flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground"
+            />
+            <Button
+              type="submit"
+              size="icon"
+              disabled={!inlineInput.trim()}
+              className="rounded-xl h-10 w-10 shrink-0"
+            >
+              <Send className="w-4 h-4" />
+            </Button>
+          </form>
         </div>
 
         {/* Menu Grid */}
