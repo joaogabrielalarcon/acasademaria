@@ -24,23 +24,25 @@ export function AppLayout({ children }: AppLayoutProps) {
       {/* Main Content */}
       <main className={cn(
         "min-h-screen transition-all duration-300",
-        "pt-14",
+        "pt-14 lg:pt-0",
         "lg:pl-60"
       )}>
-        {/* Desktop Top Bar — matches mobile header height */}
-        <header className="hidden lg:flex items-center justify-between h-14 px-6 border-b border-border">
-          <div />
-          <Button variant="ghost" size="icon-sm" asChild>
-            <Link to="/registros/novo">
-              <Plus className="w-5 h-5" />
-            </Link>
-          </Button>
-        </header>
-
         <div className="container max-w-6xl mx-auto px-4 py-6 lg:py-8">
           {children}
         </div>
       </main>
+
+      {/* Desktop quick-action button */}
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        className="hidden lg:flex fixed top-4 right-4 z-40"
+        asChild
+      >
+        <Link to="/registros/novo">
+          <Plus className="w-5 h-5" />
+        </Link>
+      </Button>
     </div>
   );
 }
