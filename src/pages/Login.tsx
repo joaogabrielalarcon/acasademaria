@@ -102,17 +102,17 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted/30 p-4">
-      <div className="w-full max-w-xs space-y-8">
+      <div className="flex flex-col items-center w-full">
         {/* Logo grande */}
-        <div className="flex flex-col items-center">
-          <img src={logoMfm} alt="MFM Paisagismo" className="w-[500px] h-auto object-contain" />
-          <p className="text-sm font-semibold text-foreground mt-2 tracking-wide">Maria Fernanda Marques — Paisagismo e Soluções Ambientais</p>
+        <div className="flex flex-col items-center mb-8">
+          <img src={logoMfm} alt="MFM Paisagismo" className="w-[650px] max-w-[90vw] h-auto object-contain" />
+          <p className="text-sm font-semibold text-foreground mt-2 tracking-wide whitespace-nowrap">Maria Fernanda Marques — Paisagismo e Soluções Ambientais</p>
         </div>
 
         {/* Formulário compacto */}
-        <form onSubmit={handleSubmit} className="card-botanical p-4 space-y-2.5">
+        <form onSubmit={handleSubmit} className="card-botanical p-3.5 space-y-2 w-full max-w-[240px]">
           <div className="space-y-1">
-            <Label htmlFor="username" className="text-[11px]">Usuário</Label>
+            <Label htmlFor="username" className="text-[10px]">Usuário</Label>
             <Input
               id="username"
               type="text"
@@ -121,12 +121,12 @@ export default function Login() {
               onChange={(e) => setUsername(e.target.value)}
               disabled={isLoading}
               autoComplete="username"
-              className="h-8 text-xs"
+              className="h-7 text-[11px]"
             />
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="password" className="text-[11px]">Senha</Label>
+            <Label htmlFor="password" className="text-[10px]">Senha</Label>
             <Input
               id="password"
               type="password"
@@ -135,30 +135,31 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
               autoComplete="current-password"
-              className="h-8 text-xs"
+              className="h-7 text-[11px]"
             />
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <Checkbox
               id="remember"
               checked={rememberMe}
               onCheckedChange={(checked) => setRememberMe(checked === true)}
+              className="h-3.5 w-3.5"
             />
-            <Label htmlFor="remember" className="text-[11px] font-normal cursor-pointer">
+            <Label htmlFor="remember" className="text-[10px] font-normal cursor-pointer">
               Lembrar meu usuário
             </Label>
           </div>
 
           <Button 
             type="submit" 
-            className="w-full h-8 text-xs" 
+            className="w-full h-7 text-[11px]" 
             variant="terracota"
             disabled={isLoading}
           >
             {isLoading ? (
               <>
-                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
                 Entrando...
               </>
             ) : (
@@ -167,7 +168,7 @@ export default function Login() {
           </Button>
         </form>
 
-        <p className="text-center text-[11px] text-muted-foreground">
+        <p className="text-center text-[10px] text-muted-foreground mt-3">
           Não tem acesso? Entre em contato com a administração.
         </p>
       </div>
