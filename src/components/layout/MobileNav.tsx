@@ -35,13 +35,12 @@ const allNavigationItems = [
   { title: "Produtos e Insumos", icon: Package, href: "/insumos", roles: ["admin"] as UserRole[] },
   { title: "Fornecedores", icon: Truck, href: "/fornecedores", roles: ["admin"] as UserRole[] },
   { title: "Máquinas", icon: Wrench, href: "/maquinas", roles: ["admin"] as UserRole[] },
-  { title: "Categorias de Plantas", icon: Tags, href: "/categorias-plantas", roles: ["admin"] as UserRole[] },
 ];
 
 const configItems = [
   { title: "Áreas Internas", icon: Building2, href: "/areas", roles: ["admin"] as UserRole[] },
   { title: "Controle de Acessos", icon: Shield, href: "/acessos", roles: ["admin"] as UserRole[] },
-  { title: "Custos da Equipe", icon: DollarSign, href: "/custos-equipe", roles: ["admin"] as UserRole[] },
+  { title: "Categorias de Plantas", icon: Tags, href: "/categorias-plantas", roles: ["admin"] as UserRole[] },
 ];
 
 export function MobileNav() {

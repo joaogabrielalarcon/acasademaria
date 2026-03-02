@@ -15,7 +15,6 @@ import {
   Building2,
   Shield,
   Wrench,
-  DollarSign
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
@@ -78,12 +77,6 @@ const allNavigationItems = [
     href: "/maquinas",
     roles: ["admin"] as UserRole[],
   },
-  {
-    title: "Categorias de Plantas",
-    icon: Tags,
-    href: "/categorias-plantas",
-    roles: ["admin"] as UserRole[],
-  },
 ];
 
 const configItems = [
@@ -100,9 +93,9 @@ const configItems = [
     roles: ["admin"] as UserRole[],
   },
   {
-    title: "Custos da Equipe",
-    icon: DollarSign,
-    href: "/custos-equipe",
+    title: "Categorias de Plantas",
+    icon: Tags,
+    href: "/categorias-plantas",
     roles: ["admin"] as UserRole[],
   },
 ];
