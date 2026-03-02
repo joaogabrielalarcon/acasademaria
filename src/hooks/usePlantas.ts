@@ -12,6 +12,7 @@ export interface Planta {
   dap_cm: number | null;
   unidade: string | null;
   nota_qualidade: number | null;
+  preco_unitario: number | null;
   midia: { url: string; tipo: string; nome: string }[] | null;
   ativo: boolean;
 }

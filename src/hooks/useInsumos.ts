@@ -6,6 +6,7 @@ export interface Insumo {
   nome: string;
   categoria: string | null;
   unidade: string | null;
+  preco_unitario: number | null;
   ativo: boolean;
 }
 

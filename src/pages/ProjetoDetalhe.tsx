@@ -12,7 +12,6 @@ import {
   X,
   ChevronDown,
   ChevronRight,
-  Check,
   FileText,
   BarChart3,
   ClipboardList,
@@ -62,6 +61,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ResumoFinanceiroTab } from "@/components/projeto/ResumoFinanceiroTab";
 import { ExecucaoTab } from "@/components/projeto/ExecucaoTab";
 import { DashboardTab } from "@/components/projeto/DashboardTab";
+import { CotacaoSheet } from "@/components/projeto/CotacaoSheet";
+import { Progress } from "@/components/ui/progress";
 
 export default function ProjetoDetalhe() {
   const { id } = useParams();
@@ -89,7 +90,7 @@ export default function ProjetoDetalhe() {
     insumo: true,
     servico: true,
   });
-  const [showCotacaoDialog, setShowCotacaoDialog] = useState<string | null>(null); // item_id
+  const [cotacaoSheetItem, setCotacaoSheetItem] = useState<string | null>(null); // item_id for sheet
 
   // Item form state
   const [itemForm, setItemForm] = useState({
@@ -104,13 +105,6 @@ export default function ProjetoDetalhe() {
     observacao: "",
   });
 
-  // Cotação form state
-  const [cotacaoForm, setCotacaoForm] = useState({
-    fornecedor_id: "",
-    fornecedor_nome: "",
-    preco_unitario: "0",
-    observacao: "",
-  });
 
   // Group items by type
   const groupedItens = useMemo(() => {
@@ -132,6 +126,36 @@ export default function ProjetoDetalhe() {
   // Totals
   const totalCusto = itens.reduce((sum, i) => sum + (i.preco_custo || 0) * (i.quantidade || 1), 0);
   const totalVenda = itens.reduce((sum, i) => sum + (i.preco_venda || 0) * (i.quantidade || 1), 0);
+
+  // Cotação completion
+  const itensCotados = useMemo(() => {
+    return itens.filter((item) =>
+      todasCotacoes.some((c) => c.item_id === item.id && c.selecionada)
+    ).length;
+  }, [itens, todasCotacoes]);
+  const cotacaoPercent = itens.length > 0 ? Math.round((itensCotados / itens.length) * 100) : 0;
+
+  // Get item with cotações for sheet
+  const sheetItem = useMemo(() => {
+    if (!cotacaoSheetItem) return null;
+    const item = itens.find((i) => i.id === cotacaoSheetItem);
+    if (!item) return null;
+    return { ...item, cotacoes: todasCotacoes.filter((c) => c.item_id === item.id) };
+  }, [cotacaoSheetItem, itens, todasCotacoes]);
+
+  // Get reference price for sheet item
+  const sheetPrecoReferencia = useMemo(() => {
+    if (!sheetItem) return null;
+    if (sheetItem.planta_id) {
+      const p = plantas.find((x) => x.id === sheetItem.planta_id);
+      return p?.preco_unitario ?? null;
+    }
+    if (sheetItem.insumo_id) {
+      const ins = insumos.find((x) => x.id === sheetItem.insumo_id);
+      return ins?.preco_unitario ?? null;
+    }
+    return null;
+  }, [sheetItem, plantas, insumos]);
 
   const formatCurrency = (v: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
@@ -187,61 +211,6 @@ export default function ProjetoDetalhe() {
     },
   });
 
-  const saveCotacaoMutation = useMutation({
-    mutationFn: async (itemId: string) => {
-      const { error } = await supabase.from("orcamento_cotacoes").insert({
-        item_id: itemId,
-        fornecedor_id: cotacaoForm.fornecedor_id || null,
-        fornecedor_nome: cotacaoForm.fornecedor_nome || null,
-        preco_unitario: parseFloat(cotacaoForm.preco_unitario) || 0,
-        observacao: cotacaoForm.observacao || null,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["orcamento-cotacoes"] });
-      setCotacaoForm({ fornecedor_id: "", fornecedor_nome: "", preco_unitario: "0", observacao: "" });
-      toast({ title: "Cotação adicionada" });
-    },
-  });
-
-  const selecionarCotacaoMutation = useMutation({
-    mutationFn: async ({ cotacao, item }: { cotacao: OrcamentoCotacao; item: OrcamentoItem }) => {
-      // Desmarcar todas do mesmo item
-      await supabase
-        .from("orcamento_cotacoes")
-        .update({ selecionada: false })
-        .eq("item_id", item.id);
-      // Marcar a selecionada
-      await supabase
-        .from("orcamento_cotacoes")
-        .update({ selecionada: true })
-        .eq("id", cotacao.id);
-      // Atualizar o preço de custo e venda do item
-      const precoCusto = cotacao.preco_unitario;
-      const precoVenda = calcularPrecoVenda(precoCusto, item.reserva_valor, item.margem_percentual);
-      await supabase
-        .from("orcamento_itens")
-        .update({ preco_custo: precoCusto, preco_venda: precoVenda })
-        .eq("id", item.id);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["orcamento-cotacoes"] });
-      queryClient.invalidateQueries({ queryKey: ["orcamento-itens", id] });
-      toast({ title: "Cotação selecionada" });
-    },
-  });
-
-  const deleteCotacaoMutation = useMutation({
-    mutationFn: async (cotacaoId: string) => {
-      const { error } = await supabase.from("orcamento_cotacoes").delete().eq("id", cotacaoId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["orcamento-cotacoes"] });
-      toast({ title: "Cotação removida" });
-    },
-  });
 
   // --- Handlers ---
   const openNewItem = (tipo = "servico") => {
@@ -379,7 +348,7 @@ export default function ProjetoDetalhe() {
 
         <TabsContent value="orcamento">
           {/* Summary cards */}
-          <div className="grid gap-4 sm:grid-cols-3 mb-6">
+          <div className="grid gap-4 sm:grid-cols-4 mb-6">
             <div className="card-botanical p-4">
               <p className="text-sm text-muted-foreground">Itens</p>
               <p className="text-2xl font-bold text-foreground">{itens.length}</p>
@@ -391,6 +360,11 @@ export default function ProjetoDetalhe() {
             <div className="card-botanical p-4">
               <p className="text-sm text-muted-foreground">Total Venda</p>
               <p className="text-2xl font-bold text-primary">{formatCurrency(totalVenda)}</p>
+            </div>
+            <div className="card-botanical p-4">
+              <p className="text-sm text-muted-foreground">Cotações</p>
+              <p className="text-2xl font-bold text-foreground">{itensCotados} <span className="text-base font-normal text-muted-foreground">de {itens.length}</span></p>
+              <Progress value={cotacaoPercent} className="h-2 mt-2" />
             </div>
           </div>
 
@@ -444,16 +418,34 @@ export default function ProjetoDetalhe() {
 
                     {isExpanded && (
                       <div className="border-t divide-y">
-                        {items.map((item) => (
+                        {items.map((item) => {
+                          const hasCotacoes = item.cotacoes.length > 0;
+                          const temSelecionada = item.cotacoes.some((c) => c.selecionada);
+                          const statusBadge = !hasCotacoes
+                            ? { label: "Sem cotação", className: "bg-muted text-muted-foreground" }
+                            : temSelecionada
+                            ? { label: "Selecionado", className: "bg-primary/15 text-primary border-primary/30" }
+                            : { label: "Pendente", className: "bg-amber-500/15 text-amber-700 border-amber-500/30" };
+
+                          return (
                           <div key={item.id} className="p-4">
-                            <div className="flex items-start justify-between gap-4">
+                            <div
+                              className="flex items-start justify-between gap-4 cursor-pointer hover:opacity-80 transition-opacity"
+                              onClick={() => setCotacaoSheetItem(item.id)}
+                            >
                               <div className="flex-1 min-w-0">
-                                <p className="font-medium text-foreground">{item.descricao}</p>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <p className="font-medium text-foreground">{item.descricao}</p>
+                                  <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${statusBadge.className}`}>
+                                    {statusBadge.label}
+                                  </Badge>
+                                </div>
                                 <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-muted-foreground">
                                   <span>Qtd: {item.quantidade} {item.unidade}</span>
                                   <span>Custo: {formatCurrency(item.preco_custo)}</span>
                                   <span>Margem: {item.margem_percentual}%</span>
                                   <span>Reserva: {formatCurrency(item.reserva_valor)}</span>
+                                  {hasCotacoes && <span>{item.cotacoes.length} cotação(ões)</span>}
                                 </div>
                               </div>
                               <div className="text-right flex-shrink-0">
@@ -466,60 +458,10 @@ export default function ProjetoDetalhe() {
                               </div>
                             </div>
 
-                            {/* Cotações */}
-                            {item.cotacoes.length > 0 && (
-                              <div className="mt-3 space-y-1">
-                                <p className="text-xs font-medium text-muted-foreground mb-1">
-                                  Cotações ({item.cotacoes.length})
-                                </p>
-                                {item.cotacoes.map((cot) => (
-                                  <div
-                                    key={cot.id}
-                                    className={`flex items-center justify-between text-sm p-2 rounded ${
-                                      cot.selecionada ? "bg-primary/10 border border-primary/20" : "bg-muted/50"
-                                    }`}
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      {isAdmin && (
-                                        <button
-                                          onClick={() =>
-                                            selecionarCotacaoMutation.mutate({ cotacao: cot, item })
-                                          }
-                                          className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                                            cot.selecionada
-                                              ? "border-primary bg-primary"
-                                              : "border-muted-foreground/40"
-                                          }`}
-                                        >
-                                          {cot.selecionada && <Check className="w-3 h-3 text-primary-foreground" />}
-                                        </button>
-                                      )}
-                                      <span>
-                                        {cot.fornecedor_nome ||
-                                          fornecedores.find((f) => f.id === cot.fornecedor_id)?.nome ||
-                                          "Fornecedor"}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-medium">{formatCurrency(cot.preco_unitario)}</span>
-                                      {isAdmin && (
-                                        <button
-                                          onClick={() => deleteCotacaoMutation.mutate(cot.id)}
-                                          className="text-muted-foreground hover:text-destructive"
-                                        >
-                                          <X className="w-3.5 h-3.5" />
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-
                             {/* Actions */}
                             {isAdmin && (
                               <div className="flex gap-2 mt-3">
-                                <Button variant="outline" size="sm" onClick={() => setShowCotacaoDialog(item.id)}>
+                                <Button variant="outline" size="sm" onClick={() => setCotacaoSheetItem(item.id)}>
                                   <Plus className="w-3 h-3" /> Cotação
                                 </Button>
                                 <Button variant="ghost" size="sm" onClick={() => openEditItem(item)}>
@@ -536,7 +478,8 @@ export default function ProjetoDetalhe() {
                               </div>
                             )}
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -685,67 +628,16 @@ export default function ProjetoDetalhe() {
         </DialogContent>
       </Dialog>
 
-      {/* Add Cotação Dialog */}
-      <Dialog open={!!showCotacaoDialog} onOpenChange={() => setShowCotacaoDialog(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Nova Cotação</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Fornecedor</Label>
-              <Select
-                value={cotacaoForm.fornecedor_id}
-                onValueChange={(v) => {
-                  const f = fornecedores.find((x) => x.id === v);
-                  setCotacaoForm((c) => ({ ...c, fornecedor_id: v, fornecedor_nome: f?.nome || "" }));
-                }}
-              >
-                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                <SelectContent>
-                  {fornecedores.map((f) => (
-                    <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Ou nome avulso</Label>
-              <Input
-                value={cotacaoForm.fornecedor_nome}
-                onChange={(e) => setCotacaoForm((c) => ({ ...c, fornecedor_nome: e.target.value }))}
-                placeholder="Nome do fornecedor"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Preço Unitário *</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={cotacaoForm.preco_unitario}
-                onChange={(e) => setCotacaoForm((c) => ({ ...c, preco_unitario: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Observação</Label>
-              <Input
-                value={cotacaoForm.observacao}
-                onChange={(e) => setCotacaoForm((c) => ({ ...c, observacao: e.target.value }))}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCotacaoDialog(null)}>Cancelar</Button>
-            <Button
-              variant="terracota"
-              onClick={() => showCotacaoDialog && saveCotacaoMutation.mutate(showCotacaoDialog)}
-              disabled={saveCotacaoMutation.isPending}
-            >
-              Adicionar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Cotação Sheet */}
+      <CotacaoSheet
+        item={sheetItem}
+        open={!!cotacaoSheetItem}
+        onOpenChange={(open) => !open && setCotacaoSheetItem(null)}
+        fornecedores={fornecedores}
+        isAdmin={isAdmin}
+        projetoId={id!}
+        precoReferencia={sheetPrecoReferencia}
+      />
 
       {/* Delete Item Alert */}
       <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
