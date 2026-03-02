@@ -17,7 +17,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth, useProfile, useUserRoles } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import mafeAvatar from "@/assets/flora-avatar.png";
+import mafeAvatar from "@/assets/flora-avatar.webp";
 
 type UserRole = "admin" | "gestor" | "operador";
 
@@ -160,7 +160,7 @@ export default function MenuCentral() {
       <div className="flex flex-col gap-6 py-4">
         {/* Greeting + Mafe — full width, no box */}
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-          <img src={mafeAvatar} alt="Mafe" className="w-28 h-28 rounded-full object-cover object-top shadow-md shrink-0" />
+          <img src={mafeAvatar} alt="Mafe" className="w-36 h-36 rounded-full object-cover object-top shadow-md shrink-0" loading="eager" decoding="async" />
           <div className="flex-1 min-w-0">
             <h1 className="text-3xl font-semibold text-foreground font-serif mb-1">
               {getGreeting()}, {firstName}! 👋🌳
