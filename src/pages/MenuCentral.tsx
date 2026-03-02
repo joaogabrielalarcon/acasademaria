@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Users,
@@ -13,7 +12,6 @@ import {
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth, useProfile, useUserRoles } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
-import { AssistenteChat } from "@/components/AssistenteChat";
 import floraAvatar from "@/assets/flora-avatar.png";
 
 type UserRole = "admin" | "gestor" | "operador";
@@ -55,7 +53,7 @@ export default function MenuCentral() {
   return (
     <AppLayout>
       <div className="flex flex-col gap-8 py-4">
-        {/* Greeting + Chat */}
+        {/* Greeting + Flora */}
         <div className="card-botanical p-8 max-w-3xl mx-auto w-full">
           <h1 className="text-2xl font-semibold text-foreground font-serif mb-6">
             {getGreeting()}, {firstName}! 👋🌳
@@ -63,14 +61,15 @@ export default function MenuCentral() {
 
           <p className="text-base text-muted-foreground text-center mb-6">Em que posso te ajudar?</p>
 
-          <div className="flex flex-col items-center mb-6">
+          <div className="flex flex-col items-center mb-4">
             <img src={floraAvatar} alt="Flora" className="w-40 h-40 rounded-full object-cover object-top shadow-md mb-4" />
             <p className="text-sm text-muted-foreground leading-relaxed text-center max-w-md">
               Eu sou a <span className="font-semibold text-foreground">Flora</span>, assistente virtual da Maria Fernanda Marques — Paisagismo e Soluções Ambientais. Me conte como posso te ajudar!
             </p>
+            <p className="text-xs text-muted-foreground mt-2">
+              💬 Clique no meu avatar no canto inferior direito para conversar
+            </p>
           </div>
-          
-          <AssistenteChat userName={firstName} userRole={userRole} />
         </div>
 
         {/* Menu Grid */}

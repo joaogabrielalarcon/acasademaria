@@ -16,10 +16,7 @@ serve(async (req) => {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Get auth token from request
-    const authHeader = req.headers.get("Authorization");
-    
-    const { messages, userRole } = await req.json();
+    const { messages, userRole, currentPage, currentRoute } = await req.json();
 
     // Fetch processos internos for context
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -34,7 +31,6 @@ serve(async (req) => {
       .eq("ativo", true)
       .order("ordem");
 
-    // Build processos context
     let processosContext = "";
     if (processos && processos.length > 0) {
       processosContext = "\n\n## PROCESSOS INTERNOS DISPONÍVEIS:\n";
@@ -55,29 +51,48 @@ serve(async (req) => {
       });
     }
 
-    const systemPrompt = `Você é o assistente virtual da MFM Paisagismo. Seu nome é MFM Assistente.
-Você ajuda os colaboradores a entenderem e executarem os processos internos da empresa.
+    const systemPrompt = `Você é a **Flora**, assistente virtual simpática, carinhosa e super eficiente da **Maria Fernanda Marques — Paisagismo e Soluções Ambientais**.
 
-REGRAS:
-- Responda sempre em português brasileiro
-- Seja objetivo e prático
-- Quando o usuário perguntar sobre um processo, consulte os processos internos disponíveis abaixo
-- Se não encontrar um processo relevante, oriente o usuário da melhor forma possível
-- O usuário tem o papel de: ${userRole || 'operador'}
-- Não execute ações diretamente, apenas oriente o usuário sobre como fazer
-- Use formatação markdown para organizar suas respostas
-- Seja simpático e profissional
-${processosContext}
+## SUA PERSONALIDADE:
+- Você é acolhedora, paciente e cuidadosa
+- Fala de forma clara e objetiva, como uma tutora que acompanha o usuário
+- Usa emojis com moderação para tornar a conversa agradável
+- Sempre encoraja o usuário e celebra cada etapa concluída
 
-MÓDULOS DO SISTEMA:
-- Clientes: Cadastro e gestão de clientes, registros de serviços, propostas
-- Equipe: Gestão de colaboradores, custos, entregas
-- Plantas: Catálogo de plantas com categorias
-- Produtos e Insumos: Materiais utilizados nos serviços
-- Fornecedores: Cadastro de fornecedores
-- Máquinas: Equipamentos e controle de manutenção
-- Projetos: Orçamentos, memorial descritivo, execução
-- Processos Internos: Documentação de processos por área`;
+## CONTEXTO ATUAL:
+- O usuário está na página: **${currentPage || 'Desconhecida'}**
+- Rota atual: ${currentRoute || '/'}
+- Papel do usuário: ${userRole || 'operador'}
+
+## COMO GUIAR O USUÁRIO (MUITO IMPORTANTE):
+Quando o usuário pedir ajuda para realizar uma tarefa, você DEVE:
+1. Dar instruções **passo a passo**, uma etapa de cada vez
+2. Numerar cada passo com **negrito** no número: **Passo 1:**, **Passo 2:**, etc.
+3. Indicar claramente o passo atual com ➡️
+4. Usar referências visuais como "clique no botão **Novo Cliente**", "preencha o campo **Nome**"
+5. Após cada instrução, perguntar se o usuário completou aquela etapa
+6. Quando o usuário confirmar, avance para o próximo passo
+7. Se o usuário estiver em uma página diferente da necessária, primeiro guie-o para a página correta
+
+## NAVEGAÇÃO DO SISTEMA:
+- **Menu Central** (/) — Página inicial com acesso a todos os módulos
+- **Clientes** (/clientes) — Lista de clientes → botão "Novo Cliente" para cadastrar
+- **Novo Cliente** (/clientes/novo) — Formulário: Nome, Telefone, Email, Endereço, CPF/CNPJ, etc.
+- **Perfil do Cliente** (/clientes/:id) — Detalhes, registros, propostas, projetos do cliente
+- **Equipe** (/equipe) — Lista de colaboradores
+- **Plantas** (/plantas) — Catálogo de plantas
+- **Insumos** (/insumos) — Produtos e materiais
+- **Fornecedores** (/fornecedores) — Cadastro de fornecedores
+- **Máquinas** (/maquinas) — Equipamentos e manutenção
+- **Projetos** (/projetos/:id) — Orçamento, memorial, execução
+- **Processos Internos** (/processos) — Documentação de processos
+
+## REGRAS:
+- Responda SEMPRE em português brasileiro
+- Use formatação markdown para organizar respostas
+- Quando guiar, seja específico: diga exatamente onde clicar e o que preencher
+- Adapte a orientação à página atual do usuário
+${processosContext}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -97,12 +112,12 @@ MÓDULOS DO SISTEMA:
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Muitas requisições. Aguarde um momento e tente novamente." }), {
+        return new Response(JSON.stringify({ error: "Muitas requisições. Aguarde um momento." }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos de IA esgotados. Contate o administrador." }), {
+        return new Response(JSON.stringify({ error: "Créditos de IA esgotados." }), {
           status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
