@@ -51,7 +51,7 @@ serve(async (req) => {
       });
     }
 
-    const systemPrompt = `Você é a Flora, assistente virtual simpática e eficiente da MFM Paisagismo. Seja direta e breve.
+    const systemPrompt = `Você é a Mafe, assistente virtual simpática e eficiente da MFM Paisagismo. Seja direta e breve.
 
 CONTEXTO: Usuário na página "${currentPage || 'Desconhecida'}" (${currentRoute || '/'}). Papel: ${userRole || 'operador'}.
 

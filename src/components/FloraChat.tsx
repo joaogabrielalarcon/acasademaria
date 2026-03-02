@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { Send, Loader2, User, Mic, Square, Minimize2, Maximize2, X, MessageCircle } from "lucide-react";
-import floraAvatar from "@/assets/flora-avatar.png";
+import mafeAvatar from "@/assets/flora-avatar.png";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
@@ -50,11 +50,11 @@ function getRouteLabel(pathname: string): string {
   return "Página do Sistema";
 }
 
-const FLORA_INTRO = `Olá! Eu sou a **Flora**, assistente virtual da **Maria Fernanda Marques — Paisagismo e Soluções Ambientais**.
+const MAFE_INTRO = `Olá! Eu sou a **Mafe**, assistente virtual da **Maria Fernanda Marques — Paisagismo e Soluções Ambientais**.
 
 Me conte como posso te ajudar! Você pode digitar ou enviar um áudio 🎙️`;
 
-export function FloraChat() {
+export function MafeChat() {
   const { user } = useAuth();
   const { data: profile } = useProfile(user?.id);
   const { data: userRoles = [] } = useUserRoles(user?.id);
@@ -62,7 +62,7 @@ export function FloraChat() {
   const { toast } = useToast();
 
   const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: FLORA_INTRO },
+    { role: "assistant", content: MAFE_INTRO },
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -93,7 +93,23 @@ export function FloraChat() {
     }
   }, [isLoading]);
 
-  // Detect route changes and auto-notify Flora during guided sessions
+  // Listen for inline messages from MenuCentral
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as string;
+      if (!detail || isLoading) return;
+      setIsOpen(true);
+      setHasUnread(false);
+      const userMsg: Message = { role: "user", content: detail };
+      setMessages(prev => [...prev, userMsg]);
+      const allMessages = [...messages.filter((m, i) => !(i === 0 && m.content === MAFE_INTRO)), userMsg];
+      sendToMafe(allMessages);
+    };
+    window.addEventListener("mafe-inline-message", handler);
+    return () => window.removeEventListener("mafe-inline-message", handler);
+  }, [messages, isLoading]);
+
+  // Detect route changes and auto-notify Mafe during guided sessions
   useEffect(() => {
     const prevRoute = prevRouteRef.current;
     const newRoute = location.pathname;
@@ -117,11 +133,11 @@ export function FloraChat() {
       setMessages(prev => [...prev, navMsg]);
       
       // Trigger Flora response with updated context
-      sendToFlora([...messages.filter((m, i) => !(i === 0 && m.content === FLORA_INTRO)), navMsg], newRoute, newPageLabel);
+      sendToMafe([...messages.filter((m, i) => !(i === 0 && m.content === MAFE_INTRO)), navMsg], newRoute, newPageLabel);
     }
   }, [location.pathname]);
 
-  const sendToFlora = async (allMessages: Message[], route?: string, page?: string) => {
+  const sendToMafe = async (allMessages: Message[], route?: string, page?: string) => {
     setIsLoading(true);
     let assistantSoFar = "";
 
@@ -185,7 +201,7 @@ export function FloraChat() {
 
       if (!isOpen) setHasUnread(true);
     } catch (err: any) {
-      toast({ title: "Erro na Flora", description: err.message, variant: "destructive" });
+      toast({ title: "Erro na Mafe", description: err.message, variant: "destructive" });
       if (!assistantSoFar) setMessages((prev) => prev.slice(0, -1));
     } finally {
       setIsLoading(false);
@@ -251,8 +267,8 @@ export function FloraChat() {
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
 
-    const allMessages = [...messages.filter((m, i) => !(i === 0 && m.content === FLORA_INTRO)), userMsg];
-    await sendToFlora(allMessages);
+    const allMessages = [...messages.filter((m, i) => !(i === 0 && m.content === MAFE_INTRO)), userMsg];
+    await sendToMafe(allMessages);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -268,7 +284,7 @@ export function FloraChat() {
         onClick={() => { setIsOpen(true); setHasUnread(false); }}
         className="fixed bottom-5 right-5 z-50 w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 overflow-hidden border-2 border-primary/20"
       >
-        <img src={floraAvatar} alt="Flora" className="w-full h-full object-cover object-top" />
+        <img src={mafeAvatar} alt="Mafe" className="w-full h-full object-cover object-top" />
         {hasUnread && (
           <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive rounded-full animate-pulse" />
         )}
@@ -284,9 +300,9 @@ export function FloraChat() {
     <div className={`${panelSize} flex flex-col bg-card border border-border rounded-2xl shadow-2xl overflow-hidden transition-all duration-300`}>
       {/* Header */}
       <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border bg-muted/50 shrink-0">
-        <img src={floraAvatar} alt="Flora" className="w-8 h-8 rounded-full object-cover object-top" />
+        <img src={mafeAvatar} alt="Mafe" className="w-8 h-8 rounded-full object-cover object-top" />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-foreground leading-none">Flora</p>
+          <p className="text-sm font-semibold text-foreground leading-none">Mafe</p>
           <p className="text-[10px] text-muted-foreground truncate mt-0.5">
             Assistente virtual — MFM Paisagismo
           </p>
@@ -306,7 +322,7 @@ export function FloraChat() {
         {messages.filter(msg => !msg.content.startsWith("[Naveguei para:")).map((msg, i) => (
           <div key={i} className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
             {msg.role === "assistant" && (
-              <img src={floraAvatar} alt="Flora" className="w-6 h-6 rounded-full object-cover object-top shrink-0 mt-1" />
+              <img src={mafeAvatar} alt="Mafe" className="w-6 h-6 rounded-full object-cover object-top shrink-0 mt-1" />
             )}
             <div className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
               msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
@@ -328,7 +344,7 @@ export function FloraChat() {
         ))}
         {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
           <div className="flex gap-2">
-            <img src={floraAvatar} alt="Flora" className="w-6 h-6 rounded-full object-cover object-top shrink-0" />
+            <img src={mafeAvatar} alt="Mafe" className="w-6 h-6 rounded-full object-cover object-top shrink-0" />
             <div className="bg-muted rounded-xl px-3 py-2">
               <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
             </div>
@@ -360,7 +376,7 @@ export function FloraChat() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={isRecording ? "🎙️ Gravando..." : "Pergunte à Flora..."}
+            placeholder={isRecording ? "🎙️ Gravando..." : "Pergunte à Mafe..."}
             rows={1}
             className="flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground"
             disabled={isLoading}
