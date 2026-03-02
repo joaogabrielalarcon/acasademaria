@@ -195,9 +195,9 @@ export default function MenuCentral() {
             <Button
               type="submit"
               size="icon"
-              variant="default"
+              variant="ghost"
               disabled={!inlineInput.trim()}
-              className="rounded-xl h-10 w-10 shrink-0 bg-primary text-primary-foreground hover:bg-primary/90"
+              className="rounded-xl h-10 w-10 shrink-0"
             >
               <Send className="w-4 h-4" />
             </Button>
