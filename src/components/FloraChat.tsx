@@ -221,8 +221,13 @@ export function FloraChat() {
   }, [toast]);
 
   const stopRecording = useCallback(() => {
-    recognitionRef.current?.stop();
-    recognitionRef.current = null;
+    if (recognitionRef.current) {
+      recognitionRef.current.onresult = null;
+      recognitionRef.current.onend = null;
+      recognitionRef.current.onerror = null;
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
     setIsRecording(false);
   }, []);
 
@@ -230,7 +235,16 @@ export function FloraChat() {
     e?.preventDefault();
     const trimmed = input.trim();
     if (!trimmed || isLoading) return;
-    if (isRecording) stopRecording();
+    if (isRecording) {
+      if (recognitionRef.current) {
+        recognitionRef.current.onresult = null;
+        recognitionRef.current.onend = null;
+        recognitionRef.current.onerror = null;
+        recognitionRef.current.stop();
+        recognitionRef.current = null;
+      }
+      setIsRecording(false);
+    }
     if (!isOpen) setIsOpen(true);
 
     const userMsg: Message = { role: "user", content: trimmed };
