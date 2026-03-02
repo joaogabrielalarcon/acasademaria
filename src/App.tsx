@@ -34,6 +34,7 @@ const ControleAcessos = lazy(() => import("./pages/ControleAcessos"));
 const BootstrapAdmin = lazy(() => import("./pages/BootstrapAdmin"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const ProcessosInternos = lazy(() => import("./pages/ProcessosInternos"));
+const Calendario = lazy(() => import("./pages/Calendario"));
 
 const queryClient = new QueryClient();
 
@@ -80,6 +81,7 @@ const App = () => (
             <Route path="/acessos" element={<ProtectedRoute><ControleAcessos /></ProtectedRoute>} />
             <Route path="/custos-equipe" element={<ProtectedRoute><CustosEquipe /></ProtectedRoute>} />
             <Route path="/processos" element={<ProtectedRoute><ProcessosInternos /></ProtectedRoute>} />
+            <Route path="/calendario" element={<ProtectedRoute><Calendario /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

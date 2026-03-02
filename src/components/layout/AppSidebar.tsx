@@ -16,6 +16,7 @@ import {
   Shield,
   Wrench,
   BookOpen,
+  CalendarDays,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
@@ -53,6 +54,12 @@ const allNavigationItems = [
     icon: UserCircle,
     href: "/equipe",
     roles: ["admin", "gestor", "operador"] as UserRole[],
+  },
+  {
+    title: "Calendário",
+    icon: CalendarDays,
+    href: "/calendario",
+    roles: ["admin", "gestor"] as UserRole[],
   },
   {
     title: "Plantas",
