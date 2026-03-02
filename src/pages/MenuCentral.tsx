@@ -100,7 +100,18 @@ export default function MenuCentral() {
     e?.preventDefault();
     const trimmed = inlineInput.trim();
     if (!trimmed) return;
-    // Dispatch custom event for FloraChat to pick up
+    // Stop recording and detach handlers before clearing
+    if (isRecording) {
+      if (recognitionRef.current) {
+        recognitionRef.current.onresult = null;
+        recognitionRef.current.onend = null;
+        recognitionRef.current.onerror = null;
+        recognitionRef.current.stop();
+        recognitionRef.current = null;
+      }
+      setIsRecording(false);
+    }
+    // Dispatch custom event for MafeChat to pick up
     window.dispatchEvent(new CustomEvent("mafe-inline-message", { detail: trimmed }));
     setInlineInput("");
   };
@@ -114,6 +125,7 @@ export default function MenuCentral() {
       if (recognitionRef.current) {
         recognitionRef.current.onresult = null;
         recognitionRef.current.onend = null;
+        recognitionRef.current.onerror = null;
         recognitionRef.current.stop();
         recognitionRef.current = null;
       }
@@ -125,13 +137,16 @@ export default function MenuCentral() {
     const recognition = new SpeechRecognition();
     recognition.lang = "pt-BR";
     recognition.continuous = true;
-    recognition.interimResults = false;
+    recognition.interimResults = true;
+    let finalTranscript = "";
     recognition.onresult = (event: any) => {
-      let transcript = "";
+      let interimTranscript = "";
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        if (event.results[i].isFinal) transcript += event.results[i][0].transcript;
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) finalTranscript += transcript + " ";
+        else interimTranscript = transcript;
       }
-      if (transcript) setInlineInput(prev => (prev ? prev + " " : "") + transcript);
+      setInlineInput(finalTranscript + interimTranscript);
     };
     recognition.onend = () => setIsRecording(false);
     recognition.onerror = () => setIsRecording(false);
@@ -177,13 +192,15 @@ export default function MenuCentral() {
             >
               {isRecording ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
             </Button>
-            <button
+            <Button
               type="submit"
+              size="icon"
+              variant="default"
               disabled={!inlineInput.trim()}
-              className="inline-flex items-center justify-center rounded-xl h-10 w-10 shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:pointer-events-none transition-colors"
+              className="rounded-xl h-10 w-10 shrink-0 bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <Send className="w-4 h-4" />
-            </button>
+            </Button>
           </form>
         </div>
 
