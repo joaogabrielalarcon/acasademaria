@@ -56,16 +56,17 @@ export default function MenuCentral() {
     <AppLayout>
       <div className="flex flex-col gap-8 py-4">
         {/* Greeting + Chat */}
-        <div className="card-botanical p-6 max-w-3xl mx-auto w-full">
-          <h1 className="text-2xl font-semibold text-foreground font-serif mb-1">
-            {getGreeting()}, {firstName}! 👋
+        <div className="card-botanical p-8 max-w-3xl mx-auto w-full">
+          <h1 className="text-2xl font-semibold text-foreground font-serif mb-6">
+            {getGreeting()}, {firstName}! 👋🌳
           </h1>
-          <p className="text-sm text-muted-foreground mb-4">Em que posso te ajudar?</p>
 
-          <div className="flex items-start gap-3 mb-4 p-3 rounded-xl bg-muted/50">
-            <img src={floraAvatar} alt="Flora" className="w-10 h-10 rounded-full object-cover shrink-0" />
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Eu sou a <span className="font-semibold text-foreground">Flora</span>, assistente de IA da Maria Fernanda Marques, Paisagismo e Soluções Ambientais. Me explique o que você precisa que eu vou te ajudar a fazer!
+          <p className="text-base text-muted-foreground text-center mb-6">Em que posso te ajudar?</p>
+
+          <div className="flex flex-col items-center mb-6">
+            <img src={floraAvatar} alt="Flora" className="w-28 h-28 rounded-full object-cover shadow-md mb-4" />
+            <p className="text-sm text-muted-foreground leading-relaxed text-center max-w-md">
+              Eu sou a <span className="font-semibold text-foreground">Flora</span>, assistente virtual da Maria Fernanda Marques — Paisagismo e Soluções Ambientais. Me conte como posso te ajudar!
             </p>
           </div>
           
