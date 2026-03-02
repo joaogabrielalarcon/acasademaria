@@ -157,74 +157,70 @@ export default function MenuCentral() {
 
   return (
     <AppLayout>
-      <div className="flex flex-col gap-8 py-4">
-        {/* Greeting + Mafe */}
-        <div className="card-botanical p-8 max-w-3xl mx-auto w-full">
-          <h1 className="text-2xl font-semibold text-foreground font-serif mb-1">
-            {getGreeting()}, {firstName}! 👋🌳
-          </h1>
-          <p className="text-lg font-semibold text-foreground font-serif mb-2">Espero que esteja bem!</p>
-          <p className="text-sm text-muted-foreground italic mb-6">{quote}</p>
+      <div className="flex flex-col gap-6 py-4">
+        {/* Greeting + Mafe — full width, no box */}
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+          <img src={mafeAvatar} alt="Mafe" className="w-28 h-28 rounded-full object-cover object-top shadow-md shrink-0" />
+          <div className="flex-1 min-w-0">
+            <h1 className="text-3xl font-semibold text-foreground font-serif mb-1">
+              {getGreeting()}, {firstName}! 👋🌳
+            </h1>
+            <p className="text-lg font-semibold text-foreground font-serif mb-1">Espero que esteja bem!</p>
+            <p className="text-sm text-muted-foreground italic mb-4">{quote}</p>
 
-          <div className="flex flex-col items-center mb-6">
-            <img src={mafeAvatar} alt="Mafe" className="w-40 h-40 rounded-full object-cover object-top shadow-md mb-4" />
-            <p className="text-sm text-muted-foreground leading-relaxed text-center max-w-md">
-              Eu sou a <span className="font-semibold text-foreground">Mafe</span>, assistente virtual da <span className="font-bold text-foreground">Maria Fernanda Marques — Paisagismo e Soluções Ambientais</span>. Me conte como posso te ajudar!
-            </p>
+            {/* Inline chat input */}
+            <form onSubmit={handleInlineSend} className="flex items-end gap-2">
+              <textarea
+                value={inlineInput}
+                onChange={(e) => setInlineInput(e.target.value)}
+                onKeyDown={handleInlineKeyDown}
+                placeholder="Pergunte algo à Mafe..."
+                rows={1}
+                className="flex-1 resize-none rounded-xl border border-border bg-background px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground"
+              />
+              <Button
+                type="button"
+                size="icon"
+                variant={isRecording ? "destructive" : "ghost"}
+                onClick={toggleRecording}
+                className="rounded-xl h-11 w-11 shrink-0"
+              >
+                {isRecording ? <Square className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+              </Button>
+              <Button
+                type="submit"
+                size="icon"
+                variant="ghost"
+                disabled={!inlineInput.trim()}
+                className="rounded-xl h-11 w-11 shrink-0"
+              >
+                <Send className="w-5 h-5" />
+              </Button>
+            </form>
           </div>
-
-          {/* Inline chat input */}
-          <form onSubmit={handleInlineSend} className="flex items-end gap-2">
-            <textarea
-              value={inlineInput}
-              onChange={(e) => setInlineInput(e.target.value)}
-              onKeyDown={handleInlineKeyDown}
-              placeholder="Descreva o que você precisa..."
-              rows={1}
-              className="flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground"
-            />
-            <Button
-              type="button"
-              size="icon"
-              variant={isRecording ? "destructive" : "ghost"}
-              onClick={toggleRecording}
-              className="rounded-xl h-10 w-10 shrink-0"
-            >
-              {isRecording ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-            </Button>
-            <Button
-              type="submit"
-              size="icon"
-              variant="ghost"
-              disabled={!inlineInput.trim()}
-              className="rounded-xl h-10 w-10 shrink-0"
-            >
-              <Send className="w-4 h-4" />
-            </Button>
-          </form>
         </div>
 
-        {/* Menu Grid */}
-        <div className="max-w-3xl mx-auto w-full">
-          <h2 className="text-sm font-medium text-muted-foreground mb-3 px-1">Módulos</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        {/* Menu Grid — full width */}
+        <div>
+          <h2 className="text-base font-medium text-muted-foreground mb-4">Módulos</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
             {visibleItems.map((item) => (
               <Link
                 key={item.href}
                 to={item.href}
                 className={cn(
-                  "flex flex-col items-center gap-3 p-5 rounded-xl",
+                  "flex flex-col items-center gap-4 p-6 rounded-xl",
                   "bg-card border border-border",
                   "hover:bg-secondary hover:shadow-md hover:scale-[1.02]",
                   "transition-all duration-200 text-center group"
                 )}
               >
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                  <item.icon className="w-6 h-6 text-foreground" />
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                  <item.icon className="w-8 h-8 text-foreground" />
                 </div>
                 <div>
-                  <p className="font-medium text-sm text-foreground">{item.title}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5 hidden sm:block">{item.description}</p>
+                  <p className="font-semibold text-base text-foreground">{item.title}</p>
+                  <p className="text-sm text-muted-foreground mt-1 hidden sm:block">{item.description}</p>
                 </div>
               </Link>
             ))}
