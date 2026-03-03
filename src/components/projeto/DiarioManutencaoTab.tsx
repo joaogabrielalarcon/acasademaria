@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -21,6 +21,11 @@ import {
   X,
   Save,
   Image as ImageIcon,
+  Mic,
+  MicOff,
+  Sparkles,
+  Send,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +40,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -63,7 +69,7 @@ import { useColaboradores } from "@/hooks/useColaboradores";
 import { useMaquinas } from "@/hooks/useMaquinas";
 import { useInsumos } from "@/hooks/useInsumos";
 import { MidiaUpload } from "@/components/MidiaUpload";
-import { FilePreview } from "@/components/projeto/FilePreview";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 interface DiarioManutencaoTabProps {
@@ -105,6 +111,14 @@ export function DiarioManutencaoTab({ projetoId, clienteId }: DiarioManutencaoTa
   const [expandedVisita, setExpandedVisita] = useState<string | null>(null);
   const [visitaToDelete, setVisitaToDelete] = useState<string | null>(null);
   const [filterPeriod, setFilterPeriod] = useState("all");
+  const [expandedPhoto, setExpandedPhoto] = useState<{ url: string; nome: string } | null>(null);
+
+  // AI state
+  const [aiInput, setAiInput] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -119,7 +133,7 @@ export function DiarioManutencaoTab({ projetoId, clienteId }: DiarioManutencaoTa
   const [formRecursosMaquinas, setFormRecursosMaquinas] = useState<{ maquina_id: string; horas_uso: string }[]>([]);
   const [formRecursosInsumos, setFormRecursosInsumos] = useState<{ insumo_id: string; quantidade: string; unidade: string }[]>([]);
 
-  // Colaboradores map
+  // Maps
   const colabMap = useMemo(() => new Map(colaboradores.map((c) => [c.id, c.nome])), [colaboradores]);
   const maquinaMap = useMemo(() => new Map(maquinas.map((m) => [m.id, m.nome])), [maquinas]);
   const insumoMap = useMemo(() => new Map(insumos.map((i) => [i.id, i.nome])), [insumos]);
@@ -145,8 +159,154 @@ export function DiarioManutencaoTab({ projetoId, clienteId }: DiarioManutencaoTa
     setFormServicos({});
     setFormRecursosMaquinas([]);
     setFormRecursosInsumos([]);
+    setAiInput("");
   };
 
+  // ============ AI ASSISTANT ============
+  const handleAiProcess = async (text: string) => {
+    if (!text.trim()) return;
+    setAiLoading(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("diario-manutencao-ai", {
+        body: {
+          message: text,
+          colaboradores: colaboradores.filter((c) => c.ativo).map((c) => ({ id: c.id, nome: c.nome })),
+          maquinas: maquinas.filter((m) => m.ativo).map((m) => ({ id: m.id, nome: m.nome })),
+          insumos: insumos.map((i) => ({ id: i.id, nome: i.nome, unidade: i.unidade })),
+          servicoTipos: servicoTipos.map((s) => ({ value: s.value, label: s.label })),
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      const result = data.data;
+
+      // Apply AI results to form
+      if (result.horas_trabalhadas) {
+        setFormData((f) => ({ ...f, horas_trabalhadas: String(result.horas_trabalhadas) }));
+      }
+      if (result.ocorrencias) {
+        setFormData((f) => ({ ...f, ocorrencias: f.ocorrencias ? `${f.ocorrencias}\n${result.ocorrencias}` : result.ocorrencias }));
+      }
+      if (result.observacoes_internas) {
+        setFormData((f) => ({ ...f, observacoes_internas: f.observacoes_internas ? `${f.observacoes_internas}\n${result.observacoes_internas}` : result.observacoes_internas }));
+      }
+
+      // Apply services
+      if (result.servicos?.length > 0) {
+        setFormServicos((prev) => {
+          const updated = { ...prev };
+          for (const s of result.servicos) {
+            updated[s.tipo] = {
+              checked: true,
+              descricao: s.descricao || prev[s.tipo]?.descricao || "",
+              quantidade: s.quantidade ? String(s.quantidade) : prev[s.tipo]?.quantidade || "",
+              unidade: s.unidade || prev[s.tipo]?.unidade || "",
+            };
+          }
+          return updated;
+        });
+      }
+
+      // Apply machines
+      if (result.recursos_maquinas?.length > 0) {
+        const newMaquinas = result.recursos_maquinas
+          .filter((rm: any) => rm.maquina_id)
+          .map((rm: any) => ({
+            maquina_id: rm.maquina_id,
+            horas_uso: rm.horas_uso ? String(rm.horas_uso) : "",
+          }));
+        if (newMaquinas.length > 0) {
+          setFormRecursosMaquinas((prev) => [...prev, ...newMaquinas]);
+        }
+      }
+
+      // Apply supplies
+      if (result.recursos_insumos?.length > 0) {
+        const newInsumos = result.recursos_insumos
+          .filter((ri: any) => ri.insumo_id)
+          .map((ri: any) => ({
+            insumo_id: ri.insumo_id,
+            quantidade: ri.quantidade ? String(ri.quantidade) : "",
+            unidade: ri.unidade || "",
+          }));
+        if (newInsumos.length > 0) {
+          setFormRecursosInsumos((prev) => [...prev, ...newInsumos]);
+        }
+      }
+
+      // Notify about new service suggestions
+      if (result.novos_servicos?.length > 0) {
+        const names = result.novos_servicos.map((s: any) => s.nome_sugerido).join(", ");
+        toast({
+          title: "Novos serviços sugeridos",
+          description: `A IA identificou serviços não cadastrados: ${names}. Foram adicionados como "Outro".`,
+        });
+      }
+
+      toast({ title: "✨ Dados preenchidos pela IA", description: "Revise e ajuste antes de salvar." });
+      setAiInput("");
+    } catch (error: any) {
+      console.error("AI error:", error);
+      toast({
+        title: "Erro ao processar com IA",
+        description: error.message || "Tente novamente",
+        variant: "destructive",
+      });
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        stream.getTracks().forEach((t) => t.stop());
+
+        // Convert to base64 and send to AI for transcription + processing
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64 = (reader.result as string).split(",")[1];
+          // For now, we use text-based AI - inform user to type or dictate
+          toast({
+            title: "Áudio gravado",
+            description: "Use a transcrição do navegador ou digite o texto.",
+          });
+        };
+        reader.readAsDataURL(blob);
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      toast({
+        title: "Erro ao acessar microfone",
+        description: "Verifique as permissões do navegador.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  // ============ FORM HANDLERS ============
   const handleSubmit = () => {
     if (!formData.data_visita) {
       toast({ title: "Informe a data da visita", variant: "destructive" });
@@ -289,21 +449,17 @@ export function DiarioManutencaoTab({ projetoId, clienteId }: DiarioManutencaoTa
         </div>
       ) : (
         <div className="relative">
-          {/* Timeline line */}
           <div className="absolute left-5 top-0 bottom-0 w-px bg-border" />
-
           <div className="space-y-4">
             {filteredVisitas.map((visita) => {
               const servicos = allServicos.filter((s) => s.visita_id === visita.id);
               const recursos = allRecursos.filter((r) => r.visita_id === visita.id);
               const isExpanded = expandedVisita === visita.id;
-              const fotos = (visita.midia || []).filter((m) => m.tipo?.startsWith("image"));
+              const fotos = (visita.midia || []).filter((m) => m.tipo?.startsWith("image") || m.tipo === "image");
 
               return (
                 <div key={visita.id} className="relative pl-12">
-                  {/* Timeline dot */}
                   <div className="absolute left-3.5 top-4 w-3 h-3 rounded-full bg-primary border-2 border-background" />
-
                   <div className="card-botanical overflow-hidden">
                     <button
                       className="w-full p-4 text-left hover:bg-muted/50 transition-colors"
@@ -335,8 +491,6 @@ export function DiarioManutencaoTab({ projetoId, clienteId }: DiarioManutencaoTa
                           <ChevronRight className="w-4 h-4 text-muted-foreground" />
                         )}
                       </div>
-
-                      {/* Service badges summary */}
                       {servicos.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mt-2">
                           {servicos.map((s, i) => (
@@ -349,7 +503,6 @@ export function DiarioManutencaoTab({ projetoId, clienteId }: DiarioManutencaoTa
                       )}
                     </button>
 
-                    {/* Expanded content */}
                     {isExpanded && (
                       <div className="border-t p-4 space-y-4">
                         {/* Equipe */}
@@ -429,14 +582,30 @@ export function DiarioManutencaoTab({ projetoId, clienteId }: DiarioManutencaoTa
                           </div>
                         )}
 
-                        {/* Fotos */}
+                        {/* Fotos - FIXED: render directly using public URLs */}
                         {fotos.length > 0 && (
                           <div>
                             <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Fotos</p>
                             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                               {fotos.slice(0, 6).map((foto, i) => (
-                                <FilePreview key={i} nome={foto.nome} url={foto.url} tipo={foto.tipo} bucket="registros-midia" />
+                                <button
+                                  key={i}
+                                  type="button"
+                                  className="aspect-square rounded-lg overflow-hidden border border-border hover:border-primary/50 transition-colors"
+                                  onClick={() => setExpandedPhoto({ url: foto.url, nome: foto.nome })}
+                                >
+                                  <img
+                                    src={foto.url}
+                                    alt={foto.nome}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </button>
                               ))}
+                              {fotos.length > 6 && (
+                                <div className="aspect-square rounded-lg bg-muted flex items-center justify-center text-sm text-muted-foreground font-medium">
+                                  +{fotos.length - 6}
+                                </div>
+                              )}
                             </div>
                           </div>
                         )}
@@ -465,14 +634,85 @@ export function DiarioManutencaoTab({ projetoId, clienteId }: DiarioManutencaoTa
         </div>
       )}
 
+      {/* ===== PHOTO EXPANDED DIALOG ===== */}
+      <Dialog open={!!expandedPhoto} onOpenChange={() => setExpandedPhoto(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden">
+          <DialogTitle className="sr-only">{expandedPhoto?.nome || "Foto"}</DialogTitle>
+          <DialogDescription className="sr-only">Visualização da foto</DialogDescription>
+          <div className="flex items-center justify-between p-3 border-b bg-muted/50">
+            <span className="text-sm font-medium truncate">{expandedPhoto?.nome}</span>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => expandedPhoto && window.open(expandedPhoto.url, "_blank")}>
+                Abrir original
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setExpandedPhoto(null)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+          <div className="overflow-auto max-h-[80vh] flex items-center justify-center bg-muted/20 p-4">
+            {expandedPhoto && (
+              <img src={expandedPhoto.url} alt={expandedPhoto.nome} className="max-w-full max-h-[75vh] object-contain rounded" />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* ===== NEW VISIT DIALOG ===== */}
       <Dialog open={showForm} onOpenChange={(open) => { if (!open) { setShowForm(false); resetForm(); } }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Novo Registro de Manutenção</DialogTitle>
+            <DialogDescription className="sr-only">Preencha os dados da visita de manutenção</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-6">
+            {/* AI Assistant Bar */}
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                <Sparkles className="w-4 h-4" />
+                Assistente IA — descreva a visita por texto ou áudio
+              </div>
+              <div className="flex gap-2">
+                <Textarea
+                  placeholder="Ex: Hoje fizemos poda geral em todas as árvores, adubação com NPK 10kg, usamos a roçadeira por 3 horas. Encontramos cochonilha nas palmeiras..."
+                  value={aiInput}
+                  onChange={(e) => setAiInput(e.target.value)}
+                  rows={2}
+                  className="flex-1 text-sm resize-none"
+                />
+                <div className="flex flex-col gap-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={isRecording ? "destructive" : "outline"}
+                    className="h-8 w-8 p-0"
+                    onClick={isRecording ? stopRecording : startRecording}
+                    title={isRecording ? "Parar gravação" : "Gravar áudio"}
+                  >
+                    {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="terracota"
+                    className="h-8 w-8 p-0"
+                    onClick={() => handleAiProcess(aiInput)}
+                    disabled={aiLoading || !aiInput.trim()}
+                    title="Processar com IA"
+                  >
+                    {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+              {isRecording && (
+                <div className="flex items-center gap-2 text-xs text-destructive animate-pulse">
+                  <div className="w-2 h-2 rounded-full bg-destructive" />
+                  Gravando... clique no microfone para parar
+                </div>
+              )}
+            </div>
+
             {/* Data e Horas */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

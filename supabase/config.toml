@@ -1,1 +1,4 @@
 project_id = "lelteebbziredzfamkzb"
+
+[functions.diario-manutencao-ai]
+verify_jwt = false
