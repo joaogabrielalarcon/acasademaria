@@ -66,6 +66,7 @@ import { DashboardTab } from "@/components/projeto/DashboardTab";
 import { CotacaoSheet } from "@/components/projeto/CotacaoSheet";
 import { InformacoesProjetoTab } from "@/components/projeto/InformacoesProjetoTab";
 import { DiarioProjetoTab } from "@/components/projeto/DiarioProjetoTab";
+import { DiarioManutencaoTab } from "@/components/projeto/DiarioManutencaoTab";
 import { Progress } from "@/components/ui/progress";
 
 export default function ProjetoDetalhe() {
@@ -373,7 +374,11 @@ export default function ProjetoDetalhe() {
 
         {/* Diário */}
         <TabsContent value="diario">
-          <DiarioProjetoTab projetoId={id!} clienteId={projeto.cliente_id} />
+          {(projeto as any).tipo === "manutencao" ? (
+            <DiarioManutencaoTab projetoId={id!} clienteId={projeto.cliente_id} />
+          ) : (
+            <DiarioProjetoTab projetoId={id!} clienteId={projeto.cliente_id} />
+          )}
         </TabsContent>
 
         <TabsContent value="orcamento">
