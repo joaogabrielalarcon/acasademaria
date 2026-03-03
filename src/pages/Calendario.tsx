@@ -31,7 +31,7 @@ export default function Calendario() {
   const { user } = useAuth();
   const { data: roles = [] } = useUserRoles(user?.id);
   const queryClient = useQueryClient();
-  const canManage = roles.some(r => r.role === "admin" || r.role === "gestor");
+  const canManage = roles.some(r => r.role === "admin" || r.role === "administrativo" || r.role === "gestao_campo");
 
   const [mesAtual, setMesAtual] = useState(new Date());
   const [novoEvento, setNovoEvento] = useState({ titulo: "", descricao: "", data: "", recorrente: false });

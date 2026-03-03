@@ -77,7 +77,8 @@ export function MafeChat() {
   const prevRouteRef = useRef(location.pathname);
 
   const userRole = userRoles.some(r => r.role === "admin") ? "admin"
-    : userRoles.some(r => r.role === "gestor") ? "gestor" : "operador";
+    : userRoles.some(r => r.role === "administrativo") ? "administrativo"
+    : userRoles.some(r => r.role === "gestao_campo") ? "gestao_campo" : "operador_campo";
 
   const currentPage = getRouteLabel(location.pathname);
 

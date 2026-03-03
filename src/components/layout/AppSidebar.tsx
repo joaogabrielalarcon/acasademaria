@@ -31,65 +31,56 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useAuth, useUserRoles } from "@/hooks/useAuth";
-
-// Definição dos perfis de acesso
-type UserRole = "admin" | "gestor" | "operador";
-
-// Mapeamento de itens por permissão
-// diretoria (admin) = vê tudo
-// administrativo (admin) = vê tudo
-// gestão de operações (gestor) = só Clientes e Equipe
-// operacional (operador) = mesma visão do gestor
+import { useAuth, useHighestRole, type AppRole } from "@/hooks/useAuth";
 
 const allNavigationItems = [
   {
     title: "Clientes",
     icon: Users,
     href: "/clientes",
-    roles: ["admin", "gestor", "operador"] as UserRole[],
+    roles: ["admin", "administrativo", "gestao_campo", "arquitetura", "responsavel_obra"] as AppRole[],
   },
   {
     title: "Equipe",
     icon: UserCircle,
     href: "/equipe",
-    roles: ["admin", "gestor", "operador"] as UserRole[],
+    roles: ["admin", "administrativo", "gestao_campo"] as AppRole[],
   },
   {
     title: "Calendário",
     icon: CalendarDays,
     href: "/calendario",
-    roles: ["admin", "gestor"] as UserRole[],
+    roles: ["admin", "administrativo", "gestao_campo", "arquitetura", "responsavel_obra"] as AppRole[],
   },
   {
     title: "Plantas",
     icon: Leaf,
     href: "/plantas",
-    roles: ["admin"] as UserRole[],
+    roles: ["admin", "administrativo", "arquitetura"] as AppRole[],
   },
   {
     title: "Produtos e Insumos",
     icon: Package,
     href: "/insumos",
-    roles: ["admin"] as UserRole[],
+    roles: ["admin", "administrativo", "gestao_campo"] as AppRole[],
   },
   {
     title: "Fornecedores",
     icon: Truck,
     href: "/fornecedores",
-    roles: ["admin"] as UserRole[],
+    roles: ["admin", "administrativo", "gestao_campo"] as AppRole[],
   },
   {
     title: "Máquinas",
     icon: Wrench,
     href: "/maquinas",
-    roles: ["admin"] as UserRole[],
+    roles: ["admin", "administrativo", "gestao_campo"] as AppRole[],
   },
   {
     title: "Processos Internos",
     icon: BookOpen,
     href: "/processos",
-    roles: ["admin", "gestor"] as UserRole[],
+    roles: ["admin", "administrativo"] as AppRole[],
   },
 ];
 
@@ -98,19 +89,19 @@ const configItems = [
     title: "Áreas Internas",
     icon: Building2,
     href: "/areas",
-    roles: ["admin"] as UserRole[],
+    roles: ["admin"] as AppRole[],
   },
   {
-    title: "Controle de Acessos",
+    title: "Gestão de Usuários",
     icon: Shield,
     href: "/acessos",
-    roles: ["admin"] as UserRole[],
+    roles: ["admin"] as AppRole[],
   },
   {
     title: "Categorias de Plantas",
     icon: Tags,
     href: "/categorias-plantas",
-    roles: ["admin"] as UserRole[],
+    roles: ["admin"] as AppRole[],
   },
 ];
 
@@ -124,18 +115,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { data: userRoles = [] } = useUserRoles(user?.id);
-
-  // Determina o maior nível de acesso do usuário
-  // Se não há roles definidas, assume admin para não bloquear acesso
-  const getUserHighestRole = (): UserRole => {
-    if (userRoles.length === 0) return "admin"; // Fallback para admin se sem roles
-    if (userRoles.some(r => r.role === "admin")) return "admin";
-    if (userRoles.some(r => r.role === "gestor")) return "gestor";
-    return "operador";
-  };
-
-  const userRole = getUserHighestRole();
+  const userRole = useHighestRole(user?.id);
 
   // Filtra itens de navegação baseado no perfil do usuário
   const visibleNavigationItems = allNavigationItems.filter(

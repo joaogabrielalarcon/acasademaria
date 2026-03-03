@@ -62,6 +62,7 @@ export default function Fornecedores() {
     nome: "",
     cnpj: "",
     telefone: "",
+    whatsapp: "",
     email: "",
     endereco: "",
     cidade: "",
@@ -75,6 +76,7 @@ export default function Fornecedores() {
       nome: "",
       cnpj: "",
       telefone: "",
+      whatsapp: "",
       email: "",
       endereco: "",
       cidade: "",
@@ -91,6 +93,7 @@ export default function Fornecedores() {
       nome: fornecedor.nome,
       cnpj: fornecedor.cnpj || "",
       telefone: fornecedor.telefone || "",
+      whatsapp: (fornecedor as any).whatsapp || "",
       email: fornecedor.email || "",
       endereco: "",
       cidade: "",
@@ -227,6 +230,17 @@ export default function Fornecedores() {
                       id="telefone"
                       value={formData.telefone}
                       onChange={(e) => setFormData({ ...formData, telefone: formatPhone(e.target.value) })}
+                      placeholder="(00) 00000-0000"
+                      maxLength={15}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="whatsapp">WhatsApp</Label>
+                    <Input
+                      id="whatsapp"
+                      value={formData.whatsapp}
+                      onChange={(e) => setFormData({ ...formData, whatsapp: formatPhone(e.target.value) })}
                       placeholder="(00) 00000-0000"
                       maxLength={15}
                     />
