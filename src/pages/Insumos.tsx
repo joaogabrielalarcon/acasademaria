@@ -63,6 +63,7 @@ export default function Insumos() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategoria, setFilterCategoria] = useState<string>("todas");
   const [itemToDelete, setItemToDelete] = useState<Insumo | null>(null);
+  const [visibleCount, setVisibleCount] = useState(20);
 
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
@@ -180,6 +181,9 @@ export default function Insumos() {
     });
     return filtered.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   }, [insumos, searchTerm, filterCategoria]);
+
+  const visibleInsumos = filteredInsumos.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredInsumos.length;
 
   return (
     <AppLayout>
@@ -363,7 +367,7 @@ export default function Insumos() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredInsumos.map((insumo) => (
+                visibleInsumos.map((insumo) => (
                   <TableRow key={insumo.id}>
                     <TableCell className="font-medium">{insumo.nome}</TableCell>
                     <TableCell>{insumo.categoria || "-"}</TableCell>
@@ -403,6 +407,13 @@ export default function Insumos() {
             </TableBody>
           </Table>
         </div>
+        {hasMore && (
+          <div className="flex justify-center mt-4">
+            <Button variant="outline" onClick={() => setVisibleCount((c) => c + 20)}>
+              Carregar mais ({filteredInsumos.length - visibleCount} restantes)
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Histórico de preços do insumo selecionado para edição */}

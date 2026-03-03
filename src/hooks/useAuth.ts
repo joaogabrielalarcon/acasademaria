@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export interface UserProfile {
   id: string;
@@ -21,18 +21,22 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
-    // Configurar listener ANTES de buscar sessão
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        // On logout, clear cached roles
+        if (!session) {
+          queryClient.removeQueries({ queryKey: ["user_roles"] });
+        }
       }
     );
 
-    // Buscar sessão inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -40,7 +44,7 @@ export function useAuth() {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [queryClient]);
 
   const signIn = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -113,6 +117,8 @@ export function useUserRoles(userId: string | undefined) {
       return data as UserRole[];
     },
     enabled: !!userId,
+    staleTime: Infinity,       // Never refetch automatically during the session
+    gcTime: 1000 * 60 * 60,   // Keep in cache for 1 hour
   });
 }
 

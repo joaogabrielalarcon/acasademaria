@@ -75,12 +75,16 @@ export default function ProjetoDetalhe() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
+  const [activeTab, setActiveTab] = useState("informacoes");
 
   const { data: projeto, isLoading: loadingProjeto } = useProjeto(id);
   const { data: cliente } = useCliente(projeto?.cliente_id);
-  const { data: itens = [], isLoading: loadingItens } = useOrcamentoItens(id);
+
+  // Lazy: only load when orcamento tab is active (or related tabs that need this data)
+  const needsOrcamento = activeTab === "orcamento" || activeTab === "resumo" || activeTab === "execucao" || activeTab === "dashboard";
+  const { data: itens = [], isLoading: loadingItens } = useOrcamentoItens(needsOrcamento ? id : undefined);
   const itemIds = itens.map((i) => i.id);
-  const { data: todasCotacoes = [] } = useOrcamentoCotacoes(itemIds);
+  const { data: todasCotacoes = [] } = useOrcamentoCotacoes(needsOrcamento ? itemIds : []);
   const { data: plantas = [] } = usePlantas();
   const { data: insumos = [] } = useInsumos();
   const { data: fornecedores = [] } = useFornecedores();
@@ -330,7 +334,7 @@ export default function ProjetoDetalhe() {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="informacoes" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-6 flex-wrap">
           <TabsTrigger value="informacoes" className="gap-2">
             <Info className="w-4 h-4" />

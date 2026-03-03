@@ -50,6 +50,7 @@ export default function Fornecedores() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("ativo");
   const [itemToDelete, setItemToDelete] = useState<Fornecedor | null>(null);
+  const [visibleCount, setVisibleCount] = useState(20);
 
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
@@ -163,6 +164,9 @@ export default function Fornecedores() {
     });
     return filtered.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   }, [fornecedores, searchTerm, filterStatus]);
+
+  const visibleFornecedores = filteredFornecedores.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredFornecedores.length;
 
   return (
     <AppLayout>
@@ -361,7 +365,7 @@ export default function Fornecedores() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredFornecedores.map((fornecedor) => (
+                visibleFornecedores.map((fornecedor) => (
                   <TableRow key={fornecedor.id}>
                     <TableCell className="font-medium">{fornecedor.nome}</TableCell>
                     <TableCell>{fornecedor.cnpj || "-"}</TableCell>
@@ -405,6 +409,13 @@ export default function Fornecedores() {
             </TableBody>
           </Table>
         </div>
+        {hasMore && (
+          <div className="flex justify-center mt-4">
+            <Button variant="outline" onClick={() => setVisibleCount((c) => c + 20)}>
+              Carregar mais ({filteredFornecedores.length - visibleCount} restantes)
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Dialog de confirmação de exclusão */}

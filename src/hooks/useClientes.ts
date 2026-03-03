@@ -26,6 +26,7 @@ export function useClientesSimples() {
       if (error) throw error;
       return data as ClienteBasico[];
     },
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
   });
 }
 
@@ -42,5 +43,6 @@ export function useClientesListagem() {
       if (error) throw error;
       return data as ClienteListagem[];
     },
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
   });
 }
