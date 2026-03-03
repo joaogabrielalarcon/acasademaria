@@ -23,5 +23,6 @@ export function useInsumos() {
       if (error) throw error;
       return data as Insumo[];
     },
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
   });
 }

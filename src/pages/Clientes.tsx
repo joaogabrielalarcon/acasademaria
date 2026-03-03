@@ -96,6 +96,7 @@ function EmptyState() {
 export default function Clientes() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [visibleCount, setVisibleCount] = useState(20);
 
   const { data: clientes = [], isLoading } = useQuery({
     queryKey: ["clientes"],
@@ -108,6 +109,7 @@ export default function Clientes() {
       if (error) throw error;
       return data as Cliente[];
     },
+    staleTime: 1000 * 60 * 5,
   });
 
   const filteredClientes = clientes.filter((cliente) => {
@@ -116,6 +118,19 @@ export default function Clientes() {
     const matchesStatus = statusFilter === "all" || cliente.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  // Reset visible count when filters change
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+    setVisibleCount(20);
+  };
+  const handleStatus = (value: string) => {
+    setStatusFilter(value);
+    setVisibleCount(20);
+  };
+
+  const visibleClientes = filteredClientes.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredClientes.length;
 
   return (
     <AppLayout>
@@ -144,11 +159,11 @@ export default function Clientes() {
           <Input
             placeholder="Buscar por nome ou bairro..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => handleSearch(e.target.value)}
             className="pl-10"
           />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Select value={statusFilter} onValueChange={handleStatus}>
           <SelectTrigger className="w-40">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
@@ -167,11 +182,20 @@ export default function Clientes() {
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
       ) : filteredClientes.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredClientes.map((cliente) => (
-            <ClienteCard key={cliente.id} cliente={cliente} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {visibleClientes.map((cliente) => (
+              <ClienteCard key={cliente.id} cliente={cliente} />
+            ))}
+          </div>
+          {hasMore && (
+            <div className="flex justify-center mt-6">
+              <Button variant="outline" onClick={() => setVisibleCount((c) => c + 20)}>
+                Carregar mais ({filteredClientes.length - visibleCount} restantes)
+              </Button>
+            </div>
+          )}
+        </>
       ) : (
         <EmptyState />
       )}

@@ -23,5 +23,6 @@ export function useFornecedores() {
       if (error) throw error;
       return data as Fornecedor[];
     },
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
   });
 }

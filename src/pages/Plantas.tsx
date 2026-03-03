@@ -42,6 +42,7 @@ export default function Plantas() {
   const [filterCategoria, setFilterCategoria] = useState<string>("todas");
   const [filterFornecedor, setFilterFornecedor] = useState<string>("todos");
   const [itemToDelete, setItemToDelete] = useState<Planta | null>(null);
+  const [visibleCount, setVisibleCount] = useState(20);
 
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
@@ -68,6 +69,9 @@ export default function Plantas() {
     });
     return filtered.sort((a, b) => a.nome_popular.localeCompare(b.nome_popular, 'pt-BR'));
   }, [plantas, searchTerm, filterCategoria, filterFornecedor]);
+
+  const visiblePlantas = filteredPlantas.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredPlantas.length;
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -178,7 +182,7 @@ export default function Plantas() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredPlantas.map((planta) => (
+                visiblePlantas.map((planta) => (
                   <TableRow key={planta.id}>
                     <TableCell className="font-medium">{planta.nome_popular}</TableCell>
                     <TableCell className="text-muted-foreground italic">
@@ -217,6 +221,13 @@ export default function Plantas() {
             </TableBody>
           </Table>
         </div>
+        {hasMore && (
+          <div className="flex justify-center mt-4">
+            <Button variant="outline" onClick={() => setVisibleCount((c) => c + 20)}>
+              Carregar mais ({filteredPlantas.length - visibleCount} restantes)
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Dialog de confirmação de exclusão */}
