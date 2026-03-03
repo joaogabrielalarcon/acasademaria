@@ -32,6 +32,7 @@ export default function NovoProjeto() {
     titulo: "",
     descricao: "",
     status: "orcamento",
+    tipo: "implantacao",
     data_inicio: "",
     data_previsao: "",
     responsavel_id: "",
@@ -45,6 +46,7 @@ export default function NovoProjeto() {
         titulo: projeto.titulo,
         descricao: projeto.descricao || "",
         status: projeto.status,
+        tipo: (projeto as any).tipo || "implantacao",
         data_inicio: projeto.data_inicio || "",
         data_previsao: projeto.data_previsao || "",
         responsavel_id: projeto.responsavel_id || "",
@@ -64,11 +66,12 @@ export default function NovoProjeto() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const payload = {
+      const payload: Record<string, any> = {
         cliente_id: form.cliente_id,
         titulo: form.titulo,
         descricao: form.descricao || null,
         status: form.status,
+        tipo: form.tipo,
         data_inicio: form.data_inicio || null,
         data_previsao: form.data_previsao || null,
         responsavel_id: form.responsavel_id || null,
@@ -76,10 +79,10 @@ export default function NovoProjeto() {
       };
 
       if (isEditing) {
-        const { error } = await supabase.from("projetos").update(payload).eq("id", id);
+        const { error } = await supabase.from("projetos").update(payload as any).eq("id", id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("projetos").insert(payload);
+        const { error } = await supabase.from("projetos").insert(payload as any);
         if (error) throw error;
       }
     },
@@ -161,6 +164,20 @@ export default function NovoProjeto() {
             placeholder="Detalhes do projeto..."
             rows={3}
           />
+        </div>
+
+        {/* Tipo */}
+        <div className="space-y-2">
+          <Label>Tipo de Projeto</Label>
+          <Select value={form.tipo} onValueChange={v => setForm(f => ({ ...f, tipo: v }))}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="implantacao">Implantação</SelectItem>
+              <SelectItem value="manutencao">Manutenção</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Status */}

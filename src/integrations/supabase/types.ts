@@ -736,6 +736,164 @@ export type Database = {
           },
         ]
       }
+      manutencao_recursos: {
+        Row: {
+          created_at: string
+          horas_uso: number | null
+          id: string
+          insumo_id: string | null
+          maquina_id: string | null
+          observacao: string | null
+          quantidade: number | null
+          tipo: string
+          unidade: string | null
+          visita_id: string
+        }
+        Insert: {
+          created_at?: string
+          horas_uso?: number | null
+          id?: string
+          insumo_id?: string | null
+          maquina_id?: string | null
+          observacao?: string | null
+          quantidade?: number | null
+          tipo: string
+          unidade?: string | null
+          visita_id: string
+        }
+        Update: {
+          created_at?: string
+          horas_uso?: number | null
+          id?: string
+          insumo_id?: string | null
+          maquina_id?: string | null
+          observacao?: string | null
+          quantidade?: number | null
+          tipo?: string
+          unidade?: string | null
+          visita_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manutencao_recursos_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "insumos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manutencao_recursos_maquina_id_fkey"
+            columns: ["maquina_id"]
+            isOneToOne: false
+            referencedRelation: "maquinas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manutencao_recursos_visita_id_fkey"
+            columns: ["visita_id"]
+            isOneToOne: false
+            referencedRelation: "manutencao_visitas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      manutencao_servicos: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          id: string
+          observacao: string | null
+          quantidade: number | null
+          tipo: string
+          unidade: string | null
+          visita_id: string
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          observacao?: string | null
+          quantidade?: number | null
+          tipo: string
+          unidade?: string | null
+          visita_id: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          observacao?: string | null
+          quantidade?: number | null
+          tipo?: string
+          unidade?: string | null
+          visita_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manutencao_servicos_visita_id_fkey"
+            columns: ["visita_id"]
+            isOneToOne: false
+            referencedRelation: "manutencao_visitas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      manutencao_visitas: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data_visita: string
+          equipe_ids: string[]
+          horas_por_pessoa: Json | null
+          horas_trabalhadas: number
+          id: string
+          midia: Json | null
+          observacoes_internas: string | null
+          ocorrencias: string | null
+          projeto_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data_visita: string
+          equipe_ids?: string[]
+          horas_por_pessoa?: Json | null
+          horas_trabalhadas?: number
+          id?: string
+          midia?: Json | null
+          observacoes_internas?: string | null
+          ocorrencias?: string | null
+          projeto_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data_visita?: string
+          equipe_ids?: string[]
+          horas_por_pessoa?: Json | null
+          horas_trabalhadas?: number
+          id?: string
+          midia?: Json | null
+          observacoes_internas?: string | null
+          ocorrencias?: string | null
+          projeto_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manutencao_visitas_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maquinas: {
         Row: {
           ativo: boolean
@@ -1360,6 +1518,7 @@ export type Database = {
           observacoes: string | null
           responsavel_id: string | null
           status: string
+          tipo: string
           titulo: string
           updated_at: string
           updated_by: string | null
@@ -1377,6 +1536,7 @@ export type Database = {
           observacoes?: string | null
           responsavel_id?: string | null
           status?: string
+          tipo?: string
           titulo: string
           updated_at?: string
           updated_by?: string | null
@@ -1394,6 +1554,7 @@ export type Database = {
           observacoes?: string | null
           responsavel_id?: string | null
           status?: string
+          tipo?: string
           titulo?: string
           updated_at?: string
           updated_by?: string | null
