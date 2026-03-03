@@ -15,23 +15,21 @@ import {
   Square,
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useAuth, useProfile, useUserRoles } from "@/hooks/useAuth";
+import { useAuth, useProfile, useHighestRole, type AppRole } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import mafeAvatar from "@/assets/flora-avatar.webp";
 
-type UserRole = "admin" | "gestor" | "operador";
-
 const menuItems = [
-  { title: "Clientes", description: "Gerenciar clientes e perfis", icon: Users, href: "/clientes", roles: ["admin", "gestor", "operador"] as UserRole[] },
-  { title: "Equipe", description: "Colaboradores e equipes", icon: UserCircle, href: "/equipe", roles: ["admin", "gestor", "operador"] as UserRole[] },
-  { title: "Calendário", description: "Datas importantes e feriados", icon: CalendarDays, href: "/calendario", roles: ["admin", "gestor"] as UserRole[] },
-  { title: "Plantas", description: "Catálogo de plantas", icon: Leaf, href: "/plantas", roles: ["admin"] as UserRole[] },
-  { title: "Produtos e Insumos", description: "Materiais e insumos", icon: Package, href: "/insumos", roles: ["admin"] as UserRole[] },
-  { title: "Fornecedores", description: "Cadastro de fornecedores", icon: Truck, href: "/fornecedores", roles: ["admin"] as UserRole[] },
-  { title: "Máquinas", description: "Equipamentos e manutenção", icon: Wrench, href: "/maquinas", roles: ["admin"] as UserRole[] },
-  { title: "Processos Internos", description: "Documentação de processos", icon: BookOpen, href: "/processos", roles: ["admin", "gestor"] as UserRole[] },
-  { title: "Configurações do Sistema", description: "Áreas, acessos e categorias", icon: Settings, href: "/areas", roles: ["admin"] as UserRole[] },
+  { title: "Clientes", description: "Gerenciar clientes e perfis", icon: Users, href: "/clientes", roles: ["admin", "administrativo", "gestao_campo", "arquitetura", "responsavel_obra"] as AppRole[] },
+  { title: "Equipe", description: "Colaboradores e equipes", icon: UserCircle, href: "/equipe", roles: ["admin", "administrativo", "gestao_campo"] as AppRole[] },
+  { title: "Calendário", description: "Datas importantes e feriados", icon: CalendarDays, href: "/calendario", roles: ["admin", "administrativo", "gestao_campo", "arquitetura", "responsavel_obra"] as AppRole[] },
+  { title: "Plantas", description: "Catálogo de plantas", icon: Leaf, href: "/plantas", roles: ["admin", "administrativo", "arquitetura"] as AppRole[] },
+  { title: "Produtos e Insumos", description: "Materiais e insumos", icon: Package, href: "/insumos", roles: ["admin", "administrativo", "gestao_campo"] as AppRole[] },
+  { title: "Fornecedores", description: "Cadastro de fornecedores", icon: Truck, href: "/fornecedores", roles: ["admin", "administrativo", "gestao_campo"] as AppRole[] },
+  { title: "Máquinas", description: "Equipamentos e manutenção", icon: Wrench, href: "/maquinas", roles: ["admin", "administrativo", "gestao_campo"] as AppRole[] },
+  { title: "Processos Internos", description: "Documentação de processos", icon: BookOpen, href: "/processos", roles: ["admin", "administrativo"] as AppRole[] },
+  { title: "Configurações do Sistema", description: "Áreas, acessos e categorias", icon: Settings, href: "/areas", roles: ["admin"] as AppRole[] },
 ];
 
 const MOTIVATIONAL_QUOTES = [
@@ -81,20 +79,11 @@ function getRandomQuote(): string {
 export default function MenuCentral() {
   const { user } = useAuth();
   const { data: profile } = useProfile(user?.id);
-  const { data: userRoles = [] } = useUserRoles(user?.id);
   const [inlineInput, setInlineInput] = useState("");
   const [quote] = useState(() => getRandomQuote());
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef<any>(null);
-
-  const getUserHighestRole = (): UserRole => {
-    if (userRoles.length === 0) return "admin";
-    if (userRoles.some(r => r.role === "admin")) return "admin";
-    if (userRoles.some(r => r.role === "gestor")) return "gestor";
-    return "operador";
-  };
-
-  const userRole = getUserHighestRole();
+  const userRole = useHighestRole(user?.id);
   const visibleItems = menuItems.filter(item => item.roles.includes(userRole));
   const firstName = profile?.nome?.split(" ")[0] || user?.email?.split("@")[0] || "Usuário";
 

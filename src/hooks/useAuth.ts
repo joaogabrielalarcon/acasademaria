@@ -13,9 +13,20 @@ export interface UserProfile {
   ativo: boolean;
 }
 
+export type AppRole = "admin" | "administrativo" | "gestao_campo" | "responsavel_obra" | "operador_campo" | "arquitetura";
+
 export interface UserRole {
-  role: "admin" | "gestor" | "operador";
+  role: AppRole;
 }
+
+export const roleLabels: Record<AppRole, string> = {
+  admin: "Direção",
+  administrativo: "Administrativo",
+  gestao_campo: "Gestão de Campo",
+  responsavel_obra: "Responsável de Obra",
+  operador_campo: "Operador de Campo",
+  arquitetura: "Arquitetura",
+};
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -127,7 +138,27 @@ export function useIsAdmin(userId: string | undefined) {
   return roles.some(r => r.role === "admin");
 }
 
+export function useIsAdminOrAdministrativo(userId: string | undefined) {
+  const { data: roles = [] } = useUserRoles(userId);
+  return roles.some(r => r.role === "admin" || r.role === "administrativo");
+}
+
 export function useIsManager(userId: string | undefined) {
   const { data: roles = [] } = useUserRoles(userId);
-  return roles.some(r => r.role === "admin" || r.role === "gestor");
+  return roles.some(r => r.role === "admin" || r.role === "administrativo" || r.role === "gestao_campo");
+}
+
+export function useHighestRole(userId: string | undefined): AppRole {
+  const { data: roles = [] } = useUserRoles(userId);
+  if (roles.length === 0) return "operador_campo";
+  const priority: AppRole[] = ["admin", "administrativo", "gestao_campo", "responsavel_obra", "arquitetura", "operador_campo"];
+  for (const p of priority) {
+    if (roles.some(r => r.role === p)) return p;
+  }
+  return "operador_campo";
+}
+
+export function useHasAnyRole(userId: string | undefined, allowedRoles: AppRole[]) {
+  const { data: roles = [] } = useUserRoles(userId);
+  return roles.some(r => allowedRoles.includes(r.role));
 }

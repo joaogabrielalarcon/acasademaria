@@ -536,6 +536,7 @@ export type Database = {
           telefone: string | null
           updated_at: string
           updated_by: string | null
+          whatsapp: string | null
         }
         Insert: {
           cidade?: string | null
@@ -552,6 +553,7 @@ export type Database = {
           telefone?: string | null
           updated_at?: string
           updated_by?: string | null
+          whatsapp?: string | null
         }
         Update: {
           cidade?: string | null
@@ -568,6 +570,7 @@ export type Database = {
           telefone?: string | null
           updated_at?: string
           updated_by?: string | null
+          whatsapp?: string | null
         }
         Relationships: []
       }
@@ -1184,7 +1187,9 @@ export type Database = {
           id: string
           nome: string
           telefone: string | null
+          ultimo_acesso: string | null
           updated_at: string
+          whatsapp: string | null
         }
         Insert: {
           area_id?: string | null
@@ -1195,7 +1200,9 @@ export type Database = {
           id: string
           nome: string
           telefone?: string | null
+          ultimo_acesso?: string | null
           updated_at?: string
+          whatsapp?: string | null
         }
         Update: {
           area_id?: string | null
@@ -1206,7 +1213,9 @@ export type Database = {
           id?: string
           nome?: string
           telefone?: string | null
+          ultimo_acesso?: string | null
           updated_at?: string
+          whatsapp?: string | null
         }
         Relationships: [
           {
@@ -1896,13 +1905,25 @@ export type Database = {
     Functions: {
       can_manage_users: { Args: { _user_id: string }; Returns: boolean }
       check_inactive_clients: { Args: never; Returns: undefined }
+      get_colaborador_id: { Args: { _user_id: string }; Returns: string }
       get_user_area: { Args: { _user_id: string }; Returns: string }
       get_user_id_by_username: { Args: { _username: string }; Returns: string }
+      has_any_role: {
+        Args: {
+          _roles: Database["public"]["Enums"]["user_role"][]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_allocated_to_project: {
+        Args: { _projeto_id: string; _user_id: string }
         Returns: boolean
       }
       is_colaborador_ativo: { Args: { _user_id: string }; Returns: boolean }
