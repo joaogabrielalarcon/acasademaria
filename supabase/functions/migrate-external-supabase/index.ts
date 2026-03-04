@@ -1,8 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import postgres from "npm:postgres";
 
-type GenericRow = Record<string, unknown>;
-
 type TableColumn = {
   table_name: string;
   column_name: string;
@@ -24,11 +22,6 @@ type ConstraintInfo = {
   contype: string;
 };
 
-type DependencyInfo = {
-  table_name: string;
-  depends_on: string;
-};
-
 type SqlStatement = {
   schema_name: string;
   table_name: string;
@@ -44,120 +37,20 @@ type BucketInfo = {
   allowed_mime_types: string[] | null;
 };
 
-type StorageObjectInfo = {
-  bucket_id: string;
-  name: string;
-  metadata: {
-    mimetype?: string;
-    cacheControl?: string;
-    contentLength?: number;
-    size?: number;
-  } | null;
-};
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 const qi = (value: string) => `"${value.replace(/"/g, '""')}"`;
-
-const buildDbConnectionStrings = (value: string, targetUrl?: string) => {
-  const sanitizeConnectionString = (connectionString: string) => {
-    const match = connectionString.match(/^(postgres(?:ql)?:\/\/[^:]+:)([^@]+)(@.*)$/i);
-    if (!match) return connectionString;
-    return `${match[1]}${encodeURIComponent(match[2])}${match[3]}`;
-  };
-
-  const extractPassword = (connectionString: string) => {
-    const match = connectionString.match(/^postgres(?:ql)?:\/\/[^:]+:([^@]+)@/i);
-    return match?.[1] ? decodeURIComponent(match[1]) : null;
-  };
-
-  if (!targetUrl) {
-    if (value.startsWith("postgres://") || value.startsWith("postgresql://")) {
-      return [sanitizeConnectionString(value)];
-    }
-    throw new Error("URL pública do destino ausente para montar a conexão Postgres.");
-  }
-
-  const projectRef = new URL(targetUrl).hostname.split(".")[0];
-  const password = value.startsWith("postgres://") || value.startsWith("postgresql://")
-    ? extractPassword(sanitizeConnectionString(value))
-    : value;
-
-  const directConnection = password
-    ? `postgresql://postgres:${encodeURIComponent(password)}@db.${projectRef}.supabase.co:5432/postgres?sslmode=require`
-    : null;
-
-  const candidates = [
-    ...(value.startsWith("postgres://") || value.startsWith("postgresql://") ? [sanitizeConnectionString(value)] : []),
-    ...(directConnection ? [directConnection] : []),
-  ];
-
-  return [...new Set(candidates)];
-};
-
-const chunk = <T>(items: T[], size: number) => {
-  const batches: T[][] = [];
-  for (let i = 0; i < items.length; i += size) {
-    batches.push(items.slice(i, i + size));
-  }
-  return batches;
-};
+const ql = (value: string) => `'${value.replace(/'/g, "''")}'`;
 
 const normalizeRoles = (roles: unknown): string => {
-  if (Array.isArray(roles) && roles.length > 0) return roles.join(", ");
+  if (Array.isArray(roles) && roles.length > 0) return roles.map(String).join(", ");
   if (typeof roles === "string" && roles.length > 0) {
     return roles.replace(/^{|}$/g, "") || "public";
   }
   return "public";
-};
-
-const topoSortTables = (tables: string[], dependencies: DependencyInfo[]) => {
-  const nodes = new Set(tables);
-  const incoming = new Map<string, number>(tables.map((table) => [table, 0]));
-  const outgoing = new Map<string, string[]>(tables.map((table) => [table, []]));
-
-  for (const dep of dependencies) {
-    if (!nodes.has(dep.table_name) || !nodes.has(dep.depends_on) || dep.table_name === dep.depends_on) {
-      continue;
-    }
-
-    incoming.set(dep.table_name, (incoming.get(dep.table_name) ?? 0) + 1);
-    outgoing.set(dep.depends_on, [...(outgoing.get(dep.depends_on) ?? []), dep.table_name]);
-  }
-
-  const queue = tables.filter((table) => (incoming.get(table) ?? 0) === 0).sort();
-  const sorted: string[] = [];
-
-  while (queue.length > 0) {
-    const current = queue.shift()!;
-    sorted.push(current);
-
-    for (const next of outgoing.get(current) ?? []) {
-      const count = (incoming.get(next) ?? 0) - 1;
-      incoming.set(next, count);
-      if (count === 0) queue.push(next);
-    }
-
-    queue.sort();
-  }
-
-  const remaining = tables.filter((table) => !sorted.includes(table)).sort();
-  return [...sorted, ...remaining];
-};
-
-const executeIfMissing = async (
-  db: postgres.Sql,
-  checkSql: string,
-  statement: string,
-) => {
-  const result = await db.unsafe(checkSql);
-  const exists = Array.isArray(result) && result.length > 0 && Object.values(result[0])[0];
-  if (!exists) {
-    await db.unsafe(statement);
-  }
 };
 
 const hasColumnReferenceInDefault = (defaultExpression: string, columns: TableColumn[], currentColumnName: string) => {
@@ -212,113 +105,50 @@ const buildPolicySql = (policy: Record<string, unknown>) => {
   const qual = policy.qual ? ` USING (${String(policy.qual)})` : "";
   const withCheck = policy.with_check ? ` WITH CHECK (${String(policy.with_check)})` : "";
 
-  return `CREATE POLICY ${qi(policyname)} ON ${qi(schemaname)}.${qi(tablename)} AS ${permissive} FOR ${cmd} TO ${roles}${qual}${withCheck};`;
+  return `DROP POLICY IF EXISTS ${qi(policyname)} ON ${qi(schemaname)}.${qi(tablename)};\nCREATE POLICY ${qi(policyname)} ON ${qi(schemaname)}.${qi(tablename)} AS ${permissive} FOR ${cmd} TO ${roles}${qual}${withCheck};`;
 };
 
 const buildIndexSql = (indexdef: string) =>
   indexdef.replace(/^CREATE( UNIQUE)? INDEX /i, "CREATE$1 INDEX IF NOT EXISTS ");
 
-const getInsertableColumns = async (db: postgres.Sql, schema: string, table: string) => {
-  const rows = await db.unsafe(`
-    SELECT column_name
-    FROM information_schema.columns
-    WHERE table_schema = '${schema.replace(/'/g, "''")}'
-      AND table_name = '${table.replace(/'/g, "''")}'
-      AND is_generated = 'NEVER'
-    ORDER BY ordinal_position;
-  `) as Array<{ column_name: string }>;
+const buildBucketSql = (bucket: BucketInfo) => {
+  const fileSizeLimit = bucket.file_size_limit === null ? "NULL" : String(bucket.file_size_limit);
+  const allowedMimeTypes = bucket.allowed_mime_types === null
+    ? "NULL"
+    : `ARRAY[${bucket.allowed_mime_types.map(ql).join(", ")}]::text[]`;
 
-  return rows.map((row) => row.column_name);
+  return [
+    "INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)",
+    `VALUES (${ql(bucket.id)}, ${ql(bucket.name)}, ${bucket.public}, ${fileSizeLimit}, ${allowedMimeTypes})`,
+    "ON CONFLICT (id) DO UPDATE SET",
+    "  name = EXCLUDED.name,",
+    "  public = EXCLUDED.public,",
+    "  file_size_limit = EXCLUDED.file_size_limit,",
+    "  allowed_mime_types = EXCLUDED.allowed_mime_types;",
+  ].join("\n");
 };
 
-const copyRows = async (
-  source: postgres.Sql,
-  target: postgres.Sql,
-  schema: string,
-  table: string,
-) => {
-  const insertableColumns = await getInsertableColumns(target, schema, table);
-  const rows = await source.unsafe(`SELECT * FROM ${qi(schema)}.${qi(table)}`) as GenericRow[];
-  if (rows.length === 0) return 0;
+const buildConstraintSql = (constraint: ConstraintInfo) =>
+  `ALTER TABLE ${constraint.table_name} ADD CONSTRAINT ${qi(constraint.constraint_name)} ${constraint.definition};`;
 
-  const columns = Object.keys(rows[0]).filter((column) => insertableColumns.includes(column));
-  const columnList = columns.map(qi).join(", ");
+const buildTriggerSql = (trigger: SqlStatement) =>
+  `DROP TRIGGER IF EXISTS ${qi(trigger.object_name)} ON ${qi(trigger.schema_name)}.${qi(trigger.table_name)};\n${trigger.create_sql};`;
 
-  for (const batch of chunk(rows, 100)) {
-    const sanitizedBatch = batch.map((row) => Object.fromEntries(columns.map((column) => [column, row[column]])));
-    await target.unsafe(
-      `INSERT INTO ${qi(schema)}.${qi(table)} (${columnList})
-       SELECT ${columnList}
-       FROM jsonb_populate_recordset(NULL::${qi(schema)}.${qi(table)}, $1::jsonb)
-       ON CONFLICT DO NOTHING;`,
-      [JSON.stringify(sanitizedBatch)],
-    );
-  }
-
-  return rows.length;
+const section = (title: string, statements: string[]) => {
+  if (statements.length === 0) return "";
+  return [`-- ${title}`, ...statements, ""].join("\n");
 };
 
-const ensureBucketsAndObjects = async (
-  sourceUrl: string,
-  sourceServiceRoleKey: string,
-  targetUrl: string,
-  targetServiceRoleKey: string,
-  buckets: BucketInfo[],
-  objects: StorageObjectInfo[],
-) => {
-  for (const bucket of buckets) {
-    await fetch(`${targetUrl}/storage/v1/bucket`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${targetServiceRoleKey}`,
-        apikey: targetServiceRoleKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        id: bucket.id,
-        name: bucket.name,
-        public: bucket.public,
-        file_size_limit: bucket.file_size_limit,
-        allowed_mime_types: bucket.allowed_mime_types,
-      }),
-    });
-  }
+const parseJsonBody = async (req: Request) => {
+  if (req.method !== "POST") return {} as Record<string, unknown>;
+  const text = await req.text();
+  if (!text.trim()) return {} as Record<string, unknown>;
+  return JSON.parse(text) as Record<string, unknown>;
+};
 
-  for (const object of objects) {
-    const sourceFile = await fetch(
-      `${sourceUrl}/storage/v1/object/${object.bucket_id}/${object.name}`,
-      {
-        headers: {
-          Authorization: `Bearer ${sourceServiceRoleKey}`,
-          apikey: sourceServiceRoleKey,
-        },
-      },
-    );
-
-    if (!sourceFile.ok) {
-      throw new Error(`Falha ao baixar arquivo ${object.bucket_id}/${object.name}`);
-    }
-
-    const uploadResponse = await fetch(
-      `${targetUrl}/storage/v1/object/${object.bucket_id}/${object.name}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${targetServiceRoleKey}`,
-          apikey: targetServiceRoleKey,
-          "x-upsert": "true",
-          "Content-Type": object.metadata?.mimetype ?? "application/octet-stream",
-          ...(object.metadata?.cacheControl ? { "cache-control": object.metadata.cacheControl } : {}),
-        },
-        body: await sourceFile.arrayBuffer(),
-      },
-    );
-
-    if (!uploadResponse.ok) {
-      const errorText = await uploadResponse.text();
-      throw new Error(`Falha ao enviar arquivo ${object.bucket_id}/${object.name}: ${errorText}`);
-    }
-  }
+const parsePositiveNumber = (value: unknown, fallback: number) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 };
 
 serve(async (req) => {
@@ -327,22 +157,9 @@ serve(async (req) => {
   }
 
   const sourceDbUrl = Deno.env.get("SUPABASE_DB_URL");
-  const sourceServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const sourceUrl = Deno.env.get("SUPABASE_URL");
-  const targetDbUrl = Deno.env.get("TARGET_SUPABASE_DB_URL");
-  const targetServiceRoleKey = Deno.env.get("TARGET_SUPABASE_SERVICE_ROLE_KEY");
-
-  if (!sourceDbUrl || !sourceServiceRoleKey || !sourceUrl || !targetDbUrl || !targetServiceRoleKey) {
-    return new Response(JSON.stringify({ error: "Secrets de migração ausentes." }), {
+  if (!sourceDbUrl) {
+    return new Response(JSON.stringify({ error: "Secret SUPABASE_DB_URL ausente." }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  const { targetUrl } = await req.json();
-  if (!targetUrl) {
-    return new Response(JSON.stringify({ error: "targetUrl é obrigatório." }), {
-      status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
@@ -355,46 +172,27 @@ serve(async (req) => {
     idle_timeout: 10,
   });
 
-  let target: postgres.Sql | null = null;
-
   try {
-    try {
-      await source`SELECT current_database(), current_user`;
-    } catch (error) {
-      throw new Error(`Falha na conexão com o banco de origem: ${error instanceof Error ? error.message : "erro desconhecido"}`);
-    }
+    const body = await parseJsonBody(req);
+    const url = new URL(req.url);
+    const responseModeValue = body.response_mode ?? url.searchParams.get("response_mode");
+    const fileNameValue = body.file_name ?? url.searchParams.get("file_name");
+    const offsetValue = body.offset ?? url.searchParams.get("offset");
+    const limitValue = body.limit ?? url.searchParams.get("limit");
 
-    const targetCandidates = buildDbConnectionStrings(targetDbUrl, targetUrl);
-    let lastTargetError = "Nenhuma string de conexão válida gerada.";
+    const responseMode = responseModeValue === "text" ? "text" : "json";
+    const fileName = typeof fileNameValue === "string" && fileNameValue.trim()
+      ? fileNameValue.trim()
+      : "schema-only.sql";
+    const offset = parsePositiveNumber(offsetValue, 0);
+    const limit = Math.min(parsePositiveNumber(limitValue, 0), 20000);
 
-    for (const candidate of targetCandidates) {
-      const client = postgres(candidate, {
-        ssl: "require",
-        max: 1,
-        prepare: false,
-        connect_timeout: 30,
-        idle_timeout: 10,
-      });
-
-      try {
-        await client`SELECT current_database(), current_user`;
-        target = client;
-        break;
-      } catch (error) {
-        lastTargetError = error instanceof Error ? error.message : "erro desconhecido";
-        await client.end({ timeout: 5 });
-      }
-    }
-
-    if (!target) {
-      throw new Error(`Falha na conexão com o banco de destino: ${lastTargetError}`);
-    }
+    await source`SELECT current_database(), current_user`;
 
     const [
       tables,
       columns,
       constraints,
-      dependencies,
       enums,
       functions,
       views,
@@ -403,7 +201,6 @@ serve(async (req) => {
       storagePolicies,
       triggers,
       buckets,
-      objects,
     ] = await Promise.all([
       source<TableInfo[]>`
         SELECT c.relname AS table_name, c.relrowsecurity AS rls_enabled
@@ -440,19 +237,6 @@ serve(async (req) => {
         JOIN pg_namespace n ON n.oid = c.connamespace
         WHERE n.nspname = 'public'
         ORDER BY c.conrelid::regclass::text, c.conname;
-      `,
-      source<DependencyInfo[]>`
-        SELECT
-          child.relname AS table_name,
-          parent.relname AS depends_on
-        FROM pg_constraint c
-        JOIN pg_class child ON child.oid = c.conrelid
-        JOIN pg_namespace child_ns ON child_ns.oid = child.relnamespace
-        JOIN pg_class parent ON parent.oid = c.confrelid
-        JOIN pg_namespace parent_ns ON parent_ns.oid = parent.relnamespace
-        WHERE c.contype = 'f'
-          AND child_ns.nspname = 'public'
-          AND parent_ns.nspname = 'public';
       `,
       source<Record<string, string>[]>`
         SELECT
@@ -526,186 +310,106 @@ serve(async (req) => {
         FROM storage.buckets
         ORDER BY id;
       `,
-      source<StorageObjectInfo[]>`
-        SELECT bucket_id, name, metadata
-        FROM storage.objects
-        ORDER BY bucket_id, name;
-      `,
     ]);
-
-    await target.unsafe('CREATE SCHEMA IF NOT EXISTS public;');
-
-    for (const enumType of enums) {
-      await target.unsafe(`DO $$
-      BEGIN
-        IF NOT EXISTS (
-          SELECT 1
-          FROM pg_type t
-          JOIN pg_namespace n ON n.oid = t.typnamespace
-          WHERE n.nspname = 'public' AND t.typname = '${String(enumType.enum_name).replace(/'/g, "''")}'
-        ) THEN
-          CREATE TYPE public.${qi(String(enumType.enum_name))} AS ENUM (${enumType.enum_values});
-        END IF;
-      END $$;`);
-    }
-
-    for (const table of tables) {
-      const tableColumns = columns.filter((column) => column.table_name === table.table_name);
-      const tableSql = createTableSql(table.table_name, tableColumns);
-      try {
-        await target.unsafe(tableSql);
-      } catch (error) {
-        throw new Error(`Falha ao criar tabela ${table.table_name}: ${error instanceof Error ? error.message : "erro desconhecido"}. SQL: ${tableSql}`);
-      }
-    }
-
-    for (const table of tables) {
-      if (table.rls_enabled) {
-        await target.unsafe(`ALTER TABLE public.${qi(table.table_name)} ENABLE ROW LEVEL SECURITY;`);
-      }
-    }
-
-    const baseConstraints = constraints.filter((constraint) => constraint.contype !== "f");
-    const foreignKeyConstraints = constraints.filter((constraint) => constraint.contype === "f");
-
-    for (const constraint of [...baseConstraints, ...foreignKeyConstraints]) {
-      await executeIfMissing(
-        target,
-        `SELECT 1 FROM pg_constraint WHERE conname = '${constraint.constraint_name.replace(/'/g, "''")}' LIMIT 1;`,
-        `ALTER TABLE ${constraint.table_name} ADD CONSTRAINT ${qi(constraint.constraint_name)} ${constraint.definition};`,
-      );
-    }
-
-    for (const fn of functions) {
-      await target.unsafe(fn.create_sql);
-    }
-
-    for (const view of views) {
-      await target.unsafe(view.create_sql);
-    }
-
-    const authUsers = await source.unsafe('SELECT * FROM auth.users ORDER BY created_at') as GenericRow[];
-    const authIdentities = await source.unsafe('SELECT * FROM auth.identities ORDER BY id') as GenericRow[];
-
-    if (authUsers.length > 0) {
-      const authUserColumns = await getInsertableColumns(target, 'auth', 'users');
-      const authUserColumnList = authUserColumns.map(qi).join(', ');
-      for (const batch of chunk(authUsers, 50)) {
-        const sanitizedBatch = batch.map((row) => Object.fromEntries(authUserColumns.map((column) => [column, row[column]])));
-        await target.unsafe(
-          `INSERT INTO auth.users (${authUserColumnList})
-           SELECT ${authUserColumnList}
-           FROM jsonb_populate_recordset(NULL::auth.users, $1::jsonb)
-           ON CONFLICT (id) DO NOTHING;`,
-          [JSON.stringify(sanitizedBatch)],
-        );
-      }
-    }
-
-    if (authIdentities.length > 0) {
-      const authIdentityColumns = await getInsertableColumns(target, 'auth', 'identities');
-      const authIdentityColumnList = authIdentityColumns.map(qi).join(', ');
-      for (const batch of chunk(authIdentities, 50)) {
-        const sanitizedBatch = batch.map((row) => Object.fromEntries(authIdentityColumns.map((column) => [column, row[column]])));
-        await target.unsafe(
-          `INSERT INTO auth.identities (${authIdentityColumnList})
-           SELECT ${authIdentityColumnList}
-           FROM jsonb_populate_recordset(NULL::auth.identities, $1::jsonb)
-           ON CONFLICT (id) DO NOTHING;`,
-          [JSON.stringify(sanitizedBatch)],
-        );
-      }
-    }
-
-    const orderedTables = topoSortTables(
-      tables.map((table) => table.table_name),
-      dependencies,
-    );
-
-    const copiedRows: Record<string, number> = {};
-    for (const tableName of orderedTables) {
-      copiedRows[tableName] = await copyRows(source, target, 'public', tableName);
-    }
 
     const constraintNames = new Set(constraints.map((constraint) => constraint.constraint_name));
     const indexesToCreate = indexes.filter((index) => !constraintNames.has(index.object_name));
-    for (const index of indexesToCreate) {
-      await target.unsafe(buildIndexSql(index.create_sql));
+    const baseConstraints = constraints.filter((constraint) => constraint.contype !== "f");
+    const foreignKeyConstraints = constraints.filter((constraint) => constraint.contype === "f");
+
+    const sqlSections = [
+      `-- Schema export gerado em ${new Date().toISOString()}`,
+      "-- Etapa 1: schema apenas (sem dados)",
+      "BEGIN;",
+      "",
+      "CREATE SCHEMA IF NOT EXISTS public;",
+      "CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;",
+      "",
+      section(
+        "Enums",
+        enums.map((enumType) => [
+          "DO $$",
+          "BEGIN",
+          "  IF NOT EXISTS (",
+          "    SELECT 1",
+          "    FROM pg_type t",
+          "    JOIN pg_namespace n ON n.oid = t.typnamespace",
+          `    WHERE n.nspname = 'public' AND t.typname = ${ql(String(enumType.enum_name))}`,
+          "  ) THEN",
+          `    CREATE TYPE public.${qi(String(enumType.enum_name))} AS ENUM (${enumType.enum_values});`,
+          "  END IF;",
+          "END $$;",
+        ].join("\n")),
+      ),
+      section(
+        "Tabelas",
+        tables.map((table) => createTableSql(
+          table.table_name,
+          columns.filter((column) => column.table_name === table.table_name),
+        )),
+      ),
+      section("Constraints base", baseConstraints.map(buildConstraintSql)),
+      section("Foreign keys", foreignKeyConstraints.map(buildConstraintSql)),
+      section("Funções", functions.map((fn) => fn.create_sql.trim().endsWith(";") ? fn.create_sql.trim() : `${fn.create_sql.trim()};`)),
+      section("Views", views.map((view) => view.create_sql.trim().endsWith(";") ? view.create_sql.trim() : `${view.create_sql.trim()};`)),
+      section("Índices", indexesToCreate.map((index) => buildIndexSql(index.create_sql))),
+      section(
+        "RLS",
+        tables.filter((table) => table.rls_enabled).map((table) => `ALTER TABLE public.${qi(table.table_name)} ENABLE ROW LEVEL SECURITY;`),
+      ),
+      section("Buckets de storage", buckets.map(buildBucketSql)),
+      section("Policies (public)", publicPolicies.map(buildPolicySql)),
+      section("Policies (storage)", storagePolicies.map(buildPolicySql)),
+      section("Triggers", triggers.map(buildTriggerSql)),
+      "COMMIT;",
+      "",
+    ].filter(Boolean);
+
+    const schemaSql = sqlSections.join("\n");
+    const chunkSql = limit > 0 ? schemaSql.slice(offset, offset + limit) : schemaSql;
+    const nextOffset = limit > 0 && offset + limit < schemaSql.length ? offset + limit : null;
+
+    if (responseMode === "text" && limit === 0) {
+      return new Response(schemaSql, {
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/sql; charset=utf-8",
+          "Content-Disposition": `attachment; filename=\"${fileName.replace(/\"/g, "")}\"`,
+        },
+      });
     }
 
-    for (const policy of publicPolicies) {
-      const dropSql = `DROP POLICY IF EXISTS ${qi(String(policy.policyname))} ON public.${qi(String(policy.tablename))};`;
-      await target.unsafe(dropSql);
-      await target.unsafe(buildPolicySql(policy));
-    }
-
-    for (const policy of storagePolicies) {
-      const dropSql = `DROP POLICY IF EXISTS ${qi(String(policy.policyname))} ON storage.${qi(String(policy.tablename))};`;
-      await target.unsafe(dropSql);
-      await target.unsafe(buildPolicySql(policy));
-    }
-
-    await ensureBucketsAndObjects(
-      sourceUrl,
-      sourceServiceRoleKey,
-      targetUrl,
-      targetServiceRoleKey,
-      buckets,
-      objects,
-    );
-
-    for (const trigger of triggers) {
-      const dropSql = `DROP TRIGGER IF EXISTS ${qi(trigger.object_name)} ON ${qi(trigger.schema_name)}.${qi(trigger.table_name)};`;
-      await target.unsafe(dropSql);
-      await target.unsafe(trigger.create_sql);
-    }
-
-    const targetTableCounts = await target.unsafe(`
-      SELECT table_name,
-        (xpath('/row/count/text()', query_to_xml(format('select count(*) as count from public.%I', table_name), false, true, '')))[1]::text::int AS row_count
-      FROM information_schema.tables
-      WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
-      ORDER BY table_name;
-    `) as Array<{ table_name: string; row_count: number }>;
-
-    const targetStorageCounts = await target.unsafe(`
-      SELECT bucket_id, count(*)::int AS object_count
-      FROM storage.objects
-      GROUP BY bucket_id
-      ORDER BY bucket_id;
-    `) as Array<{ bucket_id: string; object_count: number }>;
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        migrated_tables: copiedRows,
-        target_table_counts: targetTableCounts,
-        target_storage_counts: targetStorageCounts,
-        auth_users: authUsers.length,
-        auth_identities: authIdentities.length,
+    return new Response(JSON.stringify({
+      success: true,
+      file_name: fileName,
+      total_length: schemaSql.length,
+      offset,
+      next_offset: nextOffset,
+      schema_sql: chunkSql,
+      counts: {
+        tables: tables.length,
+        enums: enums.length,
+        functions: functions.length,
+        views: views.length,
+        indexes: indexesToCreate.length,
+        public_policies: publicPolicies.length,
+        storage_policies: storagePolicies.length,
+        triggers: triggers.length,
         buckets: buckets.length,
-        files: objects.length,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
       },
-    );
+    }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error) {
-    console.error('migrate-external-supabase error', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error instanceof Error ? error.message : 'Erro desconhecido',
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
+    console.error("migrate-external-supabase export error", error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error instanceof Error ? error.message : "Erro desconhecido",
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } finally {
     await source.end({ timeout: 5 });
-    if (target) {
-      await target.end({ timeout: 5 });
-    }
   }
 });
