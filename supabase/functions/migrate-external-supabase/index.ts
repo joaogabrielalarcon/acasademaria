@@ -62,6 +62,42 @@ const corsHeaders = {
 
 const qi = (value: string) => `"${value.replace(/"/g, '""')}"`;
 
+const buildDbConnectionStrings = (value: string, targetUrl?: string) => {
+  const sanitizeConnectionString = (connectionString: string) => {
+    const match = connectionString.match(/^(postgres(?:ql)?:\/\/[^:]+:)([^@]+)(@.*)$/i);
+    if (!match) return connectionString;
+    return `${match[1]}${encodeURIComponent(match[2])}${match[3]}`;
+  };
+
+  const extractPassword = (connectionString: string) => {
+    const match = connectionString.match(/^postgres(?:ql)?:\/\/[^:]+:([^@]+)@/i);
+    return match?.[1] ? decodeURIComponent(match[1]) : null;
+  };
+
+  if (!targetUrl) {
+    if (value.startsWith("postgres://") || value.startsWith("postgresql://")) {
+      return [sanitizeConnectionString(value)];
+    }
+    throw new Error("URL pública do destino ausente para montar a conexão Postgres.");
+  }
+
+  const projectRef = new URL(targetUrl).hostname.split(".")[0];
+  const password = value.startsWith("postgres://") || value.startsWith("postgresql://")
+    ? extractPassword(sanitizeConnectionString(value))
+    : value;
+
+  const directConnection = password
+    ? `postgresql://postgres:${encodeURIComponent(password)}@db.${projectRef}.supabase.co:5432/postgres?sslmode=require`
+    : null;
+
+  const candidates = [
+    ...(value.startsWith("postgres://") || value.startsWith("postgresql://") ? [sanitizeConnectionString(value)] : []),
+    ...(directConnection ? [directConnection] : []),
+  ];
+
+  return [...new Set(candidates)];
+};
+
 const chunk = <T>(items: T[], size: number) => {
   const batches: T[][] = [];
   for (let i = 0; i < items.length; i += size) {
@@ -276,13 +312,7 @@ serve(async (req) => {
     idle_timeout: 10,
   });
 
-  const target = postgres(targetDbUrl, {
-    ssl: "require",
-    max: 1,
-    prepare: false,
-    connect_timeout: 30,
-    idle_timeout: 10,
-  });
+  let target: postgres.Sql | null = null;
 
   try {
     try {
@@ -291,10 +321,30 @@ serve(async (req) => {
       throw new Error(`Falha na conexão com o banco de origem: ${error instanceof Error ? error.message : "erro desconhecido"}`);
     }
 
-    try {
-      await target`SELECT current_database(), current_user`;
-    } catch (error) {
-      throw new Error(`Falha na conexão com o banco de destino: ${error instanceof Error ? error.message : "erro desconhecido"}`);
+    const targetCandidates = buildDbConnectionStrings(targetDbUrl, targetUrl);
+    let lastTargetError = "Nenhuma string de conexão válida gerada.";
+
+    for (const candidate of targetCandidates) {
+      const client = postgres(candidate, {
+        ssl: "require",
+        max: 1,
+        prepare: false,
+        connect_timeout: 30,
+        idle_timeout: 10,
+      });
+
+      try {
+        await client`SELECT current_database(), current_user`;
+        target = client;
+        break;
+      } catch (error) {
+        lastTargetError = error instanceof Error ? error.message : "erro desconhecido";
+        await client.end({ timeout: 5 });
+      }
+    }
+
+    if (!target) {
+      throw new Error(`Falha na conexão com o banco de destino: ${lastTargetError}`);
     }
 
     const [
@@ -458,7 +508,12 @@ serve(async (req) => {
 
     for (const table of tables) {
       const tableColumns = columns.filter((column) => column.table_name === table.table_name);
-      await target.unsafe(createTableSql(table.table_name, tableColumns));
+      const tableSql = createTableSql(table.table_name, tableColumns);
+      try {
+        await target.unsafe(tableSql);
+      } catch (error) {
+        throw new Error(`Falha ao criar tabela ${table.table_name}: ${error instanceof Error ? error.message : "erro desconhecido"}. SQL: ${tableSql}`);
+      }
     }
 
     for (const table of tables) {
@@ -599,6 +654,8 @@ serve(async (req) => {
     );
   } finally {
     await source.end({ timeout: 5 });
-    await target.end({ timeout: 5 });
+    if (target) {
+      await target.end({ timeout: 5 });
+    }
   }
 });
