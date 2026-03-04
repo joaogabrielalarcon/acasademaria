@@ -160,12 +160,40 @@ const executeIfMissing = async (
   }
 };
 
+const hasColumnReferenceInDefault = (defaultExpression: string, columns: TableColumn[], currentColumnName: string) => {
+  const expression = defaultExpression.toLowerCase();
+  return columns.some((candidate) => {
+    if (candidate.column_name === currentColumnName) return false;
+    const pattern = new RegExp(`(^|[^a-z0-9_])${candidate.column_name.toLowerCase()}([^a-z0-9_]|$)`);
+    return pattern.test(expression);
+  });
+};
+
+const isPortableDefaultExpression = (defaultExpression: string, columns: TableColumn[], currentColumnName: string) => {
+  if (hasColumnReferenceInDefault(defaultExpression, columns, currentColumnName)) return false;
+
+  const expression = defaultExpression.trim();
+  const safePatterns = [
+    /^gen_random_uuid\(\)$/i,
+    /^now\(\)$/i,
+    /^current_date$/i,
+    /^current_timestamp$/i,
+    /^(true|false)$/i,
+    /^-?\d+(\.\d+)?$/,
+    /^'.*'(::[a-zA-Z0-9_\.\[\]"]+)?$/s,
+  ];
+
+  return safePatterns.some((pattern) => pattern.test(expression));
+};
+
 const createTableSql = (tableName: string, columns: TableColumn[]) => {
   const columnSql = columns
     .sort((a, b) => a.ordinal_position - b.ordinal_position)
     .map((column) => {
       const parts = [`${qi(column.column_name)} ${column.formatted_type}`];
-      if (column.column_default) parts.push(`DEFAULT ${column.column_default}`);
+      if (column.column_default && isPortableDefaultExpression(column.column_default, columns, column.column_name)) {
+        parts.push(`DEFAULT ${column.column_default}`);
+      }
       if (!column.is_nullable) parts.push("NOT NULL");
       return parts.join(" ");
     })
@@ -190,25 +218,40 @@ const buildPolicySql = (policy: Record<string, unknown>) => {
 const buildIndexSql = (indexdef: string) =>
   indexdef.replace(/^CREATE( UNIQUE)? INDEX /i, "CREATE$1 INDEX IF NOT EXISTS ");
 
+const getInsertableColumns = async (db: postgres.Sql, schema: string, table: string) => {
+  const rows = await db.unsafe(`
+    SELECT column_name
+    FROM information_schema.columns
+    WHERE table_schema = '${schema.replace(/'/g, "''")}'
+      AND table_name = '${table.replace(/'/g, "''")}'
+      AND is_generated = 'NEVER'
+    ORDER BY ordinal_position;
+  `) as Array<{ column_name: string }>;
+
+  return rows.map((row) => row.column_name);
+};
+
 const copyRows = async (
   source: postgres.Sql,
   target: postgres.Sql,
   schema: string,
   table: string,
 ) => {
+  const insertableColumns = await getInsertableColumns(target, schema, table);
   const rows = await source.unsafe(`SELECT * FROM ${qi(schema)}.${qi(table)}`) as GenericRow[];
   if (rows.length === 0) return 0;
 
-  const columns = Object.keys(rows[0]);
+  const columns = Object.keys(rows[0]).filter((column) => insertableColumns.includes(column));
   const columnList = columns.map(qi).join(", ");
 
   for (const batch of chunk(rows, 100)) {
+    const sanitizedBatch = batch.map((row) => Object.fromEntries(columns.map((column) => [column, row[column]])));
     await target.unsafe(
       `INSERT INTO ${qi(schema)}.${qi(table)} (${columnList})
        SELECT ${columnList}
        FROM jsonb_populate_recordset(NULL::${qi(schema)}.${qi(table)}, $1::jsonb)
        ON CONFLICT DO NOTHING;`,
-      [JSON.stringify(batch)],
+      [JSON.stringify(sanitizedBatch)],
     );
   }
 
@@ -522,7 +565,10 @@ serve(async (req) => {
       }
     }
 
-    for (const constraint of constraints) {
+    const baseConstraints = constraints.filter((constraint) => constraint.contype !== "f");
+    const foreignKeyConstraints = constraints.filter((constraint) => constraint.contype === "f");
+
+    for (const constraint of [...baseConstraints, ...foreignKeyConstraints]) {
       await executeIfMissing(
         target,
         `SELECT 1 FROM pg_constraint WHERE conname = '${constraint.constraint_name.replace(/'/g, "''")}' LIMIT 1;`,
@@ -542,27 +588,31 @@ serve(async (req) => {
     const authIdentities = await source.unsafe('SELECT * FROM auth.identities ORDER BY id') as GenericRow[];
 
     if (authUsers.length > 0) {
-      const authUserColumns = Object.keys(authUsers[0]).map(qi).join(', ');
+      const authUserColumns = await getInsertableColumns(target, 'auth', 'users');
+      const authUserColumnList = authUserColumns.map(qi).join(', ');
       for (const batch of chunk(authUsers, 50)) {
+        const sanitizedBatch = batch.map((row) => Object.fromEntries(authUserColumns.map((column) => [column, row[column]])));
         await target.unsafe(
-          `INSERT INTO auth.users (${authUserColumns})
-           SELECT ${authUserColumns}
+          `INSERT INTO auth.users (${authUserColumnList})
+           SELECT ${authUserColumnList}
            FROM jsonb_populate_recordset(NULL::auth.users, $1::jsonb)
            ON CONFLICT (id) DO NOTHING;`,
-          [JSON.stringify(batch)],
+          [JSON.stringify(sanitizedBatch)],
         );
       }
     }
 
     if (authIdentities.length > 0) {
-      const authIdentityColumns = Object.keys(authIdentities[0]).map(qi).join(', ');
+      const authIdentityColumns = await getInsertableColumns(target, 'auth', 'identities');
+      const authIdentityColumnList = authIdentityColumns.map(qi).join(', ');
       for (const batch of chunk(authIdentities, 50)) {
+        const sanitizedBatch = batch.map((row) => Object.fromEntries(authIdentityColumns.map((column) => [column, row[column]])));
         await target.unsafe(
-          `INSERT INTO auth.identities (${authIdentityColumns})
-           SELECT ${authIdentityColumns}
+          `INSERT INTO auth.identities (${authIdentityColumnList})
+           SELECT ${authIdentityColumnList}
            FROM jsonb_populate_recordset(NULL::auth.identities, $1::jsonb)
            ON CONFLICT (id) DO NOTHING;`,
-          [JSON.stringify(batch)],
+          [JSON.stringify(sanitizedBatch)],
         );
       }
     }
