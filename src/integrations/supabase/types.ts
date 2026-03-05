@@ -178,6 +178,53 @@ export type Database = {
           },
         ]
       }
+      cliente_feed_eventos: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          dados: Json | null
+          id: string
+          referencia_id: string | null
+          referencia_tipo: string | null
+          tipo: string
+          titulo: string
+          usuario_nome: string | null
+          visivel_cliente: boolean
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          dados?: Json | null
+          id?: string
+          referencia_id?: string | null
+          referencia_tipo?: string | null
+          tipo: string
+          titulo: string
+          usuario_nome?: string | null
+          visivel_cliente?: boolean
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          dados?: Json | null
+          id?: string
+          referencia_id?: string | null
+          referencia_tipo?: string | null
+          tipo?: string
+          titulo?: string
+          usuario_nome?: string | null
+          visivel_cliente?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cliente_feed_eventos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clientes: {
         Row: {
           assessores: Json | null
@@ -464,6 +511,449 @@ export type Database = {
             columns: ["trecho_id"]
             isOneToOne: false
             referencedRelation: "trechos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diario_alertas: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          descricao: string
+          id: string
+          projeto_id: string
+          resolvido: boolean
+          resolvido_em: string | null
+          resolvido_por_nome: string | null
+          visita_id: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          descricao: string
+          id?: string
+          projeto_id: string
+          resolvido?: boolean
+          resolvido_em?: string | null
+          resolvido_por_nome?: string | null
+          visita_id: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          descricao?: string
+          id?: string
+          projeto_id?: string
+          resolvido?: boolean
+          resolvido_em?: string | null
+          resolvido_por_nome?: string | null
+          visita_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diario_alertas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diario_alertas_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diario_alertas_visita_id_fkey"
+            columns: ["visita_id"]
+            isOneToOne: false
+            referencedRelation: "diario_visitas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diario_areas: {
+        Row: {
+          created_at: string
+          houve_melhora: boolean
+          id: string
+          nome_area: string
+          projeto_id: string
+          relato: string | null
+          servicos: string[] | null
+          status_anterior: string | null
+          status_area: string | null
+          visita_id: string
+        }
+        Insert: {
+          created_at?: string
+          houve_melhora?: boolean
+          id?: string
+          nome_area: string
+          projeto_id: string
+          relato?: string | null
+          servicos?: string[] | null
+          status_anterior?: string | null
+          status_area?: string | null
+          visita_id: string
+        }
+        Update: {
+          created_at?: string
+          houve_melhora?: boolean
+          id?: string
+          nome_area?: string
+          projeto_id?: string
+          relato?: string | null
+          servicos?: string[] | null
+          status_anterior?: string | null
+          status_area?: string | null
+          visita_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diario_areas_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diario_areas_visita_id_fkey"
+            columns: ["visita_id"]
+            isOneToOne: false
+            referencedRelation: "diario_visitas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diario_entregas: {
+        Row: {
+          cliente_id: string | null
+          created_at: string
+          data_entrega: string
+          descricao: string
+          hora_entrega: string | null
+          id: string
+          itens: Json | null
+          observacoes: string | null
+          projeto_id: string | null
+          recebido_por: string | null
+          registrado_por_nome: string | null
+          tipo_entrega: string | null
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string
+          data_entrega: string
+          descricao: string
+          hora_entrega?: string | null
+          id?: string
+          itens?: Json | null
+          observacoes?: string | null
+          projeto_id?: string | null
+          recebido_por?: string | null
+          registrado_por_nome?: string | null
+          tipo_entrega?: string | null
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string
+          data_entrega?: string
+          descricao?: string
+          hora_entrega?: string | null
+          id?: string
+          itens?: Json | null
+          observacoes?: string | null
+          projeto_id?: string | null
+          recebido_por?: string | null
+          registrado_por_nome?: string | null
+          tipo_entrega?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diario_entregas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diario_entregas_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diario_equipe_area: {
+        Row: {
+          area_id: string
+          colaborador_id: string | null
+          colaborador_nome: string
+          created_at: string
+          descricao_atividade: string | null
+          funcao: string | null
+          id: string
+          visita_id: string
+        }
+        Insert: {
+          area_id: string
+          colaborador_id?: string | null
+          colaborador_nome: string
+          created_at?: string
+          descricao_atividade?: string | null
+          funcao?: string | null
+          id?: string
+          visita_id: string
+        }
+        Update: {
+          area_id?: string
+          colaborador_id?: string | null
+          colaborador_nome?: string
+          created_at?: string
+          descricao_atividade?: string | null
+          funcao?: string | null
+          id?: string
+          visita_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diario_equipe_area_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "diario_areas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diario_equipe_area_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diario_equipe_area_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diario_equipe_area_visita_id_fkey"
+            columns: ["visita_id"]
+            isOneToOne: false
+            referencedRelation: "diario_visitas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diario_insumos_area: {
+        Row: {
+          area_id: string
+          created_at: string
+          id: string
+          insumo_id: string | null
+          insumo_nome: string
+          quantidade: string | null
+          unidade: string | null
+          visita_id: string
+        }
+        Insert: {
+          area_id: string
+          created_at?: string
+          id?: string
+          insumo_id?: string | null
+          insumo_nome: string
+          quantidade?: string | null
+          unidade?: string | null
+          visita_id: string
+        }
+        Update: {
+          area_id?: string
+          created_at?: string
+          id?: string
+          insumo_id?: string | null
+          insumo_nome?: string
+          quantidade?: string | null
+          unidade?: string | null
+          visita_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diario_insumos_area_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "diario_areas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diario_insumos_area_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "insumos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diario_insumos_area_visita_id_fkey"
+            columns: ["visita_id"]
+            isOneToOne: false
+            referencedRelation: "diario_visitas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diario_maquinas_area: {
+        Row: {
+          area_id: string
+          created_at: string
+          id: string
+          maquina_id: string | null
+          maquina_nome: string
+          visita_id: string
+        }
+        Insert: {
+          area_id: string
+          created_at?: string
+          id?: string
+          maquina_id?: string | null
+          maquina_nome: string
+          visita_id: string
+        }
+        Update: {
+          area_id?: string
+          created_at?: string
+          id?: string
+          maquina_id?: string | null
+          maquina_nome?: string
+          visita_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diario_maquinas_area_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "diario_areas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diario_maquinas_area_maquina_id_fkey"
+            columns: ["maquina_id"]
+            isOneToOne: false
+            referencedRelation: "maquinas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diario_maquinas_area_visita_id_fkey"
+            columns: ["visita_id"]
+            isOneToOne: false
+            referencedRelation: "diario_visitas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diario_midia: {
+        Row: {
+          area_id: string | null
+          created_at: string
+          descricao: string | null
+          id: string
+          thumbnail_url: string | null
+          tipo: string | null
+          url: string
+          visita_id: string
+        }
+        Insert: {
+          area_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          thumbnail_url?: string | null
+          tipo?: string | null
+          url: string
+          visita_id: string
+        }
+        Update: {
+          area_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          thumbnail_url?: string | null
+          tipo?: string | null
+          url?: string
+          visita_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diario_midia_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "diario_areas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diario_midia_visita_id_fkey"
+            columns: ["visita_id"]
+            isOneToOne: false
+            referencedRelation: "diario_visitas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diario_visitas: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          data_visita: string
+          hora_fim: string | null
+          hora_inicio: string | null
+          id: string
+          observacoes_internas: string | null
+          periodo: string | null
+          projeto_id: string
+          registrado_por_nome: string | null
+          status_geral: string | null
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          data_visita: string
+          hora_fim?: string | null
+          hora_inicio?: string | null
+          id?: string
+          observacoes_internas?: string | null
+          periodo?: string | null
+          projeto_id: string
+          registrado_por_nome?: string | null
+          status_geral?: string | null
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          data_visita?: string
+          hora_fim?: string | null
+          hora_inicio?: string | null
+          id?: string
+          observacoes_internas?: string | null
+          periodo?: string | null
+          projeto_id?: string
+          registrado_por_nome?: string | null
+          status_geral?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diario_visitas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diario_visitas_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
             referencedColumns: ["id"]
           },
         ]
@@ -2064,6 +2554,10 @@ export type Database = {
       }
     }
     Functions: {
+      can_access_diario_project: {
+        Args: { _projeto_id: string; _user_id: string }
+        Returns: boolean
+      }
       can_access_manutencao_client: {
         Args: { _cliente_id: string; _user_id: string }
         Returns: boolean
