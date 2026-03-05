@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import mafeAvatar from "@/assets/flora-avatar.webp";
 import { supabase } from "@/integrations/supabase/client";
 import { MafeProjetoPicker, type MafeProjetoOption } from "@/components/mafe/MafeProjetoPicker";
-import { MafeDiarioChat } from "@/components/projeto/MafeDiarioChat";
+import { MafeDiarioChat } from "@/components/diario/MafeDiarioChat";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
@@ -496,7 +496,8 @@ export function MafeChat() {
         open={Boolean(selectedProject) && diarioChatOpen}
         onOpenChange={setDiarioChatOpen}
         projetoId={selectedProject?.id || ""}
-        clienteId={selectedProject?.cliente_id || ""}
+        projetoNome={selectedProject?.titulo || "Projeto"}
+        clienteNome={selectedProject?.clientes?.nome || "Cliente"}
       />
     </>
   );

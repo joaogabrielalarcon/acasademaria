@@ -5,7 +5,7 @@ import { CalendarioDiario } from "@/components/CalendarioDiario";
 import { DiarioVisitaCard } from "@/components/diario/DiarioVisitaCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MafeDiarioChat } from "@/components/projeto/MafeDiarioChat";
+import { MafeDiarioChat } from "@/components/diario/MafeDiarioChat";
 import { useAuth, useHasAnyRole } from "@/hooks/useAuth";
 import {
   type DiarioVisitaDetalhe,
@@ -17,11 +17,13 @@ import {
 
 interface DiarioProjetoTabProps {
   projetoId: string;
+  projetoNome: string;
+  clienteNome: string;
   clienteId: string;
   isActive?: boolean;
 }
 
-export function DiarioProjetoTab({ projetoId, clienteId, isActive = false }: DiarioProjetoTabProps) {
+export function DiarioProjetoTab({ projetoId, projetoNome, clienteNome, clienteId, isActive = false }: DiarioProjetoTabProps) {
   const { user } = useAuth();
   const canViewInternalNotes = useHasAnyRole(user?.id, ["admin", "administrativo", "gestao_campo"]);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
@@ -179,7 +181,8 @@ export function DiarioProjetoTab({ projetoId, clienteId, isActive = false }: Dia
         open={isChatOpen}
         onOpenChange={setIsChatOpen}
         projetoId={projetoId}
-        clienteId={clienteId}
+        projetoNome={projetoNome}
+        clienteNome={clienteNome}
       />
 
     </div>
