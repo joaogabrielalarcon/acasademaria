@@ -4,9 +4,11 @@ import { ptBR } from "date-fns/locale";
 import {
   ArrowDown,
   ArrowUp,
+  CalendarDays,
   ChevronDown,
   ChevronUp,
   Images,
+  List,
   Loader2,
   Lock,
   Package,
@@ -18,6 +20,7 @@ import {
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { CalendarioDiario } from "@/components/CalendarioDiario";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -183,10 +186,11 @@ function getVisitStatus(visita: DiarioVisitaRow, areas: DiarioAreaRow[]) {
   return statuses.sort((a, b) => statusRank[a] - statusRank[b])[0];
 }
 
-export function DiarioProjetoTab({ projetoId }: DiarioProjetoTabProps) {
+export function DiarioProjetoTab({ projetoId, clienteId }: DiarioProjetoTabProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   const canViewInternalNotes = useHasAnyRole(user?.id, ["admin", "administrativo", "gestao_campo"]);
+  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [search, setSearch] = useState("");
   const [expandedVisitId, setExpandedVisitId] = useState<string | null>(null);
   const [selectedMedia, setSelectedMedia] = useState<DiarioMidiaRow | null>(null);
@@ -294,6 +298,36 @@ export function DiarioProjetoTab({ projetoId }: DiarioProjetoTabProps) {
     });
   }, [search, visitas]);
 
+  const calendarioRegistros = useMemo(
+    () =>
+      visitas.map((visita) => ({
+        id: visita.id,
+        data: visita.data_visita,
+        tipo: "manutencao",
+        trecho: visita.areasResumo.join(" • ") || "Visita registrada",
+        status: "realizado",
+        proposta: null,
+        equipePresente: visita.equipeResumo,
+        executores: visita.equipeResumo,
+        solicitante: visita.registrado_por_nome,
+        descricao:
+          uniqueValues(visita.areas.flatMap((area) => area.servicos || [])).join(", ") ||
+          visita.areas.map((area) => area.relato || "").filter(Boolean).join(" ") ||
+          "Registro de visita do projeto",
+        insumos: visita.areas
+          .flatMap((area) => area.insumos)
+          .slice(0, 6)
+          .map((insumo) => ({
+            nome: insumo.insumo_nome,
+            quantidade: Number.parseFloat(insumo.quantidade || "") || 1,
+            unidade: insumo.unidade || "un",
+          })),
+        prioridade: null,
+        statusSolicitacao: null,
+      })),
+    [visitas],
+  );
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
@@ -305,14 +339,47 @@ export function DiarioProjetoTab({ projetoId }: DiarioProjetoTabProps) {
   return (
     <div className="space-y-6">
       <div className="card-botanical p-4 sm:p-5">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <h3 className="font-display text-lg font-semibold text-foreground">Diário do projeto</h3>
-            <p className="text-sm text-muted-foreground">Acompanhe visitas, áreas atendidas, equipe, insumos, máquinas e mídias.</p>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+            <div>
+              <h3 className="font-display text-lg font-semibold text-foreground">Diário do projeto</h3>
+              <p className="text-sm text-muted-foreground">Acompanhe visitas, áreas atendidas, equipe, insumos, máquinas e mídias.</p>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center xl:justify-end">
+              <div className="inline-flex items-center gap-1 rounded-xl border border-border bg-muted/70 p-1">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={viewMode === "list" ? "terracota" : "ghost"}
+                  onClick={() => setViewMode("list")}
+                >
+                  <List className="w-4 h-4" />
+                  Lista
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={viewMode === "calendar" ? "terracota" : "ghost"}
+                  onClick={() => setViewMode("calendar")}
+                >
+                  <CalendarDays className="w-4 h-4" />
+                  Calendário
+                </Button>
+              </div>
+
+              <Button
+                variant="terracota"
+                onClick={() => toast({ title: "Em breve" })}
+              >
+                <Plus className="w-4 h-4" />
+                + Registrar
+              </Button>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="relative min-w-[260px] flex-1">
+          {viewMode === "list" && (
+            <div className="relative w-full xl:max-w-md">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={search}
@@ -321,22 +388,16 @@ export function DiarioProjetoTab({ projetoId }: DiarioProjetoTabProps) {
                 className="pl-9"
               />
             </div>
-
-            <Button
-              variant="terracota"
-              onClick={() => toast({ title: "Em breve", description: "O fluxo de novo registro será liberado na próxima etapa." })}
-            >
-              <Plus className="w-4 h-4" />
-              Novo registro
-            </Button>
-          </div>
+          )}
         </div>
       </div>
 
-      {!visitas.length ? (
+      {viewMode === "calendar" ? (
+        <CalendarioDiario registros={calendarioRegistros} clienteId={clienteId} />
+      ) : !visitas.length ? (
         <div className="empty-state card-botanical">
           <h4 className="font-display text-xl font-semibold text-foreground">Nenhum registro ainda.</h4>
-          <p className="mt-2 text-sm text-muted-foreground">Clique em Novo registro para começar.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Clique em + Registrar para começar.</p>
         </div>
       ) : !filteredVisitas.length ? (
         <div className="empty-state card-botanical">
@@ -392,6 +453,7 @@ export function DiarioProjetoTab({ projetoId }: DiarioProjetoTabProps) {
                       </div>
 
                       <Button
+                        type="button"
                         variant="outline"
                         size="sm"
                         onClick={() => setExpandedVisitId(isExpanded ? null : visita.id)}
@@ -511,7 +573,7 @@ export function DiarioProjetoTab({ projetoId }: DiarioProjetoTabProps) {
                             {area.relato && (
                               <div className="mt-4 rounded-xl bg-muted/70 p-3">
                                 <p className="text-sm font-medium text-foreground">Relato</p>
-                                <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap">{area.relato}</p>
+                                <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{area.relato}</p>
                               </div>
                             )}
 
@@ -539,7 +601,7 @@ export function DiarioProjetoTab({ projetoId }: DiarioProjetoTabProps) {
                                         />
                                       )}
                                       <div className="p-2">
-                                        <p className="text-xs font-medium text-foreground line-clamp-1">
+                                        <p className="line-clamp-1 text-xs font-medium text-foreground">
                                           {midia.descricao || (midia.tipo === "video" ? "Vídeo da visita" : "Foto da visita")}
                                         </p>
                                       </div>
@@ -558,7 +620,7 @@ export function DiarioProjetoTab({ projetoId }: DiarioProjetoTabProps) {
                             <Lock className="w-4 h-4 text-primary" />
                             Observações internas
                           </p>
-                          <p className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap">
+                          <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
                             {visita.observacoes_internas}
                           </p>
                         </section>
