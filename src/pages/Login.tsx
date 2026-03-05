@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -142,16 +142,21 @@ export default function Login() {
             />
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <Checkbox
-              id="remember"
-              checked={rememberMe}
-              onCheckedChange={(checked) => setRememberMe(checked === true)}
-              className="h-3.5 w-3.5"
-            />
-            <Label htmlFor="remember" className="text-[10px] font-normal cursor-pointer">
-              Lembrar meu usuário
-            </Label>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5">
+              <Checkbox
+                id="remember"
+                checked={rememberMe}
+                onCheckedChange={(checked) => setRememberMe(checked === true)}
+                className="h-3.5 w-3.5"
+              />
+              <Label htmlFor="remember" className="text-[10px] font-normal cursor-pointer">
+                Lembrar meu usuário
+              </Label>
+            </div>
+            <Link to="/esqueci-senha" className="text-[10px] text-primary hover:underline underline-offset-4">
+              Esqueci minha senha
+            </Link>
           </div>
 
           <Button 
@@ -178,3 +183,4 @@ export default function Login() {
     </div>
   );
 }
+

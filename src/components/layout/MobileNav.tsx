@@ -12,14 +12,14 @@ import {
   Building2,
   Shield,
   Wrench,
-  DollarSign,
   BookOpen,
   CalendarDays,
   ClipboardList,
+  Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { SheetClose } from "@/components/ui/sheet";
 import {
   Collapsible,
@@ -157,6 +157,13 @@ export function MobileNav() {
 
       {/* Footer */}
       <div className="border-t border-border p-4">
+        <SheetClose asChild>
+          <Link to="/alterar-senha" className={cn(buttonVariants({ variant: "outline" }), "w-full mb-3 justify-start")}>
+            <Lock className="w-4 h-4" />
+            Alterar senha
+          </Link>
+        </SheetClose>
+
         <div className="flex items-center gap-3 px-2 py-2 rounded-lg bg-secondary/50">
           <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
             <UserCircle className="w-6 h-6 text-foreground" />
@@ -178,3 +185,4 @@ export function MobileNav() {
     </div>
   );
 }
+
