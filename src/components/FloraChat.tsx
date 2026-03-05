@@ -262,7 +262,7 @@ export function MafeChat() {
           if (jsonStr === "[DONE]") break;
           try {
             const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content;
+            const content = parsed.delta;
             if (content) {
               assistantSoFar += content;
               setMessages((prev) => {
