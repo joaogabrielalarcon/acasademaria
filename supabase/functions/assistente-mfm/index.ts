@@ -26,6 +26,80 @@ function formatDate(value: string | null | undefined) {
   }).format(new Date(value));
 }
 
+async function parseAnthropicStream(response: Response) {
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error("Anthropic stream unavailable");
+
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+
+  return new ReadableStream({
+    async start(controller) {
+      let textBuffer = "";
+      let currentEvent = "";
+      let currentData = "";
+
+      const flushEvent = () => {
+        if (!currentData.trim()) {
+          currentEvent = "";
+          return;
+        }
+
+        try {
+          const parsed = JSON.parse(currentData);
+          const eventType = currentEvent || parsed.type;
+
+          if (eventType === "content_block_delta" && parsed.delta?.type === "text_delta" && parsed.delta?.text) {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ delta: parsed.delta.text })}\n\n`));
+          }
+
+          if (eventType === "message_stop") {
+            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          }
+        } catch (error) {
+          console.error("Erro ao processar stream Anthropic:", error, currentData);
+        }
+
+        currentEvent = "";
+        currentData = "";
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        textBuffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex = textBuffer.indexOf("\n");
+        while (newlineIndex !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+
+          if (!line.trim()) {
+            flushEvent();
+            newlineIndex = textBuffer.indexOf("\n");
+            continue;
+          }
+
+          if (line.startsWith("event:")) {
+            currentEvent = line.slice(6).trim();
+          } else if (line.startsWith("data:")) {
+            currentData += line.slice(5).trim();
+          }
+
+          newlineIndex = textBuffer.indexOf("\n");
+        }
+      }
+
+      if (currentData.trim()) flushEvent();
+      controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+      controller.close();
+    },
+  });
+}
+
 async function buildProcessosContext(client: ReturnType<typeof createClient>) {
   const { data: processos } = await client
     .from("processos")
@@ -122,11 +196,11 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
 
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY is not configured");
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) throw new Error("Backend auth keys are not configured");
 
     const { messages, userRole, currentPage, currentRoute } = await req.json();
@@ -144,54 +218,74 @@ serve(async (req) => {
       buildHistoricalContext(client, lastUserMessage, currentRoute || ""),
     ]);
 
-    const systemPrompt = `Você é a Mafe, assistente virtual inteligente da MFM Paisagismo (Maria Fernanda Marques — Paisagismo e Soluções Ambientais).
+    const systemPrompt = `Você é a Mafe, assistente inteligente da MFM Paisagismo Ecológico.
 
-COMPORTAMENTO:
-- Analise cuidadosamente a intenção real do usuário
-- Seja direta, profissional e acolhedora
-- Responda em português do Brasil
-- Quando a pergunta for de histórico, priorize os dados reais fornecidos no contexto
-- Nunca invente visitas, alertas, clientes, projetos ou datas
-- Se o dado não estiver no contexto, diga isso claramente
+Horário de trabalho: 07h às 17h.
+
+REGRA PRINCIPAL: Você age e resolve. Nunca mande o usuário navegar para outra tela ou seguir passos manuais.
+
+QUANDO pedirem para registrar visita, diária ou serviço:
+- Identifique o projeto mencionado
+- Abra o fluxo de registro do MafeDiarioChat para aquele projeto
+- Conduza o registro você mesma
+
+QUANDO perguntarem sobre dados (clientes, equipe, máquinas, histórico, relatórios):
+- Consulte o Supabase e responda com dados reais
+- Exemplos: "quantos clientes temos?", "onde está a roçadeira?", "quem trabalhou na casa do Flávio semana passada?"
+
+INTENÇÕES QUE VOCÊ RECONHECE:
+- "registrar visita" / "diário" / "o que fizemos hoje" → perguntar projeto → abrir MafeDiarioChat
+- "quantos clientes" / "lista de projetos" / qualquer dado → consultar Supabase e responder diretamente
+
+Tom: direto, profissional, acolhedor. Português brasileiro. Nunca mencione "IA", "sistema" ou "banco de dados".
 
 CONTEXTO ATUAL: Usuário na página "${currentPage || "Desconhecida"}" (${currentRoute || "/"}). Papel: ${userRole || "operador"}.
 
-GUIA PASSO A PASSO (quando aplicável):
-- Instruções claras e diretas, um passo por vez
-- Use ➡️ no passo atual. Formato: **Passo N:** instrução
-- Referencie botões/campos em negrito
-- Mensagens "[Naveguei para: ...]" significam que o usuário avançou
+DADOS DE APOIO PARA RESPONDER COM BASE REAL:
+- Quando houver histórico no contexto, priorize esse conteúdo.
+- Se o dado não estiver disponível, diga claramente que não encontrou informação suficiente agora.
+- Nunca invente visitas, alertas, clientes, projetos, datas ou números.
+- PÁGINAS RELEVANTES: / (Menu), /clientes, /clientes/novo, /equipe, /plantas, /insumos, /fornecedores, /maquinas, /projetos/:id, /processos.${processosContext}${historicalContext}`;
 
-PÁGINAS: / (Menu), /clientes, /clientes/novo, /equipe, /plantas, /insumos, /fornecedores, /maquinas, /projetos/:id, /processos.${processosContext}${historicalContext}`;
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const anthropicResponse = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...(messages || []),
-        ],
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1024,
         stream: true,
-        max_tokens: 900,
-        temperature: 0.4,
+        system: systemPrompt,
+        messages: (messages || []).map((message: { role: string; content: string }) => ({
+          role: message.role,
+          content: message.content,
+        })),
       }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      return new Response(JSON.stringify({ error: "Erro no serviço de IA" }), {
-        status: response.status >= 400 && response.status < 600 ? response.status : 500,
+    if (!anthropicResponse.ok) {
+      const errorText = await anthropicResponse.text();
+      console.error("Anthropic error:", anthropicResponse.status, errorText);
+      let errorMessage = "Erro no serviço da Mafe";
+
+      try {
+        const parsed = JSON.parse(errorText);
+        errorMessage = parsed?.error?.message || errorMessage;
+      } catch {
+        // mantém mensagem padrão
+      }
+
+      return new Response(JSON.stringify({ error: errorMessage }), {
+        status: anthropicResponse.status >= 400 && anthropicResponse.status < 600 ? anthropicResponse.status : 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    return new Response(response.body, {
+    const stream = await parseAnthropicStream(anthropicResponse);
+    return new Response(stream, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (error) {
