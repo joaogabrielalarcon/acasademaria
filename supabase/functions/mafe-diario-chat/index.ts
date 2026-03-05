@@ -36,6 +36,15 @@ const getHighestRole = (roles: string[]) => {
   return priority.find((role) => roles.includes(role)) || "operador_campo";
 };
 
+const extractAnthropicText = (payload: any) =>
+  Array.isArray(payload?.content)
+    ? payload.content
+        .filter((item: any) => item?.type === "text")
+        .map((item: any) => item.text)
+        .join("")
+        .trim()
+    : "";
+
 async function parseAnthropicStream(response: Response) {
   const reader = response.body?.getReader();
   if (!reader) throw new Error("Anthropic stream unavailable");
@@ -146,7 +155,8 @@ serve(async (req) => {
     }
 
     const userId = claimsData.claims.sub;
-    const { messages = [], projetoId, currentDraft } = await req.json();
+    const body = await req.json();
+    const { messages = [], projetoId, currentDraft, mode = "chat", transcript = "" } = body;
 
     if (!projetoId) {
       return new Response(JSON.stringify({ error: "Projeto não informado" }), {
@@ -270,6 +280,82 @@ serve(async (req) => {
     const lastVisitText = lastVisitRes.data
       ? `${lastVisitRes.data.data_visita} · ${formatPeriod(lastVisitRes.data.periodo, lastVisitRes.data.hora_inicio, lastVisitRes.data.hora_fim)} · status ${lastVisitRes.data.status_geral || "não informado"}`
       : "Nenhum registro anterior";
+
+    if (mode === "normalize_transcript") {
+      const transcriptText = String(transcript || "").trim();
+      if (!transcriptText) {
+        return new Response(JSON.stringify({ transcript: "" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const latestAssistantPrompt = [...(messages as ChatMessage[])].reverse().find((message) => message.role === "assistant")?.content || "";
+      const normalizationPrompt = `Você corrige transcrições de voz em português do Brasil para a assistente Mafe, da MFM Paisagismo.
+
+Objetivo: revisar a transcrição bruta do microfone usando o contexto abaixo para corrigir nomes próprios, termos de jardinagem e itens cadastrados, sem inventar informação.
+
+REGRAS:
+- Retorne apenas a transcrição corrigida, sem aspas, sem explicações e sem markdown.
+- Preserve a intenção, a ordem e o conteúdo da fala original.
+- Corrija apenas o que tiver alta confiança pelo contexto.
+- Se houver dúvida real, mantenha o termo original.
+- O nome da assistente é sempre Mafe.
+- Trate como referência à assistente variantes fonéticas comuns como: Marfim, Máfia, Mafé, Marfe, Mafi, Mafi, Mavi.
+- Prefira nomes exatamente como cadastrados quando houver similaridade fonética.
+- Nunca troque um item não identificado por outro diferente só porque parece parecido.
+
+EXEMPLOS:
+- "oi marfim" -> "oi Mafe"
+- "mafia registra a visita" -> "Mafe registra a visita"
+- "foi o joao com a rosadeira" -> "foi o João com a roçadeira"
+
+CONTEXTO:
+- Projeto: ${projectData.titulo}
+- Cliente: ${clientName}
+- Última pergunta da Mafe: ${latestAssistantPrompt || "não disponível"}
+- Rascunho atual: ${JSON.stringify(currentDraft || null)}
+- Colaboradores: ${activeTeam.map((item) => item.nome).join(", ") || "nenhum"}
+- Insumos: ${supplies.map((item) => item.nome).join(", ") || "nenhum"}
+- Máquinas: ${machines.map((item) => item.nome).join(", ") || "nenhuma"}
+- Áreas cadastradas: ${((areasRes.data || []) as any[]).map((item) => item.nome).join(", ") || "nenhuma"}`;
+
+      const normalizationResponse = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 220,
+          temperature: 0,
+          system: normalizationPrompt,
+          messages: [
+            {
+              role: "user",
+              content: `Transcrição bruta: ${transcriptText}`,
+            },
+          ],
+        }),
+      });
+
+      if (!normalizationResponse.ok) {
+        const errorText = await normalizationResponse.text();
+        console.error("Anthropic normalize error:", normalizationResponse.status, errorText);
+        return new Response(JSON.stringify({ error: "Erro ao revisar a transcrição da Mafe." }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const normalizationPayload = await normalizationResponse.json();
+      const normalizedTranscript = extractAnthropicText(normalizationPayload) || transcriptText;
+
+      return new Response(JSON.stringify({ transcript: normalizedTranscript }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const systemPrompt = `Você é a Mafe, assistente da MFM Paisagismo.
 
