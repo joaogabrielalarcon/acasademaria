@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -36,6 +36,7 @@ import { cn } from "@/lib/utils";
 interface DiarioProjetoTabProps {
   projetoId: string;
   clienteId: string;
+  isActive?: boolean;
 }
 
 type StatusArea = "otimo" | "bom" | "requer_atencao" | "critico";
@@ -186,7 +187,7 @@ function getVisitStatus(visita: DiarioVisitaRow, areas: DiarioAreaRow[]) {
   return statuses.sort((a, b) => statusRank[a] - statusRank[b])[0];
 }
 
-export function DiarioProjetoTab({ projetoId, clienteId }: DiarioProjetoTabProps) {
+export function DiarioProjetoTab({ projetoId, clienteId, isActive = false }: DiarioProjetoTabProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   const canViewInternalNotes = useHasAnyRole(user?.id, ["admin", "administrativo", "gestao_campo"]);
@@ -194,6 +195,14 @@ export function DiarioProjetoTab({ projetoId, clienteId }: DiarioProjetoTabProps
   const [search, setSearch] = useState("");
   const [expandedVisitId, setExpandedVisitId] = useState<string | null>(null);
   const [selectedMedia, setSelectedMedia] = useState<DiarioMidiaRow | null>(null);
+
+  useEffect(() => {
+    if (!isActive) return;
+    setViewMode("list");
+    setSearch("");
+    setExpandedVisitId(null);
+    setSelectedMedia(null);
+  }, [isActive, projetoId]);
 
   const { data: visitas = [], isLoading } = useQuery({
     queryKey: ["diario-visitas-projeto", projetoId],
