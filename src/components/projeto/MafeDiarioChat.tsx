@@ -389,6 +389,8 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, clienteId, onSav
     onSuccess: () => {
       toast({ title: "Visita salva", description: "O diário do projeto foi atualizado." });
       queryClient.invalidateQueries({ queryKey: ["diario-visitas-projeto", projetoId] });
+      queryClient.invalidateQueries({ queryKey: ["diario-alertas-pendentes"] });
+      queryClient.invalidateQueries({ queryKey: ["cliente-feed"] });
       onSaved?.();
       resetChat();
       onOpenChange(false);

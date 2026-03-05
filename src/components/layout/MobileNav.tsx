@@ -1,52 +1,27 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { 
-  Users, 
+import {
   UserCircle,
   LogOut,
-  Leaf,
-  Package,
-  Truck,
-  Tags,
   Settings,
   ChevronDown,
-  Building2,
-  Shield,
-  Wrench,
-  BookOpen,
-  CalendarDays,
-  ClipboardList,
   Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { SheetClose } from "@/components/ui/sheet";
+import { AlertasPendentesDialog } from "@/components/diario/AlertasPendentesDialog";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useAuth } from "@/hooks/useAuth";
-import { useHighestRole, type AppRole } from "@/hooks/useAuth";
+import { useHighestRole } from "@/hooks/useAuth";
+import { usePendingDiarioAlertas } from "@/hooks/useDiarioAlertas";
 import { useState } from "react";
-
-const allNavigationItems = [
-  { title: "Clientes", icon: Users, href: "/clientes", roles: ["admin", "administrativo", "gestao_campo", "arquitetura", "responsavel_obra"] as AppRole[] },
-  { title: "Equipe", icon: UserCircle, href: "/equipe", roles: ["admin", "administrativo", "gestao_campo"] as AppRole[] },
-  { title: "Calendário", icon: CalendarDays, href: "/calendario", roles: ["admin", "administrativo", "gestao_campo", "arquitetura", "responsavel_obra"] as AppRole[] },
-  { title: "Diário", icon: ClipboardList, href: "/diario", roles: ["admin", "gestao_campo", "responsavel_obra", "operador_campo"] as AppRole[] },
-  { title: "Plantas", icon: Leaf, href: "/plantas", roles: ["admin", "administrativo", "arquitetura"] as AppRole[] },
-  { title: "Produtos e Insumos", icon: Package, href: "/insumos", roles: ["admin", "administrativo", "gestao_campo"] as AppRole[] },
-  { title: "Fornecedores", icon: Truck, href: "/fornecedores", roles: ["admin", "administrativo", "gestao_campo"] as AppRole[] },
-  { title: "Máquinas", icon: Wrench, href: "/maquinas", roles: ["admin", "administrativo", "gestao_campo"] as AppRole[] },
-  { title: "Processos Internos", icon: BookOpen, href: "/processos", roles: ["admin", "administrativo"] as AppRole[] },
-];
-
-const configItems = [
-  { title: "Áreas Internas", icon: Building2, href: "/areas", roles: ["admin"] as AppRole[] },
-  { title: "Gestão de Usuários", icon: Shield, href: "/acessos", roles: ["admin"] as AppRole[] },
-  { title: "Categorias de Plantas", icon: Tags, href: "/categorias-plantas", roles: ["admin"] as AppRole[] },
-];
+import { alertNavigationItem, appNavigationItems, configNavigationItems } from "./navigation";
 
 export function MobileNav() {
   const location = useLocation();
@@ -54,9 +29,12 @@ export function MobileNav() {
   const { user, signOut } = useAuth();
   const userRole = useHighestRole(user?.id);
   const [configOpen, setConfigOpen] = useState(false);
+  const [alertsOpen, setAlertsOpen] = useState(false);
+  const canAccessAlerts = alertNavigationItem.roles.includes(userRole);
+  const { data: pendingAlerts = [] } = usePendingDiarioAlertas(canAccessAlerts);
 
-  const visibleNavigationItems = allNavigationItems.filter(item => item.roles.includes(userRole));
-  const visibleConfigItems = configItems.filter(item => item.roles.includes(userRole));
+  const visibleNavigationItems = appNavigationItems.filter(item => item.roles.includes(userRole));
+  const visibleConfigItems = configNavigationItems.filter(item => item.roles.includes(userRole));
 
   const isConfigActive = visibleConfigItems.some(
     item => location.pathname === item.href || location.pathname.startsWith(item.href)
@@ -157,6 +135,18 @@ export function MobileNav() {
 
       {/* Footer */}
       <div className="border-t border-border p-4">
+        {canAccessAlerts && (
+          <Button variant="outline" className="w-full mb-3 justify-between" onClick={() => setAlertsOpen(true)}>
+            <span className="flex items-center gap-2">
+              <alertNavigationItem.icon className="w-4 h-4" />
+              Alertas pendentes
+            </span>
+            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+              {pendingAlerts.length}
+            </Badge>
+          </Button>
+        )}
+
         <SheetClose asChild>
           <Link to="/alterar-senha" className={cn(buttonVariants({ variant: "outline" }), "w-full mb-3 justify-start")}>
             <Lock className="w-4 h-4" />
@@ -182,6 +172,8 @@ export function MobileNav() {
           </Button>
         </div>
       </div>
+
+      <AlertasPendentesDialog open={alertsOpen} onOpenChange={setAlertsOpen} />
     </div>
   );
 }
