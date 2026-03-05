@@ -1,28 +1,19 @@
 import { useState } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
-import { 
-  Users, 
-  UserCircle,
+import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  Leaf,
-  Package,
-  Truck,
-  Tags,
   Settings,
   ChevronDown,
-  Building2,
-  Shield,
-  Wrench,
-  BookOpen,
-  CalendarDays,
-  ClipboardList,
   Lock,
+  UserCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { AlertasPendentesDialog } from "@/components/diario/AlertasPendentesDialog";
 import {
   Tooltip,
   TooltipContent,
@@ -33,85 +24,14 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useAuth, useHighestRole, type AppRole } from "@/hooks/useAuth";
-
-const allNavigationItems = [
-  {
-    title: "Clientes",
-    icon: Users,
-    href: "/clientes",
-    roles: ["admin", "administrativo", "gestao_campo", "arquitetura", "responsavel_obra"] as AppRole[],
-  },
-  {
-    title: "Equipe",
-    icon: UserCircle,
-    href: "/equipe",
-    roles: ["admin", "administrativo", "gestao_campo"] as AppRole[],
-  },
-  {
-    title: "Calendário",
-    icon: CalendarDays,
-    href: "/calendario",
-    roles: ["admin", "administrativo", "gestao_campo", "arquitetura", "responsavel_obra"] as AppRole[],
-  },
-  {
-    title: "Diário",
-    icon: ClipboardList,
-    href: "/diario",
-    roles: ["admin", "gestao_campo", "responsavel_obra", "operador_campo"] as AppRole[],
-  },
-  {
-    title: "Plantas",
-    icon: Leaf,
-    href: "/plantas",
-    roles: ["admin", "administrativo", "arquitetura"] as AppRole[],
-  },
-  {
-    title: "Produtos e Insumos",
-    icon: Package,
-    href: "/insumos",
-    roles: ["admin", "administrativo", "gestao_campo"] as AppRole[],
-  },
-  {
-    title: "Fornecedores",
-    icon: Truck,
-    href: "/fornecedores",
-    roles: ["admin", "administrativo", "gestao_campo"] as AppRole[],
-  },
-  {
-    title: "Máquinas",
-    icon: Wrench,
-    href: "/maquinas",
-    roles: ["admin", "administrativo", "gestao_campo"] as AppRole[],
-  },
-  {
-    title: "Processos Internos",
-    icon: BookOpen,
-    href: "/processos",
-    roles: ["admin", "administrativo"] as AppRole[],
-  },
-];
-
-const configItems = [
-  {
-    title: "Áreas Internas",
-    icon: Building2,
-    href: "/areas",
-    roles: ["admin"] as AppRole[],
-  },
-  {
-    title: "Gestão de Usuários",
-    icon: Shield,
-    href: "/acessos",
-    roles: ["admin"] as AppRole[],
-  },
-  {
-    title: "Categorias de Plantas",
-    icon: Tags,
-    href: "/categorias-plantas",
-    roles: ["admin"] as AppRole[],
-  },
-];
+import { useAuth, useHighestRole } from "@/hooks/useAuth";
+import { usePendingDiarioAlertas } from "@/hooks/useDiarioAlertas";
+import {
+  alertNavigationItem,
+  appNavigationItems,
+  configNavigationItems,
+  type NavigationItem,
+} from "./navigation";
 
 interface AppSidebarProps {
   className?: string;
@@ -120,21 +40,22 @@ interface AppSidebarProps {
 export function AppSidebar({ className }: AppSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
+  const [alertsOpen, setAlertsOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const userRole = useHighestRole(user?.id);
+  const canAccessAlerts = alertNavigationItem.roles.includes(userRole);
+  const { data: pendingAlerts = [] } = usePendingDiarioAlertas(canAccessAlerts);
 
-  // Filtra itens de navegação baseado no perfil do usuário
-  const visibleNavigationItems = allNavigationItems.filter(
+  const visibleNavigationItems = appNavigationItems.filter(
     item => item.roles.includes(userRole)
   );
 
-  const visibleConfigItems = configItems.filter(
+  const visibleConfigItems = configNavigationItems.filter(
     item => item.roles.includes(userRole)
   );
 
-  // Auto-expand config if current route is inside
   const isConfigActive = visibleConfigItems.some(
     item => location.pathname === item.href || location.pathname.startsWith(item.href)
   );
@@ -144,7 +65,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
     navigate("/login");
   };
 
-  const renderNavItem = (item: typeof allNavigationItems[0], isSubItem = false) => {
+  const renderNavItem = (item: NavigationItem, isSubItem = false) => {
     const isActive = location.pathname === item.href || 
       (item.href !== "/" && location.pathname.startsWith(item.href));
     
@@ -273,6 +194,41 @@ export function AppSidebar({ className }: AppSidebarProps) {
 
       {/* Footer */}
       <div className="border-t border-sidebar-border p-3">
+        {canAccessAlerts && (
+          <div className="mb-2">
+            {collapsed ? (
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => setAlertsOpen(true)}
+                    className="relative w-full text-foreground/70 hover:bg-secondary/50 hover:text-foreground"
+                  >
+                    <alertNavigationItem.icon className="w-4 h-4" />
+                    {pendingAlerts.length > 0 && (
+                      <span className="absolute right-2 top-1.5 h-2.5 w-2.5 rounded-full bg-primary" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="ml-2">
+                  Alertas pendentes
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <Button variant="outline" className="w-full justify-between" onClick={() => setAlertsOpen(true)}>
+                <span className="flex items-center gap-2">
+                  <alertNavigationItem.icon className="w-4 h-4" />
+                  Alertas pendentes
+                </span>
+                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                  {pendingAlerts.length}
+                </Badge>
+              </Button>
+            )}
+          </div>
+        )}
+
         {/* Collapse Toggle */}
         <Button
           variant="ghost"
@@ -299,7 +255,6 @@ export function AppSidebar({ className }: AppSidebarProps) {
           </Button>
         )}
 
-        {/* User Info */}
         {!collapsed && (
           <div className="flex items-center gap-3 px-2 py-2 rounded-lg bg-secondary/50">
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -320,6 +275,8 @@ export function AppSidebar({ className }: AppSidebarProps) {
           </div>
         )}
       </div>
+
+      <AlertasPendentesDialog open={alertsOpen} onOpenChange={setAlertsOpen} />
     </aside>
   );
 }

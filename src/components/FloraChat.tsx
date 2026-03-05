@@ -1,7 +1,11 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useLocation } from "react-router-dom";
-import { Send, Loader2, User, Mic, Square, Minimize2, Maximize2, X, MessageCircle } from "lucide-react";
+import { Send, Loader2, User, Mic, Square, Minimize2, Maximize2, X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import mafeAvatar from "@/assets/flora-avatar.webp";
+import { supabase } from "@/integrations/supabase/client";
+import { MafeProjetoPicker, type MafeProjetoOption } from "@/components/mafe/MafeProjetoPicker";
+import { MafeDiarioChat } from "@/components/projeto/MafeDiarioChat";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
@@ -10,6 +14,12 @@ import { useAuth, useProfile, useUserRoles } from "@/hooks/useAuth";
 interface Message {
   role: "user" | "assistant";
   content: string;
+}
+
+const DIARIO_HOME_INTENT_REGEX = /(registrar\s+visita|anotar\s+visita|abrir\s+di[áa]rio|^di[áa]rio$|visita\s+no\s+di[áa]rio|registrar\s+no\s+di[áa]rio)/i;
+
+function shouldOpenDiarioFromHome(message: string, pathname: string) {
+  return pathname === "/" && DIARIO_HOME_INTENT_REGEX.test(message.trim());
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/assistente-mfm`;
@@ -55,7 +65,7 @@ const MAFE_INTRO = `Olá! Eu sou a **Mafe**, assistente virtual da **Maria Ferna
 Me conte como posso te ajudar! Você pode digitar ou enviar um áudio 🎙️`;
 
 export function MafeChat() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const { data: profile } = useProfile(user?.id);
   const { data: userRoles = [] } = useUserRoles(user?.id);
   const location = useLocation();
@@ -71,6 +81,10 @@ export function MafeChat() {
   const [isRecording, setIsRecording] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
   const [isGuiding, setIsGuiding] = useState(false);
+  const [projectPickerOpen, setProjectPickerOpen] = useState(false);
+  const [projectPickerSearch, setProjectPickerSearch] = useState("");
+  const [selectedProject, setSelectedProject] = useState<MafeProjetoOption | null>(null);
+  const [diarioChatOpen, setDiarioChatOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastMsgStartRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -81,6 +95,53 @@ export function MafeChat() {
     : userRoles.some(r => r.role === "gestao_campo") ? "gestao_campo" : "operador_campo";
 
   const currentPage = getRouteLabel(location.pathname);
+
+  const { data: accessibleProjects = [], isLoading: isLoadingProjects } = useQuery<MafeProjetoOption[]>({
+    queryKey: ["mafe-accessible-projects"],
+    enabled: projectPickerOpen || location.pathname === "/",
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("projetos")
+        .select("id, titulo, cliente_id, status, clientes(nome)")
+        .order("updated_at", { ascending: false });
+
+      if (error) throw error;
+      return (data ?? []) as unknown as MafeProjetoOption[];
+    },
+  });
+
+  const filteredProjects = useMemo(() => {
+    const normalizedSearch = projectPickerSearch.trim().toLowerCase();
+    if (!normalizedSearch) return accessibleProjects;
+
+    return accessibleProjects.filter((projeto) =>
+      [projeto.titulo, projeto.clientes?.nome || ""].join(" ").toLowerCase().includes(normalizedSearch),
+    );
+  }, [accessibleProjects, projectPickerSearch]);
+
+  const openDiarioFlow = useCallback((message: string) => {
+    setIsOpen(true);
+    setHasUnread(false);
+    setProjectPickerOpen(true);
+    setProjectPickerSearch("");
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: message },
+      { role: "assistant", content: "Claro — qual projeto você quer registrar no diário?" },
+    ]);
+  }, []);
+
+  const handleSelectProject = useCallback((projeto: MafeProjetoOption) => {
+    setSelectedProject(projeto);
+    setProjectPickerOpen(false);
+    setProjectPickerSearch("");
+    setDiarioChatOpen(true);
+    setHasUnread(false);
+    setMessages((prev) => [
+      ...prev,
+      { role: "assistant", content: `Perfeito — abrindo o diário de **${projeto.titulo}**.` },
+    ]);
+  }, []);
 
   // Scroll to the START of the last assistant message
   const scrollToLastAssistantStart = useCallback(() => {
@@ -112,6 +173,12 @@ export function MafeChat() {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail as string;
       if (!detail || isLoading) return;
+
+      if (shouldOpenDiarioFromHome(detail, location.pathname)) {
+        openDiarioFlow(detail);
+        return;
+      }
+
       setIsOpen(true);
       setHasUnread(false);
       const userMsg: Message = { role: "user", content: detail };
@@ -121,7 +188,7 @@ export function MafeChat() {
     };
     window.addEventListener("mafe-inline-message", handler);
     return () => window.removeEventListener("mafe-inline-message", handler);
-  }, [messages, isLoading]);
+  }, [messages, isLoading, location.pathname, openDiarioFlow]);
 
   // Detect route changes and auto-notify Mafe during guided sessions
   useEffect(() => {
@@ -160,7 +227,7 @@ export function MafeChat() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${session?.access_token || ""}`,
         },
         body: JSON.stringify({
           messages: allMessages,
@@ -275,11 +342,18 @@ export function MafeChat() {
       }
       setIsRecording(false);
     }
+
+    setInput("");
+
+    if (shouldOpenDiarioFromHome(trimmed, location.pathname)) {
+      openDiarioFlow(trimmed);
+      return;
+    }
+
     if (!isOpen) setIsOpen(true);
 
     const userMsg: Message = { role: "user", content: trimmed };
     setMessages((prev) => [...prev, userMsg]);
-    setInput("");
 
     const allMessages = [...messages.filter((m, i) => !(i === 0 && m.content === MAFE_INTRO)), userMsg];
     await sendToMafe(allMessages);
@@ -311,103 +385,119 @@ export function MafeChat() {
     : "fixed bottom-5 right-5 z-50 w-80 h-[28rem] sm:w-96 sm:h-[32rem]";
 
   return (
-    <div className={`${panelSize} flex flex-col bg-card border border-border rounded-2xl shadow-2xl overflow-hidden transition-all duration-300`}>
-      {/* Header */}
-      <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border bg-muted/50 shrink-0">
-        <img src={mafeAvatar} alt="Mafe" className="w-8 h-8 rounded-full object-cover object-top" />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-foreground leading-none">Mafe</p>
-          <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-            Assistente virtual — MFM Paisagismo
-          </p>
+    <>
+      <div className={`${panelSize} flex flex-col bg-card border border-border rounded-2xl shadow-2xl overflow-hidden transition-all duration-300`}>
+        <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border bg-muted/50 shrink-0">
+          <img src={mafeAvatar} alt="Mafe" className="w-8 h-8 rounded-full object-cover object-top" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground leading-none">Mafe</p>
+            <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+              Assistente virtual — MFM Paisagismo
+            </p>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsExpanded(!isExpanded)}>
+              {isExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsOpen(false)}>
+              <X className="w-3.5 h-3.5" />
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsExpanded(!isExpanded)}>
-            {isExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-          </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsOpen(false)}>
-            <X className="w-3.5 h-3.5" />
-          </Button>
-        </div>
-      </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
-        {messages.filter(msg => !msg.content.startsWith("[Naveguei para:")).map((msg, i, arr) => {
-          const isLastAssistant = msg.role === "assistant" && 
-            arr.slice(i + 1).every(m => m.role === "user" || m.content.startsWith("[Naveguei para:"));
-          return (
-            <div
-              key={i}
-              ref={isLastAssistant && msg.role === "assistant" ? lastMsgStartRef : undefined}
-              className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-            >
-              {msg.role === "assistant" && (
-                <img src={mafeAvatar} alt="Mafe" className="w-6 h-6 rounded-full object-cover object-top shrink-0 mt-1" />
-              )}
-              <div className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
-                msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
-              }`}>
-                {msg.role === "assistant" ? (
-                  <div className="prose prose-sm dark:prose-invert max-w-none leading-relaxed [&>p]:my-1.5 [&>ul]:my-1.5 [&>ol]:my-1.5 [&>li]:my-0.5 [&>h1]:mt-2 [&>h2]:mt-2 [&>h3]:mt-1.5 [&>strong]:text-foreground">
-                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
+          {messages.filter(msg => !msg.content.startsWith("[Naveguei para:")).map((msg, i, arr) => {
+            const isLastAssistant = msg.role === "assistant" && 
+              arr.slice(i + 1).every(m => m.role === "user" || m.content.startsWith("[Naveguei para:"));
+            return (
+              <div
+                key={i}
+                ref={isLastAssistant && msg.role === "assistant" ? lastMsgStartRef : undefined}
+                className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+              >
+                {msg.role === "assistant" && (
+                  <img src={mafeAvatar} alt="Mafe" className="w-6 h-6 rounded-full object-cover object-top shrink-0 mt-1" />
+                )}
+                <div className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
+                  msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
+                }`}>
+                  {msg.role === "assistant" ? (
+                    <div className="prose prose-sm dark:prose-invert max-w-none leading-relaxed [&>p]:my-1.5 [&>ul]:my-1.5 [&>ol]:my-1.5 [&>li]:my-0.5 [&>h1]:mt-2 [&>h2]:mt-2 [&>h3]:mt-1.5 [&>strong]:text-foreground">
+                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                  )}
+                </div>
+                {msg.role === "user" && (
+                  <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center shrink-0 mt-1">
+                    <User className="w-3.5 h-3.5 text-foreground" />
                   </div>
-                ) : (
-                  <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                 )}
               </div>
-              {msg.role === "user" && (
-                <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center shrink-0 mt-1">
-                  <User className="w-3.5 h-3.5 text-foreground" />
-                </div>
-              )}
+            );
+          })}
+          {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
+            <div className="flex gap-2">
+              <img src={mafeAvatar} alt="Mafe" className="w-6 h-6 rounded-full object-cover object-top shrink-0" />
+              <div className="bg-muted rounded-xl px-3 py-2">
+                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+              </div>
             </div>
-          );
-        })}
-        {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
-          <div className="flex gap-2">
-            <img src={mafeAvatar} alt="Mafe" className="w-6 h-6 rounded-full object-cover object-top shrink-0" />
-            <div className="bg-muted rounded-xl px-3 py-2">
-              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        <div className="border-t border-border px-3 py-2 shrink-0">
+          {isRecording && (
+            <div className="flex items-center gap-2 mb-1.5 text-[11px] text-destructive animate-pulse">
+              <Mic className="w-3 h-3" />
+              <span>Gravando áudio...</span>
             </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
+          )}
+          <form onSubmit={handleSubmit} className="flex items-end gap-1.5">
+            <Button
+              type="button"
+              size="icon"
+              variant={isRecording ? "destructive" : "outline"}
+              onClick={isRecording ? stopRecording : startRecording}
+              className="rounded-xl h-9 w-9 shrink-0"
+              disabled={isLoading}
+            >
+              {isRecording ? <Square className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+            </Button>
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={isRecording ? "🎙️ Gravando..." : "Pergunte à Mafe..."}
+              rows={1}
+              className="flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground"
+              disabled={isLoading}
+            />
+            <Button type="submit" size="icon" disabled={!input.trim() || isLoading} className="rounded-xl h-9 w-9 shrink-0">
+              <Send className="w-3.5 h-3.5" />
+            </Button>
+          </form>
+        </div>
       </div>
 
-      {/* Input */}
-      <div className="border-t border-border px-3 py-2 shrink-0">
-        {isRecording && (
-          <div className="flex items-center gap-2 mb-1.5 text-[11px] text-destructive animate-pulse">
-            <Mic className="w-3 h-3" />
-            <span>Gravando áudio...</span>
-          </div>
-        )}
-        <form onSubmit={handleSubmit} className="flex items-end gap-1.5">
-          <Button
-            type="button"
-            size="icon"
-            variant={isRecording ? "destructive" : "outline"}
-            onClick={isRecording ? stopRecording : startRecording}
-            className="rounded-xl h-9 w-9 shrink-0"
-            disabled={isLoading}
-          >
-            {isRecording ? <Square className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
-          </Button>
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={isRecording ? "🎙️ Gravando..." : "Pergunte à Mafe..."}
-            rows={1}
-            className="flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground"
-            disabled={isLoading}
-          />
-          <Button type="submit" size="icon" disabled={!input.trim() || isLoading} className="rounded-xl h-9 w-9 shrink-0">
-            <Send className="w-3.5 h-3.5" />
-          </Button>
-        </form>
-      </div>
-    </div>
+      <MafeProjetoPicker
+        open={projectPickerOpen}
+        onOpenChange={setProjectPickerOpen}
+        projetos={filteredProjects}
+        search={projectPickerSearch}
+        onSearchChange={setProjectPickerSearch}
+        onSelect={handleSelectProject}
+        isLoading={isLoadingProjects}
+      />
+
+      <MafeDiarioChat
+        open={Boolean(selectedProject) && diarioChatOpen}
+        onOpenChange={setDiarioChatOpen}
+        projetoId={selectedProject?.id || ""}
+        clienteId={selectedProject?.cliente_id || ""}
+      />
+    </>
   );
 }
