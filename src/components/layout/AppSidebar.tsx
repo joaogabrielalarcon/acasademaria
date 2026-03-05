@@ -17,6 +17,7 @@ import {
   Wrench,
   BookOpen,
   CalendarDays,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
@@ -51,6 +52,12 @@ const allNavigationItems = [
     icon: CalendarDays,
     href: "/calendario",
     roles: ["admin", "administrativo", "gestao_campo", "arquitetura", "responsavel_obra"] as AppRole[],
+  },
+  {
+    title: "Diário",
+    icon: ClipboardList,
+    href: "/diario",
+    roles: ["admin", "gestao_campo", "responsavel_obra", "operador_campo"] as AppRole[],
   },
   {
     title: "Plantas",

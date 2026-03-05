@@ -15,6 +15,7 @@ import {
   DollarSign,
   BookOpen,
   CalendarDays,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
@@ -33,6 +34,7 @@ const allNavigationItems = [
   { title: "Clientes", icon: Users, href: "/clientes", roles: ["admin", "administrativo", "gestao_campo", "arquitetura", "responsavel_obra"] as AppRole[] },
   { title: "Equipe", icon: UserCircle, href: "/equipe", roles: ["admin", "administrativo", "gestao_campo"] as AppRole[] },
   { title: "Calendário", icon: CalendarDays, href: "/calendario", roles: ["admin", "administrativo", "gestao_campo", "arquitetura", "responsavel_obra"] as AppRole[] },
+  { title: "Diário", icon: ClipboardList, href: "/diario", roles: ["admin", "gestao_campo", "responsavel_obra", "operador_campo"] as AppRole[] },
   { title: "Plantas", icon: Leaf, href: "/plantas", roles: ["admin", "administrativo", "arquitetura"] as AppRole[] },
   { title: "Produtos e Insumos", icon: Package, href: "/insumos", roles: ["admin", "administrativo", "gestao_campo"] as AppRole[] },
   { title: "Fornecedores", icon: Truck, href: "/fornecedores", roles: ["admin", "administrativo", "gestao_campo"] as AppRole[] },
