@@ -18,6 +18,7 @@ import {
   BookOpen,
   CalendarDays,
   ClipboardList,
+  Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
@@ -289,6 +290,15 @@ export function AppSidebar({ className }: AppSidebarProps) {
           )}
         </Button>
 
+        {!collapsed && (
+          <Button variant="outline" className="w-full mb-2 justify-start" asChild>
+            <Link to="/alterar-senha">
+              <Lock className="w-4 h-4" />
+              Alterar senha
+            </Link>
+          </Button>
+        )}
+
         {/* User Info */}
         {!collapsed && (
           <div className="flex items-center gap-3 px-2 py-2 rounded-lg bg-secondary/50">
@@ -313,3 +323,4 @@ export function AppSidebar({ className }: AppSidebarProps) {
     </aside>
   );
 }
+

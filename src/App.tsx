@@ -29,6 +29,8 @@ const Insumos = lazy(() => import("./pages/Insumos"));
 const CustosEquipe = lazy(() => import("./pages/CustosEquipe"));
 const Maquinas = lazy(() => import("./pages/Maquinas"));
 const AlterarSenha = lazy(() => import("./pages/AlterarSenha"));
+const EsqueciSenha = lazy(() => import("./pages/EsqueciSenha"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Areas = lazy(() => import("./pages/Areas"));
 const ControleAcessos = lazy(() => import("./pages/ControleAcessos"));
 const BootstrapAdmin = lazy(() => import("./pages/BootstrapAdmin"));
@@ -54,6 +56,8 @@ const App = () => (
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/esqueci-senha" element={<EsqueciSenha />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/bootstrap" element={<BootstrapAdmin />} />
             <Route path="/" element={<ProtectedRoute><MenuCentral /></ProtectedRoute>} />
             <Route path="/clientes" element={<ProtectedRoute><Clientes /></ProtectedRoute>} />
