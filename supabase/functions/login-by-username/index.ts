@@ -7,6 +7,10 @@ const corsHeaders = {
 
 const GENERIC_AUTH_ERROR = "Usuário ou senha inválidos";
 
+function normalizeUsername(username: string): string {
+  return username.trim().toLowerCase();
+}
+
 function validateUsername(username: string): boolean {
   return typeof username === "string" && username.length >= 3 && username.length <= 30 && /^[a-zA-Z0-9._-]+$/.test(username);
 }
@@ -34,7 +38,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (!validateUsername(username)) {
+    const normalizedUsername = normalizeUsername(username);
+
+    if (!validateUsername(normalizedUsername)) {
       return new Response(JSON.stringify({ error: "Formato de usuário inválido" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -48,20 +54,66 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Cliente admin para buscar email pelo username
+    // Cliente admin para buscar dados de login
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // Buscar colaborador pelo username
+    let collaboratorUserId: string | null = null;
+
+    // 1) Busca principal por username atual na tabela de colaboradores
     const { data: colaborador, error: searchError } = await supabaseAdmin
       .from("colaboradores")
-      .select("email, user_id, ativo")
-      .eq("username", username.toLowerCase())
+      .select("user_id, ativo")
+      .eq("username", normalizedUsername)
       .maybeSingle();
 
+    if (!searchError && colaborador?.ativo && colaborador.user_id) {
+      collaboratorUserId = colaborador.user_id;
+    }
+
+    // 2) Fallback para username legado salvo no metadata do usuário
+    if (!collaboratorUserId) {
+      const { data: usersData, error: usersError } = await supabaseAdmin.auth.admin.listUsers({
+        page: 1,
+        perPage: 1000,
+      });
+
+      if (!usersError) {
+        const matchedUser = usersData.users.find((u) => {
+          const metadataUsername = typeof u.user_metadata?.username === "string"
+            ? u.user_metadata.username.toLowerCase()
+            : null;
+          return metadataUsername === normalizedUsername;
+        });
+
+        if (matchedUser?.id) {
+          const { data: collaboratorByUser, error: collaboratorByUserError } = await supabaseAdmin
+            .from("colaboradores")
+            .select("user_id, ativo")
+            .eq("user_id", matchedUser.id)
+            .maybeSingle();
+
+          if (!collaboratorByUserError && collaboratorByUser?.ativo && collaboratorByUser.user_id) {
+            collaboratorUserId = collaboratorByUser.user_id;
+          }
+        }
+      }
+    }
+
     // Generic error for all auth failures - prevents username enumeration
-    if (searchError || !colaborador || !colaborador.ativo || !colaborador.email || !colaborador.user_id) {
+    if (!collaboratorUserId) {
+      return new Response(JSON.stringify({ error: GENERIC_AUTH_ERROR }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Busca e-mail real no provedor de autenticação para evitar divergência com tabela colaboradores
+    const { data: authUserData, error: authUserError } = await supabaseAdmin.auth.admin.getUserById(collaboratorUserId);
+    const loginEmail = authUserData?.user?.email;
+
+    if (authUserError || !loginEmail) {
       return new Response(JSON.stringify({ error: GENERIC_AUTH_ERROR }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -72,7 +124,7 @@ Deno.serve(async (req) => {
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
 
     const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
-      email: colaborador.email,
+      email: loginEmail,
       password,
     });
 

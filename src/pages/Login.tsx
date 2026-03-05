@@ -25,7 +25,8 @@ export default function Login() {
   useEffect(() => {
     const remembered = localStorage.getItem(REMEMBER_KEY);
     if (remembered) {
-      setUsername(remembered);
+      const normalizedRemembered = remembered.trim().toLowerCase();
+      setUsername(normalizedRemembered);
       setRememberMe(true);
     }
 
@@ -50,11 +51,13 @@ export default function Login() {
       return;
     }
 
+    const normalizedUsername = username.trim().toLowerCase();
+
     setIsLoading(true);
 
     try {
       const { data, error } = await supabase.functions.invoke("login-by-username", {
-        body: { username, password },
+        body: { username: normalizedUsername, password },
       });
 
       if (error || data?.error) {
@@ -71,7 +74,7 @@ export default function Login() {
 
       // Save or clear remember preference
       if (rememberMe) {
-        localStorage.setItem(REMEMBER_KEY, username);
+        localStorage.setItem(REMEMBER_KEY, normalizedUsername);
       } else {
         localStorage.removeItem(REMEMBER_KEY);
       }
