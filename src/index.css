@@ -48,6 +48,10 @@
     --diario-team-bg: 245 28% 92%;
     --diario-team-fg: 243 47% 20%;
     --diario-typing: 140 20% 51%;
+    --mafe-diario-collecting: 38 91% 55%;
+    --mafe-diario-awaiting: 19 45% 60%;
+    --mafe-diario-ready: 154 44% 21%;
+    --mafe-diario-typing: 140 20% 51%;
     
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
@@ -98,6 +102,10 @@
     --diario-team-bg: 245 28% 92%;
     --diario-team-fg: 243 47% 20%;
     --diario-typing: 140 20% 51%;
+    --mafe-diario-collecting: 38 91% 55%;
+    --mafe-diario-awaiting: 19 45% 60%;
+    --mafe-diario-ready: 154 44% 21%;
+    --mafe-diario-typing: 140 20% 51%;
     --border: 11 66% 38% / 0.2;
     --input: 11 66% 38% / 0.3;
     --ring: 11 66% 38%;
@@ -245,8 +253,40 @@
   .diario-media-thumb:hover {
     transform: translateY(-1px);
   }
-  
-  /* Photo Gallery */
+
+  .mafe-diario-frame {
+    box-shadow: var(--shadow-subtle);
+    transition: border-color var(--transition-smooth), box-shadow var(--transition-smooth);
+  }
+
+  .mafe-diario-frame--collecting {
+    border-color: hsl(var(--mafe-diario-collecting));
+    box-shadow: 0 0 0 1px hsl(var(--mafe-diario-collecting) / 0.12);
+  }
+
+  .mafe-diario-frame--awaiting {
+    border-color: hsl(var(--mafe-diario-awaiting));
+    box-shadow: 0 0 0 1px hsl(var(--mafe-diario-awaiting) / 0.12);
+  }
+
+  .mafe-diario-frame--ready {
+    border-color: hsl(var(--mafe-diario-ready));
+    box-shadow: 0 0 0 1px hsl(var(--mafe-diario-ready) / 0.14);
+  }
+
+  .mafe-diario-dot {
+    @apply h-2.5 w-2.5 rounded-full animate-bounce;
+    background: hsl(var(--mafe-diario-typing));
+  }
+
+  .mafe-diario-dot:nth-child(2) {
+    animation-delay: 120ms;
+  }
+
+  .mafe-diario-dot:nth-child(3) {
+    animation-delay: 240ms;
+  }
+
   .photo-frame {
     @apply relative overflow-hidden rounded-lg;
     aspect-ratio: 4/3;

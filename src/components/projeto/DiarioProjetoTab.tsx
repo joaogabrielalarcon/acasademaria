@@ -29,7 +29,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
+import { MafeDiarioChat } from "@/components/projeto/MafeDiarioChat";
 import { useAuth, useHasAnyRole } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
@@ -168,6 +168,9 @@ function uniqueValues(values: Array<string | null | undefined>) {
   return Array.from(new Set(values.filter(Boolean) as string[]));
 }
 
+const DIARIO_STORAGE_BUCKET = "diario-midias";
+const isAbsoluteUrl = (value: string) => /^https?:\/\//i.test(value);
+
 function getTrend(area: DiarioAreaRow) {
   if (area.status_area && area.status_anterior) {
     const current = statusRank[area.status_area];
@@ -188,13 +191,13 @@ function getVisitStatus(visita: DiarioVisitaRow, areas: DiarioAreaRow[]) {
 }
 
 export function DiarioProjetoTab({ projetoId, clienteId, isActive = false }: DiarioProjetoTabProps) {
-  const { toast } = useToast();
   const { user } = useAuth();
   const canViewInternalNotes = useHasAnyRole(user?.id, ["admin", "administrativo", "gestao_campo"]);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [search, setSearch] = useState("");
   const [expandedVisitId, setExpandedVisitId] = useState<string | null>(null);
   const [selectedMedia, setSelectedMedia] = useState<DiarioMidiaRow | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   useEffect(() => {
     if (!isActive) return;
@@ -261,6 +264,37 @@ export function DiarioProjetoTab({ projetoId, clienteId, isActive = false }: Dia
       const maquinaRows = ((maquinasResult.data as unknown as DiarioMaquinaRow[]) ?? []);
       const midiaRows = ((midiasResult.data as unknown as DiarioMidiaRow[]) ?? []);
 
+      const privatePaths = Array.from(
+        new Set(
+          midiaRows
+            .flatMap((item) => [item.url, item.thumbnail_url])
+            .filter((value): value is string => Boolean(value) && !isAbsoluteUrl(value)),
+        ),
+      );
+
+      let signedMap = new Map<string, string>();
+      if (privatePaths.length > 0) {
+        const { data: signedData, error: signedError } = await supabase.storage
+          .from(DIARIO_STORAGE_BUCKET)
+          .createSignedUrls(privatePaths, 60 * 60);
+
+        if (signedError) {
+          console.error("Erro ao assinar mídias do diário do projeto:", signedError);
+        } else {
+          signedMap = new Map((signedData || []).map((item) => [item.path, item.signedUrl]));
+        }
+      }
+
+      const resolvedMidiaRows = midiaRows.map((item) => ({
+        ...item,
+        url: isAbsoluteUrl(item.url) ? item.url : signedMap.get(item.url) || "",
+        thumbnail_url: item.thumbnail_url
+          ? isAbsoluteUrl(item.thumbnail_url)
+            ? item.thumbnail_url
+            : signedMap.get(item.thumbnail_url) || null
+          : null,
+      }));
+
       return visitasRows.map((visita) => {
         const areas = areasRows
           .filter((area) => area.visita_id === visita.id)
@@ -269,10 +303,10 @@ export function DiarioProjetoTab({ projetoId, clienteId, isActive = false }: Dia
             equipe: equipeRows.filter((item) => item.area_id === area.id),
             insumos: insumoRows.filter((item) => item.area_id === area.id),
             maquinas: maquinaRows.filter((item) => item.area_id === area.id),
-            midias: midiaRows.filter((item) => item.area_id === area.id),
+            midias: resolvedMidiaRows.filter((item) => item.area_id === area.id),
           }));
 
-        const visitMidias = midiaRows.filter((item) => item.visita_id === visita.id);
+        const visitMidias = resolvedMidiaRows.filter((item) => item.visita_id === visita.id);
         return {
           ...visita,
           areas,
@@ -377,10 +411,7 @@ export function DiarioProjetoTab({ projetoId, clienteId, isActive = false }: Dia
                 </Button>
               </div>
 
-              <Button
-                variant="terracota"
-                onClick={() => toast({ title: "Em breve" })}
-              >
+              <Button variant="terracota" onClick={() => setIsChatOpen(true)}>
                 <Plus className="w-4 h-4" />
                 + Registrar
               </Button>
@@ -642,6 +673,13 @@ export function DiarioProjetoTab({ projetoId, clienteId, isActive = false }: Dia
           })}
         </div>
       )}
+
+      <MafeDiarioChat
+        open={isChatOpen}
+        onOpenChange={setIsChatOpen}
+        projetoId={projetoId}
+        clienteId={clienteId}
+      />
 
       <Dialog open={!!selectedMedia} onOpenChange={(open) => !open && setSelectedMedia(null)}>
         <DialogContent className="max-w-4xl bg-card">
