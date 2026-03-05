@@ -94,6 +94,7 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [isRefiningTranscript, setIsRefiningTranscript] = useState(false);
   const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [draftState, setDraftState] = useState<MafeDiarioHiddenState>(() => createInitialMafeDiarioDraft(projetoId, ""));
@@ -102,6 +103,9 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const recognitionRef = useRef<any>(null);
+  const recordingFinalTranscriptRef = useRef("");
+  const recordingInterimTranscriptRef = useRef("");
+  const recordingStopResolverRef = useRef<((value: string) => void) | null>(null);
 
   const { data: projectContext, isLoading: loadingContext } = useQuery({
     queryKey: ["mafe-diario-context", projetoId],
@@ -142,6 +146,9 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
   };
 
   const resetConversationState = () => {
+    recordingFinalTranscriptRef.current = "";
+    recordingInterimTranscriptRef.current = "";
+    recordingStopResolverRef.current = null;
     recognitionRef.current?.stop?.();
     recognitionRef.current = null;
     setInput("");
@@ -239,10 +246,65 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
 
   const reviewSummary = useMemo(() => draftState.draft, [draftState]);
 
-  const stopRecording = () => {
-    recognitionRef.current?.stop?.();
-    recognitionRef.current = null;
-    setIsRecording(false);
+  const resolveRecordingStop = (value: string) => {
+    recordingStopResolverRef.current?.(value);
+    recordingStopResolverRef.current = null;
+  };
+
+  const normalizeTranscriptWithContext = async (rawTranscript: string) => {
+    const trimmed = rawTranscript.trim();
+    if (!trimmed || !projectContext) return trimmed;
+
+    setIsRefiningTranscript(true);
+
+    try {
+      const response = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token || ""}`,
+        },
+        body: JSON.stringify({
+          mode: "normalize_transcript",
+          projetoId,
+          transcript: trimmed,
+          currentDraft: draftState.draft,
+          messages: messages.slice(-6).map((message) => ({ role: message.role, content: message.content })),
+          currentPage: "Diário do projeto",
+          currentRoute: window.location.pathname,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorPayload = await response.json().catch(() => ({}));
+        throw new Error(errorPayload.error || "Não foi possível revisar a transcrição.");
+      }
+
+      const payload = await response.json();
+      return (payload.transcript || trimmed).trim();
+    } catch (error) {
+      console.error("Erro ao revisar transcrição da Mafe:", error);
+      toast({
+        title: "Revisão de voz indisponível",
+        description: "Mantive o texto captado pelo microfone para você revisar.",
+      });
+      return trimmed;
+    } finally {
+      setIsRefiningTranscript(false);
+    }
+  };
+
+  const stopRecording = async () => {
+    const recognition = recognitionRef.current;
+    if (!recognition) {
+      setIsRecording(false);
+      return input.trim();
+    }
+
+    return new Promise<string>((resolve) => {
+      recordingStopResolverRef.current = resolve;
+      recognition.stop();
+    });
   };
 
   const startRecording = () => {
@@ -256,35 +318,54 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
       return;
     }
 
+    recordingFinalTranscriptRef.current = "";
+    recordingInterimTranscriptRef.current = "";
+
     const recognition = new SpeechRecognition();
     recognition.lang = "pt-BR";
     recognition.continuous = true;
     recognition.interimResults = true;
-
-    let finalTranscript = "";
 
     recognition.onresult = (event: any) => {
       let interimTranscript = "";
       for (let i = event.resultIndex; i < event.results.length; i += 1) {
         const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          finalTranscript += `${transcript} `;
+          recordingFinalTranscriptRef.current += `${transcript} `;
         } else {
           interimTranscript = transcript;
         }
       }
-      setInput(`${finalTranscript}${interimTranscript}`.trimStart());
+
+      recordingInterimTranscriptRef.current = interimTranscript;
+      setInput(`${recordingFinalTranscriptRef.current}${interimTranscript}`.trimStart());
     };
 
     recognition.onerror = (event: any) => {
+      recognitionRef.current = null;
       setIsRecording(false);
+
+      const fallbackTranscript = `${recordingFinalTranscriptRef.current}${recordingInterimTranscriptRef.current}`.trim();
+      resolveRecordingStop(fallbackTranscript || input.trim());
+
       if (event.error === "not-allowed") {
         toast({ title: "Permissão negada", description: "Libere o microfone para usar a transcrição.", variant: "destructive" });
       }
     };
 
-    recognition.onend = () => {
+    recognition.onend = async () => {
+      recognitionRef.current = null;
       setIsRecording(false);
+
+      const rawTranscript = `${recordingFinalTranscriptRef.current}${recordingInterimTranscriptRef.current}`.trim();
+      if (!rawTranscript) {
+        resolveRecordingStop(input.trim());
+        return;
+      }
+
+      const refinedTranscript = await normalizeTranscriptWithContext(rawTranscript);
+      setInput(refinedTranscript);
+      resolveRecordingStop(refinedTranscript);
     };
 
     recognitionRef.current = recognition;
@@ -432,7 +513,15 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
 
   const handleSubmit = async (event?: React.FormEvent) => {
     event?.preventDefault();
-    if (isRecording) stopRecording();
+    if (isRefiningTranscript) return;
+
+    if (isRecording) {
+      const transcript = await stopRecording();
+      if (!transcript.trim()) return;
+      await sendMessage(transcript);
+      return;
+    }
+
     await sendMessage(input);
   };
 
@@ -490,7 +579,7 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
     },
   });
 
-  const disableComposer = loadingContext || isStreaming || saveMutation.isPending || !!resumeDraft;
+  const disableComposer = loadingContext || isStreaming || isRefiningTranscript || saveMutation.isPending || !!resumeDraft;
 
   return (
     <>
@@ -594,7 +683,7 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
                     <Textarea
                       value={input}
                       onChange={(event) => setInput(event.target.value)}
-                      placeholder={isRecording ? "🎙️ Gravando... fale agora" : "Conte para a Mafe como foi a visita"}
+                      placeholder={isRecording ? "🎙️ Gravando... fale agora" : isRefiningTranscript ? "A Mafe está ajustando a transcrição com o contexto do projeto..." : "Conte para a Mafe como foi a visita"}
                       className="min-h-[110px] resize-none"
                       disabled={disableComposer}
                     />
