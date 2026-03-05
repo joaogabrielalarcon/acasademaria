@@ -27,7 +27,8 @@ interface MafeDiarioChatProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projetoId: string;
-  clienteId: string;
+  projetoNome: string;
+  clienteNome: string;
   onSaved?: () => void;
 }
 
@@ -66,7 +67,7 @@ const phaseMeta: Record<MafeDiarioPhase, { frameClass: string; badge: string }> 
 const isImageFile = (file: File) => file.type.startsWith("image/");
 const isVideoFile = (file: File) => file.type.startsWith("video/");
 
-export function MafeDiarioChat({ open, onOpenChange, projetoId, clienteId, onSaved }: MafeDiarioChatProps) {
+export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, clienteNome, onSaved }: MafeDiarioChatProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user, session } = useAuth();
@@ -81,20 +82,20 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, clienteId, onSav
   const [isRecording, setIsRecording] = useState(false);
   const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
   const [reviewOpen, setReviewOpen] = useState(false);
-  const [draftState, setDraftState] = useState<MafeDiarioHiddenState>(() => createInitialMafeDiarioDraft(projetoId, clienteId));
+  const [draftState, setDraftState] = useState<MafeDiarioHiddenState>(() => createInitialMafeDiarioDraft(projetoId, ""));
   const [phase, setPhase] = useState<MafeDiarioPhase>("collecting");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const recognitionRef = useRef<any>(null);
 
   const { data: projectContext, isLoading: loadingContext } = useQuery({
-    queryKey: ["mafe-diario-context", projetoId, clienteId],
-    enabled: open && !!projetoId && !!clienteId,
+    queryKey: ["mafe-diario-context", projetoId],
+    enabled: open && !!projetoId,
     queryFn: async () => {
       const [projectRes, lastVisitRes] = await Promise.all([
         supabase
           .from("projetos")
-          .select("id, titulo, cliente_id, clientes(nome)")
+          .select("cliente_id")
           .eq("id", projetoId)
           .maybeSingle(),
         supabase
@@ -110,14 +111,13 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, clienteId, onSav
       if (lastVisitRes.error) throw lastVisitRes.error;
 
       return {
-        projectName: projectRes.data?.titulo || "Projeto",
-        clientName: (projectRes.data as any)?.clientes?.nome || "Cliente",
+        clienteId: projectRes.data?.cliente_id || "",
+        projectName: projetoNome,
+        clientName: clienteNome,
         lastVisit: lastVisitRes.data,
       };
     },
   });
-
-  const { data: trechos = [] } = useTrechosCliente(clienteId);
 
   const resetChat = () => {
     setMessages([{ id: crypto.randomUUID(), role: "assistant", content: INITIAL_ASSISTANT_MESSAGE }]);
@@ -126,7 +126,7 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, clienteId, onSav
     setIsRecording(false);
     setReviewOpen(false);
     setPhase("collecting");
-    setDraftState(createInitialMafeDiarioDraft(projetoId, clienteId));
+    setDraftState(createInitialMafeDiarioDraft(projetoId, projectContext?.clienteId || ""));
     setAttachments((current) => {
       current.forEach((item) => URL.revokeObjectURL(item.previewUrl));
       return [];
@@ -136,7 +136,7 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, clienteId, onSav
   useEffect(() => {
     if (!open) return;
     resetChat();
-  }, [open, projetoId, clienteId]);
+  }, [open, projetoId, projectContext?.clienteId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -261,7 +261,6 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, clienteId, onSav
         },
         body: JSON.stringify({
           projetoId,
-          clienteId,
           currentDraft: draftState.draft,
           messages: nextMessages.map((message) => ({ role: message.role, content: message.content })),
           currentPage: "Diário do projeto",
@@ -407,9 +406,9 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, clienteId, onSav
             <SheetHeader className="border-b border-border px-6 py-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <SheetTitle>🌿 Mafe — {projectContext?.projectName || "Projeto"}</SheetTitle>
+                  <SheetTitle>🌿 Mafe — {projetoNome || projectContext?.projectName || "Projeto"}</SheetTitle>
                   <SheetDescription>
-                    Registro guiado da visita do diário {projectContext?.clientName ? `· ${projectContext.clientName}` : ""}
+                    Registro guiado da visita do diário {clienteNome ? `· ${clienteNome}` : projectContext?.clientName ? `· ${projectContext.clientName}` : ""}
                   </SheetDescription>
                 </div>
                 <span className="rounded-full border border-border bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
