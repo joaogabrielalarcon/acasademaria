@@ -41,6 +41,13 @@
     
     --success: 142 60% 40%;
     --success-foreground: 0 0% 100%;
+    --diario-area-bg: 37 45% 92%;
+    --diario-area-fg: 8 63% 45%;
+    --diario-service-bg: 143 28% 87%;
+    --diario-service-fg: 154 44% 21%;
+    --diario-team-bg: 245 28% 92%;
+    --diario-team-fg: 243 47% 20%;
+    --diario-typing: 140 20% 51%;
     
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
@@ -84,6 +91,13 @@
     --muted-foreground: 11 66% 38% / 0.6;
     --accent: 18 68% 87%;
     --accent-foreground: 11 66% 38%;
+    --diario-area-bg: 37 45% 92%;
+    --diario-area-fg: 8 63% 45%;
+    --diario-service-bg: 143 28% 87%;
+    --diario-service-fg: 154 44% 21%;
+    --diario-team-bg: 245 28% 92%;
+    --diario-team-fg: 243 47% 20%;
+    --diario-typing: 140 20% 51%;
     --border: 11 66% 38% / 0.2;
     --input: 11 66% 38% / 0.3;
     --ring: 11 66% 38%;
@@ -161,6 +175,75 @@
     @apply inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium;
     background: hsl(11 66% 38% / 0.15);
     color: hsl(11 66% 38%);
+  }
+
+  .diario-chip-area,
+  .diario-chip-service,
+  .diario-chip-team {
+    @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+
+  .diario-chip-area {
+    background: hsl(var(--diario-area-bg));
+    color: hsl(var(--diario-area-fg));
+  }
+
+  .diario-chip-service {
+    background: hsl(var(--diario-service-bg));
+    color: hsl(var(--diario-service-fg));
+  }
+
+  .diario-chip-team {
+    background: hsl(var(--diario-team-bg));
+    color: hsl(var(--diario-team-fg));
+  }
+
+  .diario-status-badge {
+    @apply inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold;
+    border-color: hsl(var(--border));
+    background: hsl(var(--muted));
+    color: hsl(var(--foreground));
+  }
+
+  .diario-status-otimo {
+    background: hsl(var(--success) / 0.12);
+    color: hsl(var(--success));
+    border-color: hsl(var(--success) / 0.18);
+  }
+
+  .diario-status-bom {
+    background: hsl(46 95% 55% / 0.16);
+    color: hsl(35 92% 28%);
+    border-color: hsl(46 95% 55% / 0.28);
+  }
+
+  .diario-status-requer_atencao {
+    background: hsl(24 95% 53% / 0.16);
+    color: hsl(23 83% 32%);
+    border-color: hsl(24 95% 53% / 0.28);
+  }
+
+  .diario-status-critico {
+    background: hsl(var(--destructive) / 0.12);
+    color: hsl(var(--destructive));
+    border-color: hsl(var(--destructive) / 0.2);
+  }
+
+  .diario-trend-up {
+    color: hsl(var(--success));
+  }
+
+  .diario-trend-down {
+    color: hsl(var(--primary));
+  }
+
+  .diario-media-thumb {
+    @apply overflow-hidden rounded-xl border bg-muted transition-transform duration-200;
+    border-color: hsl(var(--border));
+  }
+
+  .diario-media-thumb:hover {
+    transform: translateY(-1px);
   }
   
   /* Photo Gallery */

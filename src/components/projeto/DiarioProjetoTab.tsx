@@ -1,192 +1,298 @@
-import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
-import { format, isSameDay, isSameMonth, parseISO, isAfter, startOfDay } from "date-fns";
+import { useMemo, useState } from "react";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  Calendar as CalendarIcon,
-  Plus,
-  FileText,
-  Users,
-  User,
-  Package,
-  Briefcase,
-  Image as ImageIcon,
-  Check,
-  X,
-  Clock,
-  MessageSquare,
-  AlertTriangle,
+  ArrowDown,
   ArrowUp,
+  ChevronDown,
+  ChevronUp,
+  Images,
   Loader2,
+  Lock,
+  Package,
+  Plus,
+  Search,
+  UserRound,
+  Video,
+  Wrench,
 } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth, useHasAnyRole } from "@/hooks/useAuth";
+import { cn } from "@/lib/utils";
 
 interface DiarioProjetoTabProps {
   projetoId: string;
   clienteId: string;
 }
 
-interface Registro {
+type StatusArea = "otimo" | "bom" | "requer_atencao" | "critico";
+type PeriodoVisita = "dia_inteiro" | "manha" | "tarde" | "horario_especifico";
+type TipoMidia = "foto" | "video";
+
+interface DiarioVisitaRow {
   id: string;
-  data_servico: string;
-  tipo: string;
-  status: string;
-  descricao: string;
-  trecho_nome: string | null;
-  equipe_nomes: string[];
-  executores_nomes: string[];
-  solicitante: string | null;
-  prioridade: string | null;
-  status_solicitacao: string | null;
-  proposta?: { codigo: string; titulo: string } | null;
+  projeto_id: string;
+  cliente_id: string;
+  data_visita: string;
+  hora_inicio: string | null;
+  hora_fim: string | null;
+  periodo: PeriodoVisita | null;
+  status_geral: StatusArea | null;
+  observacoes_internas: string | null;
+  registrado_por_nome: string | null;
+  created_at: string;
 }
 
-const tipoLabels: Record<string, string> = {
-  manutenção: "Manutenção",
-  manutencao: "Manutenção",
-  implantação: "Implantação",
-  implantacao: "Implantação",
-  recebimento_materiais: "Recebimento de Materiais",
-  recebimento: "Recebimento",
-  visita_tecnica: "Visita Técnica",
-  reuniao: "Reunião",
-  solicitacao: "Solicitação",
-  outro: "Outro",
+interface DiarioAreaRow {
+  id: string;
+  visita_id: string;
+  projeto_id: string;
+  nome_area: string;
+  servicos: string[] | null;
+  status_area: StatusArea | null;
+  status_anterior: StatusArea | null;
+  houve_melhora: boolean;
+  relato: string | null;
+  created_at: string;
+}
+
+interface DiarioEquipeRow {
+  id: string;
+  area_id: string;
+  visita_id: string;
+  colaborador_id: string | null;
+  colaborador_nome: string;
+  funcao: string | null;
+  descricao_atividade: string | null;
+}
+
+interface DiarioInsumoRow {
+  id: string;
+  area_id: string;
+  visita_id: string;
+  insumo_id: string | null;
+  insumo_nome: string;
+  quantidade: string | null;
+  unidade: string | null;
+}
+
+interface DiarioMaquinaRow {
+  id: string;
+  area_id: string;
+  visita_id: string;
+  maquina_id: string | null;
+  maquina_nome: string;
+}
+
+interface DiarioMidiaRow {
+  id: string;
+  visita_id: string;
+  area_id: string | null;
+  tipo: TipoMidia | null;
+  url: string;
+  thumbnail_url: string | null;
+  descricao: string | null;
+}
+
+interface DiarioAreaDetalhe extends DiarioAreaRow {
+  equipe: DiarioEquipeRow[];
+  insumos: DiarioInsumoRow[];
+  maquinas: DiarioMaquinaRow[];
+  midias: DiarioMidiaRow[];
+}
+
+interface DiarioVisitaDetalhe extends DiarioVisitaRow {
+  areas: DiarioAreaDetalhe[];
+  fotoCount: number;
+  videoCount: number;
+  areasResumo: string[];
+  servicosResumo: string[];
+  equipeResumo: string[];
+  statusResumo: StatusArea | null;
+}
+
+const periodLabels: Record<PeriodoVisita, string> = {
+  dia_inteiro: "Dia inteiro",
+  manha: "Manhã",
+  tarde: "Tarde",
+  horario_especifico: "Horário específico",
 };
 
-const statusConfig: Record<string, { label: string; className: string; icon: React.ReactNode }> = {
-  realizado: {
-    label: "Realizado",
-    className: "bg-green-500/20 text-green-700 dark:text-green-300",
-    icon: <Check className="w-3 h-3" />,
-  },
-  agendado: {
-    label: "Agendado",
-    className: "bg-blue-500/20 text-blue-700 dark:text-blue-300",
-    icon: <Clock className="w-3 h-3" />,
-  },
-  cancelado: {
-    label: "Cancelado",
-    className: "bg-red-500/20 text-red-700 dark:text-red-300",
-    icon: <X className="w-3 h-3" />,
-  },
+const statusMeta: Record<StatusArea, { emoji: string; label: string; className: string }> = {
+  otimo: { emoji: "🟢", label: "Ótimo", className: "diario-status-otimo" },
+  bom: { emoji: "🟡", label: "Bom", className: "diario-status-bom" },
+  requer_atencao: { emoji: "🟠", label: "Requer atenção", className: "diario-status-requer_atencao" },
+  critico: { emoji: "🔴", label: "Crítico", className: "diario-status-critico" },
 };
 
-export function DiarioProjetoTab({ projetoId, clienteId }: DiarioProjetoTabProps) {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
-  const today = startOfDay(new Date());
+const statusRank: Record<StatusArea, number> = {
+  critico: 0,
+  requer_atencao: 1,
+  bom: 2,
+  otimo: 3,
+};
 
-  // Fetch registros linked to this project
-  const { data: rawRegistros = [], isLoading } = useQuery({
-    queryKey: ["registros-projeto", projetoId],
+function formatDate(value: string) {
+  return format(new Date(`${value}T12:00:00`), "dd/MM/yyyy", { locale: ptBR });
+}
+
+function formatHour(value: string | null) {
+  return value ? value.slice(0, 5) : "";
+}
+
+function formatPeriodo(visita: Pick<DiarioVisitaRow, "periodo" | "hora_inicio" | "hora_fim">) {
+  const periodoLabel = visita.periodo ? periodLabels[visita.periodo] : null;
+  const hourRange = [formatHour(visita.hora_inicio), formatHour(visita.hora_fim)].filter(Boolean).join("–");
+
+  if (periodoLabel && hourRange) return `${periodoLabel} ${hourRange}`;
+  if (periodoLabel) return periodoLabel;
+  if (hourRange) return hourRange;
+  return "Horário não informado";
+}
+
+function uniqueValues(values: Array<string | null | undefined>) {
+  return Array.from(new Set(values.filter(Boolean) as string[]));
+}
+
+function getTrend(area: DiarioAreaRow) {
+  if (area.status_area && area.status_anterior) {
+    const current = statusRank[area.status_area];
+    const previous = statusRank[area.status_anterior];
+    if (current > previous) return "up" as const;
+    if (current < previous) return "down" as const;
+  }
+
+  if (area.houve_melhora) return "up" as const;
+  return null;
+}
+
+function getVisitStatus(visita: DiarioVisitaRow, areas: DiarioAreaRow[]) {
+  if (visita.status_geral) return visita.status_geral;
+  const statuses = areas.map((area) => area.status_area).filter(Boolean) as StatusArea[];
+  if (!statuses.length) return null;
+  return statuses.sort((a, b) => statusRank[a] - statusRank[b])[0];
+}
+
+export function DiarioProjetoTab({ projetoId }: DiarioProjetoTabProps) {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const canViewInternalNotes = useHasAnyRole(user?.id, ["admin", "administrativo", "gestao_campo"]);
+  const [search, setSearch] = useState("");
+  const [expandedVisitId, setExpandedVisitId] = useState<string | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<DiarioMidiaRow | null>(null);
+
+  const { data: visitas = [], isLoading } = useQuery({
+    queryKey: ["diario-visitas-projeto", projetoId],
+    enabled: !!projetoId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("registros")
-        .select("id, data_servico, tipo, status, descricao, solicitante, prioridade, status_solicitacao, trecho_id, equipe_presente_ids, executores_ids, proposta_id")
+      const { data: visitasData, error: visitasError } = await supabase
+        .from("diario_visitas" as never)
+        .select("*")
         .eq("projeto_id", projetoId)
-        .order("data_servico", { ascending: false });
-      if (error) throw error;
-      return data;
+        .order("data_visita", { ascending: false });
+
+      if (visitasError) throw visitasError;
+
+      const visitasRows = ((visitasData as unknown as DiarioVisitaRow[]) ?? []);
+      if (!visitasRows.length) return [] as DiarioVisitaDetalhe[];
+
+      const visitaIds = visitasRows.map((visita) => visita.id);
+
+      const [areasResult, equipeResult, insumosResult, maquinasResult, midiasResult] = await Promise.all([
+        supabase
+          .from("diario_areas" as never)
+          .select("*")
+          .in("visita_id", visitaIds)
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("diario_equipe_area" as never)
+          .select("*")
+          .in("visita_id", visitaIds)
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("diario_insumos_area" as never)
+          .select("*")
+          .in("visita_id", visitaIds)
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("diario_maquinas_area" as never)
+          .select("*")
+          .in("visita_id", visitaIds)
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("diario_midia" as never)
+          .select("*")
+          .in("visita_id", visitaIds)
+          .order("created_at", { ascending: true }),
+      ]);
+
+      if (areasResult.error) throw areasResult.error;
+      if (equipeResult.error) throw equipeResult.error;
+      if (insumosResult.error) throw insumosResult.error;
+      if (maquinasResult.error) throw maquinasResult.error;
+      if (midiasResult.error) throw midiasResult.error;
+
+      const areasRows = ((areasResult.data as unknown as DiarioAreaRow[]) ?? []);
+      const equipeRows = ((equipeResult.data as unknown as DiarioEquipeRow[]) ?? []);
+      const insumoRows = ((insumosResult.data as unknown as DiarioInsumoRow[]) ?? []);
+      const maquinaRows = ((maquinasResult.data as unknown as DiarioMaquinaRow[]) ?? []);
+      const midiaRows = ((midiasResult.data as unknown as DiarioMidiaRow[]) ?? []);
+
+      return visitasRows.map((visita) => {
+        const areas = areasRows
+          .filter((area) => area.visita_id === visita.id)
+          .map((area) => ({
+            ...area,
+            equipe: equipeRows.filter((item) => item.area_id === area.id),
+            insumos: insumoRows.filter((item) => item.area_id === area.id),
+            maquinas: maquinaRows.filter((item) => item.area_id === area.id),
+            midias: midiaRows.filter((item) => item.area_id === area.id),
+          }));
+
+        const visitMidias = midiaRows.filter((item) => item.visita_id === visita.id);
+        return {
+          ...visita,
+          areas,
+          fotoCount: visitMidias.filter((item) => item.tipo === "foto").length,
+          videoCount: visitMidias.filter((item) => item.tipo === "video").length,
+          areasResumo: uniqueValues(areas.map((area) => area.nome_area)),
+          servicosResumo: uniqueValues(areas.flatMap((area) => area.servicos || [])),
+          equipeResumo: uniqueValues(areas.flatMap((area) => area.equipe.map((item) => item.colaborador_nome))),
+          statusResumo: getVisitStatus(visita, areas),
+        } satisfies DiarioVisitaDetalhe;
+      });
     },
   });
 
-  // Fetch colaboradores for names
-  const { data: colaboradores = [] } = useQuery({
-    queryKey: ["colaboradores-basico"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("colaboradores_basico").select("id, nome");
-      if (error) throw error;
-      return data;
-    },
-  });
+  const filteredVisitas = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+    if (!normalizedSearch) return visitas;
 
-  // Fetch trechos
-  const { data: trechos = [] } = useQuery({
-    queryKey: ["trechos", clienteId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("trechos").select("id, nome").eq("cliente_id", clienteId);
-      if (error) throw error;
-      return data;
-    },
-  });
+    return visitas.filter((visita) => {
+      const searchableText = [
+        formatDate(visita.data_visita),
+        formatPeriodo(visita),
+        visita.areasResumo.join(" "),
+        visita.servicosResumo.join(" "),
+        visita.equipeResumo.join(" "),
+        visita.areas.map((area) => area.relato || "").join(" "),
+      ]
+        .join(" ")
+        .toLowerCase();
 
-  const colabMap = new Map(colaboradores.map((c) => [c.id, c.nome]));
-  const trechoMap = new Map(trechos.map((t) => [t.id, t.nome]));
-
-  // Process registros
-  const registros: Registro[] = useMemo(() => {
-    return rawRegistros.map((r: any) => {
-      const registroDate = parseISO(r.data_servico);
-      const inferredStatus = r.status || (isAfter(registroDate, today) ? "agendado" : "realizado");
-      return {
-        id: r.id,
-        data_servico: r.data_servico,
-        tipo: r.tipo,
-        status: inferredStatus,
-        descricao: r.descricao,
-        trecho_nome: r.trecho_id ? trechoMap.get(r.trecho_id) || null : null,
-        equipe_nomes: (r.equipe_presente_ids || []).map((id: string) => colabMap.get(id)).filter(Boolean),
-        executores_nomes: (r.executores_ids || []).map((id: string) => colabMap.get(id)).filter(Boolean),
-        solicitante: r.solicitante,
-        prioridade: r.prioridade,
-        status_solicitacao: r.status_solicitacao,
-      };
+      return searchableText.includes(normalizedSearch);
     });
-  }, [rawRegistros, colabMap, trechoMap, today]);
-
-  // Group by date
-  const registrosPorData = useMemo(() => {
-    const map = new Map<string, Registro[]>();
-    registros.forEach((r) => {
-      const existing = map.get(r.data_servico) || [];
-      existing.push(r);
-      map.set(r.data_servico, existing);
-    });
-    return map;
-  }, [registros]);
-
-  const registrosDoDia = useMemo(() => {
-    if (!selectedDate) return [];
-    const key = format(selectedDate, "yyyy-MM-dd");
-    return registrosPorData.get(key) || [];
-  }, [selectedDate, registrosPorData]);
-
-  const datasComAtividade = useMemo(() => {
-    const realizados: Date[] = [];
-    const agendados: Date[] = [];
-    registrosPorData.forEach((regs, dateStr) => {
-      const date = parseISO(dateStr);
-      if (regs.some((r) => r.status === "agendado")) agendados.push(date);
-      if (regs.some((r) => r.status === "realizado")) realizados.push(date);
-    });
-    return { realizados, agendados };
-  }, [registrosPorData]);
-
-  const contadoresMes = useMemo(() => {
-    let realizados = 0;
-    let agendados = 0;
-    registrosPorData.forEach((regs, dateStr) => {
-      const date = parseISO(dateStr);
-      if (isSameMonth(date, currentMonth)) {
-        regs.forEach((r) => {
-          if (r.status === "realizado") realizados++;
-          if (r.status === "agendado") agendados++;
-        });
-      }
-    });
-    return { realizados, agendados };
-  }, [registrosPorData, currentMonth]);
-
-  const getDateIndicators = (date: Date) => ({
-    hasRealizado: datasComAtividade.realizados.some((d) => isSameDay(d, date)),
-    hasAgendado: datasComAtividade.agendados.some((d) => isSameDay(d, date)),
-  });
+  }, [search, visitas]);
 
   if (isLoading) {
     return (
@@ -198,115 +304,293 @@ export function DiarioProjetoTab({ projetoId, clienteId }: DiarioProjetoTabProps
 
   return (
     <div className="space-y-6">
-      {/* Resumo do mês */}
-      <div className="flex items-center gap-4 flex-wrap">
-        <div className="flex items-center gap-2 text-sm">
-          <span className="w-3 h-3 rounded-full bg-green-500" />
-          <span className="text-muted-foreground">
-            {contadoresMes.realizados} realizado{contadoresMes.realizados !== 1 ? "s" : ""}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 text-sm">
-          <span className="w-3 h-3 rounded-full bg-blue-500" />
-          <span className="text-muted-foreground">
-            {contadoresMes.agendados} agendado{contadoresMes.agendados !== 1 ? "s" : ""}
-          </span>
-        </div>
-      </div>
-
-      {/* Calendar */}
-      <div className="card-botanical p-4">
-        <Calendar
-          mode="single"
-          selected={selectedDate}
-          onSelect={setSelectedDate}
-          month={currentMonth}
-          onMonthChange={setCurrentMonth}
-          locale={ptBR}
-          modifiers={{ realizado: datasComAtividade.realizados, agendado: datasComAtividade.agendados }}
-          modifiersClassNames={{ realizado: "", agendado: "" }}
-          className="pointer-events-auto"
-          components={{
-            DayContent: ({ date }) => {
-              const { hasRealizado, hasAgendado } = getDateIndicators(date);
-              return (
-                <div className="relative flex flex-col items-center">
-                  <span>{date.getDate()}</span>
-                  {(hasRealizado || hasAgendado) && (
-                    <div className="flex gap-0.5 mt-0.5">
-                      {hasRealizado && <span className="w-1.5 h-1.5 rounded-full bg-green-500" />}
-                      {hasAgendado && <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
-                    </div>
-                  )}
-                </div>
-              );
-            },
-          }}
-        />
-      </div>
-
-      {/* Day detail */}
-      {selectedDate && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
-              <CalendarIcon className="w-5 h-5 text-primary" />
-              {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
-            </h3>
-            <Button variant="outline" size="sm" asChild>
-              <Link to={`/registros/novo?cliente=${clienteId}&projeto=${projetoId}&data=${format(selectedDate, "yyyy-MM-dd")}`}>
-                <Plus className="w-4 h-4" />
-                {isAfter(startOfDay(selectedDate), today) ? "Agendar" : "Registrar"}
-              </Link>
-            </Button>
+      <div className="card-botanical p-4 sm:p-5">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h3 className="font-display text-lg font-semibold text-foreground">Diário do projeto</h3>
+            <p className="text-sm text-muted-foreground">Acompanhe visitas, áreas atendidas, equipe, insumos, máquinas e mídias.</p>
           </div>
 
-          {registrosDoDia.length === 0 ? (
-            <div className="card-botanical p-6 text-center">
-              <p className="text-muted-foreground mb-3">Nenhum registro neste dia</p>
-              <Button variant="terracota" size="sm" asChild>
-                <Link to={`/registros/novo?cliente=${clienteId}&projeto=${projetoId}&data=${format(selectedDate, "yyyy-MM-dd")}`}>
-                  <Plus className="w-4 h-4" />
-                  {isAfter(startOfDay(selectedDate), today) ? "Agendar Serviço" : "Adicionar Registro"}
-                </Link>
-              </Button>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative min-w-[260px] flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Buscar por data, área, serviço ou colaborador"
+                className="pl-9"
+              />
             </div>
-          ) : (
-            <div className="space-y-3">
-              {registrosDoDia.map((registro) => {
-                const st = statusConfig[registro.status] || statusConfig.realizado;
-                const isSolicitacao = registro.tipo === "solicitacao";
 
-                return (
-                  <Link key={registro.id} to={`/registros/${registro.id}`} className="block">
-                    <article className="card-botanical p-4 animate-fade-in hover:shadow-card transition-all">
-                      <div className="flex items-center gap-2 flex-wrap mb-2">
-                        <Badge className={cn("gap-1", st.className)}>
-                          {st.icon}
-                          {st.label}
-                        </Badge>
-                        <span className={cn("tag-primary text-xs", isSolicitacao && "bg-blue-500/10 text-blue-700 dark:text-blue-300")}>
-                          {tipoLabels[registro.tipo] || registro.tipo}
+            <Button
+              variant="terracota"
+              onClick={() => toast({ title: "Em breve", description: "O fluxo de novo registro será liberado na próxima etapa." })}
+            >
+              <Plus className="w-4 h-4" />
+              Novo registro
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {!visitas.length ? (
+        <div className="empty-state card-botanical">
+          <h4 className="font-display text-xl font-semibold text-foreground">Nenhum registro ainda.</h4>
+          <p className="mt-2 text-sm text-muted-foreground">Clique em Novo registro para começar.</p>
+        </div>
+      ) : !filteredVisitas.length ? (
+        <div className="empty-state card-botanical">
+          <h4 className="font-display text-xl font-semibold text-foreground">Nenhum resultado encontrado</h4>
+          <p className="mt-2 text-sm text-muted-foreground">Tente buscar por outra data, área, serviço ou colaborador.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredVisitas.map((visita) => {
+            const isExpanded = expandedVisitId === visita.id;
+            const visitStatus = visita.statusResumo ? statusMeta[visita.statusResumo] : null;
+
+            return (
+              <article key={visita.id} className="card-botanical overflow-hidden">
+                <div className="p-4 sm:p-5">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h4 className="font-display text-lg font-semibold text-foreground">
+                          {formatDate(visita.data_visita)} · {formatPeriodo(visita)}
+                        </h4>
+                        {visitStatus && (
+                          <span className={cn("diario-status-badge", visitStatus.className)}>
+                            <span>{visitStatus.emoji}</span>
+                            <span>{visitStatus.label}</span>
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {visita.areasResumo.map((area) => (
+                          <span key={area} className="diario-chip-area">{area}</span>
+                        ))}
+                        {visita.servicosResumo.map((servico) => (
+                          <span key={servico} className="diario-chip-service">{servico}</span>
+                        ))}
+                        {visita.equipeResumo.map((colaborador) => (
+                          <span key={colaborador} className="diario-chip-team">{colaborador}</span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-start gap-3 lg:items-end">
+                      <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                        <span className="inline-flex items-center gap-1.5">
+                          <Images className="w-4 h-4" />
+                          {visita.fotoCount} foto{visita.fotoCount === 1 ? "" : "s"}
+                        </span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <Video className="w-4 h-4" />
+                          {visita.videoCount} vídeo{visita.videoCount === 1 ? "" : "s"}
                         </span>
                       </div>
-                      {registro.trecho_nome && (
-                        <p className="text-sm font-medium text-foreground mb-1">{registro.trecho_nome}</p>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setExpandedVisitId(isExpanded ? null : visita.id)}
+                      >
+                        {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        {isExpanded ? "Recolher" : "Expandir"}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {isExpanded && (
+                  <div className="border-t border-border px-4 py-5 sm:px-5">
+                    <div className="space-y-5">
+                      {visita.areas.map((area) => {
+                        const areaStatus = area.status_area ? statusMeta[area.status_area] : null;
+                        const trend = getTrend(area);
+
+                        return (
+                          <section key={area.id} className="rounded-2xl border border-border bg-background/60 p-4">
+                            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                              <div>
+                                <h5 className="font-display text-lg font-semibold text-foreground">{area.nome_area}</h5>
+                                <div className="mt-2 flex flex-wrap items-center gap-2">
+                                  {areaStatus && (
+                                    <span className={cn("diario-status-badge", areaStatus.className)}>
+                                      <span>{areaStatus.emoji}</span>
+                                      <span>{areaStatus.label}</span>
+                                    </span>
+                                  )}
+
+                                  {trend === "up" && (
+                                    <span className="inline-flex items-center gap-1 text-sm font-medium diario-trend-up">
+                                      <ArrowUp className="w-4 h-4" />
+                                      Melhorou
+                                    </span>
+                                  )}
+
+                                  {trend === "down" && (
+                                    <span className="inline-flex items-center gap-1 text-sm font-medium diario-trend-down">
+                                      <ArrowDown className="w-4 h-4" />
+                                      Piorou
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {!!area.servicos?.length && (
+                              <div className="mt-4 space-y-2">
+                                <p className="text-sm font-medium text-foreground">Serviços realizados</p>
+                                <div className="flex flex-wrap gap-2">
+                                  {area.servicos.map((servico) => (
+                                    <span key={servico} className="diario-chip-service">{servico}</span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {!!area.equipe.length && (
+                              <div className="mt-4 space-y-2">
+                                <p className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
+                                  <UserRound className="w-4 h-4 text-primary" />
+                                  Equipe
+                                </p>
+                                <div className="space-y-2">
+                                  {area.equipe.map((colaborador) => (
+                                    <div key={colaborador.id} className="rounded-xl bg-muted/70 p-3">
+                                      <p className="text-sm font-medium text-foreground">
+                                        {colaborador.colaborador_nome}
+                                        {colaborador.funcao ? ` · ${colaborador.funcao}` : ""}
+                                      </p>
+                                      {colaborador.descricao_atividade && (
+                                        <p className="mt-1 text-sm text-muted-foreground">{colaborador.descricao_atividade}</p>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {!!area.insumos.length && (
+                              <div className="mt-4 space-y-2">
+                                <p className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
+                                  <Package className="w-4 h-4 text-primary" />
+                                  Insumos usados
+                                </p>
+                                <div className="space-y-2">
+                                  {area.insumos.map((insumo) => (
+                                    <div key={insumo.id} className="rounded-xl bg-muted/70 p-3 text-sm text-foreground">
+                                      <span className="font-medium">{insumo.insumo_nome}</span>
+                                      {(insumo.quantidade || insumo.unidade) && (
+                                        <span className="text-muted-foreground">
+                                          {` · ${[insumo.quantidade, insumo.unidade].filter(Boolean).join(" ")}`}
+                                        </span>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {!!area.maquinas.length && (
+                              <div className="mt-4 space-y-2">
+                                <p className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
+                                  <Wrench className="w-4 h-4 text-primary" />
+                                  Máquinas usadas
+                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                  {area.maquinas.map((maquina) => (
+                                    <span key={maquina.id} className="tag-secondary">{maquina.maquina_nome}</span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {area.relato && (
+                              <div className="mt-4 rounded-xl bg-muted/70 p-3">
+                                <p className="text-sm font-medium text-foreground">Relato</p>
+                                <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap">{area.relato}</p>
+                              </div>
+                            )}
+
+                            {!!area.midias.length && (
+                              <div className="mt-4 space-y-2">
+                                <p className="text-sm font-medium text-foreground">Fotos e vídeos</p>
+                                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                                  {area.midias.map((midia) => (
+                                    <button
+                                      key={midia.id}
+                                      type="button"
+                                      className="diario-media-thumb text-left"
+                                      onClick={() => setSelectedMedia(midia)}
+                                    >
+                                      {midia.tipo === "video" ? (
+                                        <div className="flex aspect-[4/3] items-center justify-center bg-muted text-muted-foreground">
+                                          <Video className="w-6 h-6" />
+                                        </div>
+                                      ) : (
+                                        <img
+                                          src={midia.thumbnail_url || midia.url}
+                                          alt={midia.descricao || `Mídia da área ${area.nome_area}`}
+                                          className="aspect-[4/3] w-full object-cover"
+                                          loading="lazy"
+                                        />
+                                      )}
+                                      <div className="p-2">
+                                        <p className="text-xs font-medium text-foreground line-clamp-1">
+                                          {midia.descricao || (midia.tipo === "video" ? "Vídeo da visita" : "Foto da visita")}
+                                        </p>
+                                      </div>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </section>
+                        );
+                      })}
+
+                      {canViewInternalNotes && visita.observacoes_internas && (
+                        <section className="rounded-2xl border border-border bg-muted/50 p-4">
+                          <p className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
+                            <Lock className="w-4 h-4 text-primary" />
+                            Observações internas
+                          </p>
+                          <p className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap">
+                            {visita.observacoes_internas}
+                          </p>
+                        </section>
                       )}
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{registro.descricao}</p>
-                      {!isSolicitacao && registro.equipe_nomes.length > 0 && (
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <Users className="w-3.5 h-3.5" />
-                          <span>{registro.equipe_nomes.join(", ")}</span>
-                        </div>
-                      )}
-                    </article>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
+                    </div>
+                  </div>
+                )}
+              </article>
+            );
+          })}
         </div>
       )}
+
+      <Dialog open={!!selectedMedia} onOpenChange={(open) => !open && setSelectedMedia(null)}>
+        <DialogContent className="max-w-4xl bg-card">
+          <DialogHeader>
+            <DialogTitle>{selectedMedia?.descricao || "Visualização de mídia"}</DialogTitle>
+          </DialogHeader>
+
+          {selectedMedia?.tipo === "video" ? (
+            <video src={selectedMedia.url} controls className="max-h-[75vh] w-full rounded-xl bg-muted" />
+          ) : selectedMedia ? (
+            <img
+              src={selectedMedia.url}
+              alt={selectedMedia.descricao || "Mídia da visita"}
+              className="max-h-[75vh] w-full rounded-xl object-contain"
+              loading="lazy"
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
