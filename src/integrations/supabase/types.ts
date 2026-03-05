@@ -2064,6 +2064,10 @@ export type Database = {
       }
     }
     Functions: {
+      can_access_manutencao_client: {
+        Args: { _cliente_id: string; _user_id: string }
+        Returns: boolean
+      }
       can_manage_users: { Args: { _user_id: string }; Returns: boolean }
       check_inactive_clients: { Args: never; Returns: undefined }
       get_colaborador_id: { Args: { _user_id: string }; Returns: string }
