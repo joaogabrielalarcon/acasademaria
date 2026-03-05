@@ -2564,6 +2564,10 @@ export type Database = {
       }
       can_manage_users: { Args: { _user_id: string }; Returns: boolean }
       check_inactive_clients: { Args: never; Returns: undefined }
+      create_diario_visita_with_details: {
+        Args: { payload: Json }
+        Returns: string
+      }
       get_colaborador_id: { Args: { _user_id: string }; Returns: string }
       get_user_area: { Args: { _user_id: string }; Returns: string }
       get_user_id_by_username: { Args: { _username: string }; Returns: string }
