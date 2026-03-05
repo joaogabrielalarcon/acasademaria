@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MafeDiarioChat } from "@/components/diario/MafeDiarioChat";
 import { useAuth, useHasAnyRole } from "@/hooks/useAuth";
+import { MAFE_DIARIO_RASCUNHO_EVENT, hasMafeDiarioRascunho } from "@/lib/mafe-diario";
 import {
   type DiarioVisitaDetalhe,
   fetchDiarioVisitasDetalhes,
@@ -29,12 +30,31 @@ export function DiarioProjetoTab({ projetoId, projetoNome, clienteNome, clienteI
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [search, setSearch] = useState("");
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [hasSavedDraft, setHasSavedDraft] = useState(() => hasMafeDiarioRascunho(projetoId));
 
   useEffect(() => {
     if (!isActive) return;
     setViewMode("list");
     setSearch("");
   }, [isActive, projetoId]);
+
+  useEffect(() => {
+    setHasSavedDraft(hasMafeDiarioRascunho(projetoId));
+
+    const syncDraftBadge = () => setHasSavedDraft(hasMafeDiarioRascunho(projetoId));
+    const handleDraftEvent = (event: Event) => {
+      const detail = (event as CustomEvent<{ projetoId?: string }>).detail;
+      if (!detail?.projetoId || detail.projetoId === projetoId) syncDraftBadge();
+    };
+
+    window.addEventListener("storage", syncDraftBadge);
+    window.addEventListener(MAFE_DIARIO_RASCUNHO_EVENT, handleDraftEvent as EventListener);
+
+    return () => {
+      window.removeEventListener("storage", syncDraftBadge);
+      window.removeEventListener(MAFE_DIARIO_RASCUNHO_EVENT, handleDraftEvent as EventListener);
+    };
+  }, [projetoId]);
 
   const { data: visitas = [], isLoading } = useQuery<DiarioVisitaDetalhe[]>({
     queryKey: ["diario-visitas-projeto", projetoId],
@@ -132,10 +152,17 @@ export function DiarioProjetoTab({ projetoId, projetoNome, clienteNome, clienteI
                 </Button>
               </div>
 
-              <Button variant="terracota" onClick={() => setIsChatOpen(true)}>
-                <Plus className="w-4 h-4" />
-                + Registrar
-              </Button>
+              <div className="relative inline-flex">
+                <Button variant="terracota" onClick={() => setIsChatOpen(true)}>
+                  <Plus className="w-4 h-4" />
+                  + Registrar
+                </Button>
+                {hasSavedDraft ? (
+                  <span className="pointer-events-none absolute -right-2 -top-2 rounded-full border border-primary/20 bg-background px-2 py-0.5 text-[11px] font-semibold text-primary shadow-sm">
+                    ● Rascunho salvo
+                  </span>
+                ) : null}
+              </div>
             </div>
           </div>
 

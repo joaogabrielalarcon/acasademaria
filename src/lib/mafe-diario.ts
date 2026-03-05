@@ -59,6 +59,21 @@ export interface MafeDiarioHiddenState {
   draft: MafeDiarioDraftPayload;
 }
 
+export interface MafeDiarioStoredMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface MafeDiarioStoredDraft {
+  mensagens: MafeDiarioStoredMessage[];
+  projetoId: string;
+  projetoNome: string;
+  clienteNome: string;
+  timestamp: string;
+  draftState?: MafeDiarioHiddenState;
+}
+
 const HIDDEN_TAG = "draft_state";
 const HIDDEN_BLOCK_REGEX = new RegExp(`<${HIDDEN_TAG}>([\\s\\S]*?)<\\/${HIDDEN_TAG}>`, "i");
 const OPENING_TAG_REGEX = new RegExp(`<${HIDDEN_TAG}>[\\s\\S]*$`, "i");
@@ -102,4 +117,56 @@ export function extractMafeDiarioHiddenState(rawContent: string): MafeDiarioHidd
     console.error("Erro ao interpretar estado oculto da Mafe:", error);
     return null;
   }
+}
+
+export const MAFE_DIARIO_RASCUNHO_EVENT = "mafe-diario-rascunho-updated";
+
+const canUseLocalStorage = () => typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+
+const dispatchMafeDiarioRascunhoEvent = (projetoId: string, hasDraft: boolean) => {
+  if (!canUseLocalStorage()) return;
+
+  window.dispatchEvent(
+    new CustomEvent(MAFE_DIARIO_RASCUNHO_EVENT, {
+      detail: { projetoId, hasDraft },
+    }),
+  );
+};
+
+export function getMafeDiarioRascunhoStorageKey(projetoId: string) {
+  return `mafe_diario_rascunho_${projetoId}`;
+}
+
+export function saveMafeDiarioRascunho(rascunho: MafeDiarioStoredDraft) {
+  if (!canUseLocalStorage()) return;
+
+  window.localStorage.setItem(getMafeDiarioRascunhoStorageKey(rascunho.projetoId), JSON.stringify(rascunho));
+  dispatchMafeDiarioRascunhoEvent(rascunho.projetoId, true);
+}
+
+export function readMafeDiarioRascunho(projetoId: string): MafeDiarioStoredDraft | null {
+  if (!canUseLocalStorage()) return null;
+
+  const stored = window.localStorage.getItem(getMafeDiarioRascunhoStorageKey(projetoId));
+  if (!stored) return null;
+
+  try {
+    const parsed = JSON.parse(stored) as MafeDiarioStoredDraft;
+    if (!parsed || !Array.isArray(parsed.mensagens)) return null;
+    return parsed;
+  } catch (error) {
+    console.error("Erro ao ler rascunho salvo da Mafe:", error);
+    return null;
+  }
+}
+
+export function clearMafeDiarioRascunho(projetoId: string) {
+  if (!canUseLocalStorage()) return;
+
+  window.localStorage.removeItem(getMafeDiarioRascunhoStorageKey(projetoId));
+  dispatchMafeDiarioRascunhoEvent(projetoId, false);
+}
+
+export function hasMafeDiarioRascunho(projetoId: string) {
+  return Boolean(readMafeDiarioRascunho(projetoId));
 }

@@ -15,12 +15,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import {
+  clearMafeDiarioRascunho,
   createInitialMafeDiarioDraft,
+  readMafeDiarioRascunho,
   extractMafeDiarioHiddenState,
   getVisibleMafeDiarioContent,
+  saveMafeDiarioRascunho,
   type MafeDiarioHiddenState,
   type MafeDiarioMediaDraft,
   type MafeDiarioPhase,
+  type MafeDiarioStoredDraft,
 } from "@/lib/mafe-diario";
 
 interface MafeDiarioChatProps {
@@ -48,6 +52,16 @@ interface PendingAttachment {
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mafe-diario-chat`;
 const INITIAL_ASSISTANT_MESSAGE = "Vamos registrar a visita de hoje. Qual foi o período da visita? (dia inteiro 07h–17h, manhã, tarde ou horário específico)";
+
+const formatSavedDraftDate = (timestamp: string) => {
+  const parsedDate = new Date(timestamp);
+  if (Number.isNaN(parsedDate.getTime())) return "agora há pouco";
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(parsedDate);
+};
 
 const phaseMeta: Record<MafeDiarioPhase, { frameClass: string; badge: string }> = {
   collecting: {
@@ -84,6 +98,7 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
   const [reviewOpen, setReviewOpen] = useState(false);
   const [draftState, setDraftState] = useState<MafeDiarioHiddenState>(() => createInitialMafeDiarioDraft(projetoId, ""));
   const [phase, setPhase] = useState<MafeDiarioPhase>("collecting");
+  const [resumeDraft, setResumeDraft] = useState<MafeDiarioStoredDraft | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const recognitionRef = useRef<any>(null);
@@ -119,28 +134,102 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
     },
   });
 
-  const resetChat = () => {
-    setMessages([{ id: crypto.randomUUID(), role: "assistant", content: INITIAL_ASSISTANT_MESSAGE }]);
-    setInput("");
-    setIsStreaming(false);
-    setIsRecording(false);
-    setReviewOpen(false);
-    setPhase("collecting");
-    setDraftState(createInitialMafeDiarioDraft(projetoId, projectContext?.clienteId || ""));
+  const clearAttachments = () => {
     setAttachments((current) => {
       current.forEach((item) => URL.revokeObjectURL(item.previewUrl));
       return [];
     });
   };
 
+  const resetConversationState = () => {
+    recognitionRef.current?.stop?.();
+    recognitionRef.current = null;
+    setInput("");
+    setIsStreaming(false);
+    setIsRecording(false);
+    setReviewOpen(false);
+    clearAttachments();
+  };
+
+  const startFreshChat = (clienteId: string) => {
+    resetConversationState();
+    setResumeDraft(null);
+    setMessages([{ id: crypto.randomUUID(), role: "assistant", content: INITIAL_ASSISTANT_MESSAGE }]);
+    setPhase("collecting");
+    setDraftState(createInitialMafeDiarioDraft(projetoId, clienteId));
+  };
+
+  const restoreSavedDraft = (savedDraft: MafeDiarioStoredDraft, clienteId: string) => {
+    resetConversationState();
+
+    const restoredState = savedDraft.draftState
+      ? {
+          ...savedDraft.draftState,
+          draft: {
+            ...savedDraft.draftState.draft,
+            projeto_id: projetoId,
+            cliente_id: savedDraft.draftState.draft.cliente_id || clienteId,
+          },
+        }
+      : createInitialMafeDiarioDraft(projetoId, clienteId);
+
+    setResumeDraft(null);
+    setMessages(
+      savedDraft.mensagens.length
+        ? savedDraft.mensagens.map((message) => ({
+            ...message,
+            id: message.id || crypto.randomUUID(),
+          }))
+        : [{ id: crypto.randomUUID(), role: "assistant", content: INITIAL_ASSISTANT_MESSAGE }],
+    );
+    setDraftState(restoredState);
+    setPhase(restoredState.phase);
+  };
+
   useEffect(() => {
-    if (!open) return;
-    resetChat();
+    if (!open || !projectContext?.clienteId) return;
+
+    const savedDraft = readMafeDiarioRascunho(projetoId);
+    if (savedDraft?.mensagens?.length) {
+      resetConversationState();
+      setMessages([]);
+      setResumeDraft(savedDraft);
+
+      const restoredState = savedDraft.draftState
+        ? {
+            ...savedDraft.draftState,
+            draft: {
+              ...savedDraft.draftState.draft,
+              projeto_id: projetoId,
+              cliente_id: savedDraft.draftState.draft.cliente_id || projectContext.clienteId,
+            },
+          }
+        : createInitialMafeDiarioDraft(projetoId, projectContext.clienteId);
+
+      setDraftState(restoredState);
+      setPhase(restoredState.phase);
+      return;
+    }
+
+    startFreshChat(projectContext.clienteId);
   }, [open, projetoId, projectContext?.clienteId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isStreaming]);
+  }, [messages, isStreaming, resumeDraft]);
+
+  useEffect(() => {
+    if (!open || !messages.length || resumeDraft) return;
+
+    saveMafeDiarioRascunho({
+      mensagens: messages,
+      projetoId,
+      projetoNome,
+      clienteNome,
+      timestamp: new Date().toISOString(),
+      draftState,
+    });
+  }, [open, messages, projetoId, projetoNome, clienteNome, draftState, resumeDraft]);
 
   useEffect(() => {
     return () => {
@@ -386,17 +475,22 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
       return data;
     },
     onSuccess: () => {
+      clearMafeDiarioRascunho(projetoId);
       toast({ title: "Visita salva", description: "O diário do projeto foi atualizado." });
       queryClient.invalidateQueries({ queryKey: ["diario-visitas-projeto", projetoId] });
       queryClient.invalidateQueries({ queryKey: ["diario-alertas-pendentes"] });
       queryClient.invalidateQueries({ queryKey: ["cliente-feed"] });
       onSaved?.();
-      resetChat();
+      resetConversationState();
+      setMessages([]);
+      setResumeDraft(null);
+      setPhase("collecting");
+      setDraftState(createInitialMafeDiarioDraft(projetoId, projectContext?.clienteId || ""));
       onOpenChange(false);
     },
   });
 
-  const disableComposer = loadingContext || isStreaming || saveMutation.isPending;
+  const disableComposer = loadingContext || isStreaming || saveMutation.isPending || !!resumeDraft;
 
   return (
     <>
@@ -423,6 +517,32 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
                   {loadingContext ? (
                     <div className="flex h-full items-center justify-center">
                       <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    </div>
+                  ) : resumeDraft ? (
+                    <div className="flex h-full items-center justify-center p-4">
+                      <div className="max-w-md rounded-3xl border border-border bg-muted/40 p-5 shadow-sm">
+                        <p className="text-sm font-medium text-foreground">
+                          Encontrei um rascunho do dia {formatSavedDraftDate(resumeDraft.timestamp)}. Quer continuar de onde parou?
+                        </p>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          Se continuar, eu restauro a conversa e o contexto já coletado para este projeto.
+                        </p>
+                        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                          <Button type="button" variant="terracota" onClick={() => restoreSavedDraft(resumeDraft, projectContext?.clienteId || "")}>
+                            Continuar
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              clearMafeDiarioRascunho(projetoId);
+                              startFreshChat(projectContext?.clienteId || "");
+                            }}
+                          >
+                            Começar do zero
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   ) : (
                     <>
