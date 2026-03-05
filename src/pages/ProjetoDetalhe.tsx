@@ -377,7 +377,7 @@ export default function ProjetoDetalhe() {
           {(projeto as any).tipo === "manutencao" ? (
             <DiarioManutencaoTab projetoId={id!} clienteId={projeto.cliente_id} />
           ) : (
-            <DiarioProjetoTab projetoId={id!} clienteId={projeto.cliente_id} />
+            <DiarioProjetoTab projetoId={id!} clienteId={projeto.cliente_id} isActive={activeTab === "diario"} />
           )}
         </TabsContent>
 
