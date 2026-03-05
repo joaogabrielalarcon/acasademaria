@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   Plus,
@@ -72,11 +72,34 @@ import { Progress } from "@/components/ui/progress";
 export default function ProjetoDetalhe() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
-  const [activeTab, setActiveTab] = useState("informacoes");
+  const initialTab = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState(
+    initialTab === "diario" ||
+      initialTab === "orcamento" ||
+      initialTab === "execucao" ||
+      initialTab === "resumo" ||
+      initialTab === "dashboard"
+      ? initialTab
+      : "informacoes",
+  );
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    const nextSearchParams = new URLSearchParams(searchParams);
+
+    if (value === "informacoes") {
+      nextSearchParams.delete("tab");
+    } else {
+      nextSearchParams.set("tab", value);
+    }
+
+    setSearchParams(nextSearchParams, { replace: true });
+  };
 
   const { data: projeto, isLoading: loadingProjeto } = useProjeto(id);
   const { data: cliente } = useCliente(projeto?.cliente_id);
@@ -335,7 +358,7 @@ export default function ProjetoDetalhe() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="mb-6 flex-wrap">
           <TabsTrigger value="informacoes" className="gap-2">
             <Info className="w-4 h-4" />
