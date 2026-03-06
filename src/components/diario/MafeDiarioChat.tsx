@@ -609,12 +609,13 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
       queryClient.invalidateQueries({ queryKey: ["diario-alertas-pendentes"] });
       queryClient.invalidateQueries({ queryKey: ["cliente-feed"] });
       onSaved?.();
+      setReviewOpen(false);
       resetConversationState();
       setMessages([]);
       setResumeDraft(null);
       setPhase("collecting");
       setDraftState(createInitialMafeDiarioDraft(projetoId, projectContext?.clienteId || ""));
-      onOpenChange(false);
+      setTimeout(() => onOpenChange(false), 150);
     },
   });
 
