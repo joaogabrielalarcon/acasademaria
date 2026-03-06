@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Mic, Paperclip, Send, Square, Video, X } from "lucide-react";
+import { Loader2, Mic, Paperclip, Send, Video, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, useHighestRole, useProfile } from "@/hooks/useAuth";
