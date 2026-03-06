@@ -16,8 +16,6 @@ import {
   Briefcase,
   AlertCircle,
   Package,
-  DollarSign,
-  Clock,
   List,
   CalendarDays,
   X,
@@ -36,7 +34,7 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   useCliente, 
   useTrechosCliente, 
-  usePropostasCliente, 
+   
   useRegistrosComDetalhes 
 } from "@/hooks/useCliente";
 import { useAuth, useIsAdmin } from "@/hooks/useAuth";
@@ -60,12 +58,6 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   prospecto: { label: "Prospecto", className: "bg-primary/10 text-primary/80 border-primary/20" },
 };
 
-const propostaStatusConfig: Record<string, { label: string; className: string }> = {
-  rascunho: { label: "Rascunho", className: "bg-muted text-muted-foreground" },
-  enviada: { label: "Enviada", className: "bg-blue-500/20 text-blue-700 dark:text-blue-300" },
-  recusada: { label: "Recusada", className: "bg-red-500/20 text-red-700 dark:text-red-300" },
-  aprovada: { label: "Aprovada", className: "bg-green-500/20 text-green-700 dark:text-green-300" },
-};
 
 const tipoLabels: Record<string, string> = {
   manutenção: "Manutenção",
@@ -111,7 +103,7 @@ export default function ClientePerfil() {
   // Fetch real data from database
   const { data: cliente, isLoading: loadingCliente, error: clienteError } = useCliente(id);
   const { data: trechos = [] } = useTrechosCliente(id);
-  const { data: propostas = [] } = usePropostasCliente(id);
+  
   const { registros, isLoading: loadingRegistros } = useRegistrosComDetalhes(id);
   const { data: projetos = [] } = useProjetosCliente(id);
   
