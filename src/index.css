@@ -287,6 +287,67 @@
     animation-delay: 240ms;
   }
 
+  /* ── Mafe Message Renderer ── */
+
+  .mafe-message-body {
+    @apply space-y-2 text-sm leading-relaxed;
+  }
+
+  .mafe-paragraph {
+    @apply leading-relaxed;
+  }
+
+  .mafe-emoji-line {
+    @apply py-1.5 text-base leading-relaxed;
+  }
+
+  .mafe-list {
+    @apply space-y-2 pl-0;
+    list-style: none;
+  }
+
+  .mafe-list-item {
+    @apply relative pl-4 leading-relaxed;
+  }
+
+  .mafe-list-item::before {
+    content: "•";
+    @apply absolute left-0 font-bold;
+    color: hsl(11 66% 38%); /* terracota */
+  }
+
+  .mafe-bold--status {
+    @apply font-semibold;
+    color: #B93C2A;
+  }
+
+  .mafe-bold--area {
+    @apply font-semibold;
+    color: #1E4D3A;
+  }
+
+  .mafe-bold--person {
+    @apply font-semibold;
+    color: #1E1B4B;
+  }
+
+  .mafe-italic--question {
+    @apply not-italic block mt-3 pt-2;
+    color: #6A9A7A;
+    border-top: 1px solid hsl(11 66% 38% / 0.1);
+  }
+
+  .mafe-alert {
+    @apply rounded-xl px-4 py-3 my-2 text-sm leading-relaxed;
+    background: #F5EDE0;
+    border-left: 3px solid #B93C2A;
+  }
+
+  .mafe-hr {
+    @apply my-3 border-0;
+    border-top: 1px solid hsl(11 66% 38% / 0.15);
+  }
+
   .photo-frame {
     @apply relative overflow-hidden rounded-lg;
     aspect-ratio: 4/3;
