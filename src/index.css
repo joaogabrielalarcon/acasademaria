@@ -323,17 +323,17 @@
 
   .mafe-bold--area {
     @apply font-semibold;
-    color: #1E4D3A;
+    color: #B93C2A;
   }
 
   .mafe-bold--person {
     @apply font-semibold;
-    color: #1E1B4B;
+    color: #B93C2A;
   }
 
   .mafe-italic--question {
     @apply not-italic block mt-3 pt-2;
-    color: #6A9A7A;
+    color: #B93C2A;
     border-top: 1px solid hsl(11 66% 38% / 0.1);
   }
 
