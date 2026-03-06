@@ -117,6 +117,7 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
   const recordingInterimTranscriptRef = useRef("");
   const recordingStopResolverRef = useRef<((value: string) => void) | null>(null);
   const recordingStoppedByUserRef = useRef(false);
+  const previousTextRef = useRef("");
 
   const { data: projectContext, isLoading: loadingContext } = useQuery({
     queryKey: ["mafe-diario-context", projetoId],
@@ -331,6 +332,7 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
       return;
     }
 
+    previousTextRef.current = input.trim();
     recordingFinalTranscriptRef.current = "";
     recordingInterimTranscriptRef.current = "";
     recordingStoppedByUserRef.current = false;
@@ -339,6 +341,13 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
     recognition.lang = "pt-BR";
     recognition.continuous = true;
     recognition.interimResults = true;
+
+    const buildFullText = (final: string, interim: string) => {
+      const newPart = `${final}${interim}`.trim();
+      const prev = previousTextRef.current;
+      if (!newPart) return prev;
+      return prev ? `${prev} ${newPart}` : newPart;
+    };
 
     recognition.onresult = (event: any) => {
       let interimTranscript = "";
@@ -352,7 +361,7 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
       }
 
       recordingInterimTranscriptRef.current = interimTranscript;
-      setInput(`${recordingFinalTranscriptRef.current}${interimTranscript}`.trimStart());
+      setInput(buildFullText(recordingFinalTranscriptRef.current, interimTranscript));
     };
 
     recognition.onerror = (event: any) => {
@@ -443,6 +452,7 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
     const nextMessages = [...messages, { id: crypto.randomUUID(), role: "user" as const, content: trimmed }];
     setMessages(nextMessages);
     setInput("");
+    previousTextRef.current = "";
     setIsStreaming(true);
 
     let rawAssistant = "";
