@@ -210,6 +210,9 @@ export function DiarioProjetoTab({ projetoId, projetoNome, clienteNome, clienteI
         projetoId={projetoId}
         projetoNome={projetoNome}
         clienteNome={clienteNome}
+        onSaved={() => {
+          setIsChatOpen(false);
+        }}
       />
 
     </div>
