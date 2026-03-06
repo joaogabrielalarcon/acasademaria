@@ -392,15 +392,18 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
       recognitionRef.current = null;
       setIsRecording(false);
 
-      const rawTranscript = `${recordingFinalTranscriptRef.current}${recordingInterimTranscriptRef.current}`.trim();
-      if (!rawTranscript) {
+      const rawNewPart = `${recordingFinalTranscriptRef.current}${recordingInterimTranscriptRef.current}`.trim();
+      if (!rawNewPart) {
         resolveRecordingStop(input.trim());
         return;
       }
 
-      const refinedTranscript = await normalizeTranscriptWithContext(rawTranscript);
-      setInput(refinedTranscript);
-      resolveRecordingStop(refinedTranscript);
+      const refinedNewPart = await normalizeTranscriptWithContext(rawNewPart);
+      const prev = previousTextRef.current;
+      const fullText = prev ? `${prev} ${refinedNewPart}` : refinedNewPart;
+      previousTextRef.current = fullText;
+      setInput(fullText);
+      resolveRecordingStop(fullText);
     };
 
     recognitionRef.current = recognition;
