@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Mic, Paperclip, Send, Video, X } from "lucide-react";
-import ReactMarkdown from "react-markdown";
+import { MafeMessageRenderer } from "./MafeMessageRenderer";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, useHighestRole, useProfile } from "@/hooks/useAuth";
 import { useColaboradoresAtivosBasico } from "@/hooks/useColaboradores";
@@ -684,7 +684,11 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
                                 : "border border-border bg-muted/70 text-foreground",
                             )}
                           >
-                            <ReactMarkdown>{message.content}</ReactMarkdown>
+                            {message.role === "assistant" ? (
+                              <MafeMessageRenderer content={message.content} />
+                            ) : (
+                              <span className="whitespace-pre-wrap">{message.content}</span>
+                            )}
                           </div>
                         </div>
                       ))}
