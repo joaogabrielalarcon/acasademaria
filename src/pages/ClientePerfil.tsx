@@ -95,7 +95,7 @@ export default function ClientePerfil() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const defaultTab = searchParams.get("tab") || "cadastro";
+  const defaultTab = searchParams.get("tab") || "diario";
   const [activeTab, setActiveTab] = useState(defaultTab);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -298,21 +298,17 @@ export default function ClientePerfil() {
       {/* Tabs */}
       <Tabs defaultValue={defaultTab} className="w-full">
         <TabsList className="mb-6">
-          <TabsTrigger value="cadastro" className="gap-2">
-            <FileText className="w-4 h-4" />
-            Cadastro
-          </TabsTrigger>
           <TabsTrigger value="diario" className="gap-2">
             <List className="w-4 h-4" />
-            Feed do Cliente
-          </TabsTrigger>
-          <TabsTrigger value="propostas" className="gap-2">
-            <DollarSign className="w-4 h-4" />
-            Propostas
+            Feed
           </TabsTrigger>
           <TabsTrigger value="projetos" className="gap-2">
             <FolderKanban className="w-4 h-4" />
             Projetos
+          </TabsTrigger>
+          <TabsTrigger value="cadastro" className="gap-2">
+            <FileText className="w-4 h-4" />
+            Cadastro
           </TabsTrigger>
         </TabsList>
 
@@ -577,109 +573,6 @@ export default function ClientePerfil() {
             </p>
           </div>
           <FeedCliente clienteId={id || ''} />
-        </TabsContent>
-
-        {/* Tab Propostas */}
-        <TabsContent value="propostas">
-          {/* Header das Propostas */}
-          <div className="flex items-center justify-between mb-6">
-            <p className="text-muted-foreground">
-              Histórico de propostas comerciais enviadas
-            </p>
-            <Button variant="terracota" asChild>
-              <Link to={`/propostas/nova?cliente=${id}`}>
-                <Plus className="w-4 h-4" />
-                Nova Proposta
-              </Link>
-            </Button>
-          </div>
-
-          {/* Estatísticas rápidas */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-            <div className="card-botanical p-4 text-center">
-              <p className="text-2xl font-bold text-foreground">
-                {propostas.length}
-              </p>
-              <p className="text-xs text-muted-foreground">Total</p>
-            </div>
-            <div className="card-botanical p-4 text-center">
-              <p className="text-2xl font-bold text-green-600">
-                {propostas.filter(p => p.status === "aprovada").length}
-              </p>
-              <p className="text-xs text-muted-foreground">Aprovadas</p>
-            </div>
-            <div className="card-botanical p-4 text-center">
-              <p className="text-2xl font-bold text-blue-600">
-                {propostas.filter(p => p.status === "enviada").length}
-              </p>
-              <p className="text-xs text-muted-foreground">Aguardando</p>
-            </div>
-            <div className="card-botanical p-4 text-center">
-              <p className="text-2xl font-bold text-red-600">
-                {propostas.filter(p => p.status === "recusada").length}
-              </p>
-              <p className="text-xs text-muted-foreground">Recusadas</p>
-            </div>
-          </div>
-
-          {/* Lista de Propostas */}
-          {propostas.length > 0 ? (
-            <div className="space-y-4">
-              {propostas.map((proposta) => {
-                const statusInfo = propostaStatusConfig[proposta.status] || propostaStatusConfig.rascunho;
-                return (
-                  <article 
-                    key={proposta.id} 
-                    className="card-botanical p-5 hover:shadow-card transition-all cursor-pointer"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <Badge className={statusInfo.className}>
-                            {statusInfo.label}
-                          </Badge>
-                          {proposta.data_envio && (
-                            <span className="text-sm text-muted-foreground flex items-center gap-1">
-                              <Clock className="w-3.5 h-3.5" />
-                              {new Date(proposta.data_envio).toLocaleDateString('pt-BR')}
-                            </span>
-                          )}
-                        </div>
-                        
-                        <h3 className="font-semibold text-foreground mb-1">
-                          {proposta.codigo} / {proposta.titulo}
-                        </h3>
-                        
-                        {proposta.descricao && (
-                          <p className="text-sm text-muted-foreground line-clamp-2">
-                            {proposta.descricao}
-                          </p>
-                        )}
-                      </div>
-
-                      {proposta.valor && (
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-primary">
-                            {formatCurrency(proposta.valor)}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground mb-4">Nenhuma proposta encontrada para este cliente</p>
-              <Button variant="terracota" asChild>
-                <Link to={`/propostas/nova?cliente=${id}`}>
-                  <Plus className="w-4 h-4" />
-                  Criar primeira proposta
-                </Link>
-              </Button>
-            </div>
-          )}
         </TabsContent>
 
         {/* Tab Projetos */}
