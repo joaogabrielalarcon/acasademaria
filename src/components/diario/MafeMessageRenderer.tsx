@@ -23,18 +23,7 @@ const AREA_PREFIXES = ["área:", "area:", "trecho:", "setor:"];
 
 const PERSON_PREFIXES = ["equipe:", "time:"];
 
-function classifyBold(text: string): string {
-  const lower = text.toLowerCase().trim();
-
-  if (STATUS_WORDS.some((w) => lower.includes(w))) return "mafe-bold--status";
-  if (AREA_PREFIXES.some((p) => lower.startsWith(p))) return "mafe-bold--area";
-  if (PERSON_PREFIXES.some((p) => lower.startsWith(p))) return "mafe-bold--person";
-
-  // If the bold text appears after "Área" pattern or is a known area name
-  // Default: check if it looks like a person name (capitalized words, no special chars)
-  const looksLikeName = /^[A-ZÀ-Ú][a-zà-ú]+(\s[A-ZÀ-Ú][a-zà-ú]+)*$/.test(text.trim());
-  if (looksLikeName) return "mafe-bold--person";
-
+function classifyBold(_text: string): string {
   return "mafe-bold--status";
 }
 
