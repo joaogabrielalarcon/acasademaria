@@ -2,6 +2,7 @@ import { useMemo, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useNavigate } from "react-router-dom";
 import {
   ArrowRightLeft,
   Building2,
@@ -44,6 +45,7 @@ interface ClienteAtividadeRow {
   tipo: string;
   acao: string;
   descricao: string;
+  entidade_id: string | null;
   usuario_id: string | null;
   created_at: string;
 }
@@ -64,6 +66,8 @@ type FeedItem =
       tipo: string;
       title: string;
       userName: string | null;
+      referenciaId: string | null;
+      referenciaTipo: string | null;
     }
   | {
       id: string;
@@ -73,6 +77,7 @@ type FeedItem =
       acao: string;
       description: string;
       userId: string | null;
+      entidadeId: string | null;
     };
 
 const semanticEventConfig: Record<string, { label: string; icon: ReactNode; className: string }> = {
@@ -138,6 +143,28 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+/** Resolve a link for a feed item based on its type and reference */
+function resolveFeedLink(item: FeedItem): string | null {
+  if (item.kind === "evento") {
+    // projeto_criado / projeto_status → go to project
+    if ((item.tipo === "projeto_criado" || item.tipo === "projeto_status") && item.referenciaId) {
+      return `/projetos/${item.referenciaId}`;
+    }
+    // proposta events with a project reference
+    if (item.tipo === "proposta" && item.referenciaTipo === "projeto" && item.referenciaId) {
+      return `/projetos/${item.referenciaId}`;
+    }
+  }
+
+  if (item.kind === "atividade") {
+    if (item.tipo === "projeto" && item.entidadeId) {
+      return `/projetos/${item.entidadeId}`;
+    }
+  }
+
+  return null;
+}
+
 function GenericFeedCard({
   icon,
   className,
@@ -145,6 +172,7 @@ function GenericFeedCard({
   badgeLabel,
   time,
   userName,
+  onClick,
 }: {
   icon: ReactNode;
   className: string;
@@ -152,9 +180,13 @@ function GenericFeedCard({
   badgeLabel: string;
   time: string;
   userName: string;
+  onClick?: () => void;
 }) {
   return (
-    <article className="card-botanical p-3 animate-fade-in flex items-start gap-3">
+    <article
+      className={`card-botanical p-3 animate-fade-in flex items-start gap-3 ${onClick ? "cursor-pointer hover:shadow-card transition-all" : ""}`}
+      onClick={onClick}
+    >
       <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${className}`}>
         {icon}
       </div>
@@ -180,6 +212,8 @@ function GenericFeedCard({
 }
 
 export function FeedCliente({ clienteId }: FeedClienteProps) {
+  const navigate = useNavigate();
+
   const { data: feedData, isLoading } = useQuery({
     queryKey: ["cliente-feed", clienteId],
     queryFn: async () => {
@@ -229,6 +263,8 @@ export function FeedCliente({ clienteId }: FeedClienteProps) {
         tipo: event.tipo,
         title: event.titulo,
         userName: event.usuario_nome,
+        referenciaId: event.referencia_id,
+        referenciaTipo: event.referencia_tipo,
       } satisfies FeedItem;
     });
 
@@ -240,6 +276,7 @@ export function FeedCliente({ clienteId }: FeedClienteProps) {
       acao: atividade.acao,
       description: atividade.descricao,
       userId: atividade.usuario_id,
+      entidadeId: atividade.entidade_id,
     }) satisfies FeedItem);
 
     return [...events, ...atividades].sort(
@@ -275,6 +312,11 @@ export function FeedCliente({ clienteId }: FeedClienteProps) {
 
   const visitMap = useMemo(() => new Map(visitas.map((visita) => [visita.id, visita])), [visitas]);
   const profileMap = useMemo(() => new Map(profiles.map((profile) => [profile.id, profile.nome])), [profiles]);
+
+  const handleCardClick = (item: FeedItem) => {
+    const link = resolveFeedLink(item);
+    if (link) navigate(link);
+  };
 
   if (isLoading) {
     return (
@@ -346,6 +388,7 @@ export function FeedCliente({ clienteId }: FeedClienteProps) {
 
               if (item.kind === "evento") {
                 const semanticConfig = semanticEventConfig[item.tipo] || fallbackEventConfig;
+                const link = resolveFeedLink(item);
                 return (
                   <GenericFeedCard
                     key={item.id}
@@ -355,6 +398,7 @@ export function FeedCliente({ clienteId }: FeedClienteProps) {
                     badgeLabel={semanticConfig.label}
                     time={time}
                     userName={item.userName || "Equipe MFM"}
+                    onClick={link ? () => handleCardClick(item) : undefined}
                   />
                 );
               }
@@ -362,9 +406,14 @@ export function FeedCliente({ clienteId }: FeedClienteProps) {
               const legacyConfig = legacyTypeConfig[item.tipo] || fallbackEventConfig;
               const actionIcon = acaoIcon[item.acao] || acaoIcon.atualizado;
               const userName = item.userId ? profileMap.get(item.userId) || "Usuário" : "Sistema";
+              const link = resolveFeedLink(item);
 
               return (
-                <article key={item.id} className="card-botanical p-3 animate-fade-in flex items-start gap-3">
+                <article
+                  key={item.id}
+                  className={`card-botanical p-3 animate-fade-in flex items-start gap-3 ${link ? "cursor-pointer hover:shadow-card transition-all" : ""}`}
+                  onClick={link ? () => handleCardClick(item) : undefined}
+                >
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${legacyConfig.className}`}>
                     {legacyConfig.icon}
                   </div>
