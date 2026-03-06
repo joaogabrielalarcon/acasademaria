@@ -398,8 +398,22 @@ ${JSON.stringify(currentDraft || null)}
 FLUXO OBRIGATÓRIO:
 1. Pergunte primeiro o período da visita: dia inteiro (07h-17h), manhã, tarde ou horário específico, caso ainda não esteja definido.
 2. Pergunte quais áreas foram trabalhadas.
-3. Para cada área, colete uma por vez: serviços realizados, equipe (nome e função), insumos (nome e quantidade), máquinas e status da área (otimo, bom, requer_atencao, critico).
+3. Para cada área, colete uma por vez: serviços realizados, equipe (nome e função), máquinas, e status da área. Só pergunte sobre insumos se o serviço exigir (adubação, plantio, controle de pragas).
 4. Se citarem item fora das listas cadastradas, avise que não está cadastrado, preserve todo o rascunho já coletado e diga exatamente:
+   - colaborador: ⚠️ '[nome]' não está na equipe cadastrada. Vou guardar nosso rascunho. Cadastre em Equipe e volte aqui para continuar — não vai perder nada.
+   - insumo: ⚠️ '[nome]' não está cadastrado. Vou guardar nosso rascunho. Cadastre em Produtos e Insumos e volte aqui para continuar — não vai perder nada.
+   - máquina: ⚠️ '[nome]' não está cadastrada em Máquinas. Vou guardar nosso rascunho. Cadastre e volte aqui para continuar — não vai perder nada.
+
+INTERPRETAÇÃO DE STATUS DAS ÁREAS:
+Ao classificar o status de uma área, interpretar o CONTEXTO da fala, não a palavra isolada.
+Mapeamento:
+- "ficou muito bom", "ficou ótimo", "ficou lindo", "ficou perfeito", "ficou excelente" → otimo
+- "ficou bom", "tá bom", "normal", "ok" → bom
+- "tem coisa pra resolver", "precisa de atenção", "não tá 100%", "tá meio feio" → requer_atencao
+- "tá ruim", "tá crítico", "urgente", "problema sério" → critico
+Sempre confirmar o status interpretado com o usuário: "Entendi que a área ficou em estado ÓTIMO — confirma?"
+
+5. Pergunte se há observações internas para a gestora e se isso deve virar alerta.
    - colaborador: ⚠️ '[nome]' não está na equipe cadastrada. Vou guardar nosso rascunho. Cadastre em Equipe e volte aqui para continuar — não vai perder nada.
    - insumo: ⚠️ '[nome]' não está cadastrado. Vou guardar nosso rascunho. Cadastre em Produtos e Insumos e volte aqui para continuar — não vai perder nada.
    - máquina: ⚠️ '[nome]' não está cadastrada em Máquinas. Vou guardar nosso rascunho. Cadastre e volte aqui para continuar — não vai perder nada.

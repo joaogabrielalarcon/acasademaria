@@ -116,6 +116,7 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
   const recordingFinalTranscriptRef = useRef("");
   const recordingInterimTranscriptRef = useRef("");
   const recordingStopResolverRef = useRef<((value: string) => void) | null>(null);
+  const recordingStoppedByUserRef = useRef(false);
 
   const { data: projectContext, isLoading: loadingContext } = useQuery({
     queryKey: ["mafe-diario-context", projetoId],
@@ -311,6 +312,8 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
       return input.trim();
     }
 
+    recordingStoppedByUserRef.current = true;
+
     return new Promise<string>((resolve) => {
       recordingStopResolverRef.current = resolve;
       recognition.stop();
@@ -330,6 +333,7 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
 
     recordingFinalTranscriptRef.current = "";
     recordingInterimTranscriptRef.current = "";
+    recordingStoppedByUserRef.current = false;
 
     const recognition = new SpeechRecognition();
     recognition.lang = "pt-BR";
@@ -352,6 +356,8 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
     };
 
     recognition.onerror = (event: any) => {
+      if (event.error === "no-speech" || event.error === "aborted") return;
+
       recognitionRef.current = null;
       setIsRecording(false);
 
@@ -364,6 +370,16 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
     };
 
     recognition.onend = async () => {
+      if (!recordingStoppedByUserRef.current) {
+        // Browser auto-stopped (silence timeout) — restart to keep capturing
+        try {
+          recognition.start();
+          return;
+        } catch {
+          // If restart fails, treat as user stop
+        }
+      }
+
       recognitionRef.current = null;
       setIsRecording(false);
 
@@ -703,11 +719,15 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
                         <Button
                           type="button"
                           size="icon"
-                          variant={isRecording ? "destructive" : "outline"}
+                          variant={isRecording ? "ghost" : "outline"}
                           onClick={isRecording ? stopRecording : startRecording}
                           disabled={disableComposer}
+                          className={isRecording ? "relative text-[#B93C2A]" : ""}
                         >
-                          {isRecording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                          <Mic className={cn("h-4 w-4", isRecording && "animate-pulse")} />
+                          {isRecording && (
+                            <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-[#B93C2A] animate-pulse" />
+                          )}
                         </Button>
 
                         <Button
