@@ -51,7 +51,17 @@ interface PendingAttachment {
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mafe-diario-chat`;
-const INITIAL_ASSISTANT_MESSAGE = "Vamos registrar a visita de hoje. Qual foi o período da visita? (dia inteiro 07h–17h, manhã, tarde ou horário específico)";
+const INITIAL_ASSISTANT_MESSAGE = `Vamos registrar a visita de hoje! 🌿
+
+Me conte sobre o trabalho que foi realizado. Para montar o registro completo, vou precisar saber:
+
+- O período da visita (manhã, tarde ou dia inteiro)
+- Quais áreas da propriedade foram trabalhadas
+- Quem estava na equipe e o que cada um fez
+- Insumos e máquinas utilizados
+- Como ficou cada área ao final
+
+Pode falar à vontade — pode ser de uma vez ou aos poucos que eu vou organizando tudo. 😊`;
 
 const formatSavedDraftDate = (timestamp: string) => {
   const parsedDate = new Date(timestamp);
