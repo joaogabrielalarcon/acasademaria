@@ -72,8 +72,8 @@ export default {
         },
       },
       fontFamily: {
-        display: ["'Playfair Display'", "Georgia", "serif"],
-        body: ["'Inter'", "'Avenir Next'", "system-ui", "sans-serif"],
+        display: ["'Cormorant Garamond'", "Georgia", "serif"],
+        body: ["'Lato'", "'Helvetica Neue'", "system-ui", "sans-serif"],
       },
       borderRadius: {
         lg: "var(--radius)",
