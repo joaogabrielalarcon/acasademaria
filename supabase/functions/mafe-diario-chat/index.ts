@@ -403,9 +403,9 @@ CONTEXTO DISPONÍVEL:
 - Cliente: ${clientName}
 - Papel do usuário atual: ${highestRole}
 - Áreas cadastradas: ${((areasRes.data || []) as any[]).map((item) => item.nome).join(", ") || "Nenhuma área cadastrada"}
-- Colaboradores cadastrados: ${activeTeam.map((item) => item.nome).join(", ") || "Nenhum colaborador cadastrado"}
-- Insumos cadastrados: ${supplies.map((item) => `${item.nome}${item.unidade ? ` (${item.unidade})` : ""}`).join(", ") || "Nenhum insumo cadastrado"}
-- Máquinas cadastradas: ${machines.map((item) => item.nome).join(", ") || "Nenhuma máquina cadastrada"}
+- Colaboradores cadastrados (use EXATAMENTE estes IDs): ${activeTeam.map((item) => `${item.nome} [id:${item.id}]`).join(", ") || "Nenhum colaborador cadastrado"}
+- Insumos cadastrados (use EXATAMENTE estes IDs): ${supplies.map((item) => `${item.nome} [id:${item.id}]${item.unidade ? ` (${item.unidade})` : ""}`).join(", ") || "Nenhum insumo cadastrado"}
+- Máquinas cadastradas (use EXATAMENTE estes IDs): ${machines.map((item) => `${item.nome} [id:${item.id}]`).join(", ") || "Nenhuma máquina cadastrada"}
 - Último registro: ${lastVisitText}
 
 HISTÓRICO RECENTE:
@@ -468,7 +468,7 @@ Anotado! ✅
 12. Nunca persista dados diretamente; apenas prepare o rascunho para salvamento após confirmação.
 13. Ao final de TODA resposta, acrescente em uma nova linha um bloco oculto exatamente neste formato: <draft_state>{JSON}</draft_state>.
 14. O JSON deve ser válido, sem comentários, e seguir exatamente esta estrutura: {"phase":"collecting|awaiting_registration|ready_to_save","ready_to_save":boolean,"draft":{"projeto_id":"${projectData.id}","cliente_id":"${clienteId}","data_visita":"YYYY-MM-DD","periodo":"dia_inteiro|manha|tarde|horario_especifico|null","hora_inicio":"HH:MM|null","hora_fim":"HH:MM|null","status_geral":"otimo|bom|requer_atencao|critico|null","observacoes_internas":"texto|null","criar_alerta":boolean,"areas":[{"nome_area":"texto","servicos":["texto"],"status_area":"otimo|bom|requer_atencao|critico|null","status_anterior":"otimo|bom|requer_atencao|critico|null","houve_melhora":boolean,"relato":"texto|null","equipe":[{"colaborador_id":"uuid|null","colaborador_nome":"texto","funcao":"texto|null","descricao_atividade":"texto|null"}],"insumos":[{"insumo_id":"uuid|null","insumo_nome":"texto","quantidade":"texto|null","unidade":"texto|null"}],"maquinas":[{"maquina_id":"uuid|null","maquina_nome":"texto"}],"midias":[]}],"midias_gerais":[]}}.
-15. Resolva colaborador_id, insumo_id e maquina_id usando apenas itens presentes nas listas recebidas; se não encontrar correspondência exata, use null e mude phase para awaiting_registration.
+15. CRÍTICO: Para colaborador_id, insumo_id e maquina_id, copie EXATAMENTE o UUID que aparece entre [id:...] nas listas acima. NUNCA invente ou gere um UUID. Se o nome mencionado não corresponder a nenhum item das listas, use null como ID e mude phase para awaiting_registration.
 16. Use ready_to_save=true e phase=ready_to_save somente quando o rascunho estiver completo e aguardando confirmação explícita do usuário.
 
 REGRA DE DESCRIÇÃO DE SERVIÇO: Nunca registre apenas o tipo genérico do serviço (ex: Irrigação, Poda, Limpeza). Sempre descreva O QUE FOI FEITO com precisão. Exemplos corretos: 'Ajuste de tempo de irrigação do setor das jardineiras para 5 minutos', 'Poda de formação nas palmeiras', 'Retirada de bambus e espontâneas na fachada'. Se o serviço não ficou claro, pergunte antes de registrar.

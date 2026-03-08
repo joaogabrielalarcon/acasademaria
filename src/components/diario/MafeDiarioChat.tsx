@@ -570,6 +570,27 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
         throw new Error("A Mafe ainda não montou o rascunho da visita.");
       }
 
+      // Validate IDs against real data to prevent FK violations
+      const validColabIds = new Set(colaboradores.map((c: any) => c.id));
+      const validInsumoIds = new Set(insumos.map((i: any) => i.id));
+      const validMaquinaIds = new Set(maquinas.map((m: any) => m.id));
+
+      const sanitizedAreas = reviewSummary.areas.map((area: any) => ({
+        ...area,
+        equipe: (area.equipe || []).map((e: any) => ({
+          ...e,
+          colaborador_id: e.colaborador_id && validColabIds.has(e.colaborador_id) ? e.colaborador_id : null,
+        })),
+        insumos: (area.insumos || []).map((i: any) => ({
+          ...i,
+          insumo_id: i.insumo_id && validInsumoIds.has(i.insumo_id) ? i.insumo_id : null,
+        })),
+        maquinas: (area.maquinas || []).map((m: any) => ({
+          ...m,
+          maquina_id: m.maquina_id && validMaquinaIds.has(m.maquina_id) ? m.maquina_id : null,
+        })),
+      }));
+
       const uploadedMedia: MafeDiarioMediaDraft[] = [];
 
       for (const attachment of attachments) {
@@ -592,6 +613,7 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
 
       const payload = {
         ...reviewSummary,
+        areas: sanitizedAreas,
         observacoes_internas: reviewSummary.observacoes_internas || null,
         criar_alerta: Boolean(reviewSummary.criar_alerta),
         registrado_por_nome: profile?.nome || user?.email || "Equipe MFM",
