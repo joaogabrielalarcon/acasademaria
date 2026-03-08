@@ -58,7 +58,7 @@ export function DiarioVisitaCard({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-2">
-                <h4 className="font-display text-lg font-semibold text-foreground">
+                <h4 className="font-display text-xl font-bold text-foreground tracking-tight">
                   {formatDate(visita.data_visita)} · {formatPeriodo(visita)}
                 </h4>
                 {visitStatus && (
