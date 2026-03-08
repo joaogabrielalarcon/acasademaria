@@ -126,8 +126,10 @@ export function DiarioProjetoTab({ projetoId, projetoNome, clienteNome, clienteI
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
             <div>
-              <h3 className="font-display text-lg font-semibold text-foreground">Diário do projeto</h3>
-              <p className="text-sm text-muted-foreground">Acompanhe visitas, áreas atendidas, equipe, insumos, máquinas e mídias.</p>
+              <h3 className="font-display text-xl font-bold text-foreground tracking-tight">Diário do projeto</h3>
+              <p className="text-sm text-muted-foreground">
+                {visitas.length} registro{visitas.length === 1 ? "" : "s"} · Acompanhe visitas, áreas atendidas, equipe, insumos, máquinas e mídias.
+              </p>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center xl:justify-end">
