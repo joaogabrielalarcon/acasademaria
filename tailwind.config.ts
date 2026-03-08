@@ -73,7 +73,7 @@ export default {
       },
       fontFamily: {
         display: ["'Cormorant Garamond'", "Georgia", "serif"],
-        body: ["'Lato'", "'Helvetica Neue'", "system-ui", "sans-serif"],
+        body: ["'Avenir Next'", "'Avenir'", "'Nunito Sans'", "system-ui", "sans-serif"],
       },
       borderRadius: {
         lg: "var(--radius)",

@@ -126,7 +126,7 @@
   
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Lato', 'Helvetica Neue', system-ui, sans-serif;
+    font-family: 'Avenir Next', 'Avenir', 'Nunito Sans', system-ui, sans-serif;
   }
   
   h1, h2, h3, h4, h5, h6 {
