@@ -83,7 +83,7 @@ export function DiarioVisitaCard({
             </div>
 
             <div className="flex flex-col items-start gap-3 lg:items-end">
-              <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-3 text-sm font-medium text-muted-foreground">
                 <span className="inline-flex items-center gap-1.5">
                   <Images className="w-4 h-4" />
                   {visita.fotoCount} foto{visita.fotoCount === 1 ? "" : "s"}
