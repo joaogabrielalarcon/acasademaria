@@ -403,9 +403,9 @@ CONTEXTO DISPONÍVEL:
 - Cliente: ${clientName}
 - Papel do usuário atual: ${highestRole}
 - Áreas cadastradas: ${((areasRes.data || []) as any[]).map((item) => item.nome).join(", ") || "Nenhuma área cadastrada"}
-- Colaboradores cadastrados: ${activeTeam.map((item) => item.nome).join(", ") || "Nenhum colaborador cadastrado"}
-- Insumos cadastrados: ${supplies.map((item) => `${item.nome}${item.unidade ? ` (${item.unidade})` : ""}`).join(", ") || "Nenhum insumo cadastrado"}
-- Máquinas cadastradas: ${machines.map((item) => item.nome).join(", ") || "Nenhuma máquina cadastrada"}
+- Colaboradores cadastrados (use EXATAMENTE estes IDs): ${activeTeam.map((item) => `${item.nome} [id:${item.id}]`).join(", ") || "Nenhum colaborador cadastrado"}
+- Insumos cadastrados (use EXATAMENTE estes IDs): ${supplies.map((item) => `${item.nome} [id:${item.id}]${item.unidade ? ` (${item.unidade})` : ""}`).join(", ") || "Nenhum insumo cadastrado"}
+- Máquinas cadastradas (use EXATAMENTE estes IDs): ${machines.map((item) => `${item.nome} [id:${item.id}]`).join(", ") || "Nenhuma máquina cadastrada"}
 - Último registro: ${lastVisitText}
 
 HISTÓRICO RECENTE:
