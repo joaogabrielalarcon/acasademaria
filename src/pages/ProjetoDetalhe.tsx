@@ -397,18 +397,14 @@ export default function ProjetoDetalhe() {
 
         {/* Diário */}
         <TabsContent value="diario">
-          {(projeto as any).tipo === "manutencao" ? (
-            <DiarioManutencaoTab projetoId={id!} clienteId={projeto.cliente_id} />
-          ) : (
-            <DiarioProjetoTab
-              key={`diario-${id}-${activeTab === "diario" ? "open" : "closed"}`}
-              projetoId={id!}
-              projetoNome={projeto.titulo}
-              clienteNome={cliente?.nome || "Cliente"}
-              clienteId={projeto.cliente_id}
-              isActive={activeTab === "diario"}
-            />
-          )}
+          <DiarioProjetoTab
+            key={`diario-${id}-${activeTab === "diario" ? "open" : "closed"}`}
+            projetoId={id!}
+            projetoNome={projeto.titulo}
+            clienteNome={cliente?.nome || "Cliente"}
+            clienteId={projeto.cliente_id}
+            isActive={activeTab === "diario"}
+          />
         </TabsContent>
 
         <TabsContent value="orcamento">
