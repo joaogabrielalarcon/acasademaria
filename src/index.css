@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Lato:wght@300;400;700;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -126,11 +126,11 @@
   
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', 'Avenir Next', system-ui, sans-serif;
+    font-family: 'Lato', 'Helvetica Neue', system-ui, sans-serif;
   }
   
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Playfair Display', 'Georgia', serif;
+    font-family: 'Cormorant Garamond', 'Georgia', serif;
     @apply font-semibold tracking-tight text-foreground;
   }
 }
