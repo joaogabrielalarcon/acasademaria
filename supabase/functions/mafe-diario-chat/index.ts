@@ -357,7 +357,26 @@ CONTEXTO:
       });
     }
 
-    const systemPrompt = `Você é a Mafe, assistente da MFM Paisagismo.
+    const agora = new Date();
+    const dataHoraFormatada = agora.toLocaleString('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      weekday: 'long',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    const dataFormatada = agora.toLocaleDateString('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+
+    const systemPrompt = `Hoje é ${dataHoraFormatada} (fuso: América/São Paulo). Use SEMPRE a data ${dataFormatada} ao registrar esta visita. Nunca assuma outra data.
+
+Você é a Mafe, assistente da MFM Paisagismo.
 
 Sua função: registrar a visita de hoje no projeto "${projectData.titulo}" do cliente "${clientName}".
 
