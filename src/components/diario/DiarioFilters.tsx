@@ -7,10 +7,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { type StatusArea, statusMeta } from "@/lib/diario-visitas";
+import { type NotaQualidade, notaQualidadeMeta } from "@/lib/diario-visitas";
 
 export interface DiarioFiltersState {
-  status: StatusArea | "all";
+  nota: NotaQualidade | "all";
   area: string;
   colaborador: string;
   periodo: "all" | "7dias" | "30dias" | "90dias";
@@ -24,7 +24,7 @@ interface DiarioFiltersProps {
 }
 
 export const defaultFilters: DiarioFiltersState = {
-  status: "all",
+  nota: "all",
   area: "all",
   colaborador: "all",
   periodo: "all",
@@ -32,7 +32,7 @@ export const defaultFilters: DiarioFiltersState = {
 
 export function DiarioFilters({ filters, onChange, areas, colaboradores }: DiarioFiltersProps) {
   const hasActiveFilters =
-    filters.status !== "all" ||
+    filters.nota !== "all" ||
     filters.area !== "all" ||
     filters.colaborador !== "all" ||
     filters.periodo !== "all";
@@ -43,19 +43,19 @@ export function DiarioFilters({ filters, onChange, areas, colaboradores }: Diari
     <div className="flex flex-wrap items-center gap-2">
       <Filter className="w-4 h-4 text-muted-foreground" />
 
-      {/* Status */}
+      {/* Nota de qualidade 1-5 */}
       <Select
-        value={filters.status}
-        onValueChange={(value) => onChange({ ...filters, status: value as StatusArea | "all" })}
+        value={filters.nota === "all" ? "all" : String(filters.nota)}
+        onValueChange={(value) => onChange({ ...filters, nota: value === "all" ? "all" : (Number(value) as NotaQualidade) })}
       >
         <SelectTrigger className="h-8 w-[130px] text-xs">
-          <SelectValue placeholder="Status" />
+          <SelectValue placeholder="Qualidade" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Todos os status</SelectItem>
-          {Object.entries(statusMeta).map(([key, meta]) => (
-            <SelectItem key={key} value={key}>
-              {meta.emoji} {meta.label}
+          <SelectItem value="all">Todas as notas</SelectItem>
+          {([5, 4, 3, 2, 1] as NotaQualidade[]).map((nota) => (
+            <SelectItem key={nota} value={String(nota)}>
+              {nota} - {notaQualidadeMeta[nota].label}
             </SelectItem>
           ))}
         </SelectContent>

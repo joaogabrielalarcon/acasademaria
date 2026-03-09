@@ -237,6 +237,36 @@
     border-color: hsl(var(--destructive) / 0.2);
   }
 
+  /* Escala numérica 1-5 para qualidade */
+  .diario-nota-badge {
+    @apply inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold;
+  }
+
+  .diario-nota-1 {
+    background: hsl(var(--destructive) / 0.15);
+    color: hsl(var(--destructive));
+  }
+
+  .diario-nota-2 {
+    background: hsl(24 95% 53% / 0.15);
+    color: hsl(23 83% 32%);
+  }
+
+  .diario-nota-3 {
+    background: hsl(46 95% 55% / 0.15);
+    color: hsl(35 92% 28%);
+  }
+
+  .diario-nota-4 {
+    background: hsl(120 40% 50% / 0.12);
+    color: hsl(120 45% 35%);
+  }
+
+  .diario-nota-5 {
+    background: hsl(var(--success) / 0.15);
+    color: hsl(var(--success));
+  }
+
   .diario-trend-up {
     color: hsl(var(--success));
   }
