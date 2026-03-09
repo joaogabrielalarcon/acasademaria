@@ -126,7 +126,7 @@ export function DiarioVisitaCompactCard({
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs font-medium text-foreground/80">
                       {item.servicos.length > 0 
                         ? item.servicos.join(" • ") 
                         : "—"}
