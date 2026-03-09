@@ -271,11 +271,11 @@
   }
 
   .diario-trend-up {
-    color: hsl(var(--success));
+    color: hsl(11 66% 32%);
   }
 
   .diario-trend-down {
-    color: hsl(var(--primary));
+    color: hsl(11 66% 45%);
   }
 
   .diario-media-thumb {
