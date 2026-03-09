@@ -8,6 +8,7 @@ import {
   Images,
   Lock,
   Package,
+  Star,
   Users,
   Video,
   Wrench,
@@ -48,10 +49,14 @@ function NotaBadge({ nota }: { nota: NotaQualidade }) {
   const meta = notaQualidadeMeta[nota];
   return (
     <span 
-      className={cn("diario-nota-badge", meta.className)} 
-      title={meta.label}
+      className={cn(
+        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold",
+        meta.className
+      )} 
+      title={`${nota}/5`}
     >
-      {nota}
+      <Star className="w-3 h-3 fill-current" />
+      {meta.label}
     </span>
   );
 }
