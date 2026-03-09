@@ -304,7 +304,7 @@ export function DiarioVisitaCard({
                     <Lock className="w-3.5 h-3.5 text-primary" />
                     Observações internas
                   </p>
-                  <p className="mt-2 text-sm text-muted-foreground">
+                  <p className="mt-2 text-sm font-medium text-foreground/80">
                     {visita.observacoes_internas}
                   </p>
                 </section>
