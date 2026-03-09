@@ -212,8 +212,8 @@ export function DiarioVisitaCompactCard({
                           </p>
                           <div className="flex flex-wrap gap-x-2 gap-y-0.5">
                             {area.equipe.map((colaborador) => (
-                              <span key={colaborador.id} className="text-xs text-muted-foreground">
-                                <span className="font-medium text-foreground/80">{colaborador.colaborador_nome}</span>
+                              <span key={colaborador.id} className="text-xs font-medium text-foreground/80">
+                                <span>{colaborador.colaborador_nome}</span>
                                 {colaborador.funcao && <span> · {colaborador.funcao}</span>}
                               </span>
                             ))}
