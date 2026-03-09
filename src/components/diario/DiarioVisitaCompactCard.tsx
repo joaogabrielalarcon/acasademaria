@@ -8,7 +8,7 @@ import {
   Images,
   Lock,
   Package,
-  UserRound,
+  Users,
   Video,
   Wrench,
 } from "lucide-react";
@@ -27,10 +27,12 @@ import { cn } from "@/lib/utils";
 import {
   type DiarioMidiaRow,
   type DiarioVisitaDetalhe,
+  type NotaQualidade,
   formatDate,
   formatPeriodo,
   getTrend,
-  statusMeta,
+  notaQualidadeMeta,
+  statusToNota,
 } from "@/lib/diario-visitas";
 
 interface DiarioVisitaCompactCardProps {
@@ -39,6 +41,18 @@ interface DiarioVisitaCompactCardProps {
   hideInternalNotes?: boolean;
   footerLink?: string;
   footerLabel?: string;
+}
+
+function NotaBadge({ nota }: { nota: NotaQualidade }) {
+  const meta = notaQualidadeMeta[nota];
+  return (
+    <span 
+      className={cn("diario-nota-badge", meta.className)} 
+      title={meta.label}
+    >
+      {nota}
+    </span>
+  );
 }
 
 export function DiarioVisitaCompactCard({
@@ -51,8 +65,15 @@ export function DiarioVisitaCompactCard({
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<DiarioMidiaRow | null>(null);
 
-  const visitStatus = visita.statusResumo ? statusMeta[visita.statusResumo] : null;
+  const visitNota = statusToNota(visita.statusResumo);
   const hasMedia = visita.fotoCount > 0 || visita.videoCount > 0;
+
+  // Agrupa serviços por área para exibição estruturada
+  const servicosPorArea = visita.areas.map((area) => ({
+    nome: area.nome_area,
+    servicos: area.servicos || [],
+    nota: statusToNota(area.status_area),
+  }));
 
   return (
     <>
@@ -64,50 +85,47 @@ export function DiarioVisitaCompactCard({
               <span className="font-display text-base font-bold text-foreground truncate">
                 {formatDate(visita.data_visita)}
               </span>
-              {visitStatus && (
-                <span className={cn("diario-status-badge text-[10px] px-2 py-0.5", visitStatus.className)}>
-                  <span>{visitStatus.emoji}</span>
-                </span>
-              )}
+              {visitNota && <NotaBadge nota={visitNota} />}
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">{formatPeriodo(visita)}</p>
           </div>
 
-          {/* Conteúdo principal */}
-          <div className="p-3 flex-1 space-y-2">
-            {/* Áreas */}
-            {visita.areasResumo.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {visita.areasResumo.slice(0, 3).map((area) => (
-                  <span key={area} className="diario-chip-area text-[10px] px-1.5 py-0.5">{area}</span>
-                ))}
-                {visita.areasResumo.length > 3 && (
-                  <span className="text-[10px] text-muted-foreground">+{visita.areasResumo.length - 3}</span>
-                )}
-              </div>
-            )}
-
-            {/* Serviços */}
-            {visita.servicosResumo.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {visita.servicosResumo.slice(0, 4).map((servico) => (
-                  <span key={servico} className="diario-chip-service text-[10px] px-1.5 py-0.5">{servico}</span>
-                ))}
-                {visita.servicosResumo.length > 4 && (
-                  <span className="text-[10px] text-muted-foreground">+{visita.servicosResumo.length - 4}</span>
-                )}
-              </div>
-            )}
-
-            {/* Equipe */}
+          {/* Conteúdo principal - Estrutura reorganizada */}
+          <div className="p-3 flex-1 space-y-3">
+            {/* Equipe: título + contador + nomes lado a lado */}
             {visita.equipeResumo.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {visita.equipeResumo.slice(0, 3).map((colaborador) => (
-                  <span key={colaborador} className="diario-chip-team text-[10px] px-1.5 py-0.5">{colaborador}</span>
+              <div>
+                <p className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-foreground mb-1">
+                  <Users className="w-3 h-3 text-primary" />
+                  Equipe ({visita.equipeResumo.length})
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {visita.equipeResumo.join(" · ")}
+                </p>
+              </div>
+            )}
+
+            {/* Serviços por área: cada área numa linha */}
+            {servicosPorArea.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-semibold text-foreground">Serviços</p>
+                {servicosPorArea.map((item) => (
+                  <div key={item.nome} className="flex items-start gap-2 text-xs">
+                    <span className="font-medium text-foreground whitespace-nowrap min-w-fit">
+                      {item.nome}:
+                    </span>
+                    <span className="text-muted-foreground flex-1">
+                      {item.servicos.length > 0 
+                        ? item.servicos.join(" • ") 
+                        : "—"}
+                    </span>
+                    {item.nota && (
+                      <span className={cn("diario-nota-badge text-[9px] w-4 h-4", notaQualidadeMeta[item.nota].className)}>
+                        {item.nota}
+                      </span>
+                    )}
+                  </div>
                 ))}
-                {visita.equipeResumo.length > 3 && (
-                  <span className="text-[10px] text-muted-foreground">+{visita.equipeResumo.length - 3}</span>
-                )}
               </div>
             )}
           </div>
@@ -145,44 +163,41 @@ export function DiarioVisitaCompactCard({
           <CollapsibleContent>
             <div className="border-t border-border p-3 space-y-3 bg-muted/20">
               {visita.areas.map((area) => {
-                const areaStatus = area.status_area ? statusMeta[area.status_area] : null;
+                const areaNota = statusToNota(area.status_area);
                 const trend = getTrend(area);
 
                 return (
                   <section key={area.id} className="rounded-xl border border-border bg-background/80 p-3">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <h5 className="font-display text-sm font-semibold text-foreground">{area.nome_area}</h5>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1.5">
                         {trend === "up" && <ArrowUp className="w-3 h-3 text-success" />}
                         {trend === "down" && <ArrowDown className="w-3 h-3 text-primary" />}
-                        {areaStatus && (
-                          <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full", areaStatus.className)}>
-                            {areaStatus.emoji}
-                          </span>
-                        )}
+                        {areaNota && <NotaBadge nota={areaNota} />}
                       </div>
                     </div>
 
                     {/* Relato/Descrição do serviço */}
                     {area.relato && (
-                      <p className="text-xs text-muted-foreground mb-2 line-clamp-3">{area.relato}</p>
+                      <p className="text-xs text-muted-foreground mb-2">{area.relato}</p>
                     )}
 
                     {/* Serviços detalhados */}
                     {!!area.servicos?.length && (
-                      <div className="flex flex-wrap gap-1 mb-2">
-                        {area.servicos.map((servico) => (
-                          <span key={servico} className="diario-chip-service text-[10px] px-1.5 py-0.5">{servico}</span>
-                        ))}
+                      <div className="mb-2">
+                        <p className="text-[10px] font-medium text-foreground mb-1">Serviços realizados:</p>
+                        <p className="text-xs text-muted-foreground">
+                          {area.servicos.join(" • ")}
+                        </p>
                       </div>
                     )}
 
-                    {/* Equipe */}
+                    {/* Equipe da área */}
                     {!!area.equipe.length && (
-                      <div className="space-y-1 mb-2">
-                        <p className="inline-flex items-center gap-1 text-[10px] font-medium text-foreground">
-                          <UserRound className="w-3 h-3 text-primary" />
-                          Equipe
+                      <div className="mb-2">
+                        <p className="inline-flex items-center gap-1 text-[10px] font-medium text-foreground mb-1">
+                          <Users className="w-3 h-3 text-primary" />
+                          Equipe ({area.equipe.length})
                         </p>
                         <div className="space-y-1">
                           {area.equipe.map((colaborador) => (
@@ -202,34 +217,29 @@ export function DiarioVisitaCompactCard({
 
                     {/* Insumos */}
                     {!!area.insumos.length && (
-                      <div className="space-y-1 mb-2">
-                        <p className="inline-flex items-center gap-1 text-[10px] font-medium text-foreground">
+                      <div className="mb-2">
+                        <p className="inline-flex items-center gap-1 text-[10px] font-medium text-foreground mb-1">
                           <Package className="w-3 h-3 text-primary" />
                           Insumos
                         </p>
-                        <div className="flex flex-wrap gap-1">
-                          {area.insumos.map((insumo) => (
-                            <span key={insumo.id} className="tag-secondary text-[10px] px-1.5 py-0.5">
-                              {insumo.insumo_nome}
-                              {insumo.quantidade && ` (${insumo.quantidade}${insumo.unidade || ""})`}
-                            </span>
-                          ))}
-                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {area.insumos.map((insumo) => 
+                            `${insumo.insumo_nome}${insumo.quantidade ? ` (${insumo.quantidade}${insumo.unidade || ""})` : ""}`
+                          ).join(" • ")}
+                        </p>
                       </div>
                     )}
 
                     {/* Máquinas */}
                     {!!area.maquinas.length && (
-                      <div className="space-y-1 mb-2">
-                        <p className="inline-flex items-center gap-1 text-[10px] font-medium text-foreground">
+                      <div className="mb-2">
+                        <p className="inline-flex items-center gap-1 text-[10px] font-medium text-foreground mb-1">
                           <Wrench className="w-3 h-3 text-primary" />
                           Máquinas
                         </p>
-                        <div className="flex flex-wrap gap-1">
-                          {area.maquinas.map((maquina) => (
-                            <span key={maquina.id} className="tag-secondary text-[10px] px-1.5 py-0.5">{maquina.maquina_nome}</span>
-                          ))}
-                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {area.maquinas.map((m) => m.maquina_nome).join(" • ")}
+                        </p>
                       </div>
                     )}
 
@@ -270,7 +280,7 @@ export function DiarioVisitaCompactCard({
                     <Lock className="w-3 h-3 text-primary" />
                     Observações internas
                   </p>
-                  <p className="mt-1 text-[10px] text-muted-foreground line-clamp-4">
+                  <p className="mt-1 text-[10px] text-muted-foreground">
                     {visita.observacoes_internas}
                   </p>
                 </section>
