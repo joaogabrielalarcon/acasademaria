@@ -1226,6 +1226,164 @@ export type Database = {
           },
         ]
       }
+      irrigacao_historico: {
+        Row: {
+          colaborador_id: string | null
+          created_at: string | null
+          id: string
+          observacao: string | null
+          origem: string | null
+          projeto_id: string
+          setor_id: string
+          tempo_anterior_minutos: number | null
+          tempo_novo_minutos: number
+        }
+        Insert: {
+          colaborador_id?: string | null
+          created_at?: string | null
+          id?: string
+          observacao?: string | null
+          origem?: string | null
+          projeto_id: string
+          setor_id: string
+          tempo_anterior_minutos?: number | null
+          tempo_novo_minutos: number
+        }
+        Update: {
+          colaborador_id?: string | null
+          created_at?: string | null
+          id?: string
+          observacao?: string | null
+          origem?: string | null
+          projeto_id?: string
+          setor_id?: string
+          tempo_anterior_minutos?: number | null
+          tempo_novo_minutos?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "irrigacao_historico_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "irrigacao_historico_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "irrigacao_historico_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "irrigacao_historico_setor_id_fkey"
+            columns: ["setor_id"]
+            isOneToOne: false
+            referencedRelation: "irrigacao_setores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      irrigacao_setores: {
+        Row: {
+          created_at: string | null
+          descricao_area: string | null
+          foto_url: string | null
+          id: string
+          nome: string
+          projeto_id: string
+          tempo_atual_minutos: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          descricao_area?: string | null
+          foto_url?: string | null
+          id?: string
+          nome: string
+          projeto_id: string
+          tempo_atual_minutos?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          descricao_area?: string | null
+          foto_url?: string | null
+          id?: string
+          nome?: string
+          projeto_id?: string
+          tempo_atual_minutos?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "irrigacao_setores_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mafe_correcoes_ia: {
+        Row: {
+          colaborador_id: string | null
+          contexto: string | null
+          created_at: string | null
+          id: string
+          o_que_deveria_ter_feito: string
+          o_que_fez: string
+          projeto_id: string | null
+        }
+        Insert: {
+          colaborador_id?: string | null
+          contexto?: string | null
+          created_at?: string | null
+          id?: string
+          o_que_deveria_ter_feito: string
+          o_que_fez: string
+          projeto_id?: string | null
+        }
+        Update: {
+          colaborador_id?: string | null
+          contexto?: string | null
+          created_at?: string | null
+          id?: string
+          o_que_deveria_ter_feito?: string
+          o_que_fez?: string
+          projeto_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mafe_correcoes_ia_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mafe_correcoes_ia_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mafe_correcoes_ia_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       manutencao_recursos: {
         Row: {
           created_at: string

@@ -196,7 +196,7 @@ serve(async (req) => {
 
     const clienteId = projectData.cliente_id as string;
 
-    const [rolesRes, areasRes, colaboradoresRes, insumosRes, maquinasRes, lastVisitRes, visitsRes] = await Promise.all([
+    const [rolesRes, areasRes, colaboradoresRes, insumosRes, maquinasRes, lastVisitRes, visitsRes, correcoesRes] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", userId),
       supabase.from("trechos").select("nome").eq("cliente_id", clienteId).order("ordem", { ascending: true }),
       supabase.from("colaboradores_basico").select("id, nome").eq("ativo", true).order("nome", { ascending: true }),
@@ -215,6 +215,12 @@ serve(async (req) => {
         .eq("projeto_id", projetoId)
         .order("data_visita", { ascending: false })
         .limit(8),
+      supabase
+        .from("mafe_correcoes_ia")
+        .select("o_que_fez, o_que_deveria_ter_feito")
+        .eq("projeto_id", projetoId)
+        .order("created_at", { ascending: false })
+        .limit(50),
     ]);
 
     if (rolesRes.error) throw rolesRes.error;
@@ -223,6 +229,7 @@ serve(async (req) => {
     if (insumosRes.error) throw insumosRes.error;
     if (maquinasRes.error) throw maquinasRes.error;
     if (lastVisitRes.error) throw lastVisitRes.error;
+    if (correcoesRes.error) throw correcoesRes.error;
     if (visitsRes.error) throw visitsRes.error;
 
     const visitIds = (visitsRes.data || []).map((item) => item.id);
@@ -473,7 +480,13 @@ Anotado! ✅
 
 REGRA DE DESCRIÇÃO DE SERVIÇO: Nunca registre apenas o tipo genérico do serviço (ex: Irrigação, Poda, Limpeza). Sempre descreva O QUE FOI FEITO com precisão. Exemplos corretos: 'Ajuste de tempo de irrigação do setor das jardineiras para 5 minutos', 'Poda de formação nas palmeiras', 'Retirada de bambus e espontâneas na fachada'. Se o serviço não ficou claro, pergunte antes de registrar.
 
-REGRA DE PRECISÃO NUMÉRICA COM VERIFICAÇÃO LÓGICA: Quando o usuário informar um valor numérico explícito (minutos, kg, litros, horas), use EXATAMENTE esse valor — ele prevalece sempre. Porém, se detectar uma inconsistência lógica entre o valor informado e outros dados da mesma mensagem, faça UMA pergunta de confirmação antes de registrar. Exemplo: se o usuário diz 'reduzi 2 minutos, ficando em 5' mas 5+2=7 e não o valor anterior, pergunte: 'Você mencionou 5 minutos após reduzir 2. O tempo anterior era 7 minutos? Ou registro 5 minutos como valor final?' Nunca corrija sozinha — sempre pergunte e respeite a decisão do usuário.`;
+REGRA DE PRECISÃO NUMÉRICA COM VERIFICAÇÃO LÓGICA: Quando o usuário informar um valor numérico explícito (minutos, kg, litros, horas), use EXATAMENTE esse valor — ele prevalece sempre. Porém, se detectar uma inconsistência lógica entre o valor informado e outros dados da mesma mensagem, faça UMA pergunta de confirmação antes de registrar. Exemplo: se o usuário diz 'reduzi 2 minutos, ficando em 5' mas 5+2=7 e não o valor anterior, pergunte: 'Você mencionou 5 minutos após reduzir 2. O tempo anterior era 7 minutos? Ou registro 5 minutos como valor final?' Nunca corrija sozinha — sempre pergunte e respeite a decisão do usuário.
+
+DETECÇÃO DE ERROS REPORTADOS: Se o usuário disser algo como "você errou", "isso está errado", "não era isso", "você deveria ter feito", "tá errado", "errou aqui", "fez errado", ANTES de corrigir, pergunte: "O que eu fiz de errado e o que deveria ter sido feito?" Quando o usuário responder, registre internamente incluindo no draft_state um campo "correcao": {"o_que_fez": "...", "o_que_deveria_ter_feito": "...", "contexto": "..."} e responda: "Anotado! Vou lembrar disso nesta obra. ✅"
+
+${((correcoesRes.data || []) as any[]).length > 0 ? `
+APRENDIZADOS DESTA OBRA — aplique estas correções:
+${((correcoesRes.data || []) as any[]).map((c: any) => `- Antes eu fazia: ${c.o_que_fez}. O correto é: ${c.o_que_deveria_ter_feito}`).join("\n")}` : ""}`;
 
     const anthropicResponse = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",

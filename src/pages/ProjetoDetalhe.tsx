@@ -17,6 +17,7 @@ import {
   ClipboardList,
   Info,
   Calendar,
+  Droplets,
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,7 @@ import { CotacaoSheet } from "@/components/projeto/CotacaoSheet";
 import { InformacoesProjetoTab } from "@/components/projeto/InformacoesProjetoTab";
 import { DiarioProjetoTab } from "@/components/projeto/DiarioProjetoTab";
 import { DiarioManutencaoTab } from "@/components/projeto/DiarioManutencaoTab";
+import { IrrigacaoTab } from "@/components/projeto/IrrigacaoTab";
 import { Progress } from "@/components/ui/progress";
 
 export default function ProjetoDetalhe() {
@@ -83,8 +85,9 @@ export default function ProjetoDetalhe() {
       initialTab === "orcamento" ||
       initialTab === "execucao" ||
       initialTab === "resumo" ||
-      initialTab === "dashboard"
-      ? initialTab
+      initialTab === "dashboard" ||
+      initialTab === "irrigacao"
+       ? initialTab
       : "informacoes",
   );
 
@@ -384,6 +387,10 @@ export default function ProjetoDetalhe() {
             <BarChart3 className="w-4 h-4" />
             Dashboard
           </TabsTrigger>
+          <TabsTrigger value="irrigacao" className="gap-2">
+            <Droplets className="w-4 h-4" />
+            Irrigação
+          </TabsTrigger>
         </TabsList>
 
         {/* Informações do Projeto */}
@@ -573,6 +580,11 @@ export default function ProjetoDetalhe() {
             dataCriacao={projeto.created_at}
             dataPrevisao={projeto.data_previsao}
           />
+        </TabsContent>
+
+        {/* Irrigação */}
+        <TabsContent value="irrigacao">
+          <IrrigacaoTab projetoId={id!} />
         </TabsContent>
       </Tabs>
 
