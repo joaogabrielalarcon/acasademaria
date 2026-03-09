@@ -228,7 +228,7 @@ export function DiarioVisitaCompactCard({
                             <Package className="w-3 h-3 text-primary" />
                             Insumos
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs font-medium text-foreground/80">
                             {area.insumos.map((insumo) => 
                               `${insumo.insumo_nome}${insumo.quantidade ? ` (${insumo.quantidade}${insumo.unidade || ""})` : ""}`
                             ).join(" · ")}
