@@ -116,23 +116,25 @@ export function DiarioVisitaCard({
 
             {/* Serviços por área: cada área numa linha */}
             {servicosPorArea.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-foreground">Serviços</p>
+              <div className="space-y-3">
+                <p className="text-xs font-bold text-foreground uppercase tracking-wide">Serviços</p>
                 {servicosPorArea.map((item) => (
-                  <div key={item.nome} className="flex items-start gap-2 text-sm">
-                    <span className="font-medium text-foreground whitespace-nowrap min-w-fit">
-                      {item.nome}:
-                    </span>
-                    <span className="text-muted-foreground flex-1">
+                  <div key={item.nome} className="border-l-2 border-primary/30 pl-3">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <h6 className="font-display text-base font-bold text-foreground">
+                        {item.nome}
+                      </h6>
+                      {item.nota && (
+                        <span className={cn("diario-nota-badge text-[10px] w-5 h-5", notaQualidadeMeta[item.nota].className)}>
+                          {item.nota}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
                       {item.servicos.length > 0 
                         ? item.servicos.join(" • ") 
                         : "—"}
-                    </span>
-                    {item.nota && (
-                      <span className={cn("diario-nota-badge text-[10px] w-5 h-5", notaQualidadeMeta[item.nota].className)}>
-                        {item.nota}
-                      </span>
-                    )}
+                    </p>
                   </div>
                 ))}
               </div>
