@@ -168,114 +168,114 @@ export function DiarioVisitaCompactCard({
 
           {/* Conteúdo expandido */}
           <CollapsibleContent>
-            <div className="border-t border-border p-3 space-y-3 bg-muted/20">
+            <div className="border-t border-border p-3 space-y-4 bg-muted/20">
               {visita.areas.map((area) => {
                 const areaNota = statusToNota(area.status_area);
                 const trend = getTrend(area);
 
                 return (
-                  <section key={area.id} className="rounded-xl border border-border bg-background/80 p-3">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <h5 className="font-display text-sm font-semibold text-foreground">{area.nome_area}</h5>
-                      <div className="flex items-center gap-1.5">
-                        {trend === "up" && <ArrowUp className="w-3 h-3 text-success" />}
+                  <section key={area.id} className="rounded-xl border border-border bg-background/80 overflow-hidden">
+                    {/* Header da área - destaque forte */}
+                    <div className="flex items-center justify-between gap-2 px-3 py-2 bg-secondary/50 border-b border-border/50">
+                      <h5 className="font-display text-sm font-bold text-foreground uppercase tracking-wide">
+                        {area.nome_area}
+                      </h5>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {trend === "up" && <ArrowUp className="w-3 h-3 text-primary/70" />}
                         {trend === "down" && <ArrowDown className="w-3 h-3 text-primary" />}
                         {areaNota && <NotaBadge nota={areaNota} />}
                       </div>
                     </div>
 
-                    {/* Relato/Descrição do serviço */}
-                    {area.relato && (
-                      <p className="text-xs text-muted-foreground mb-2">{area.relato}</p>
-                    )}
+                    <div className="p-3 space-y-2.5">
+                      {/* Relato */}
+                      {area.relato && (
+                        <p className="text-xs text-muted-foreground leading-relaxed">{area.relato}</p>
+                      )}
 
-                    {/* Serviços detalhados */}
-                    {!!area.servicos?.length && (
-                      <div className="mb-2">
-                        <p className="text-[10px] font-medium text-foreground mb-1">Serviços realizados:</p>
-                        <p className="text-xs text-muted-foreground">
-                          {area.servicos.join(" • ")}
-                        </p>
-                      </div>
-                    )}
+                      {/* Serviços */}
+                      {!!area.servicos?.length && (
+                        <div>
+                          <p className="text-[10px] font-bold text-foreground uppercase tracking-wider mb-0.5">Serviços</p>
+                          <p className="text-xs text-muted-foreground">
+                            {area.servicos.join(" · ")}
+                          </p>
+                        </div>
+                      )}
 
-                    {/* Equipe da área */}
-                    {!!area.equipe.length && (
-                      <div className="mb-2">
-                        <p className="inline-flex items-center gap-1 text-[10px] font-medium text-foreground mb-1">
-                          <Users className="w-3 h-3 text-primary" />
-                          Equipe ({area.equipe.length})
-                        </p>
-                        <div className="space-y-1">
-                          {area.equipe.map((colaborador) => (
-                            <div key={colaborador.id} className="rounded-lg bg-muted/70 p-2">
-                              <p className="text-[10px] font-medium text-foreground">
-                                {colaborador.colaborador_nome}
-                                {colaborador.funcao ? ` · ${colaborador.funcao}` : ""}
-                              </p>
-                              {colaborador.descricao_atividade && (
-                                <p className="text-[10px] text-muted-foreground mt-0.5">{colaborador.descricao_atividade}</p>
+                      {/* Equipe */}
+                      {!!area.equipe.length && (
+                        <div>
+                          <p className="inline-flex items-center gap-1 text-[10px] font-bold text-foreground uppercase tracking-wider mb-1">
+                            <Users className="w-3 h-3 text-primary" />
+                            Equipe ({area.equipe.length})
+                          </p>
+                          <div className="flex flex-wrap gap-x-2 gap-y-0.5">
+                            {area.equipe.map((colaborador) => (
+                              <span key={colaborador.id} className="text-xs text-muted-foreground">
+                                <span className="font-medium text-foreground/80">{colaborador.colaborador_nome}</span>
+                                {colaborador.funcao && <span> · {colaborador.funcao}</span>}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Insumos */}
+                      {!!area.insumos.length && (
+                        <div>
+                          <p className="inline-flex items-center gap-1 text-[10px] font-bold text-foreground uppercase tracking-wider mb-0.5">
+                            <Package className="w-3 h-3 text-primary" />
+                            Insumos
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {area.insumos.map((insumo) => 
+                              `${insumo.insumo_nome}${insumo.quantidade ? ` (${insumo.quantidade}${insumo.unidade || ""})` : ""}`
+                            ).join(" · ")}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Máquinas */}
+                      {!!area.maquinas.length && (
+                        <div>
+                          <p className="inline-flex items-center gap-1 text-[10px] font-bold text-foreground uppercase tracking-wider mb-0.5">
+                            <Wrench className="w-3 h-3 text-primary" />
+                            Máquinas
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {area.maquinas.map((m) => m.maquina_nome).join(" · ")}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Mídias */}
+                      {!!area.midias.length && (
+                        <div className="grid grid-cols-3 gap-1 pt-1">
+                          {area.midias.slice(0, 6).map((midia) => (
+                            <button
+                              key={midia.id}
+                              type="button"
+                              className="diario-media-thumb text-left aspect-square"
+                              onClick={() => setSelectedMedia(midia)}
+                            >
+                              {midia.tipo === "video" ? (
+                                <div className="flex h-full items-center justify-center bg-muted text-muted-foreground">
+                                  <Video className="w-4 h-4" />
+                                </div>
+                              ) : (
+                                <img
+                                  src={midia.thumbnail_url || midia.url}
+                                  alt={midia.descricao || `Mídia da área ${area.nome_area}`}
+                                  className="h-full w-full object-cover"
+                                  loading="lazy"
+                                />
                               )}
-                            </div>
+                            </button>
                           ))}
                         </div>
-                      </div>
-                    )}
-
-                    {/* Insumos */}
-                    {!!area.insumos.length && (
-                      <div className="mb-2">
-                        <p className="inline-flex items-center gap-1 text-[10px] font-medium text-foreground mb-1">
-                          <Package className="w-3 h-3 text-primary" />
-                          Insumos
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {area.insumos.map((insumo) => 
-                            `${insumo.insumo_nome}${insumo.quantidade ? ` (${insumo.quantidade}${insumo.unidade || ""})` : ""}`
-                          ).join(" • ")}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Máquinas */}
-                    {!!area.maquinas.length && (
-                      <div className="mb-2">
-                        <p className="inline-flex items-center gap-1 text-[10px] font-medium text-foreground mb-1">
-                          <Wrench className="w-3 h-3 text-primary" />
-                          Máquinas
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {area.maquinas.map((m) => m.maquina_nome).join(" • ")}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Mídias */}
-                    {!!area.midias.length && (
-                      <div className="grid grid-cols-3 gap-1 mt-2">
-                        {area.midias.slice(0, 6).map((midia) => (
-                          <button
-                            key={midia.id}
-                            type="button"
-                            className="diario-media-thumb text-left aspect-square"
-                            onClick={() => setSelectedMedia(midia)}
-                          >
-                            {midia.tipo === "video" ? (
-                              <div className="flex h-full items-center justify-center bg-muted text-muted-foreground">
-                                <Video className="w-4 h-4" />
-                              </div>
-                            ) : (
-                              <img
-                                src={midia.thumbnail_url || midia.url}
-                                alt={midia.descricao || `Mídia da área ${area.nome_area}`}
-                                className="h-full w-full object-cover"
-                                loading="lazy"
-                              />
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </section>
                 );
               })}
@@ -283,11 +283,11 @@ export function DiarioVisitaCompactCard({
               {/* Observações internas */}
               {!hideInternalNotes && canViewInternalNotes && visita.observacoes_internas && (
                 <section className="rounded-xl border border-border bg-muted/50 p-3">
-                  <p className="inline-flex items-center gap-1 text-[10px] font-medium text-foreground">
+                  <p className="inline-flex items-center gap-1 text-[10px] font-bold text-foreground uppercase tracking-wider">
                     <Lock className="w-3 h-3 text-primary" />
                     Observações internas
                   </p>
-                  <p className="mt-1 text-[10px] text-muted-foreground">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     {visita.observacoes_internas}
                   </p>
                 </section>
