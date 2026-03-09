@@ -196,7 +196,7 @@ serve(async (req) => {
 
     const clienteId = projectData.cliente_id as string;
 
-    const [rolesRes, areasRes, colaboradoresRes, insumosRes, maquinasRes, lastVisitRes, visitsRes] = await Promise.all([
+    const [rolesRes, areasRes, colaboradoresRes, insumosRes, maquinasRes, lastVisitRes, visitsRes, correcoesRes] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", userId),
       supabase.from("trechos").select("nome").eq("cliente_id", clienteId).order("ordem", { ascending: true }),
       supabase.from("colaboradores_basico").select("id, nome").eq("ativo", true).order("nome", { ascending: true }),
@@ -215,6 +215,12 @@ serve(async (req) => {
         .eq("projeto_id", projetoId)
         .order("data_visita", { ascending: false })
         .limit(8),
+      supabase
+        .from("mafe_correcoes_ia")
+        .select("o_que_fez, o_que_deveria_ter_feito")
+        .eq("projeto_id", projetoId)
+        .order("created_at", { ascending: false })
+        .limit(50),
     ]);
 
     if (rolesRes.error) throw rolesRes.error;
