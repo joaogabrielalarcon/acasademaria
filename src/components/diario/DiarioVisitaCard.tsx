@@ -108,7 +108,7 @@ export function DiarioVisitaCard({
                   <Users className="w-4 h-4 text-primary" />
                   Equipe ({visita.equipeResumo.length})
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm font-medium text-foreground/80">
                   {visita.equipeResumo.join(" · ")}
                 </p>
               </div>
