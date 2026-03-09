@@ -43,8 +43,8 @@
     --success-foreground: 0 0% 100%;
     --diario-area-bg: 37 45% 92%;
     --diario-area-fg: 8 63% 45%;
-    --diario-service-bg: 143 28% 87%;
-    --diario-service-fg: 154 44% 21%;
+    --diario-service-bg: 11 66% 38% / 0.12;
+    --diario-service-fg: 11 66% 38%;
     --diario-team-bg: 245 28% 92%;
     --diario-team-fg: 243 47% 20%;
     --diario-typing: 140 20% 51%;
@@ -97,8 +97,8 @@
     --accent-foreground: 11 66% 38%;
     --diario-area-bg: 37 45% 92%;
     --diario-area-fg: 8 63% 45%;
-    --diario-service-bg: 143 28% 87%;
-    --diario-service-fg: 154 44% 21%;
+    --diario-service-bg: 11 66% 38% / 0.12;
+    --diario-service-fg: 11 66% 38%;
     --diario-team-bg: 245 28% 92%;
     --diario-team-fg: 243 47% 20%;
     --diario-typing: 140 20% 51%;
