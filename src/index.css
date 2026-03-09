@@ -208,35 +208,36 @@
     color: hsl(var(--diario-team-fg));
   }
 
+  /* Status badges - paleta terracota monocromática */
   .diario-status-badge {
     @apply inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold;
-    border-color: hsl(var(--border));
+    border-color: hsl(11 66% 38% / 0.2);
     background: hsl(var(--muted));
     color: hsl(var(--foreground));
   }
 
   .diario-status-otimo {
-    background: hsl(var(--success) / 0.12);
-    color: hsl(var(--success));
-    border-color: hsl(var(--success) / 0.18);
+    background: hsl(18 68% 90%);
+    color: hsl(11 66% 24%);
+    border-color: hsl(11 66% 38% / 0.25);
   }
 
   .diario-status-bom {
-    background: hsl(46 95% 55% / 0.16);
-    color: hsl(35 92% 28%);
-    border-color: hsl(46 95% 55% / 0.28);
+    background: hsl(18 68% 92%);
+    color: hsl(11 66% 28%);
+    border-color: hsl(11 66% 38% / 0.2);
   }
 
   .diario-status-requer_atencao {
-    background: hsl(24 95% 53% / 0.16);
-    color: hsl(23 83% 32%);
-    border-color: hsl(24 95% 53% / 0.28);
+    background: hsl(11 66% 38% / 0.15);
+    color: hsl(11 66% 30%);
+    border-color: hsl(11 66% 38% / 0.25);
   }
 
   .diario-status-critico {
-    background: hsl(var(--destructive) / 0.12);
-    color: hsl(var(--destructive));
-    border-color: hsl(var(--destructive) / 0.2);
+    background: hsl(11 66% 38% / 0.2);
+    color: hsl(11 66% 24%);
+    border-color: hsl(11 66% 38% / 0.3);
   }
 
   /* Escala numérica 1-5 para qualidade - com labels de texto */
