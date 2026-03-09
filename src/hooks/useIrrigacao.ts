@@ -61,7 +61,7 @@ export function useIrrigacaoHistorico(setorId: string | undefined) {
 export function useAddSetor(projetoId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: { nome: string; descricao_area?: string; tempo_atual_minutos?: number }) => {
+    mutationFn: async (payload: { nome: string; descricao_area?: string; tempo_atual_minutos?: number; foto_url?: string }) => {
       const { data, error } = await supabase
         .from("irrigacao_setores")
         .insert({ projeto_id: projetoId, ...payload })
@@ -69,6 +69,22 @@ export function useAddSetor(projetoId: string) {
         .single();
       if (error) throw error;
       return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["irrigacao-setores", projetoId] });
+    },
+  });
+}
+
+export function useUpdateSetorFoto(projetoId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: { setorId: string; foto_url: string | null }) => {
+      const { error } = await supabase
+        .from("irrigacao_setores")
+        .update({ foto_url: payload.foto_url, updated_at: new Date().toISOString() })
+        .eq("id", payload.setorId);
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["irrigacao-setores", projetoId] });
@@ -86,14 +102,12 @@ export function useUpdateSetorTempo(projetoId: string) {
       observacao?: string;
       colaboradorId?: string;
     }) => {
-      // Update setor
       const { error: updateError } = await supabase
         .from("irrigacao_setores")
         .update({ tempo_atual_minutos: payload.tempoNovo, updated_at: new Date().toISOString() })
         .eq("id", payload.setorId);
       if (updateError) throw updateError;
 
-      // Insert history
       const { error: histError } = await supabase
         .from("irrigacao_historico")
         .insert({
