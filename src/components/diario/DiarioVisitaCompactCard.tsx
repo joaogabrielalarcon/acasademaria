@@ -104,7 +104,7 @@ export function DiarioVisitaCompactCard({
                   <Users className="w-3 h-3 text-primary" />
                   Equipe ({visita.equipeResumo.length})
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs font-medium text-foreground/80">
                   {visita.equipeResumo.join(" · ")}
                 </p>
               </div>
@@ -126,7 +126,7 @@ export function DiarioVisitaCompactCard({
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs font-medium text-foreground/80">
                       {item.servicos.length > 0 
                         ? item.servicos.join(" • ") 
                         : "—"}
@@ -190,14 +190,14 @@ export function DiarioVisitaCompactCard({
                     <div className="p-3 space-y-2.5">
                       {/* Relato */}
                       {area.relato && (
-                        <p className="text-xs text-muted-foreground leading-relaxed">{area.relato}</p>
+                        <p className="text-xs font-medium text-foreground/80 leading-relaxed">{area.relato}</p>
                       )}
 
                       {/* Serviços */}
                       {!!area.servicos?.length && (
                         <div>
                           <p className="text-[10px] font-bold text-foreground uppercase tracking-wider mb-0.5">Serviços</p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs font-medium text-foreground/80">
                             {area.servicos.join(" · ")}
                           </p>
                         </div>
@@ -212,8 +212,8 @@ export function DiarioVisitaCompactCard({
                           </p>
                           <div className="flex flex-wrap gap-x-2 gap-y-0.5">
                             {area.equipe.map((colaborador) => (
-                              <span key={colaborador.id} className="text-xs text-muted-foreground">
-                                <span className="font-medium text-foreground/80">{colaborador.colaborador_nome}</span>
+                              <span key={colaborador.id} className="text-xs font-medium text-foreground/80">
+                                <span>{colaborador.colaborador_nome}</span>
                                 {colaborador.funcao && <span> · {colaborador.funcao}</span>}
                               </span>
                             ))}
@@ -228,7 +228,7 @@ export function DiarioVisitaCompactCard({
                             <Package className="w-3 h-3 text-primary" />
                             Insumos
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs font-medium text-foreground/80">
                             {area.insumos.map((insumo) => 
                               `${insumo.insumo_nome}${insumo.quantidade ? ` (${insumo.quantidade}${insumo.unidade || ""})` : ""}`
                             ).join(" · ")}
@@ -243,7 +243,7 @@ export function DiarioVisitaCompactCard({
                             <Wrench className="w-3 h-3 text-primary" />
                             Máquinas
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs font-medium text-foreground/80">
                             {area.maquinas.map((m) => m.maquina_nome).join(" · ")}
                           </p>
                         </div>
@@ -287,7 +287,7 @@ export function DiarioVisitaCompactCard({
                     <Lock className="w-3 h-3 text-primary" />
                     Observações internas
                   </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="mt-1 text-xs font-medium text-foreground/80">
                     {visita.observacoes_internas}
                   </p>
                 </section>

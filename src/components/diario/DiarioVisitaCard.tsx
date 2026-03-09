@@ -108,7 +108,7 @@ export function DiarioVisitaCard({
                   <Users className="w-4 h-4 text-primary" />
                   Equipe ({visita.equipeResumo.length})
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm font-medium text-foreground/80">
                   {visita.equipeResumo.join(" · ")}
                 </p>
               </div>
@@ -130,7 +130,7 @@ export function DiarioVisitaCard({
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm font-medium text-foreground/80">
                       {item.servicos.length > 0 
                         ? item.servicos.join(" • ") 
                         : "—"}
@@ -204,14 +204,14 @@ export function DiarioVisitaCard({
                     <div className="p-4 space-y-3">
                       {/* Relato */}
                       {area.relato && (
-                        <p className="text-sm text-muted-foreground leading-relaxed">{area.relato}</p>
+                        <p className="text-sm font-medium text-foreground/80 leading-relaxed">{area.relato}</p>
                       )}
 
                       {/* Serviços */}
                       {!!area.servicos?.length && (
                         <div>
                           <p className="text-[10px] font-bold text-foreground uppercase tracking-wider mb-1">Serviços</p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm font-medium text-foreground/80">
                             {area.servicos.join(" · ")}
                           </p>
                         </div>
@@ -226,11 +226,11 @@ export function DiarioVisitaCard({
                           </p>
                           <div className="flex flex-wrap gap-x-3 gap-y-1">
                             {area.equipe.map((colaborador) => (
-                              <div key={colaborador.id} className="text-sm text-muted-foreground">
-                                <span className="font-medium text-foreground/80">{colaborador.colaborador_nome}</span>
-                                {colaborador.funcao && <span className="text-muted-foreground"> · {colaborador.funcao}</span>}
+                              <div key={colaborador.id} className="text-sm font-medium text-foreground/80">
+                                <span>{colaborador.colaborador_nome}</span>
+                                {colaborador.funcao && <span> · {colaborador.funcao}</span>}
                                 {colaborador.descricao_atividade && (
-                                  <span className="text-xs text-muted-foreground block pl-0.5">{colaborador.descricao_atividade}</span>
+                                  <span className="text-xs font-medium text-foreground/70 block pl-0.5">{colaborador.descricao_atividade}</span>
                                 )}
                               </div>
                             ))}
@@ -245,7 +245,7 @@ export function DiarioVisitaCard({
                             <Package className="w-3 h-3 text-primary" />
                             Insumos
                           </p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm font-medium text-foreground/80">
                             {area.insumos.map((insumo) => 
                               `${insumo.insumo_nome}${insumo.quantidade ? ` (${insumo.quantidade}${insumo.unidade || ""})` : ""}`
                             ).join(" · ")}
@@ -260,7 +260,7 @@ export function DiarioVisitaCard({
                             <Wrench className="w-3 h-3 text-primary" />
                             Máquinas
                           </p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm font-medium text-foreground/80">
                             {area.maquinas.map((m) => m.maquina_nome).join(" · ")}
                           </p>
                         </div>
@@ -304,7 +304,7 @@ export function DiarioVisitaCard({
                     <Lock className="w-3.5 h-3.5 text-primary" />
                     Observações internas
                   </p>
-                  <p className="mt-2 text-sm text-muted-foreground">
+                  <p className="mt-2 text-sm font-medium text-foreground/80">
                     {visita.observacoes_internas}
                   </p>
                 </section>
