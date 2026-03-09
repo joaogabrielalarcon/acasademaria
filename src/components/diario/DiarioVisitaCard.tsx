@@ -204,7 +204,7 @@ export function DiarioVisitaCard({
                     <div className="p-4 space-y-3">
                       {/* Relato */}
                       {area.relato && (
-                        <p className="text-sm text-muted-foreground leading-relaxed">{area.relato}</p>
+                        <p className="text-sm font-medium text-foreground/80 leading-relaxed">{area.relato}</p>
                       )}
 
                       {/* Serviços */}
