@@ -190,7 +190,7 @@ export function DiarioVisitaCompactCard({
                     <div className="p-3 space-y-2.5">
                       {/* Relato */}
                       {area.relato && (
-                        <p className="text-xs text-muted-foreground leading-relaxed">{area.relato}</p>
+                        <p className="text-xs font-medium text-foreground/80 leading-relaxed">{area.relato}</p>
                       )}
 
                       {/* Serviços */}
