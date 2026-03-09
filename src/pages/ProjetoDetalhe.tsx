@@ -371,6 +371,10 @@ export default function ProjetoDetalhe() {
             <Calendar className="w-4 h-4" />
             Diário
           </TabsTrigger>
+          <TabsTrigger value="irrigacao" className="gap-2">
+            <Droplets className="w-4 h-4" />
+            Irrigação
+          </TabsTrigger>
           <TabsTrigger value="orcamento" className="gap-2">
             <DollarSign className="w-4 h-4" />
             Orçamento
@@ -386,10 +390,6 @@ export default function ProjetoDetalhe() {
           <TabsTrigger value="dashboard" className="gap-2">
             <BarChart3 className="w-4 h-4" />
             Dashboard
-          </TabsTrigger>
-          <TabsTrigger value="irrigacao" className="gap-2">
-            <Droplets className="w-4 h-4" />
-            Irrigação
           </TabsTrigger>
         </TabsList>
 
