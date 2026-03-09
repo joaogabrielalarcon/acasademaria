@@ -30,6 +30,7 @@ import {
   type DiarioVisitaDetalhe,
   type NotaQualidade,
   formatDate,
+  formatDateComDia,
   formatPeriodo,
   getTrend,
   notaQualidadeMeta,
