@@ -34,7 +34,7 @@
     --secondary-foreground: 11 66% 38%;
     
     --muted: 25 80% 96%; /* #fdf5ef */
-    --muted-foreground: 11 66% 38% / 0.6; /* terracota 60% */
+    --muted-foreground: 11 66% 32% / 0.78; /* terracota 78% - mais legível */
     
     --accent: 18 68% 87%; /* #f5d9c8 */
     --accent-foreground: 11 66% 38%;
@@ -92,7 +92,7 @@
     --secondary: 18 68% 87%;
     --secondary-foreground: 11 66% 38%;
     --muted: 25 80% 96%;
-    --muted-foreground: 11 66% 38% / 0.6;
+    --muted-foreground: 11 66% 32% / 0.78;
     --accent: 18 68% 87%;
     --accent-foreground: 11 66% 38%;
     --diario-area-bg: 37 45% 92%;
@@ -131,7 +131,7 @@
   
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Cormorant Garamond', 'Georgia', serif;
-    @apply font-semibold tracking-tight text-foreground;
+    @apply font-bold tracking-tight text-foreground;
   }
 }
 
