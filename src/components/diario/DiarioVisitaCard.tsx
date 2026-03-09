@@ -8,7 +8,7 @@ import {
   Images,
   Lock,
   Package,
-  UserRound,
+  Users,
   Video,
   Wrench,
 } from "lucide-react";
@@ -18,15 +18,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import {
   type DiarioMidiaRow,
   type DiarioVisitaDetalhe,
+  type NotaQualidade,
   formatDate,
   formatPeriodo,
   getTrend,
-  statusMeta,
+  notaQualidadeMeta,
+  statusToNota,
 } from "@/lib/diario-visitas";
 
 interface DiarioVisitaCardProps {
@@ -36,6 +42,18 @@ interface DiarioVisitaCardProps {
   footerLink?: string;
   footerLabel?: string;
   defaultExpanded?: boolean;
+}
+
+function NotaBadge({ nota }: { nota: NotaQualidade }) {
+  const meta = notaQualidadeMeta[nota];
+  return (
+    <span 
+      className={cn("diario-nota-badge", meta.className)} 
+      title={meta.label}
+    >
+      {nota}
+    </span>
+  );
 }
 
 export function DiarioVisitaCard({
@@ -49,129 +67,161 @@ export function DiarioVisitaCard({
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [selectedMedia, setSelectedMedia] = useState<DiarioMidiaRow | null>(null);
 
-  const visitStatus = visita.statusResumo ? statusMeta[visita.statusResumo] : null;
+  const visitNota = statusToNota(visita.statusResumo);
+  const hasMedia = visita.fotoCount > 0 || visita.videoCount > 0;
+
+  // Agrupa serviços por área para exibição estruturada
+  const servicosPorArea = visita.areas.map((area) => ({
+    nome: area.nome_area,
+    servicos: area.servicos || [],
+    nota: statusToNota(area.status_area),
+  }));
 
   return (
     <>
-      <article className="card-botanical overflow-hidden">
-        <div className="p-4 sm:p-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <h4 className="font-display text-xl font-bold text-foreground tracking-tight">
-                  {formatDate(visita.data_visita)} · {formatPeriodo(visita)}
+      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+        <article className="card-botanical overflow-hidden">
+          {/* Header com data e nota */}
+          <div className="p-4 border-b border-border/50">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h4 className="font-display text-lg font-bold text-foreground">
+                  {formatDate(visita.data_visita)}
                 </h4>
-                {visitStatus && (
-                  <span className={cn("diario-status-badge", visitStatus.className)}>
-                    <span>{visitStatus.emoji}</span>
-                    <span>{visitStatus.label}</span>
-                  </span>
-                )}
+                <p className="text-sm text-muted-foreground mt-0.5">{formatPeriodo(visita)}</p>
               </div>
-
-              <div className="flex flex-wrap gap-2">
-                {visita.areasResumo.map((area) => (
-                  <span key={area} className="diario-chip-area">{area}</span>
-                ))}
-                {visita.servicosResumo.map((servico) => (
-                  <span key={servico} className="diario-chip-service">{servico}</span>
-                ))}
-                {visita.equipeResumo.map((colaborador) => (
-                  <span key={colaborador} className="diario-chip-team">{colaborador}</span>
-                ))}
-              </div>
+              {visitNota && <NotaBadge nota={visitNota} />}
             </div>
+          </div>
 
-            <div className="flex flex-col items-start gap-3 lg:items-end">
-              <div className="flex flex-wrap items-center gap-3 text-sm font-medium text-muted-foreground">
-                <span className="inline-flex items-center gap-1.5">
-                  <Images className="w-4 h-4" />
-                  {visita.fotoCount} foto{visita.fotoCount === 1 ? "" : "s"}
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <Video className="w-4 h-4" />
-                  {visita.videoCount} vídeo{visita.videoCount === 1 ? "" : "s"}
-                </span>
+          {/* Conteúdo principal - Estrutura reorganizada */}
+          <div className="p-4 space-y-4">
+            {/* Equipe: título + contador + nomes lado a lado */}
+            {visita.equipeResumo.length > 0 && (
+              <div>
+                <p className="inline-flex items-center gap-2 text-xs font-semibold text-foreground mb-1.5">
+                  <Users className="w-4 h-4 text-primary" />
+                  Equipe ({visita.equipeResumo.length})
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {visita.equipeResumo.join(" · ")}
+                </p>
               </div>
+            )}
 
-              <div className="flex flex-wrap items-center gap-2">
-                {footerLink && (
-                  <Button type="button" variant="ghost" size="sm" asChild>
-                    <Link to={footerLink}>{footerLabel}</Link>
-                  </Button>
+            {/* Serviços por área: cada área numa linha */}
+            {servicosPorArea.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-foreground">Serviços</p>
+                {servicosPorArea.map((item) => (
+                  <div key={item.nome} className="flex items-start gap-2 text-sm">
+                    <span className="font-medium text-foreground whitespace-nowrap min-w-fit">
+                      {item.nome}:
+                    </span>
+                    <span className="text-muted-foreground flex-1">
+                      {item.servicos.length > 0 
+                        ? item.servicos.join(" • ") 
+                        : "—"}
+                    </span>
+                    {item.nota && (
+                      <span className={cn("diario-nota-badge text-[10px] w-5 h-5", notaQualidadeMeta[item.nota].className)}>
+                        {item.nota}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Footer com contadores e ações */}
+          <div className="px-4 py-3 bg-muted/30 border-t border-border/50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                {hasMedia && (
+                  <>
+                    <span className="inline-flex items-center gap-1">
+                      <Images className="w-3.5 h-3.5" />
+                      {visita.fotoCount}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <Video className="w-3.5 h-3.5" />
+                      {visita.videoCount}
+                    </span>
+                  </>
                 )}
-                <Button type="button" variant="outline" size="sm" onClick={() => setIsExpanded((current) => !current)}>
-                  {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                  {isExpanded ? "Recolher" : "Expandir"}
-                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                {footerLink && (
+                  <Link
+                    to={footerLink}
+                    className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                  >
+                    {footerLabel}
+                  </Link>
+                )}
+                <CollapsibleTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                  >
+                    {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    {isExpanded ? "Menos" : "Mais"}
+                  </button>
+                </CollapsibleTrigger>
               </div>
             </div>
           </div>
-        </div>
 
-        {isExpanded && (
-          <div className="border-t border-border px-4 py-5 sm:px-5">
-            <div className="space-y-5">
+          {/* Conteúdo expandido */}
+          <CollapsibleContent>
+            <div className="border-t border-border p-4 space-y-4 bg-muted/20">
               {visita.areas.map((area) => {
-                const areaStatus = area.status_area ? statusMeta[area.status_area] : null;
+                const areaNota = statusToNota(area.status_area);
                 const trend = getTrend(area);
 
                 return (
-                  <section key={area.id} className="rounded-2xl border border-border bg-background/60 p-4">
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                      <div>
-                        <h5 className="font-display text-lg font-semibold text-foreground">{area.nome_area}</h5>
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                          {areaStatus && (
-                            <span className={cn("diario-status-badge", areaStatus.className)}>
-                              <span>{areaStatus.emoji}</span>
-                              <span>{areaStatus.label}</span>
-                            </span>
-                          )}
-
-                          {trend === "up" && (
-                            <span className="inline-flex items-center gap-1 text-sm font-medium diario-trend-up">
-                              <ArrowUp className="w-4 h-4" />
-                              Melhorou
-                            </span>
-                          )}
-
-                          {trend === "down" && (
-                            <span className="inline-flex items-center gap-1 text-sm font-medium diario-trend-down">
-                              <ArrowDown className="w-4 h-4" />
-                              Piorou
-                            </span>
-                          )}
-                        </div>
+                  <section key={area.id} className="rounded-xl border border-border bg-background/80 p-4">
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <h5 className="font-display text-base font-semibold text-foreground">{area.nome_area}</h5>
+                      <div className="flex items-center gap-2">
+                        {trend === "up" && <ArrowUp className="w-4 h-4 text-success" />}
+                        {trend === "down" && <ArrowDown className="w-4 h-4 text-primary" />}
+                        {areaNota && <NotaBadge nota={areaNota} />}
                       </div>
                     </div>
 
+                    {/* Relato/Descrição do serviço */}
+                    {area.relato && (
+                      <p className="text-sm text-muted-foreground mb-3">{area.relato}</p>
+                    )}
+
+                    {/* Serviços detalhados */}
                     {!!area.servicos?.length && (
-                      <div className="mt-4 space-y-2">
-                        <p className="text-sm font-medium text-foreground">Serviços realizados</p>
-                        <div className="flex flex-wrap gap-2">
-                          {area.servicos.map((servico) => (
-                            <span key={servico} className="diario-chip-service">{servico}</span>
-                          ))}
-                        </div>
+                      <div className="mb-3">
+                        <p className="text-xs font-medium text-foreground mb-1">Serviços realizados:</p>
+                        <p className="text-sm text-muted-foreground">
+                          {area.servicos.join(" • ")}
+                        </p>
                       </div>
                     )}
 
+                    {/* Equipe da área */}
                     {!!area.equipe.length && (
-                      <div className="mt-4 space-y-2">
-                        <p className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
-                          <UserRound className="w-4 h-4 text-primary" />
-                          Equipe
+                      <div className="mb-3">
+                        <p className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground mb-2">
+                          <Users className="w-3.5 h-3.5 text-primary" />
+                          Equipe ({area.equipe.length})
                         </p>
                         <div className="space-y-2">
                           {area.equipe.map((colaborador) => (
-                            <div key={colaborador.id} className="rounded-xl bg-muted/70 p-3">
+                            <div key={colaborador.id} className="rounded-lg bg-muted/70 p-2.5">
                               <p className="text-sm font-medium text-foreground">
                                 {colaborador.colaborador_nome}
                                 {colaborador.funcao ? ` · ${colaborador.funcao}` : ""}
                               </p>
                               {colaborador.descricao_atividade && (
-                                <p className="mt-1 text-sm text-muted-foreground">{colaborador.descricao_atividade}</p>
+                                <p className="text-xs text-muted-foreground mt-1">{colaborador.descricao_atividade}</p>
                               )}
                             </div>
                           ))}
@@ -179,101 +229,82 @@ export function DiarioVisitaCard({
                       </div>
                     )}
 
+                    {/* Insumos */}
                     {!!area.insumos.length && (
-                      <div className="mt-4 space-y-2">
-                        <p className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
-                          <Package className="w-4 h-4 text-primary" />
-                          Insumos usados
+                      <div className="mb-3">
+                        <p className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground mb-1">
+                          <Package className="w-3.5 h-3.5 text-primary" />
+                          Insumos
                         </p>
-                        <div className="space-y-2">
-                          {area.insumos.map((insumo) => (
-                            <div key={insumo.id} className="rounded-xl bg-muted/70 p-3 text-sm text-foreground">
-                              <span className="font-medium">{insumo.insumo_nome}</span>
-                              {(insumo.quantidade || insumo.unidade) && (
-                                <span className="text-muted-foreground">
-                                  {` · ${[insumo.quantidade, insumo.unidade].filter(Boolean).join(" ")}`}
-                                </span>
-                              )}
-                            </div>
-                          ))}
-                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {area.insumos.map((insumo) => 
+                            `${insumo.insumo_nome}${insumo.quantidade ? ` (${insumo.quantidade}${insumo.unidade || ""})` : ""}`
+                          ).join(" • ")}
+                        </p>
                       </div>
                     )}
 
+                    {/* Máquinas */}
                     {!!area.maquinas.length && (
-                      <div className="mt-4 space-y-2">
-                        <p className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
-                          <Wrench className="w-4 h-4 text-primary" />
-                          Máquinas usadas
+                      <div className="mb-3">
+                        <p className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground mb-1">
+                          <Wrench className="w-3.5 h-3.5 text-primary" />
+                          Máquinas
                         </p>
-                        <div className="flex flex-wrap gap-2">
-                          {area.maquinas.map((maquina) => (
-                            <span key={maquina.id} className="tag-secondary">{maquina.maquina_nome}</span>
-                          ))}
-                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {area.maquinas.map((m) => m.maquina_nome).join(" • ")}
+                        </p>
                       </div>
                     )}
 
-                    {area.relato && (
-                      <div className="mt-4 rounded-xl bg-muted/70 p-3">
-                        <p className="text-sm font-medium text-foreground">Relato</p>
-                        <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{area.relato}</p>
-                      </div>
-                    )}
-
+                    {/* Mídias */}
                     {!!area.midias.length && (
-                      <div className="mt-4 space-y-2">
-                        <p className="text-sm font-medium text-foreground">Fotos e vídeos</p>
-                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                          {area.midias.map((midia) => (
-                            <button
-                              key={midia.id}
-                              type="button"
-                              className="diario-media-thumb text-left"
-                              onClick={() => setSelectedMedia(midia)}
-                            >
-                              {midia.tipo === "video" ? (
-                                <div className="flex aspect-[4/3] items-center justify-center bg-muted text-muted-foreground">
-                                  <Video className="w-6 h-6" />
-                                </div>
-                              ) : (
-                                <img
-                                  src={midia.thumbnail_url || midia.url}
-                                  alt={midia.descricao || `Mídia da área ${area.nome_area}`}
-                                  className="aspect-[4/3] w-full object-cover"
-                                  loading="lazy"
-                                />
-                              )}
-                              <div className="p-2">
-                                <p className="line-clamp-1 text-xs font-medium text-foreground">
-                                  {midia.descricao || (midia.tipo === "video" ? "Vídeo da visita" : "Foto da visita")}
-                                </p>
+                      <div className="grid grid-cols-3 gap-2 mt-3">
+                        {area.midias.slice(0, 6).map((midia) => (
+                          <button
+                            key={midia.id}
+                            type="button"
+                            className="diario-media-thumb text-left aspect-square"
+                            onClick={() => setSelectedMedia(midia)}
+                          >
+                            {midia.tipo === "video" ? (
+                              <div className="flex h-full items-center justify-center bg-muted text-muted-foreground">
+                                <Video className="w-5 h-5" />
                               </div>
-                            </button>
-                          ))}
-                        </div>
+                            ) : (
+                              <img
+                                src={midia.thumbnail_url || midia.url}
+                                alt={midia.descricao || `Mídia da área ${area.nome_area}`}
+                                className="h-full w-full object-cover"
+                                loading="lazy"
+                              />
+                            )}
+                          </button>
+                        ))}
                       </div>
                     )}
                   </section>
                 );
               })}
 
+              {/* Observações internas */}
               {!hideInternalNotes && canViewInternalNotes && visita.observacoes_internas && (
-                <section className="rounded-2xl border border-border bg-muted/50 p-4">
-                  <p className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
-                    <Lock className="w-4 h-4 text-primary" />
+                <section className="rounded-xl border border-border bg-muted/50 p-4">
+                  <p className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground">
+                    <Lock className="w-3.5 h-3.5 text-primary" />
                     Observações internas
                   </p>
-                  <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
+                  <p className="mt-2 text-sm text-muted-foreground">
                     {visita.observacoes_internas}
                   </p>
                 </section>
               )}
             </div>
-          </div>
-        )}
-      </article>
+          </CollapsibleContent>
+        </article>
+      </Collapsible>
 
+      {/* Modal de mídia */}
       <Dialog open={!!selectedMedia} onOpenChange={(open) => !open && setSelectedMedia(null)}>
         <DialogContent className="max-w-4xl bg-card">
           <DialogHeader>
