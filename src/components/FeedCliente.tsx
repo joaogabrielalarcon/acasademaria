@@ -192,7 +192,7 @@ function GenericFeedCard({
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-foreground">{title}</p>
+        <p className="text-sm font-medium text-foreground">{title}</p>
         <div className="mt-1 flex flex-wrap items-center gap-3">
           <span className="text-xs text-muted-foreground flex items-center gap-1">
             <User className="w-3 h-3" />
