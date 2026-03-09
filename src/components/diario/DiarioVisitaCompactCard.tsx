@@ -104,7 +104,7 @@ export function DiarioVisitaCompactCard({
                   <Users className="w-3 h-3 text-primary" />
                   Equipe ({visita.equipeResumo.length})
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs font-medium text-foreground/80">
                   {visita.equipeResumo.join(" · ")}
                 </p>
               </div>
