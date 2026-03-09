@@ -197,7 +197,7 @@ export function DiarioVisitaCompactCard({
                       {!!area.servicos?.length && (
                         <div>
                           <p className="text-[10px] font-bold text-foreground uppercase tracking-wider mb-0.5">Serviços</p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs font-medium text-foreground/80">
                             {area.servicos.join(" · ")}
                           </p>
                         </div>
