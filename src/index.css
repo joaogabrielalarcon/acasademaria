@@ -39,22 +39,24 @@
     --accent: 18 68% 87%; /* #f5d9c8 */
     --accent-foreground: 11 66% 38%;
     
-    --success: 142 60% 40%;
-    --success-foreground: 0 0% 100%;
-    --diario-area-bg: 37 45% 92%;
-    --diario-area-fg: 8 63% 45%;
+    /* Success agora em terracota suave */
+    --success: 11 66% 32%;
+    --success-foreground: 21 100% 95%;
+    --diario-area-bg: 18 68% 92%;
+    --diario-area-fg: 11 66% 32%;
     --diario-service-bg: 11 66% 38% / 0.12;
     --diario-service-fg: 11 66% 38%;
-    --diario-team-bg: 245 28% 92%;
-    --diario-team-fg: 243 47% 20%;
-    --diario-typing: 140 20% 51%;
-    --mafe-diario-collecting: 38 91% 55%;
-    --mafe-diario-awaiting: 19 45% 60%;
-    --mafe-diario-ready: 154 44% 21%;
-    --mafe-diario-typing: 17 43% 60%;
+    --diario-team-bg: 18 68% 90%;
+    --diario-team-fg: 11 66% 28%;
+    --diario-typing: 11 50% 50%;
+    --mafe-diario-collecting: 11 66% 45%;
+    --mafe-diario-awaiting: 11 50% 55%;
+    --mafe-diario-ready: 11 66% 28%;
+    --mafe-diario-typing: 11 50% 55%;
     
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
+    /* Destructive também em terracota */
+    --destructive: 11 66% 38%;
+    --destructive-foreground: 21 100% 95%;
     
     --border: 11 66% 38% / 0.2; /* #9e3722 com 20% opacidade */
     --input: 11 66% 38% / 0.3; /* #9e3722 com 30% opacidade */
@@ -95,17 +97,17 @@
     --muted-foreground: 11 66% 32% / 0.78;
     --accent: 18 68% 87%;
     --accent-foreground: 11 66% 38%;
-    --diario-area-bg: 37 45% 92%;
-    --diario-area-fg: 8 63% 45%;
+    --diario-area-bg: 18 68% 92%;
+    --diario-area-fg: 11 66% 32%;
     --diario-service-bg: 11 66% 38% / 0.12;
     --diario-service-fg: 11 66% 38%;
-    --diario-team-bg: 245 28% 92%;
-    --diario-team-fg: 243 47% 20%;
-    --diario-typing: 140 20% 51%;
-    --mafe-diario-collecting: 38 91% 55%;
-    --mafe-diario-awaiting: 19 45% 60%;
-    --mafe-diario-ready: 154 44% 21%;
-    --mafe-diario-typing: 17 43% 60%;
+    --diario-team-bg: 18 68% 90%;
+    --diario-team-fg: 11 66% 28%;
+    --diario-typing: 11 50% 50%;
+    --mafe-diario-collecting: 11 66% 45%;
+    --mafe-diario-awaiting: 11 50% 55%;
+    --mafe-diario-ready: 11 66% 28%;
+    --mafe-diario-typing: 11 50% 55%;
     --border: 11 66% 38% / 0.2;
     --input: 11 66% 38% / 0.3;
     --ring: 11 66% 38%;
@@ -206,73 +208,74 @@
     color: hsl(var(--diario-team-fg));
   }
 
+  /* Status badges - paleta terracota monocromática */
   .diario-status-badge {
     @apply inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold;
-    border-color: hsl(var(--border));
+    border-color: hsl(11 66% 38% / 0.2);
     background: hsl(var(--muted));
     color: hsl(var(--foreground));
   }
 
   .diario-status-otimo {
-    background: hsl(var(--success) / 0.12);
-    color: hsl(var(--success));
-    border-color: hsl(var(--success) / 0.18);
+    background: hsl(18 68% 90%);
+    color: hsl(11 66% 24%);
+    border-color: hsl(11 66% 38% / 0.25);
   }
 
   .diario-status-bom {
-    background: hsl(46 95% 55% / 0.16);
-    color: hsl(35 92% 28%);
-    border-color: hsl(46 95% 55% / 0.28);
+    background: hsl(18 68% 92%);
+    color: hsl(11 66% 28%);
+    border-color: hsl(11 66% 38% / 0.2);
   }
 
   .diario-status-requer_atencao {
-    background: hsl(24 95% 53% / 0.16);
-    color: hsl(23 83% 32%);
-    border-color: hsl(24 95% 53% / 0.28);
+    background: hsl(11 66% 38% / 0.15);
+    color: hsl(11 66% 30%);
+    border-color: hsl(11 66% 38% / 0.25);
   }
 
   .diario-status-critico {
-    background: hsl(var(--destructive) / 0.12);
-    color: hsl(var(--destructive));
-    border-color: hsl(var(--destructive) / 0.2);
+    background: hsl(11 66% 38% / 0.2);
+    color: hsl(11 66% 24%);
+    border-color: hsl(11 66% 38% / 0.3);
   }
 
-  /* Escala numérica 1-5 para qualidade - com labels de texto */
+  /* Escala numérica 1-5 para qualidade - paleta terracota monocromática */
   .diario-nota-badge {
     @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold;
   }
 
   .diario-nota-1 {
-    background: hsl(var(--destructive) / 0.15);
-    color: hsl(var(--destructive));
+    background: hsl(11 66% 38% / 0.22);
+    color: hsl(11 66% 22%);
   }
 
   .diario-nota-2 {
-    background: hsl(24 95% 53% / 0.15);
-    color: hsl(23 83% 32%);
+    background: hsl(11 66% 38% / 0.18);
+    color: hsl(11 66% 26%);
   }
 
   .diario-nota-3 {
-    background: hsl(46 95% 55% / 0.15);
-    color: hsl(35 92% 28%);
+    background: hsl(11 66% 38% / 0.14);
+    color: hsl(11 66% 30%);
   }
 
   .diario-nota-4 {
-    background: hsl(120 40% 50% / 0.12);
-    color: hsl(120 45% 35%);
+    background: hsl(18 68% 90%);
+    color: hsl(11 66% 28%);
   }
 
   .diario-nota-5 {
-    background: hsl(var(--success) / 0.15);
-    color: hsl(var(--success));
+    background: hsl(18 68% 87%);
+    color: hsl(11 66% 24%);
   }
 
   .diario-trend-up {
-    color: hsl(var(--success));
+    color: hsl(11 66% 32%);
   }
 
   .diario-trend-down {
-    color: hsl(var(--primary));
+    color: hsl(11 66% 45%);
   }
 
   .diario-media-thumb {

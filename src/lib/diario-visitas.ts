@@ -96,10 +96,10 @@ export const periodLabels: Record<PeriodoVisita, string> = {
 };
 
 export const statusMeta: Record<StatusArea, { emoji: string; label: string; className: string }> = {
-  otimo: { emoji: "🟢", label: "Ótimo", className: "diario-status-otimo" },
-  bom: { emoji: "🟡", label: "Bom", className: "diario-status-bom" },
-  requer_atencao: { emoji: "🟠", label: "Requer atenção", className: "diario-status-requer_atencao" },
-  critico: { emoji: "🔴", label: "Crítico", className: "diario-status-critico" },
+  otimo: { emoji: "●", label: "Ótimo", className: "diario-status-otimo" },
+  bom: { emoji: "●", label: "Bom", className: "diario-status-bom" },
+  requer_atencao: { emoji: "●", label: "Requer atenção", className: "diario-status-requer_atencao" },
+  critico: { emoji: "●", label: "Crítico", className: "diario-status-critico" },
 };
 
 export const statusRank: Record<StatusArea, number> = {
