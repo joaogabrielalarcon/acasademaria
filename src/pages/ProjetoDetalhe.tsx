@@ -387,6 +387,10 @@ export default function ProjetoDetalhe() {
             <BarChart3 className="w-4 h-4" />
             Dashboard
           </TabsTrigger>
+          <TabsTrigger value="irrigacao" className="gap-2">
+            <Droplets className="w-4 h-4" />
+            Irrigação
+          </TabsTrigger>
         </TabsList>
 
         {/* Informações do Projeto */}
