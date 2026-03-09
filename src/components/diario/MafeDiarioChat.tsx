@@ -541,6 +541,19 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
       if (hiddenState) {
         setDraftState(hiddenState);
         setPhase(hiddenState.phase);
+
+        // Save correction if Mafe detected an error report
+        const correcao = (hiddenState as any).correcao;
+        if (correcao?.o_que_fez && correcao?.o_que_deveria_ter_feito) {
+          supabase.from("mafe_correcoes_ia").insert({
+            projeto_id: projetoId,
+            o_que_fez: correcao.o_que_fez,
+            o_que_deveria_ter_feito: correcao.o_que_deveria_ter_feito,
+            contexto: correcao.contexto || null,
+          }).then(({ error }) => {
+            if (error) console.error("Erro ao salvar correção da Mafe:", error);
+          });
+        }
       }
     } catch (error: any) {
       toast({ title: "Erro na Mafe Diário", description: error.message || "Tente novamente.", variant: "destructive" });
