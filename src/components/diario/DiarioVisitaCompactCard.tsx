@@ -89,7 +89,7 @@ export function DiarioVisitaCompactCard({
           <div className="p-3 border-b border-border/50">
             <div className="flex items-center justify-between gap-2">
               <span className="font-display text-base font-bold text-foreground truncate">
-                {formatDate(visita.data_visita)}
+                {formatDateComDia(visita.data_visita)}
               </span>
               {visitNota && <NotaBadge nota={visitNota} />}
             </div>
