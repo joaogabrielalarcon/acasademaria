@@ -140,6 +140,14 @@ export function formatDate(value: string) {
   return format(new Date(`${value}T12:00:00`), "dd/MM/yyyy", { locale: ptBR });
 }
 
+export function formatDateComDia(value: string) {
+  const date = new Date(`${value}T12:00:00`);
+  const diaSemana = format(date, "EEEE", { locale: ptBR });
+  const diaSemanaCapitalizado = diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1);
+  const dataFormatada = format(date, "dd/MM/yyyy", { locale: ptBR });
+  return `${diaSemanaCapitalizado} · ${dataFormatada}`;
+}
+
 export function formatHour(value: string | null) {
   return value ? value.slice(0, 5) : "";
 }
