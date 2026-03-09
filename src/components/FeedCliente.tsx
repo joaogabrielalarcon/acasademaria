@@ -192,13 +192,13 @@ function GenericFeedCard({
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-foreground">{title}</p>
+        <p className="text-sm font-medium text-foreground">{title}</p>
         <div className="mt-1 flex flex-wrap items-center gap-3">
-          <span className="text-xs text-muted-foreground flex items-center gap-1">
+          <span className="text-xs font-medium text-foreground/70 flex items-center gap-1">
             <User className="w-3 h-3" />
             {userName}
           </span>
-          <span className="text-xs text-muted-foreground flex items-center gap-1">
+          <span className="text-xs font-medium text-foreground/70 flex items-center gap-1">
             <Clock className="w-3 h-3" />
             {time}
           </span>
@@ -419,13 +419,13 @@ export function FeedCliente({ clienteId }: FeedClienteProps) {
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-foreground">{item.description}</p>
+                    <p className="text-sm font-medium text-foreground">{item.description}</p>
                     <div className="flex items-center gap-3 mt-1 flex-wrap">
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <span className="text-xs font-medium text-foreground/70 flex items-center gap-1">
                         <User className="w-3 h-3" />
                         {userName}
                       </span>
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <span className="text-xs font-medium text-foreground/70 flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         {time}
                       </span>
