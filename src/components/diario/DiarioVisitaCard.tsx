@@ -260,7 +260,7 @@ export function DiarioVisitaCard({
                             <Wrench className="w-3 h-3 text-primary" />
                             Máquinas
                           </p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm font-medium text-foreground/80">
                             {area.maquinas.map((m) => m.maquina_nome).join(" · ")}
                           </p>
                         </div>
