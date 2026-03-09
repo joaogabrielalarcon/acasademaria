@@ -122,8 +122,8 @@ export function DiarioVisitaCompactCard({
                         {item.nome}
                       </h6>
                       {item.nota && (
-                        <span className={cn("diario-nota-badge text-[9px] w-4 h-4", notaQualidadeMeta[item.nota].className)}>
-                          {item.nota}
+                        <span className={cn("diario-nota-badge text-[9px] px-1.5 py-0.5 rounded-full", notaQualidadeMeta[item.nota].className)}>
+                          {notaQualidadeMeta[item.nota].label}
                         </span>
                       )}
                     </div>
