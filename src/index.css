@@ -240,34 +240,34 @@
     border-color: hsl(11 66% 38% / 0.3);
   }
 
-  /* Escala numérica 1-5 para qualidade - com labels de texto */
+  /* Escala numérica 1-5 para qualidade - paleta terracota monocromática */
   .diario-nota-badge {
     @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold;
   }
 
   .diario-nota-1 {
-    background: hsl(var(--destructive) / 0.15);
-    color: hsl(var(--destructive));
+    background: hsl(11 66% 38% / 0.22);
+    color: hsl(11 66% 22%);
   }
 
   .diario-nota-2 {
-    background: hsl(24 95% 53% / 0.15);
-    color: hsl(23 83% 32%);
+    background: hsl(11 66% 38% / 0.18);
+    color: hsl(11 66% 26%);
   }
 
   .diario-nota-3 {
-    background: hsl(46 95% 55% / 0.15);
-    color: hsl(35 92% 28%);
+    background: hsl(11 66% 38% / 0.14);
+    color: hsl(11 66% 30%);
   }
 
   .diario-nota-4 {
-    background: hsl(120 40% 50% / 0.12);
-    color: hsl(120 45% 35%);
+    background: hsl(18 68% 90%);
+    color: hsl(11 66% 28%);
   }
 
   .diario-nota-5 {
-    background: hsl(var(--success) / 0.15);
-    color: hsl(var(--success));
+    background: hsl(18 68% 87%);
+    color: hsl(11 66% 24%);
   }
 
   .diario-trend-up {
