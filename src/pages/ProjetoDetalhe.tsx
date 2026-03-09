@@ -85,8 +85,9 @@ export default function ProjetoDetalhe() {
       initialTab === "orcamento" ||
       initialTab === "execucao" ||
       initialTab === "resumo" ||
-      initialTab === "dashboard"
-      ? initialTab
+      initialTab === "dashboard" ||
+      initialTab === "irrigacao"
+       ? initialTab
       : "informacoes",
   );
 
