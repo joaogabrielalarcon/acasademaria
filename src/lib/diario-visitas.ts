@@ -109,6 +109,29 @@ export const statusRank: Record<StatusArea, number> = {
   otimo: 3,
 };
 
+// Escala numérica 1-5 para qualidade
+export type NotaQualidade = 1 | 2 | 3 | 4 | 5;
+
+export const notaQualidadeMeta: Record<NotaQualidade, { label: string; className: string }> = {
+  1: { label: "Crítico", className: "diario-nota-1" },
+  2: { label: "Ruim", className: "diario-nota-2" },
+  3: { label: "Regular", className: "diario-nota-3" },
+  4: { label: "Bom", className: "diario-nota-4" },
+  5: { label: "Ótimo", className: "diario-nota-5" },
+};
+
+// Converte status antigo para nota numérica (retrocompatibilidade)
+export function statusToNota(status: StatusArea | null): NotaQualidade | null {
+  if (!status) return null;
+  const map: Record<StatusArea, NotaQualidade> = {
+    critico: 1,
+    requer_atencao: 2,
+    bom: 4,
+    otimo: 5,
+  };
+  return map[status];
+}
+
 export const DIARIO_STORAGE_BUCKET = "diario-midias";
 
 const isAbsoluteUrl = (value: string) => /^https?:\/\//i.test(value);
