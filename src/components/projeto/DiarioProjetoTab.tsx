@@ -16,6 +16,7 @@ import {
   formatDate,
   formatPeriodo,
   uniqueValues,
+  statusToNota,
 } from "@/lib/diario-visitas";
 
 interface DiarioProjetoTabProps {
