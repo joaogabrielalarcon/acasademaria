@@ -113,11 +113,11 @@ export const statusRank: Record<StatusArea, number> = {
 export type NotaQualidade = 1 | 2 | 3 | 4 | 5;
 
 export const notaQualidadeMeta: Record<NotaQualidade, { label: string; className: string }> = {
-  1: { label: "Crítico", className: "diario-nota-1" },
+  1: { label: "Péssimo", className: "diario-nota-1" },
   2: { label: "Ruim", className: "diario-nota-2" },
-  3: { label: "Regular", className: "diario-nota-3" },
-  4: { label: "Bom", className: "diario-nota-4" },
-  5: { label: "Ótimo", className: "diario-nota-5" },
+  3: { label: "Bom", className: "diario-nota-3" },
+  4: { label: "Ótimo", className: "diario-nota-4" },
+  5: { label: "Excelente", className: "diario-nota-5" },
 };
 
 // Converte status antigo para nota numérica (retrocompatibilidade)

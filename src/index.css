@@ -237,9 +237,9 @@
     border-color: hsl(var(--destructive) / 0.2);
   }
 
-  /* Escala numérica 1-5 para qualidade */
+  /* Escala numérica 1-5 para qualidade - com labels de texto */
   .diario-nota-badge {
-    @apply inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold;
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold;
   }
 
   .diario-nota-1 {
