@@ -581,6 +581,11 @@ export default function ProjetoDetalhe() {
             dataPrevisao={projeto.data_previsao}
           />
         </TabsContent>
+
+        {/* Irrigação */}
+        <TabsContent value="irrigacao">
+          <IrrigacaoTab projetoId={id!} />
+        </TabsContent>
       </Tabs>
 
       {/* --- Dialogs --- */}
