@@ -226,11 +226,11 @@ export function DiarioVisitaCard({
                           </p>
                           <div className="flex flex-wrap gap-x-3 gap-y-1">
                             {area.equipe.map((colaborador) => (
-                              <div key={colaborador.id} className="text-sm text-muted-foreground">
-                                <span className="font-medium text-foreground/80">{colaborador.colaborador_nome}</span>
-                                {colaborador.funcao && <span className="text-muted-foreground"> · {colaborador.funcao}</span>}
+                              <div key={colaborador.id} className="text-sm font-medium text-foreground/80">
+                                <span>{colaborador.colaborador_nome}</span>
+                                {colaborador.funcao && <span> · {colaborador.funcao}</span>}
                                 {colaborador.descricao_atividade && (
-                                  <span className="text-xs text-muted-foreground block pl-0.5">{colaborador.descricao_atividade}</span>
+                                  <span className="text-xs font-medium text-foreground/70 block pl-0.5">{colaborador.descricao_atividade}</span>
                                 )}
                               </div>
                             ))}
