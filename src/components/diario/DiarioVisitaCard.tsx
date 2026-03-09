@@ -130,7 +130,7 @@ export function DiarioVisitaCard({
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm font-medium text-foreground/80">
                       {item.servicos.length > 0 
                         ? item.servicos.join(" • ") 
                         : "—"}
