@@ -68,6 +68,7 @@ import { CotacaoSheet } from "@/components/projeto/CotacaoSheet";
 import { InformacoesProjetoTab } from "@/components/projeto/InformacoesProjetoTab";
 import { DiarioProjetoTab } from "@/components/projeto/DiarioProjetoTab";
 import { DiarioManutencaoTab } from "@/components/projeto/DiarioManutencaoTab";
+import { IrrigacaoTab } from "@/components/projeto/IrrigacaoTab";
 import { Progress } from "@/components/ui/progress";
 
 export default function ProjetoDetalhe() {
