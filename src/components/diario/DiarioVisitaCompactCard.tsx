@@ -112,23 +112,25 @@ export function DiarioVisitaCompactCard({
 
             {/* Serviços por área: cada área numa linha */}
             {servicosPorArea.length > 0 && (
-              <div className="space-y-1.5">
-                <p className="text-[10px] font-semibold text-foreground">Serviços</p>
+              <div className="space-y-2">
+                <p className="text-[10px] font-bold text-foreground uppercase tracking-wide">Serviços</p>
                 {servicosPorArea.map((item) => (
-                  <div key={item.nome} className="flex items-start gap-2 text-xs">
-                    <span className="font-medium text-foreground whitespace-nowrap min-w-fit">
-                      {item.nome}:
-                    </span>
-                    <span className="text-muted-foreground flex-1">
+                  <div key={item.nome} className="border-l-2 border-primary/30 pl-2">
+                    <div className="flex items-center justify-between gap-1 mb-0.5">
+                      <h6 className="font-display text-sm font-bold text-foreground">
+                        {item.nome}
+                      </h6>
+                      {item.nota && (
+                        <span className={cn("diario-nota-badge text-[9px] w-4 h-4", notaQualidadeMeta[item.nota].className)}>
+                          {item.nota}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
                       {item.servicos.length > 0 
                         ? item.servicos.join(" • ") 
                         : "—"}
-                    </span>
-                    {item.nota && (
-                      <span className={cn("diario-nota-badge text-[9px] w-4 h-4", notaQualidadeMeta[item.nota].className)}>
-                        {item.nota}
-                      </span>
-                    )}
+                    </p>
                   </div>
                 ))}
               </div>
