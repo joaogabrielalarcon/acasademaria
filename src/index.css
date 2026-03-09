@@ -34,7 +34,7 @@
     --secondary-foreground: 11 66% 38%;
     
     --muted: 25 80% 96%; /* #fdf5ef */
-    --muted-foreground: 11 66% 38% / 0.6; /* terracota 60% */
+    --muted-foreground: 11 66% 32% / 0.78; /* terracota 78% - mais legível */
     
     --accent: 18 68% 87%; /* #f5d9c8 */
     --accent-foreground: 11 66% 38%;
