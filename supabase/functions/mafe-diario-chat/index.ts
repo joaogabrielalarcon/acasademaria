@@ -229,6 +229,7 @@ serve(async (req) => {
     if (insumosRes.error) throw insumosRes.error;
     if (maquinasRes.error) throw maquinasRes.error;
     if (lastVisitRes.error) throw lastVisitRes.error;
+    if (correcoesRes.error) throw correcoesRes.error;
     if (visitsRes.error) throw visitsRes.error;
 
     const visitIds = (visitsRes.data || []).map((item) => item.id);
