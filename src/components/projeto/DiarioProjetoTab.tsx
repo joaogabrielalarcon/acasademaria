@@ -85,9 +85,9 @@ export function DiarioProjetoTab({ projetoId, projetoNome, clienteNome, clienteI
       result = result.filter((v) => new Date(v.data_visita) >= cutoff);
     }
 
-    // Filtro de status
-    if (filters.status !== "all") {
-      result = result.filter((v) => v.statusResumo === filters.status);
+    // Filtro de nota de qualidade
+    if (filters.nota !== "all") {
+      result = result.filter((v) => statusToNota(v.statusResumo) === filters.nota);
     }
 
     // Filtro de área
