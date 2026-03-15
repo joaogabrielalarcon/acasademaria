@@ -30,6 +30,7 @@ const menuItems = [
   { title: "Fornecedores", description: "Cadastro de fornecedores", icon: Truck, href: "/fornecedores", roles: ["admin", "administrativo", "gestao_campo"] as AppRole[] },
   { title: "Máquinas", description: "Equipamentos e manutenção", icon: Wrench, href: "/maquinas", roles: ["admin", "administrativo", "gestao_campo"] as AppRole[] },
   { title: "Processos Internos", description: "Documentação de processos", icon: BookOpen, href: "/processos", roles: ["admin", "administrativo"] as AppRole[] },
+  { title: "CRM", description: "Pipeline comercial", icon: GitBranch, href: "/crm", roles: ["admin", "administrativo", "gestao_campo", "arquitetura"] as AppRole[] },
   { title: "Configurações do Sistema", description: "Áreas, acessos e categorias", icon: Settings, href: "/areas", roles: ["admin"] as AppRole[] },
 ];
 
