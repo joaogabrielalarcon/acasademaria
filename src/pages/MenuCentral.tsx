@@ -10,6 +10,7 @@ import {
   Settings,
   BookOpen,
   CalendarDays,
+  GitBranch,
   Send,
   Mic,
   Square,
