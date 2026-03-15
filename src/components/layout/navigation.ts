@@ -3,6 +3,7 @@ import {
   BookOpen,
   Building2,
   CalendarDays,
+  GitBranch,
   Leaf,
   Package,
   Settings,
