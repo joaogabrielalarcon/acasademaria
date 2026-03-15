@@ -3,6 +3,7 @@ import {
   BookOpen,
   Building2,
   CalendarDays,
+  GitBranch,
   Leaf,
   Package,
   Settings,
@@ -32,6 +33,7 @@ export const appNavigationItems: NavigationItem[] = [
   { title: "Fornecedores", icon: Truck, href: "/fornecedores", roles: ["admin", "administrativo", "gestao_campo"] },
   { title: "Máquinas", icon: Wrench, href: "/maquinas", roles: ["admin", "administrativo", "gestao_campo"] },
   { title: "Processos Internos", icon: BookOpen, href: "/processos", roles: ["admin", "administrativo"] },
+  { title: "CRM", icon: GitBranch, href: "/crm", roles: ["admin", "administrativo", "gestao_campo", "arquitetura"] },
 ];
 
 export const configNavigationItems: NavigationItem[] = [

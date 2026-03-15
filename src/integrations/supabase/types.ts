@@ -401,6 +401,173 @@ export type Database = {
           },
         ]
       }
+      crm_cards: {
+        Row: {
+          cliente_id: string | null
+          contato_cargo: string | null
+          contato_email: string | null
+          contato_nome: string | null
+          contato_whatsapp: string | null
+          created_at: string | null
+          id: string
+          observacoes: string | null
+          prazo: string | null
+          projeto_id: string | null
+          responsavel_id: string | null
+          status: string
+          tipo: string
+          titulo: string
+          updated_at: string | null
+        }
+        Insert: {
+          cliente_id?: string | null
+          contato_cargo?: string | null
+          contato_email?: string | null
+          contato_nome?: string | null
+          contato_whatsapp?: string | null
+          created_at?: string | null
+          id?: string
+          observacoes?: string | null
+          prazo?: string | null
+          projeto_id?: string | null
+          responsavel_id?: string | null
+          status?: string
+          tipo: string
+          titulo: string
+          updated_at?: string | null
+        }
+        Update: {
+          cliente_id?: string | null
+          contato_cargo?: string | null
+          contato_email?: string | null
+          contato_nome?: string | null
+          contato_whatsapp?: string | null
+          created_at?: string | null
+          id?: string
+          observacoes?: string | null
+          prazo?: string | null
+          projeto_id?: string | null
+          responsavel_id?: string | null
+          status?: string
+          tipo?: string
+          titulo?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_cards_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_cards_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_cards_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_cards_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_followups: {
+        Row: {
+          card_id: string
+          created_at: string | null
+          data_retorno: string
+          dias_alerta: number
+          id: string
+          observacao: string | null
+          status: string
+        }
+        Insert: {
+          card_id: string
+          created_at?: string | null
+          data_retorno: string
+          dias_alerta?: number
+          id?: string
+          observacao?: string | null
+          status?: string
+        }
+        Update: {
+          card_id?: string
+          created_at?: string | null
+          data_retorno?: string
+          dias_alerta?: number
+          id?: string
+          observacao?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_followups_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "crm_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_historico: {
+        Row: {
+          card_id: string
+          colaborador_id: string | null
+          created_at: string | null
+          descricao: string
+          id: string
+        }
+        Insert: {
+          card_id: string
+          colaborador_id?: string | null
+          created_at?: string | null
+          descricao: string
+          id?: string
+        }
+        Update: {
+          card_id?: string
+          colaborador_id?: string | null
+          created_at?: string | null
+          descricao?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_historico_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "crm_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_historico_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_historico_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custos_equipe: {
         Row: {
           colaborador_id: string
