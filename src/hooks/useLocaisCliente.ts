@@ -5,8 +5,15 @@ export interface LocalCliente {
   id: string;
   cliente_id: string;
   nome: string;
+  tipo_pessoa: "fisica" | "juridica";
   endereco_completo: string | null;
+  cpf: string | null;
+  data_aniversario: string | null;
+  razao_social: string | null;
   cnpj: string | null;
+  inscricao_estadual: string | null;
+  contato_principal: string | null;
+  email: string | null;
   assessores: string | null;
   funcionarios_casa: string | null;
   observacoes: string | null;
