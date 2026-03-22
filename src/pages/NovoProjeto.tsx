@@ -62,7 +62,9 @@ export default function NovoProjeto() {
     if (!isEditing) {
       const params = new URLSearchParams(window.location.search);
       const clienteId = params.get("cliente_id");
+      const localId = params.get("local_id");
       if (clienteId) setForm(f => ({ ...f, cliente_id: clienteId }));
+      if (localId) setForm(f => ({ ...f, local_id: localId }));
     }
   }, [isEditing]);
 
