@@ -126,12 +126,13 @@ export default function NovoProjeto() {
         </div>
 
         <div className="space-y-2">
-          <Label>Descrição</Label>
+          <Label>Descrição *</Label>
           <Textarea
             value={form.descricao}
             onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))}
             placeholder="Detalhes do projeto..."
             rows={3}
+            required
           />
         </div>
 
