@@ -84,7 +84,7 @@ export default function NovoProjeto() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.cliente_id || !form.titulo) {
+    if (!form.cliente_id || !form.titulo || !form.descricao.trim()) {
       toast({ title: "Preencha os campos obrigatórios", variant: "destructive" });
       return;
     }
@@ -126,12 +126,13 @@ export default function NovoProjeto() {
         </div>
 
         <div className="space-y-2">
-          <Label>Descrição</Label>
+          <Label>Descrição *</Label>
           <Textarea
             value={form.descricao}
             onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))}
             placeholder="Detalhes do projeto..."
             rows={3}
+            required
           />
         </div>
 
