@@ -1504,34 +1504,55 @@ export type Database = {
           assessores: string | null
           cliente_id: string
           cnpj: string | null
+          contato_principal: string | null
+          cpf: string | null
           created_at: string | null
+          data_aniversario: string | null
+          email: string | null
           endereco_completo: string | null
           funcionarios_casa: string | null
           id: string
+          inscricao_estadual: string | null
           nome: string
           observacoes: string | null
+          razao_social: string | null
+          tipo_pessoa: string
         }
         Insert: {
           assessores?: string | null
           cliente_id: string
           cnpj?: string | null
+          contato_principal?: string | null
+          cpf?: string | null
           created_at?: string | null
+          data_aniversario?: string | null
+          email?: string | null
           endereco_completo?: string | null
           funcionarios_casa?: string | null
           id?: string
+          inscricao_estadual?: string | null
           nome: string
           observacoes?: string | null
+          razao_social?: string | null
+          tipo_pessoa?: string
         }
         Update: {
           assessores?: string | null
           cliente_id?: string
           cnpj?: string | null
+          contato_principal?: string | null
+          cpf?: string | null
           created_at?: string | null
+          data_aniversario?: string | null
+          email?: string | null
           endereco_completo?: string | null
           funcionarios_casa?: string | null
           id?: string
+          inscricao_estadual?: string | null
           nome?: string
           observacoes?: string | null
+          razao_social?: string | null
+          tipo_pessoa?: string
         }
         Relationships: [
           {

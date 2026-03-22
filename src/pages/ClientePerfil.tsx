@@ -1,15 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   MapPin,
-  FolderKanban,
   Phone,
   Mail,
   Calendar,
   Plus,
   Pencil,
-  Building2,
   FileText,
   User,
   Loader2,
@@ -17,7 +15,8 @@ import {
   ChevronDown,
   ChevronUp,
   Save,
-  X,
+  Building2,
+  UserRound,
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -30,7 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCliente } from "@/hooks/useCliente";
 import { useAuth, useIsAdmin } from "@/hooks/useAuth";
 import { useProjetosCliente, projetoStatusConfig } from "@/hooks/useProjetos";
-import { useLocaisCliente, useSaveLocal, useDeleteLocal } from "@/hooks/useLocaisCliente";
+import { useLocaisCliente, useSaveLocal, useDeleteLocal, LocalCliente } from "@/hooks/useLocaisCliente";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import {
@@ -50,6 +49,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   ativo: { label: "Ativo", className: "bg-primary/20 text-primary border-primary/30" },
@@ -57,7 +57,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   prospecto: { label: "Prospecto", className: "bg-primary/10 text-primary/80 border-primary/20" },
 };
 
-// Local form modal
+// ─── Local Form Dialog ────────────────────────────────────────────
 function LocalFormDialog({
   open,
   onOpenChange,
@@ -67,12 +67,19 @@ function LocalFormDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
   clienteId: string;
-  existingLocal?: any;
+  existingLocal?: LocalCliente;
 }) {
   const [form, setForm] = useState({
     nome: existingLocal?.nome || "",
+    tipo_pessoa: (existingLocal?.tipo_pessoa || "fisica") as "fisica" | "juridica",
     endereco_completo: existingLocal?.endereco_completo || "",
+    cpf: existingLocal?.cpf || "",
+    data_aniversario: existingLocal?.data_aniversario || "",
+    razao_social: existingLocal?.razao_social || "",
     cnpj: existingLocal?.cnpj || "",
+    inscricao_estadual: existingLocal?.inscricao_estadual || "",
+    contato_principal: existingLocal?.contato_principal || "",
+    email: existingLocal?.email || "",
     assessores: existingLocal?.assessores || "",
     funcionarios_casa: existingLocal?.funcionarios_casa || "",
     observacoes: existingLocal?.observacoes || "",
@@ -91,8 +98,15 @@ function LocalFormDialog({
         id: existingLocal?.id,
         cliente_id: clienteId,
         nome: form.nome.trim(),
+        tipo_pessoa: form.tipo_pessoa,
         endereco_completo: form.endereco_completo || null,
-        cnpj: form.cnpj || null,
+        cpf: form.tipo_pessoa === "fisica" ? form.cpf || null : null,
+        data_aniversario: form.tipo_pessoa === "fisica" && form.data_aniversario ? form.data_aniversario : null,
+        razao_social: form.tipo_pessoa === "juridica" ? form.razao_social || null : null,
+        cnpj: form.tipo_pessoa === "juridica" ? form.cnpj || null : null,
+        inscricao_estadual: form.tipo_pessoa === "juridica" ? form.inscricao_estadual || null : null,
+        contato_principal: form.contato_principal || null,
+        email: form.email || null,
         assessores: form.assessores || null,
         funcionarios_casa: form.funcionarios_casa || null,
         observacoes: form.observacoes || null,
@@ -109,65 +123,164 @@ function LocalFormDialog({
     );
   };
 
+  const set = (field: string, value: string) => setForm((f) => ({ ...f, [field]: value }));
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display">
             {existingLocal ? "Editar Local" : "Novo Local"}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Nome */}
           <div className="space-y-2">
-            <Label>Nome do Local *</Label>
+            <Label className="text-[#1E4D3A]">Nome do Local *</Label>
             <Input
               value={form.nome}
-              onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))}
-              placeholder='Ex: "Casa Boituva", "Apartamento SP"'
+              onChange={(e) => set("nome", e.target.value)}
+              placeholder='Ex: "Casa Boituva", "Sede SP"'
             />
           </div>
+
+          {/* Toggle PF / PJ */}
           <div className="space-y-2">
-            <Label>Endereço Completo</Label>
-            <Input
-              value={form.endereco_completo}
-              onChange={(e) => setForm((f) => ({ ...f, endereco_completo: e.target.value }))}
-              placeholder="Rua, número, bairro, cidade - UF"
-            />
+            <Label className="text-[#1E4D3A]">Tipo de Pessoa</Label>
+            <ToggleGroup
+              type="single"
+              value={form.tipo_pessoa}
+              onValueChange={(v) => {
+                if (v) set("tipo_pessoa", v);
+              }}
+              className="w-full justify-start gap-0 border border-primary/30 rounded-lg overflow-hidden p-0"
+            >
+              <ToggleGroupItem
+                value="fisica"
+                className="flex-1 rounded-none data-[state=on]:bg-primary data-[state=on]:text-primary-foreground gap-2 px-4 py-2.5"
+              >
+                <UserRound className="w-4 h-4" />
+                Pessoa Física
+              </ToggleGroupItem>
+              <ToggleGroupItem
+                value="juridica"
+                className="flex-1 rounded-none data-[state=on]:bg-primary data-[state=on]:text-primary-foreground gap-2 px-4 py-2.5"
+              >
+                <Building2 className="w-4 h-4" />
+                Pessoa Jurídica
+              </ToggleGroupItem>
+            </ToggleGroup>
           </div>
-          <div className="space-y-2">
-            <Label>CNPJ</Label>
-            <Input
-              value={form.cnpj}
-              onChange={(e) => setForm((f) => ({ ...f, cnpj: e.target.value }))}
-              placeholder="00.000.000/0000-00"
-            />
+
+          {/* PF Fields */}
+          {form.tipo_pessoa === "fisica" && (
+            <div className="grid gap-4 sm:grid-cols-2 p-4 rounded-lg bg-muted/30 border border-primary/10">
+              <div className="space-y-2">
+                <Label className="text-[#1E4D3A]">CPF</Label>
+                <Input
+                  value={form.cpf}
+                  onChange={(e) => set("cpf", e.target.value)}
+                  placeholder="000.000.000-00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[#1E4D3A]">Data de Aniversário</Label>
+                <Input
+                  type="date"
+                  value={form.data_aniversario}
+                  onChange={(e) => set("data_aniversario", e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* PJ Fields */}
+          {form.tipo_pessoa === "juridica" && (
+            <div className="grid gap-4 sm:grid-cols-2 p-4 rounded-lg bg-muted/30 border border-primary/10">
+              <div className="space-y-2 sm:col-span-2">
+                <Label className="text-[#1E4D3A]">Razão Social</Label>
+                <Input
+                  value={form.razao_social}
+                  onChange={(e) => set("razao_social", e.target.value)}
+                  placeholder="Razão social da empresa"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[#1E4D3A]">CNPJ</Label>
+                <Input
+                  value={form.cnpj}
+                  onChange={(e) => set("cnpj", e.target.value)}
+                  placeholder="00.000.000/0000-00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[#1E4D3A]">Inscrição Estadual</Label>
+                <Input
+                  value={form.inscricao_estadual}
+                  onChange={(e) => set("inscricao_estadual", e.target.value)}
+                  placeholder="Opcional"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Common fields */}
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-[#1E4D3A]">Endereço Completo</Label>
+              <Input
+                value={form.endereco_completo}
+                onChange={(e) => set("endereco_completo", e.target.value)}
+                placeholder="Rua, número, bairro, cidade - UF"
+              />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label className="text-[#1E4D3A]">Contato Principal / WhatsApp</Label>
+                <Input
+                  value={form.contato_principal}
+                  onChange={(e) => set("contato_principal", e.target.value)}
+                  placeholder="(11) 99999-9999"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[#1E4D3A]">Email</Label>
+                <Input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => set("email", e.target.value)}
+                  placeholder="email@exemplo.com"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[#1E4D3A]">Assessores</Label>
+              <Textarea
+                value={form.assessores}
+                onChange={(e) => set("assessores", e.target.value)}
+                placeholder="Nomes e contatos dos assessores deste local"
+                rows={2}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[#1E4D3A]">Funcionários da Casa</Label>
+              <Textarea
+                value={form.funcionarios_casa}
+                onChange={(e) => set("funcionarios_casa", e.target.value)}
+                placeholder="Zelador, caseiro, governanta..."
+                rows={2}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[#1E4D3A]">Observações</Label>
+              <Textarea
+                value={form.observacoes}
+                onChange={(e) => set("observacoes", e.target.value)}
+                rows={2}
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label>Assessores</Label>
-            <Textarea
-              value={form.assessores}
-              onChange={(e) => setForm((f) => ({ ...f, assessores: e.target.value }))}
-              placeholder="Lista de assessores deste local"
-              rows={2}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Funcionários da Casa</Label>
-            <Textarea
-              value={form.funcionarios_casa}
-              onChange={(e) => setForm((f) => ({ ...f, funcionarios_casa: e.target.value }))}
-              placeholder="Lista de funcionários do local"
-              rows={2}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Observações</Label>
-            <Textarea
-              value={form.observacoes}
-              onChange={(e) => setForm((f) => ({ ...f, observacoes: e.target.value }))}
-              rows={2}
-            />
-          </div>
+
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
@@ -187,13 +300,13 @@ function LocalFormDialog({
   );
 }
 
-// Local card with expandable projects
+// ─── Local Card ───────────────────────────────────────────────────
 function LocalCard({
   local,
   clienteId,
   isAdmin,
 }: {
-  local: any;
+  local: LocalCliente;
   clienteId: string;
   isAdmin: boolean;
 }) {
@@ -203,7 +316,6 @@ function LocalCard({
   const deleteLocal = useDeleteLocal();
   const { toast } = useToast();
 
-  // Fetch projects for this local
   const { data: projetos = [] } = useQuery({
     queryKey: ["projetos-local", local.id],
     queryFn: async () => {
@@ -217,6 +329,10 @@ function LocalCard({
     },
     enabled: expanded,
   });
+
+  const tipoBadge = local.tipo_pessoa === "juridica"
+    ? { label: "PJ", className: "bg-accent/20 text-accent-foreground border-accent/30" }
+    : { label: "PF", className: "bg-primary/10 text-primary border-primary/20" };
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
@@ -232,9 +348,12 @@ function LocalCard({
             <h3 className="font-display font-semibold text-foreground flex items-center gap-2">
               <MapPin className="w-4 h-4 text-primary shrink-0" />
               {local.nome}
+              <Badge variant="outline" className={`${tipoBadge.className} text-xs ml-1`}>
+                {tipoBadge.label}
+              </Badge>
             </h3>
             {local.endereco_completo && (
-              <p className="text-sm text-muted-foreground mt-1 truncate">
+              <p className="text-sm text-muted-foreground mt-1 truncate pl-6">
                 {local.endereco_completo}
               </p>
             )}
@@ -255,28 +374,66 @@ function LocalCard({
           <div className="border-t border-primary/10 p-4 space-y-4">
             {/* Local details */}
             <div className="grid gap-3 sm:grid-cols-2 text-sm">
-              {local.cnpj && (
+              {local.tipo_pessoa === "fisica" && local.cpf && (
+                <div>
+                  <span className="text-muted-foreground">CPF:</span>{" "}
+                  <span className="text-foreground font-medium">{local.cpf}</span>
+                </div>
+              )}
+              {local.tipo_pessoa === "fisica" && local.data_aniversario && (
+                <div>
+                  <span className="text-muted-foreground">Aniversário:</span>{" "}
+                  <span className="text-foreground font-medium">
+                    {new Date(local.data_aniversario + "T12:00:00").toLocaleDateString("pt-BR")}
+                  </span>
+                </div>
+              )}
+              {local.tipo_pessoa === "juridica" && local.razao_social && (
+                <div className="sm:col-span-2">
+                  <span className="text-muted-foreground">Razão Social:</span>{" "}
+                  <span className="text-foreground font-medium">{local.razao_social}</span>
+                </div>
+              )}
+              {local.tipo_pessoa === "juridica" && local.cnpj && (
                 <div>
                   <span className="text-muted-foreground">CNPJ:</span>{" "}
-                  <span className="text-foreground">{local.cnpj}</span>
+                  <span className="text-foreground font-medium">{local.cnpj}</span>
+                </div>
+              )}
+              {local.tipo_pessoa === "juridica" && local.inscricao_estadual && (
+                <div>
+                  <span className="text-muted-foreground">Insc. Estadual:</span>{" "}
+                  <span className="text-foreground font-medium">{local.inscricao_estadual}</span>
+                </div>
+              )}
+              {local.contato_principal && (
+                <div>
+                  <span className="text-muted-foreground">Contato:</span>{" "}
+                  <span className="text-foreground font-medium">{local.contato_principal}</span>
+                </div>
+              )}
+              {local.email && (
+                <div>
+                  <span className="text-muted-foreground">Email:</span>{" "}
+                  <span className="text-foreground font-medium">{local.email}</span>
                 </div>
               )}
               {local.assessores && (
                 <div className="sm:col-span-2">
                   <span className="text-muted-foreground">Assessores:</span>{" "}
-                  <span className="text-foreground">{local.assessores}</span>
+                  <span className="text-foreground font-medium">{local.assessores}</span>
                 </div>
               )}
               {local.funcionarios_casa && (
                 <div className="sm:col-span-2">
                   <span className="text-muted-foreground">Funcionários da Casa:</span>{" "}
-                  <span className="text-foreground">{local.funcionarios_casa}</span>
+                  <span className="text-foreground font-medium">{local.funcionarios_casa}</span>
                 </div>
               )}
               {local.observacoes && (
                 <div className="sm:col-span-2">
                   <span className="text-muted-foreground">Observações:</span>{" "}
-                  <span className="text-foreground">{local.observacoes}</span>
+                  <span className="text-foreground font-medium">{local.observacoes}</span>
                 </div>
               )}
             </div>
@@ -292,7 +449,7 @@ function LocalCard({
                   variant="outline"
                   size="sm"
                   onClick={() => setDeleteConfirm(true)}
-                  className="text-destructive hover:text-destructive"
+                  className="text-primary hover:text-primary"
                 >
                   <Trash2 className="w-3.5 h-3.5 mr-1" />
                   Excluir
@@ -386,7 +543,7 @@ function LocalCard({
                     toast({ title: "Erro ao excluir", variant: "destructive" }),
                 });
               }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               Excluir
             </AlertDialogAction>
@@ -397,6 +554,7 @@ function LocalCard({
   );
 }
 
+// ─── Main Page ────────────────────────────────────────────────────
 export default function ClientePerfil() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -413,7 +571,6 @@ export default function ClientePerfil() {
   const { data: locais = [], isLoading: loadingLocais } = useLocaisCliente(id);
   const { data: projetos = [] } = useProjetosCliente(id);
 
-  // Delete client mutation
   const deleteClienteMutation = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("clientes").delete().eq("id", id);
@@ -462,13 +619,10 @@ export default function ClientePerfil() {
   }
 
   const status = statusConfig[cliente.status] || statusConfig.ativo;
-
-  // Projects not linked to any local (legacy)
   const projetosSemLocal = projetos.filter((p: any) => !p.local_id);
 
   return (
     <AppLayout>
-      {/* Back Button */}
       <Link
         to="/clientes"
         className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
@@ -516,7 +670,7 @@ export default function ClientePerfil() {
           {isAdmin && (
             <Button
               variant="outline"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              className="text-primary hover:text-primary hover:bg-primary/10"
               onClick={() => setClienteToDelete(true)}
             >
               <Trash2 className="w-4 h-4" />
@@ -526,7 +680,7 @@ export default function ClientePerfil() {
         </div>
       </div>
 
-      {/* Tabs: Dados | Locais | Feed */}
+      {/* Tabs */}
       <Tabs defaultValue="locais" className="w-full">
         <TabsList className="mb-6">
           <TabsTrigger value="locais" className="gap-2">
@@ -561,7 +715,7 @@ export default function ClientePerfil() {
             </div>
           ) : locais.length > 0 ? (
             <div className="space-y-3">
-              {locais.map((local: any) => (
+              {locais.map((local) => (
                 <LocalCard
                   key={local.id}
                   local={local}
@@ -615,7 +769,6 @@ export default function ClientePerfil() {
 
         {/* Tab Dados */}
         <TabsContent value="dados" className="space-y-6">
-          {/* Contact info */}
           <section className="card-botanical p-5">
             <h2 className="font-display text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
               <User className="w-5 h-5 text-primary" />
@@ -624,44 +777,19 @@ export default function ClientePerfil() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <p className="text-sm text-muted-foreground">WhatsApp / Telefone</p>
-                <p className="text-foreground">{cliente.telefone || "-"}</p>
+                <p className="text-foreground font-medium">{cliente.telefone || "-"}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Email</p>
-                <p className="text-foreground">{cliente.email || "-"}</p>
+                <p className="text-foreground font-medium">{cliente.email || "-"}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">CPF / CNPJ</p>
-                <p className="text-foreground">{cliente.cpf_cnpj || "-"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Inscrição Estadual</p>
-                <p className="text-foreground">{cliente.inscricao_estadual || "-"}</p>
+                <p className="text-foreground font-medium">{cliente.cpf_cnpj || "-"}</p>
               </div>
             </div>
           </section>
 
-          {/* Proprietários */}
-          {cliente.proprietarios && cliente.proprietarios.length > 0 && (
-            <section className="card-botanical p-5">
-              <h2 className="font-display text-lg font-semibold text-foreground mb-4">
-                Proprietários
-              </h2>
-              <div className="space-y-3">
-                {cliente.proprietarios.map((prop: any, i: number) => (
-                  <div key={i} className="flex flex-col gap-1 p-3 rounded-lg bg-muted/50">
-                    <span className="font-medium text-foreground">{prop.nome}</span>
-                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                      {prop.telefone && <span>{prop.telefone}</span>}
-                      {prop.email && <span>{prop.email}</span>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Datas Importantes */}
           {cliente.datas_importantes && cliente.datas_importantes.length > 0 && (
             <section className="card-botanical p-5">
               <h2 className="font-display text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
@@ -681,22 +809,12 @@ export default function ClientePerfil() {
             </section>
           )}
 
-          {/* Notas */}
           {cliente.notas && (
             <section className="card-botanical p-5">
               <h2 className="font-display text-lg font-semibold text-foreground mb-4">
                 Observações
               </h2>
               <p className="text-foreground whitespace-pre-wrap">{cliente.notas}</p>
-            </section>
-          )}
-
-          {cliente.particularidades && (
-            <section className="card-botanical p-5">
-              <h2 className="font-display text-lg font-semibold text-foreground mb-4">
-                Particularidades
-              </h2>
-              <p className="text-foreground whitespace-pre-wrap">{cliente.particularidades}</p>
             </section>
           )}
         </TabsContent>
@@ -733,7 +851,7 @@ export default function ClientePerfil() {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteClienteMutation.mutate()}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               Excluir
             </AlertDialogAction>
