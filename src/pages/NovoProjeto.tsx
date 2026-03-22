@@ -29,6 +29,7 @@ export default function NovoProjeto() {
 
   const [form, setForm] = useState({
     cliente_id: "",
+    local_id: "",
     titulo: "",
     descricao: "",
     status: "orcamento",
@@ -43,6 +44,7 @@ export default function NovoProjeto() {
     if (projeto) {
       setForm({
         cliente_id: projeto.cliente_id,
+        local_id: (projeto as any).local_id || "",
         titulo: projeto.titulo,
         descricao: projeto.descricao || "",
         status: projeto.status,
@@ -60,7 +62,9 @@ export default function NovoProjeto() {
     if (!isEditing) {
       const params = new URLSearchParams(window.location.search);
       const clienteId = params.get("cliente_id");
+      const localId = params.get("local_id");
       if (clienteId) setForm(f => ({ ...f, cliente_id: clienteId }));
+      if (localId) setForm(f => ({ ...f, local_id: localId }));
     }
   }, [isEditing]);
 
@@ -68,6 +72,7 @@ export default function NovoProjeto() {
     mutationFn: async () => {
       const payload: Record<string, any> = {
         cliente_id: form.cliente_id,
+        local_id: form.local_id || null,
         titulo: form.titulo,
         descricao: form.descricao || null,
         status: form.status,

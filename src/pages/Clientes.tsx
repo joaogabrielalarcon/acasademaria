@@ -1,16 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Plus, MapPin, Loader2 } from "lucide-react";
+import { Search, Plus, Phone, Mail, MapPin, Loader2 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,28 +14,17 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   prospecto: { label: "Prospecto", className: "bg-primary/10 text-primary/80 border-primary/20" },
 };
 
-interface Cliente {
+interface ClienteComLocais {
   id: string;
   nome: string;
-  endereco: string | null;
-  bairro: string | null;
-  condominio: string | null;
-  cidade: string | null;
-  cep: string | null;
+  telefone: string | null;
+  email: string | null;
   status: string;
+  locais_count: number;
 }
 
-function ClienteCard({ cliente }: { cliente: Cliente }) {
+function ClienteCard({ cliente }: { cliente: ClienteComLocais }) {
   const status = statusConfig[cliente.status] || statusConfig.ativo;
-
-  // Monta o endereço completo
-  const enderecoCompleto = [
-    cliente.endereco,
-    cliente.bairro,
-    cliente.condominio,
-    cliente.cidade,
-    cliente.cep,
-  ].filter(Boolean).join(" • ");
 
   return (
     <Link to={`/clientes/${cliente.id}`} className="block">
@@ -52,12 +34,24 @@ function ClienteCard({ cliente }: { cliente: Cliente }) {
             <h3 className="font-display text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
               {cliente.nome}
             </h3>
-            {enderecoCompleto && (
-              <div className="flex items-start gap-1.5 text-sm text-muted-foreground mt-2">
-                <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                <span className="line-clamp-2">{enderecoCompleto}</span>
+            <div className="space-y-1.5 mt-2">
+              {cliente.telefone && (
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <Phone className="w-3.5 h-3.5 shrink-0" />
+                  <span>{cliente.telefone}</span>
+                </div>
+              )}
+              {cliente.email && (
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <Mail className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">{cliente.email}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <MapPin className="w-3.5 h-3.5 shrink-0" />
+                <span>{cliente.locais_count} {cliente.locais_count === 1 ? "local" : "locais"}</span>
               </div>
-            )}
+            </div>
           </div>
 
           <div className="flex items-center justify-between pt-2 border-t border-primary/10">
@@ -81,7 +75,7 @@ function EmptyState() {
         Nenhum cliente cadastrado
       </h3>
       <p className="text-muted-foreground mb-6 max-w-sm">
-        Cadastre o primeiro cliente para começar a documentar os serviços de paisagismo.
+        Cadastre o primeiro cliente para começar.
       </p>
       <Button variant="terracota" asChild>
         <Link to="/clientes/novo">
@@ -95,37 +89,44 @@ function EmptyState() {
 
 export default function Clientes() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [visibleCount, setVisibleCount] = useState(20);
 
   const { data: clientes = [], isLoading } = useQuery({
-    queryKey: ["clientes"],
+    queryKey: ["clientes-com-locais"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch clients
+      const { data: clientesData, error: cErr } = await supabase
         .from("clientes")
-        .select("id, nome, endereco, bairro, condominio, cidade, cep, status")
+        .select("id, nome, telefone, email, status")
         .order("nome");
-      
-      if (error) throw error;
-      return data as Cliente[];
+      if (cErr) throw cErr;
+
+      // Fetch locais count per client
+      const { data: locaisData, error: lErr } = await supabase
+        .from("locais_cliente")
+        .select("cliente_id");
+      if (lErr) throw lErr;
+
+      const countMap = new Map<string, number>();
+      locaisData.forEach((l: any) => {
+        countMap.set(l.cliente_id, (countMap.get(l.cliente_id) || 0) + 1);
+      });
+
+      return (clientesData || []).map((c: any) => ({
+        ...c,
+        locais_count: countMap.get(c.id) || 0,
+      })) as ClienteComLocais[];
     },
     staleTime: 1000 * 60 * 5,
   });
 
-  const filteredClientes = clientes.filter((cliente) => {
-    const matchesSearch = cliente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (cliente.bairro?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
-    const matchesStatus = statusFilter === "all" || cliente.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  // Get phone from proprietarios for clients without direct telefone
+  const filteredClientes = clientes.filter((c) =>
+    c.nome.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  // Reset visible count when filters change
   const handleSearch = (value: string) => {
     setSearchTerm(value);
-    setVisibleCount(20);
-  };
-  const handleStatus = (value: string) => {
-    setStatusFilter(value);
     setVisibleCount(20);
   };
 
@@ -134,14 +135,13 @@ export default function Clientes() {
 
   return (
     <AppLayout>
-      {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
           <h1 className="font-display text-3xl font-bold text-foreground mb-2">
             Clientes
           </h1>
           <p className="text-muted-foreground">
-            Gerencie os clientes e seus jardins
+            Gerencie clientes, locais e projetos
           </p>
         </div>
         <Button variant="terracota" asChild>
@@ -152,31 +152,18 @@ export default function Clientes() {
         </Button>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nome ou bairro..."
+            placeholder="Buscar por nome..."
             value={searchTerm}
             onChange={(e) => handleSearch(e.target.value)}
             className="pl-10"
           />
         </div>
-        <Select value={statusFilter} onValueChange={handleStatus}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="ativo">Ativos</SelectItem>
-            <SelectItem value="inativo">Inativos</SelectItem>
-            <SelectItem value="prospecto">Prospectos</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
-      {/* Loading */}
       {isLoading ? (
         <div className="flex items-center justify-center py-24">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />

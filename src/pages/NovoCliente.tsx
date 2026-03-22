@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, Star, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Loader2, Save } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,36 +14,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { formatCPFCNPJ, formatCEP, formatPhone, formatIE, capitalizeWords } from "@/hooks/useInputMasks";
+import { formatCPFCNPJ, formatPhone, capitalizeWords } from "@/hooks/useInputMasks";
 import { supabase } from "@/integrations/supabase/client";
 import { useCliente } from "@/hooks/useCliente";
-
-interface Proprietario {
-  nome: string;
-  telefone: string;
-  email: string;
-  dataNascimento: string;
-  cpf: string;
-  pontoContato: boolean;
-}
-
-interface FuncionarioCasa {
-  nome: string;
-  funcao: string;
-  telefone: string;
-  dataNascimento: string;
-  cpf: string;
-  pontoContato: boolean;
-}
-
-interface Assessor {
-  nome: string;
-  empresa: string;
-  telefone: string;
-  dataNascimento: string;
-  cpf: string;
-  pontoContato: boolean;
-}
 
 interface DataImportante {
   data: string;
@@ -57,99 +30,43 @@ export default function NovoCliente() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState("ativo");
-  const [estado, setEstado] = useState("");
 
-  const [proprietarios, setProprietarios] = useState<Proprietario[]>([
-    { nome: "", telefone: "", email: "", dataNascimento: "", cpf: "", pontoContato: false }
-  ]);
-  const [funcionarios, setFuncionarios] = useState<FuncionarioCasa[]>([]);
-  const [assessores, setAssessores] = useState<Assessor[]>([]);
-  const [datasImportantes, setDatasImportantes] = useState<DataImportante[]>([]);
-
-  // Estados para campos formatados
   const [nome, setNome] = useState("");
-  const [endereco, setEndereco] = useState("");
-  const [bairro, setBairro] = useState("");
-  const [cidade, setCidade] = useState("");
-  const [condominio, setCondominio] = useState("");
+  const [telefone, setTelefone] = useState("");
+  const [email, setEmail] = useState("");
   const [cpfCnpj, setCpfCnpj] = useState("");
-  const [inscricaoEstadual, setInscricaoEstadual] = useState("");
-  const [cep, setCep] = useState("");
-  const [particularidades, setParticularidades] = useState("");
+  const [datasImportantes, setDatasImportantes] = useState<DataImportante[]>([]);
   const [notas, setNotas] = useState("");
 
-  // Fetch existing client data if editing
   const { data: clienteExistente, isLoading: loadingCliente } = useCliente(id);
 
-  // Populate form with existing data when editing
   useEffect(() => {
     if (clienteExistente && isEditing) {
       setNome(clienteExistente.nome || "");
       setStatus(clienteExistente.status || "ativo");
-      setEndereco(clienteExistente.endereco || "");
-      setBairro(clienteExistente.bairro || "");
-      setCidade(clienteExistente.cidade || "");
-      setEstado(clienteExistente.estado || "");
-      setCep(clienteExistente.cep || "");
-      setCondominio(clienteExistente.condominio || "");
+      setTelefone(clienteExistente.telefone || "");
+      setEmail(clienteExistente.email || "");
       setCpfCnpj(clienteExistente.cpf_cnpj || "");
-      setInscricaoEstadual(clienteExistente.inscricao_estadual || "");
-      setParticularidades(clienteExistente.particularidades || "");
       setNotas(clienteExistente.notas || "");
-      
-      // Map proprietarios
-      if (clienteExistente.proprietarios && clienteExistente.proprietarios.length > 0) {
-        setProprietarios(clienteExistente.proprietarios.map((p: any) => ({
-          nome: p.nome || "",
-          telefone: p.telefone || "",
-          email: p.email || "",
-          dataNascimento: p.dataNascimento || "",
-          cpf: p.cpf || "",
-          pontoContato: p.pontoContato || false,
-        })));
-      }
-      
-      // Map funcionarios
-      if (clienteExistente.funcionarios_casa && clienteExistente.funcionarios_casa.length > 0) {
-        setFuncionarios(clienteExistente.funcionarios_casa.map((f: any) => ({
-          nome: f.nome || "",
-          funcao: f.funcao || "",
-          telefone: f.telefone || "",
-          dataNascimento: f.dataNascimento || "",
-          cpf: f.cpf || "",
-          pontoContato: f.pontoContato || false,
-        })));
-      }
-      
-      // Map assessores
-      if (clienteExistente.assessores && clienteExistente.assessores.length > 0) {
-        setAssessores(clienteExistente.assessores.map((a: any) => ({
-          nome: a.nome || "",
-          empresa: a.empresa || "",
-          telefone: a.telefone || "",
-          dataNascimento: a.dataNascimento || "",
-          cpf: a.cpf || "",
-          pontoContato: a.pontoContato || false,
-        })));
-      }
-      
-      // Map datas importantes
+
       if (clienteExistente.datas_importantes && clienteExistente.datas_importantes.length > 0) {
-        setDatasImportantes(clienteExistente.datas_importantes.map((d: any) => ({
-          data: d.data || "",
-          descricao: d.descricao || "",
-        })));
+        setDatasImportantes(
+          clienteExistente.datas_importantes.map((d: any) => ({
+            data: d.data || "",
+            descricao: d.descricao || "",
+          }))
+        );
       }
     }
   }, [clienteExistente, isEditing]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!nome.trim()) {
       toast({
         title: "Erro",
-        description: "O nome da propriedade é obrigatório.",
+        description: "O nome do proprietário é obrigatório.",
         variant: "destructive",
       });
       return;
@@ -157,70 +74,29 @@ export default function NovoCliente() {
 
     setIsLoading(true);
 
-      const filteredProps = proprietarios.filter(p => p.nome.trim());
-      const filteredFuncs = funcionarios.filter(f => f.nome.trim());
-      const filteredAssessores = assessores.filter(a => a.nome.trim());
-      const manualDatas = datasImportantes.filter(d => d.data || d.descricao);
+    const filteredDatas = datasImportantes.filter((d) => d.data || d.descricao);
 
-      // Auto-generate birthday entries from people with dataNascimento
-      const birthdayDatas: DataImportante[] = [];
-      filteredProps.forEach(p => {
-        if (p.dataNascimento) birthdayDatas.push({ data: p.dataNascimento, descricao: `Aniversário - ${p.nome} (Proprietário)` });
-      });
-      filteredFuncs.forEach(f => {
-        if (f.dataNascimento) birthdayDatas.push({ data: f.dataNascimento, descricao: `Aniversário - ${f.nome} (Funcionário)` });
-      });
-      filteredAssessores.forEach(a => {
-        if (a.dataNascimento) birthdayDatas.push({ data: a.dataNascimento, descricao: `Aniversário - ${a.nome} (Assessor)` });
-      });
-
-      // Merge: keep manual entries that aren't auto-generated birthdays, then add birthday entries
-      const nonBirthdayManual = manualDatas.filter(d => !d.descricao.startsWith("Aniversário - "));
-      const allDatas = [...nonBirthdayManual, ...birthdayDatas];
-
-      const clienteData = {
-        nome: nome.trim(),
-        status,
-        cpf_cnpj: cpfCnpj || null,
-        inscricao_estadual: inscricaoEstadual || null,
-        endereco: endereco || null,
-        bairro: bairro || null,
-        cidade: cidade || null,
-        estado: estado || null,
-        cep: cep || null,
-        condominio: condominio || null,
-        proprietarios: JSON.parse(JSON.stringify(filteredProps)),
-        funcionarios_casa: JSON.parse(JSON.stringify(filteredFuncs)),
-        assessores: JSON.parse(JSON.stringify(filteredAssessores)),
-        datas_importantes: JSON.parse(JSON.stringify(allDatas)),
-        particularidades: particularidades || null,
-        notas: notas || null,
-      };
+    const clienteData = {
+      nome: nome.trim(),
+      status,
+      telefone: telefone || null,
+      email: email || null,
+      cpf_cnpj: cpfCnpj || null,
+      datas_importantes: JSON.parse(JSON.stringify(filteredDatas)),
+      notas: notas || null,
+    };
 
     try {
       if (isEditing && id) {
-        const { error } = await supabase
-          .from("clientes")
-          .update(clienteData)
-          .eq("id", id);
-
+        const { error } = await supabase.from("clientes").update(clienteData).eq("id", id);
         if (error) throw error;
-
-        toast({
-          title: "Cliente atualizado!",
-          description: "Os dados do cliente foram salvos com sucesso.",
-        });
+        toast({ title: "Cliente atualizado!" });
         navigate(`/clientes/${id}`);
       } else {
         const { error } = await supabase.from("clientes").insert(clienteData);
-
         if (error) throw error;
-
-        toast({
-          title: "Cliente cadastrado!",
-          description: "O cliente foi adicionado com sucesso.",
-        });
-        navigate("/");
+        toast({ title: "Cliente cadastrado!" });
+        navigate("/clientes");
       }
     } catch (error: any) {
       toast({
@@ -233,46 +109,6 @@ export default function NovoCliente() {
     }
   };
 
-  // Proprietários
-  const addProprietario = () => {
-    setProprietarios([...proprietarios, { nome: "", telefone: "", email: "", dataNascimento: "", cpf: "", pontoContato: false }]);
-  };
-  const removeProprietario = (index: number) => {
-    setProprietarios(proprietarios.filter((_, i) => i !== index));
-  };
-  const updateProprietario = (index: number, field: keyof Proprietario, value: string | boolean) => {
-    const updated = [...proprietarios];
-    (updated[index] as any)[field] = value;
-    setProprietarios(updated);
-  };
-
-  // Funcionários
-  const addFuncionario = () => {
-    setFuncionarios([...funcionarios, { nome: "", funcao: "", telefone: "", dataNascimento: "", cpf: "", pontoContato: false }]);
-  };
-  const removeFuncionario = (index: number) => {
-    setFuncionarios(funcionarios.filter((_, i) => i !== index));
-  };
-  const updateFuncionario = (index: number, field: keyof FuncionarioCasa, value: string | boolean) => {
-    const updated = [...funcionarios];
-    (updated[index] as any)[field] = value;
-    setFuncionarios(updated);
-  };
-
-  // Assessores
-  const addAssessor = () => {
-    setAssessores([...assessores, { nome: "", empresa: "", telefone: "", dataNascimento: "", cpf: "", pontoContato: false }]);
-  };
-  const removeAssessor = (index: number) => {
-    setAssessores(assessores.filter((_, i) => i !== index));
-  };
-  const updateAssessor = (index: number, field: keyof Assessor, value: string | boolean) => {
-    const updated = [...assessores];
-    (updated[index] as any)[field] = value;
-    setAssessores(updated);
-  };
-
-  // Datas Importantes
   const addDataImportante = () => {
     setDatasImportantes([...datasImportantes, { data: "", descricao: "" }]);
   };
@@ -285,7 +121,6 @@ export default function NovoCliente() {
     setDatasImportantes(updated);
   };
 
-  // Show loading while fetching existing data
   if (isEditing && loadingCliente) {
     return (
       <AppLayout>
@@ -298,9 +133,8 @@ export default function NovoCliente() {
 
   return (
     <AppLayout>
-      {/* Back Button */}
-      <Link 
-        to={isEditing ? `/clientes/${id}` : "/"} 
+      <Link
+        to={isEditing ? `/clientes/${id}` : "/clientes"}
         className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -312,24 +146,45 @@ export default function NovoCliente() {
           {isEditing ? "Editar Cliente" : "Novo Cliente"}
         </h1>
         <p className="text-muted-foreground mb-8">
-          {isEditing ? "Atualize os dados do cliente" : "Cadastre um novo cliente e seu jardim"}
+          {isEditing
+            ? "Atualize os dados do cliente"
+            : "Cadastre o proprietário. Locais e projetos serão vinculados depois."}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Seção 1: Identificação */}
+          {/* Identificação */}
           <section className="space-y-4">
             <h2 className="font-display text-lg font-semibold border-b border-primary/20 pb-2 text-foreground">
               Identificação
             </h2>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="nome">Nome da Propriedade *</Label>
-                <Input 
-                  id="nome" 
-                  placeholder="Ex: Família Silveira, Residência Campos" 
-                  required 
+                <Label htmlFor="nome">Nome do Proprietário *</Label>
+                <Input
+                  id="nome"
+                  placeholder="Ex: João da Silva"
+                  required
                   value={nome}
                   onChange={(e) => setNome(capitalizeWords(e.target.value))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="telefone">WhatsApp / Telefone</Label>
+                <Input
+                  id="telefone"
+                  placeholder="(11) 99999-9999"
+                  value={telefone}
+                  onChange={(e) => setTelefone(formatPhone(e.target.value))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="email@exemplo.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -346,344 +201,18 @@ export default function NovoCliente() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="cpf_cnpj">CPF / CNPJ</Label>
-                <Input 
-                  id="cpf_cnpj" 
-                  placeholder="000.000.000-00 ou 00.000.000/0000-00" 
+                <Label htmlFor="cpf_cnpj">CNPJ / Dados Fiscais</Label>
+                <Input
+                  id="cpf_cnpj"
+                  placeholder="00.000.000/0000-00"
                   value={cpfCnpj}
                   onChange={(e) => setCpfCnpj(formatCPFCNPJ(e.target.value))}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="inscricao_estadual">Inscrição Estadual</Label>
-                <Input 
-                  id="inscricao_estadual" 
-                  placeholder="000.000.000.000"
-                  value={inscricaoEstadual}
-                  onChange={(e) => setInscricaoEstadual(formatIE(e.target.value))}
-                />
-              </div>
             </div>
           </section>
 
-          {/* Seção 2: Localização */}
-          <section className="space-y-4">
-            <h2 className="font-display text-lg font-semibold border-b border-primary/20 pb-2 text-foreground">
-              Localização
-            </h2>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="endereco">Endereço</Label>
-                <Input 
-                  id="endereco" 
-                  placeholder="Rua, número"
-                  value={endereco}
-                  onChange={(e) => setEndereco(capitalizeWords(e.target.value))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="bairro">Bairro</Label>
-                <Input 
-                  id="bairro" 
-                  placeholder="Bairro"
-                  value={bairro}
-                  onChange={(e) => setBairro(capitalizeWords(e.target.value))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="cidade">Cidade</Label>
-                <Input 
-                  id="cidade" 
-                  placeholder="Cidade"
-                  value={cidade}
-                  onChange={(e) => setCidade(capitalizeWords(e.target.value))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="estado">Estado</Label>
-                <Select value={estado} onValueChange={setEstado}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="UF" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="SP">São Paulo</SelectItem>
-                    <SelectItem value="RJ">Rio de Janeiro</SelectItem>
-                    <SelectItem value="MG">Minas Gerais</SelectItem>
-                    <SelectItem value="PR">Paraná</SelectItem>
-                    <SelectItem value="SC">Santa Catarina</SelectItem>
-                    <SelectItem value="RS">Rio Grande do Sul</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="cep">CEP</Label>
-                <Input 
-                  id="cep" 
-                  placeholder="00000-000"
-                  value={cep}
-                  onChange={(e) => setCep(formatCEP(e.target.value))}
-                />
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="condominio">Condomínio (opcional)</Label>
-                <Input 
-                  id="condominio" 
-                  placeholder="Nome do condomínio"
-                  value={condominio}
-                  onChange={(e) => setCondominio(capitalizeWords(e.target.value))}
-                />
-              </div>
-            </div>
-          </section>
-
-          {/* Seção 3: Proprietários */}
-          <section className="space-y-4">
-            <div className="flex items-center justify-between border-b border-primary/20 pb-2">
-              <div>
-                <h2 className="font-display text-lg font-semibold text-foreground">
-                  Proprietários
-                </h2>
-                <p className="text-xs text-muted-foreground mt-1">
-                  <Star className="w-3 h-3 inline text-amber-500" /> = Ponto de contato
-                </p>
-              </div>
-              <Button type="button" variant="ghost" size="sm" onClick={addProprietario}>
-                <Plus className="w-4 h-4" />
-                Adicionar
-              </Button>
-            </div>
-            {proprietarios.map((prop, index) => (
-              <div key={index} className={`p-4 rounded-lg space-y-3 ${prop.pontoContato ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-muted/30'}`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      size="icon-sm"
-                      onClick={() => updateProprietario(index, "pontoContato", !prop.pontoContato)}
-                      title={prop.pontoContato ? "Remover como ponto de contato" : "Marcar como ponto de contato"}
-                    >
-                      <Star className={`w-4 h-4 ${prop.pontoContato ? 'fill-amber-500 text-amber-500' : 'text-muted-foreground'}`} />
-                    </Button>
-                    <span className="text-sm font-medium text-foreground">Proprietário {index + 1}</span>
-                  </div>
-                  {proprietarios.length > 1 && (
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      size="icon-sm"
-                      onClick={() => removeProprietario(index)}
-                    >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
-                  )}
-                </div>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <Input 
-                    placeholder="Nome"
-                    value={prop.nome}
-                    onChange={(e) => updateProprietario(index, "nome", capitalizeWords(e.target.value))}
-                  />
-                  <Input 
-                    placeholder="Telefone"
-                    value={prop.telefone}
-                    onChange={(e) => updateProprietario(index, "telefone", formatPhone(e.target.value))}
-                  />
-                  <Input 
-                    placeholder="Email"
-                    value={prop.email}
-                    onChange={(e) => updateProprietario(index, "email", e.target.value)}
-                  />
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Data de Nascimento</Label>
-                    <Input 
-                      type="date"
-                      value={prop.dataNascimento}
-                      onChange={(e) => updateProprietario(index, "dataNascimento", e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">CPF</Label>
-                    <Input 
-                      placeholder="000.000.000-00"
-                      value={prop.cpf}
-                      onChange={(e) => updateProprietario(index, "cpf", formatCPFCNPJ(e.target.value))}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </section>
-
-          {/* Seção 4: Funcionários da Casa */}
-          <section className="space-y-4">
-            <div className="flex items-center justify-between border-b border-primary/20 pb-2">
-              <div>
-                <h2 className="font-display text-lg font-semibold text-foreground">
-                  Funcionários da Casa
-                </h2>
-                <p className="text-xs text-muted-foreground mt-1">
-                  <Star className="w-3 h-3 inline text-amber-500" /> = Ponto de contato
-                </p>
-              </div>
-              <Button type="button" variant="ghost" size="sm" onClick={addFuncionario}>
-                <Plus className="w-4 h-4" />
-                Adicionar
-              </Button>
-            </div>
-            {funcionarios.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhum funcionário adicionado</p>
-            ) : (
-              funcionarios.map((func, index) => (
-                <div key={index} className={`p-4 rounded-lg space-y-3 ${func.pontoContato ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-muted/30'}`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="icon-sm"
-                        onClick={() => updateFuncionario(index, "pontoContato", !func.pontoContato)}
-                        title={func.pontoContato ? "Remover como ponto de contato" : "Marcar como ponto de contato"}
-                      >
-                        <Star className={`w-4 h-4 ${func.pontoContato ? 'fill-amber-500 text-amber-500' : 'text-muted-foreground'}`} />
-                      </Button>
-                      <span className="text-sm font-medium text-foreground">Funcionário {index + 1}</span>
-                    </div>
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      size="icon-sm"
-                      onClick={() => removeFuncionario(index)}
-                    >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <Input 
-                      placeholder="Nome"
-                      value={func.nome}
-                      onChange={(e) => updateFuncionario(index, "nome", capitalizeWords(e.target.value))}
-                    />
-                    <Input 
-                      placeholder="Função (caseiro, governanta...)"
-                      value={func.funcao}
-                      onChange={(e) => updateFuncionario(index, "funcao", capitalizeWords(e.target.value))}
-                    />
-                    <Input 
-                      placeholder="Telefone"
-                      value={func.telefone}
-                      onChange={(e) => updateFuncionario(index, "telefone", formatPhone(e.target.value))}
-                    />
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Data de Nascimento</Label>
-                      <Input 
-                        type="date"
-                        value={func.dataNascimento}
-                        onChange={(e) => updateFuncionario(index, "dataNascimento", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">CPF</Label>
-                      <Input 
-                        placeholder="000.000.000-00"
-                        value={func.cpf}
-                        onChange={(e) => updateFuncionario(index, "cpf", formatCPFCNPJ(e.target.value))}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </section>
-
-          {/* Seção 5: Assessores */}
-          <section className="space-y-4">
-            <div className="flex items-center justify-between border-b border-primary/20 pb-2">
-              <div>
-                <h2 className="font-display text-lg font-semibold text-foreground">
-                  Assessores
-                </h2>
-                <p className="text-xs text-muted-foreground mt-1">
-                  <Star className="w-3 h-3 inline text-amber-500" /> = Ponto de contato
-                </p>
-              </div>
-              <Button type="button" variant="ghost" size="sm" onClick={addAssessor}>
-                <Plus className="w-4 h-4" />
-                Adicionar
-              </Button>
-            </div>
-            {assessores.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhum assessor adicionado</p>
-            ) : (
-              assessores.map((ass, index) => (
-                <div key={index} className={`p-4 rounded-lg space-y-3 ${ass.pontoContato ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-muted/30'}`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="icon-sm"
-                        onClick={() => updateAssessor(index, "pontoContato", !ass.pontoContato)}
-                        title={ass.pontoContato ? "Remover como ponto de contato" : "Marcar como ponto de contato"}
-                      >
-                        <Star className={`w-4 h-4 ${ass.pontoContato ? 'fill-amber-500 text-amber-500' : 'text-muted-foreground'}`} />
-                      </Button>
-                      <span className="text-sm font-medium text-foreground">Assessor {index + 1}</span>
-                    </div>
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      size="icon-sm"
-                      onClick={() => removeAssessor(index)}
-                    >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <Input 
-                      placeholder="Nome"
-                      value={ass.nome}
-                      onChange={(e) => updateAssessor(index, "nome", capitalizeWords(e.target.value))}
-                    />
-                    <Input 
-                      placeholder="Empresa / Função"
-                      value={ass.empresa}
-                      onChange={(e) => updateAssessor(index, "empresa", capitalizeWords(e.target.value))}
-                    />
-                    <Input 
-                      placeholder="Telefone"
-                      value={ass.telefone}
-                      onChange={(e) => updateAssessor(index, "telefone", formatPhone(e.target.value))}
-                    />
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Data de Nascimento</Label>
-                      <Input 
-                        type="date"
-                        value={ass.dataNascimento}
-                        onChange={(e) => updateAssessor(index, "dataNascimento", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">CPF</Label>
-                      <Input 
-                        placeholder="000.000.000-00"
-                        value={ass.cpf}
-                        onChange={(e) => updateAssessor(index, "cpf", formatCPFCNPJ(e.target.value))}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </section>
-
-          {/* Seção 7: Datas Importantes */}
+          {/* Datas Importantes */}
           <section className="space-y-4">
             <div className="flex items-center justify-between border-b border-primary/20 pb-2">
               <h2 className="font-display text-lg font-semibold text-foreground">
@@ -694,77 +223,65 @@ export default function NovoCliente() {
                 Adicionar
               </Button>
             </div>
-            {datasImportantes.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhuma data importante adicionada</p>
-            ) : (
-              datasImportantes.map((data, index) => (
-                <div key={index} className="p-4 rounded-lg bg-muted/30 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-foreground">Data {index + 1}</span>
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      size="icon-sm"
-                      onClick={() => removeDataImportante(index)}
-                    >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <Input 
+            <p className="text-xs text-muted-foreground">
+              Ex: "Aniversário: 15/03", "Casamento: 20/06"
+            </p>
+            {datasImportantes.map((item, index) => (
+              <div key={index} className="flex items-start gap-3 bg-muted/30 p-3 rounded-lg">
+                <div className="flex-1 grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Data</Label>
+                    <Input
                       type="date"
-                      value={data.data}
+                      value={item.data}
                       onChange={(e) => updateDataImportante(index, "data", e.target.value)}
                     />
-                    <Input 
-                      placeholder="Descrição (aniversário, viagem...)"
-                      value={data.descricao}
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Descrição</Label>
+                    <Input
+                      value={item.descricao}
                       onChange={(e) => updateDataImportante(index, "descricao", e.target.value)}
+                      placeholder="Ex: Aniversário"
                     />
                   </div>
                 </div>
-              ))
-            )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="shrink-0 mt-5"
+                  onClick={() => removeDataImportante(index)}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            ))}
           </section>
 
-          {/* Seção 8: Observações */}
+          {/* Observações */}
           <section className="space-y-4">
             <h2 className="font-display text-lg font-semibold border-b border-primary/20 pb-2 text-foreground">
               Observações
             </h2>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="particularidades">Particularidades</Label>
-                <Textarea 
-                  id="particularidades" 
-                  placeholder="Ex: Cachorros soltos, portão automático, horário de acesso..."
-                  rows={3}
-                  value={particularidades}
-                  onChange={(e) => setParticularidades(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="notas">Notas Gerais</Label>
-                <Textarea 
-                  id="notas" 
-                  placeholder="Observações sobre o cliente, preferências..."
-                  rows={3}
-                  value={notas}
-                  onChange={(e) => setNotas(e.target.value)}
-                />
-              </div>
+            <div className="space-y-2">
+              <Textarea
+                placeholder="Anotações gerais sobre o cliente..."
+                value={notas}
+                onChange={(e) => setNotas(e.target.value)}
+                rows={4}
+              />
             </div>
           </section>
 
-          {/* Actions */}
-          <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4 border-t border-primary/20">
-            <Button type="button" variant="outline" onClick={() => navigate(-1)} disabled={isLoading}>
-              Cancelar
-            </Button>
-            <Button type="submit" variant="terracota" disabled={isLoading}>
-              {isLoading ? "Salvando..." : isEditing ? "Atualizar Cliente" : "Salvar Cliente"}
-            </Button>
-          </div>
+          <Button type="submit" variant="terracota" disabled={isLoading} className="w-full sm:w-auto">
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            ) : (
+              <Save className="w-4 h-4 mr-2" />
+            )}
+            {isEditing ? "Salvar Alterações" : "Cadastrar Cliente"}
+          </Button>
         </form>
       </div>
     </AppLayout>

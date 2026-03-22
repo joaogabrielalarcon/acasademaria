@@ -1499,6 +1499,50 @@ export type Database = {
           },
         ]
       }
+      locais_cliente: {
+        Row: {
+          assessores: string | null
+          cliente_id: string
+          cnpj: string | null
+          created_at: string | null
+          endereco_completo: string | null
+          funcionarios_casa: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+        }
+        Insert: {
+          assessores?: string | null
+          cliente_id: string
+          cnpj?: string | null
+          created_at?: string | null
+          endereco_completo?: string | null
+          funcionarios_casa?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+        }
+        Update: {
+          assessores?: string | null
+          cliente_id?: string
+          cnpj?: string | null
+          created_at?: string | null
+          endereco_completo?: string | null
+          funcionarios_casa?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "locais_cliente_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mafe_correcoes_ia: {
         Row: {
           colaborador_id: string | null
@@ -2330,6 +2374,7 @@ export type Database = {
           data_previsao: string | null
           descricao: string | null
           id: string
+          local_id: string | null
           observacoes: string | null
           responsavel_id: string | null
           status: string
@@ -2348,6 +2393,7 @@ export type Database = {
           data_previsao?: string | null
           descricao?: string | null
           id?: string
+          local_id?: string | null
           observacoes?: string | null
           responsavel_id?: string | null
           status?: string
@@ -2366,6 +2412,7 @@ export type Database = {
           data_previsao?: string | null
           descricao?: string | null
           id?: string
+          local_id?: string | null
           observacoes?: string | null
           responsavel_id?: string | null
           status?: string
@@ -2381,6 +2428,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projetos_local_id_fkey"
+            columns: ["local_id"]
+            isOneToOne: false
+            referencedRelation: "locais_cliente"
             referencedColumns: ["id"]
           },
         ]
