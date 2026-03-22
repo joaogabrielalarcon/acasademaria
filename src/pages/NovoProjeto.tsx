@@ -84,7 +84,7 @@ export default function NovoProjeto() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.cliente_id || !form.titulo) {
+    if (!form.cliente_id || !form.titulo || !form.descricao.trim()) {
       toast({ title: "Preencha os campos obrigatórios", variant: "destructive" });
       return;
     }
