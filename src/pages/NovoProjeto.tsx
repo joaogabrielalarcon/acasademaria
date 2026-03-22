@@ -29,6 +29,7 @@ export default function NovoProjeto() {
 
   const [form, setForm] = useState({
     cliente_id: "",
+    local_id: "",
     titulo: "",
     descricao: "",
     status: "orcamento",
