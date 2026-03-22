@@ -44,6 +44,7 @@ export default function NovoProjeto() {
     if (projeto) {
       setForm({
         cliente_id: projeto.cliente_id,
+        local_id: (projeto as any).local_id || "",
         titulo: projeto.titulo,
         descricao: projeto.descricao || "",
         status: projeto.status,
