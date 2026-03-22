@@ -8,35 +8,25 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
-import { useClientesSimples } from "@/hooks/useClientes";
-import { useProjeto, projetoStatusConfig } from "@/hooks/useProjetos";
+import { useProjeto } from "@/hooks/useProjetos";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useColaboradores } from "@/hooks/useColaboradores";
 
 export default function NovoProjeto() {
-  const { id } = useParams(); // projeto id for editing
+  const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
   const queryClient = useQueryClient();
   const isEditing = !!id;
 
   const { data: projeto, isLoading: loadingProjeto } = useProjeto(id);
-  const { data: clientes = [] } = useClientesSimples();
-  const { data: colaboradores = [] } = useColaboradores();
 
   const [form, setForm] = useState({
     cliente_id: "",
     local_id: "",
     titulo: "",
     descricao: "",
-    status: "orcamento",
     tipo: "implantacao",
-    data_inicio: "",
-    data_previsao: "",
-    responsavel_id: "",
     observacoes: "",
   });
 
@@ -47,17 +37,12 @@ export default function NovoProjeto() {
         local_id: (projeto as any).local_id || "",
         titulo: projeto.titulo,
         descricao: projeto.descricao || "",
-        status: projeto.status,
         tipo: (projeto as any).tipo || "implantacao",
-        data_inicio: projeto.data_inicio || "",
-        data_previsao: projeto.data_previsao || "",
-        responsavel_id: projeto.responsavel_id || "",
         observacoes: projeto.observacoes || "",
       });
     }
   }, [projeto]);
 
-  // Pre-fill client from URL search params
   useEffect(() => {
     if (!isEditing) {
       const params = new URLSearchParams(window.location.search);
@@ -75,11 +60,7 @@ export default function NovoProjeto() {
         local_id: form.local_id || null,
         titulo: form.titulo,
         descricao: form.descricao || null,
-        status: form.status,
         tipo: form.tipo,
-        data_inicio: form.data_inicio || null,
-        data_previsao: form.data_previsao || null,
-        responsavel_id: form.responsavel_id || null,
         observacoes: form.observacoes || null,
       };
 
@@ -135,32 +116,15 @@ export default function NovoProjeto() {
       </h1>
 
       <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
-        {/* Cliente */}
-        <div className="space-y-2">
-          <Label>Cliente *</Label>
-          <Select value={form.cliente_id} onValueChange={v => setForm(f => ({ ...f, cliente_id: v }))}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o cliente" />
-            </SelectTrigger>
-            <SelectContent>
-              {clientes.map(c => (
-                <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Título */}
         <div className="space-y-2">
           <Label>Título *</Label>
           <Input
             value={form.titulo}
             onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))}
-            placeholder="Ex: Implantação do jardim frontal"
+            placeholder="Número da proposta"
           />
         </div>
 
-        {/* Descrição */}
         <div className="space-y-2">
           <Label>Descrição</Label>
           <Textarea
@@ -171,7 +135,6 @@ export default function NovoProjeto() {
           />
         </div>
 
-        {/* Tipo */}
         <div className="space-y-2">
           <Label>Tipo de Projeto</Label>
           <Select value={form.tipo} onValueChange={v => setForm(f => ({ ...f, tipo: v }))}>
@@ -181,61 +144,11 @@ export default function NovoProjeto() {
             <SelectContent>
               <SelectItem value="implantacao">Implantação</SelectItem>
               <SelectItem value="manutencao">Manutenção</SelectItem>
+              <SelectItem value="revitalizacao">Revitalização</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        {/* Status */}
-        <div className="space-y-2">
-          <Label>Status</Label>
-          <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(projetoStatusConfig).map(([value, config]) => (
-                <SelectItem key={value} value={value}>{config.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Datas */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label>Data de Início</Label>
-            <Input
-              type="date"
-              value={form.data_inicio}
-              onChange={e => setForm(f => ({ ...f, data_inicio: e.target.value }))}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Previsão de Conclusão</Label>
-            <Input
-              type="date"
-              value={form.data_previsao}
-              onChange={e => setForm(f => ({ ...f, data_previsao: e.target.value }))}
-            />
-          </div>
-        </div>
-
-        {/* Responsável */}
-        <div className="space-y-2">
-          <Label>Responsável</Label>
-          <Select value={form.responsavel_id} onValueChange={v => setForm(f => ({ ...f, responsavel_id: v }))}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione (opcional)" />
-            </SelectTrigger>
-            <SelectContent>
-              {colaboradores.map(c => (
-                <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Observações */}
         <div className="space-y-2">
           <Label>Observações</Label>
           <Textarea
