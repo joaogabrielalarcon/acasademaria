@@ -72,6 +72,7 @@ export default function NovoProjeto() {
     mutationFn: async () => {
       const payload: Record<string, any> = {
         cliente_id: form.cliente_id,
+        local_id: form.local_id || null,
         titulo: form.titulo,
         descricao: form.descricao || null,
         status: form.status,
