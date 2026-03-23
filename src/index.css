@@ -82,41 +82,41 @@
   }
 
   .dark {
-    --background: 37 56% 92%;
-    --foreground: 8 63% 45%;
-    --card: 35 50% 95%;
-    --card-foreground: 8 63% 45%;
-    --popover: 35 50% 95%;
-    --popover-foreground: 8 63% 45%;
-    --primary: 8 63% 45%;
-    --primary-foreground: 37 56% 96%;
-    --secondary: 25 40% 87%;
-    --secondary-foreground: 8 63% 45%;
-    --muted: 30 35% 93%;
-    --muted-foreground: 8 50% 40% / 0.78;
-    --accent: 25 40% 87%;
-    --accent-foreground: 8 63% 45%;
-    --diario-area-bg: 25 40% 90%;
-    --diario-area-fg: 8 63% 36%;
-    --diario-service-bg: 8 63% 45% / 0.12;
-    --diario-service-fg: 8 63% 45%;
-    --diario-team-bg: 25 40% 88%;
-    --diario-team-fg: 8 63% 30%;
-    --diario-typing: 8 50% 50%;
-    --mafe-diario-collecting: 8 63% 50%;
-    --mafe-diario-awaiting: 8 50% 55%;
-    --mafe-diario-ready: 8 63% 30%;
-    --mafe-diario-typing: 8 50% 55%;
-    --border: 8 63% 45% / 0.18;
-    --input: 8 63% 45% / 0.25;
-    --ring: 8 63% 45%;
-    --sidebar-background: 30 40% 90%;
-    --sidebar-foreground: 8 63% 45%;
-    --sidebar-primary: 8 63% 45%;
-    --sidebar-primary-foreground: 37 56% 96%;
-    --sidebar-accent: 25 40% 85%;
-    --sidebar-accent-foreground: 8 63% 45%;
-    --sidebar-border: 8 63% 45% / 0.15;
+    --background: 27 100% 95%;
+    --foreground: 10 65% 38%;
+    --card: 27 100% 97%;
+    --card-foreground: 10 65% 38%;
+    --popover: 27 100% 97%;
+    --popover-foreground: 10 65% 38%;
+    --primary: 10 65% 38%;
+    --primary-foreground: 27 100% 97%;
+    --secondary: 22 50% 89%;
+    --secondary-foreground: 10 65% 38%;
+    --muted: 27 60% 94%;
+    --muted-foreground: 10 50% 35% / 0.78;
+    --accent: 22 50% 89%;
+    --accent-foreground: 10 65% 38%;
+    --diario-area-bg: 22 50% 92%;
+    --diario-area-fg: 10 65% 30%;
+    --diario-service-bg: 10 65% 38% / 0.12;
+    --diario-service-fg: 10 65% 38%;
+    --diario-team-bg: 22 50% 90%;
+    --diario-team-fg: 10 65% 24%;
+    --diario-typing: 10 50% 45%;
+    --mafe-diario-collecting: 10 65% 45%;
+    --mafe-diario-awaiting: 10 50% 50%;
+    --mafe-diario-ready: 10 65% 24%;
+    --mafe-diario-typing: 10 50% 50%;
+    --border: 10 65% 38% / 0.18;
+    --input: 10 65% 38% / 0.25;
+    --ring: 10 65% 38%;
+    --sidebar-background: 25 60% 92%;
+    --sidebar-foreground: 10 65% 38%;
+    --sidebar-primary: 10 65% 38%;
+    --sidebar-primary-foreground: 27 100% 97%;
+    --sidebar-accent: 22 50% 87%;
+    --sidebar-accent-foreground: 10 65% 38%;
+    --sidebar-border: 10 65% 38% / 0.15;
   }
 }
 
