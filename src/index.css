@@ -401,9 +401,9 @@
     @apply animate-pulse rounded-lg;
     background: linear-gradient(
       90deg,
-      hsl(8 63% 45% / 0.05),
-      hsl(8 63% 45% / 0.1),
-      hsl(8 63% 45% / 0.05)
+      hsl(10 65% 38% / 0.05),
+      hsl(10 65% 38% / 0.1),
+      hsl(10 65% 38% / 0.05)
     );
   }
   
