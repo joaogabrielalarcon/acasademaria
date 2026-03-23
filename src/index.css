@@ -247,36 +247,36 @@
   }
 
   .diario-nota-1 {
-    background: hsl(8 63% 45% / 0.22);
-    color: hsl(8 63% 24%);
+    background: hsl(10 65% 38% / 0.22);
+    color: hsl(10 65% 18%);
   }
 
   .diario-nota-2 {
-    background: hsl(8 63% 45% / 0.18);
-    color: hsl(8 63% 28%);
+    background: hsl(10 65% 38% / 0.18);
+    color: hsl(10 65% 22%);
   }
 
   .diario-nota-3 {
-    background: hsl(8 63% 45% / 0.14);
-    color: hsl(8 63% 32%);
+    background: hsl(10 65% 38% / 0.14);
+    color: hsl(10 65% 26%);
   }
 
   .diario-nota-4 {
-    background: hsl(25 40% 88%);
-    color: hsl(8 63% 30%);
+    background: hsl(22 50% 90%);
+    color: hsl(10 65% 24%);
   }
 
   .diario-nota-5 {
-    background: hsl(25 40% 85%);
-    color: hsl(8 63% 26%);
+    background: hsl(22 50% 87%);
+    color: hsl(10 65% 20%);
   }
 
   .diario-trend-up {
-    color: hsl(8 63% 36%);
+    color: hsl(10 65% 30%);
   }
 
   .diario-trend-down {
-    color: hsl(8 63% 50%);
+    color: hsl(10 65% 45%);
   }
 
   .diario-media-thumb {
