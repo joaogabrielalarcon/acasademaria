@@ -140,14 +140,14 @@
   /* Card style - fundo creme, borda terracota sutil */
   .card-botanical {
     @apply bg-card rounded-lg border;
-    border-color: hsl(8 63% 45% / 0.18);
+    border-color: hsl(10 65% 38% / 0.18);
     box-shadow: var(--shadow-subtle);
     transition: all var(--transition-smooth);
   }
   
   .card-botanical:hover {
     box-shadow: var(--shadow-card);
-    border-color: hsl(8 63% 45% / 0.3);
+    border-color: hsl(10 65% 38% / 0.3);
   }
   
   /* Timeline */
