@@ -420,15 +420,15 @@
   /* FAB */
   .fab {
     @apply fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-elevated flex items-center justify-center;
-    background: hsl(8 63% 45%);
-    color: hsl(37 56% 96%);
+    background: hsl(10 65% 38%);
+    color: hsl(27 100% 97%);
     transition: all var(--transition-smooth);
     z-index: 50;
   }
   
   .fab:hover {
     transform: scale(1.05);
-    box-shadow: 0 12px 40px -8px hsl(8 63% 45% / 0.3);
+    box-shadow: 0 12px 40px -8px hsl(10 65% 38% / 0.3);
   }
   
   .fab:active {
