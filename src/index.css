@@ -352,34 +352,34 @@
 
   .mafe-bold--status {
     @apply font-semibold;
-    color: hsl(8 63% 45%);
+    color: hsl(10 65% 38%);
   }
 
   .mafe-bold--area {
     @apply font-semibold;
-    color: hsl(8 63% 45%);
+    color: hsl(10 65% 38%);
   }
 
   .mafe-bold--person {
     @apply font-semibold;
-    color: hsl(8 63% 45%);
+    color: hsl(10 65% 38%);
   }
 
   .mafe-italic--question {
     @apply not-italic block mt-3 pt-2;
-    color: hsl(8 63% 45%);
-    border-top: 1px solid hsl(8 63% 45% / 0.1);
+    color: hsl(10 65% 38%);
+    border-top: 1px solid hsl(10 65% 38% / 0.1);
   }
 
   .mafe-alert {
     @apply rounded-xl px-4 py-3 my-2 text-sm leading-relaxed;
-    background: hsl(37 56% 92%);
-    border-left: 3px solid hsl(8 63% 45%);
+    background: hsl(27 100% 95%);
+    border-left: 3px solid hsl(10 65% 38%);
   }
 
   .mafe-hr {
     @apply my-3 border-0;
-    border-top: 1px solid hsl(8 63% 45% / 0.15);
+    border-top: 1px solid hsl(10 65% 38% / 0.15);
   }
 
   .photo-frame {
