@@ -170,20 +170,20 @@
   /* Tags */
   .tag-primary {
     @apply inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium;
-    background: hsl(8 63% 45%);
-    color: hsl(37 56% 96%);
+    background: hsl(10 65% 38%);
+    color: hsl(27 100% 97%);
   }
   
   .tag-secondary {
     @apply inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium;
-    background: hsl(25 40% 87%);
-    color: hsl(8 63% 45%);
+    background: hsl(22 50% 89%);
+    color: hsl(10 65% 38%);
   }
   
   .tag-accent {
     @apply inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium;
-    background: hsl(8 63% 45% / 0.15);
-    color: hsl(8 63% 45%);
+    background: hsl(10 65% 38% / 0.15);
+    color: hsl(10 65% 38%);
   }
 
   .diario-chip-area,
