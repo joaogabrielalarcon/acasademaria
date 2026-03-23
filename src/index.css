@@ -155,16 +155,16 @@
     @apply absolute left-4 top-0 bottom-0 w-0.5;
     background: linear-gradient(
       to bottom,
-      hsl(8 63% 45% / 0.1),
-      hsl(8 63% 45% / 0.3),
-      hsl(8 63% 45% / 0.1)
+      hsl(10 65% 38% / 0.1),
+      hsl(10 65% 38% / 0.3),
+      hsl(10 65% 38% / 0.1)
     );
   }
   
   .timeline-dot {
     @apply w-3 h-3 rounded-full shadow-sm;
-    background: hsl(8 63% 45%);
-    border: 2px solid hsl(37 56% 92%);
+    background: hsl(10 65% 38%);
+    border: 2px solid hsl(27 100% 95%);
   }
   
   /* Tags */
