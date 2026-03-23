@@ -347,7 +347,7 @@
   .mafe-list-item::before {
     content: "•";
     @apply absolute left-0 font-bold;
-    color: hsl(8 63% 45%); /* terracota #B93C2A */
+    color: hsl(10 65% 38%); /* terracota #9e3722 */
   }
 
   .mafe-bold--status {
