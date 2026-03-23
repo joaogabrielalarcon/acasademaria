@@ -5,119 +5,118 @@
 @tailwind utilities;
 
 /* MFM Design System - Maria Fernanda Marques Paisagismo */
-/* Paleta: Fundo #fff0e5 (creme claro) + Detalhes #9e3722 (terracota) */
+/* Paleta: Fundo #F5EDE0 (nude) + Detalhes #B93C2A (terracota) */
 
 @layer base {
   :root {
-    /* Brand Colors */
-    --terracota: 11 66% 38%; /* #9e3722 */
-    --terracota-dark: 11 66% 30%;
-    --terracota-darker: 11 66% 24%;
-    --creme: 21 100% 95%; /* #fff0e5 */
-    --creme-alt: 25 80% 96%; /* #fdf5ef - linhas alternadas */
-    --creme-active: 18 68% 87%; /* #f5d9c8 - item ativo */
+    /* Brand Colors — #B93C2A = 8 63% 45%, #F5EDE0 = 37 56% 92% */
+    --terracota: 8 63% 45%; /* #B93C2A */
+    --terracota-dark: 8 63% 36%;
+    --terracota-darker: 8 63% 28%;
+    --creme: 37 56% 92%; /* #F5EDE0 */
+    --creme-alt: 30 40% 94%; /* levemente mais claro */
+    --creme-active: 20 50% 85%; /* nude mais escuro p/ ativo */
     
-    /* Semantic Tokens - Fundo claro */
-    --background: 21 100% 95%; /* #fff0e5 */
-    --foreground: 11 66% 38%; /* #9e3722 */
+    /* Semantic Tokens */
+    --background: 37 56% 92%; /* #F5EDE0 */
+    --foreground: 8 63% 45%; /* #B93C2A */
     
-    --card: 21 100% 95%; /* #fff0e5 */
-    --card-foreground: 11 66% 38%; /* #9e3722 */
+    --card: 35 50% 95%; /* um toque mais claro que o fundo */
+    --card-foreground: 8 63% 45%;
     
-    --popover: 21 100% 95%;
-    --popover-foreground: 11 66% 38%;
+    --popover: 35 50% 95%;
+    --popover-foreground: 8 63% 45%;
     
-    --primary: 11 66% 38%; /* #9e3722 - cor primária agora é terracota */
-    --primary-foreground: 21 100% 95%; /* #fff0e5 */
+    --primary: 8 63% 45%; /* #B93C2A */
+    --primary-foreground: 37 56% 96%; /* nude muito claro */
     
-    --secondary: 18 68% 87%; /* #f5d9c8 */
-    --secondary-foreground: 11 66% 38%;
+    --secondary: 25 40% 87%; /* nude um tom mais escuro */
+    --secondary-foreground: 8 63% 45%;
     
-    --muted: 25 80% 96%; /* #fdf5ef */
-    --muted-foreground: 11 66% 32% / 0.78; /* terracota 78% - mais legível */
+    --muted: 30 35% 93%; /* nude suave */
+    --muted-foreground: 8 50% 40% / 0.78;
     
-    --accent: 18 68% 87%; /* #f5d9c8 */
-    --accent-foreground: 11 66% 38%;
+    --accent: 25 40% 87%;
+    --accent-foreground: 8 63% 45%;
     
-    /* Success agora em terracota suave */
-    --success: 11 66% 32%;
-    --success-foreground: 21 100% 95%;
-    --diario-area-bg: 18 68% 92%;
-    --diario-area-fg: 11 66% 32%;
-    --diario-service-bg: 11 66% 38% / 0.12;
-    --diario-service-fg: 11 66% 38%;
-    --diario-team-bg: 18 68% 90%;
-    --diario-team-fg: 11 66% 28%;
-    --diario-typing: 11 50% 50%;
-    --mafe-diario-collecting: 11 66% 45%;
-    --mafe-diario-awaiting: 11 50% 55%;
-    --mafe-diario-ready: 11 66% 28%;
-    --mafe-diario-typing: 11 50% 55%;
+    /* Success — variação escura terracota */
+    --success: 8 63% 36%;
+    --success-foreground: 37 56% 96%;
+    --diario-area-bg: 25 40% 90%;
+    --diario-area-fg: 8 63% 36%;
+    --diario-service-bg: 8 63% 45% / 0.12;
+    --diario-service-fg: 8 63% 45%;
+    --diario-team-bg: 25 40% 88%;
+    --diario-team-fg: 8 63% 30%;
+    --diario-typing: 8 50% 50%;
+    --mafe-diario-collecting: 8 63% 50%;
+    --mafe-diario-awaiting: 8 50% 55%;
+    --mafe-diario-ready: 8 63% 30%;
+    --mafe-diario-typing: 8 50% 55%;
     
-    /* Destructive também em terracota */
-    --destructive: 11 66% 38%;
-    --destructive-foreground: 21 100% 95%;
+    /* Destructive — terracota */
+    --destructive: 8 63% 45%;
+    --destructive-foreground: 37 56% 96%;
     
-    --border: 11 66% 38% / 0.2; /* #9e3722 com 20% opacidade */
-    --input: 11 66% 38% / 0.3; /* #9e3722 com 30% opacidade */
-    --ring: 11 66% 38%;
+    --border: 8 63% 45% / 0.18; /* terracota diluído */
+    --input: 8 63% 45% / 0.25;
+    --ring: 8 63% 45%;
     
     --radius: 0.5rem;
     
-    /* Sidebar */
-    --sidebar-background: 21 100% 95%; /* #fff0e5 */
-    --sidebar-foreground: 11 66% 38%; /* #9e3722 */
-    --sidebar-primary: 11 66% 38%;
-    --sidebar-primary-foreground: 21 100% 95%;
-    --sidebar-accent: 18 68% 87%; /* #f5d9c8 */
-    --sidebar-accent-foreground: 11 66% 38%;
-    --sidebar-border: 11 66% 38% / 0.15;
-    --sidebar-ring: 11 66% 38%;
+    /* Sidebar — nude levemente mais escuro */
+    --sidebar-background: 30 40% 90%;
+    --sidebar-foreground: 8 63% 45%;
+    --sidebar-primary: 8 63% 45%;
+    --sidebar-primary-foreground: 37 56% 96%;
+    --sidebar-accent: 25 40% 85%;
+    --sidebar-accent-foreground: 8 63% 45%;
+    --sidebar-border: 8 63% 45% / 0.15;
+    --sidebar-ring: 8 63% 45%;
     
     /* Custom Properties */
-    --shadow-subtle: 0 2px 8px -2px hsl(11 66% 38% / 0.08);
-    --shadow-card: 0 4px 16px -4px hsl(11 66% 38% / 0.1);
-    --shadow-elevated: 0 8px 32px -8px hsl(11 66% 38% / 0.15);
+    --shadow-subtle: 0 2px 8px -2px hsl(8 63% 45% / 0.08);
+    --shadow-card: 0 4px 16px -4px hsl(8 63% 45% / 0.1);
+    --shadow-elevated: 0 8px 32px -8px hsl(8 63% 45% / 0.15);
     --transition-smooth: 250ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dark {
-    /* Dark mode mantém o mesmo tema por enquanto */
-    --background: 21 100% 95%;
-    --foreground: 11 66% 38%;
-    --card: 21 100% 95%;
-    --card-foreground: 11 66% 38%;
-    --popover: 21 100% 95%;
-    --popover-foreground: 11 66% 38%;
-    --primary: 11 66% 38%;
-    --primary-foreground: 21 100% 95%;
-    --secondary: 18 68% 87%;
-    --secondary-foreground: 11 66% 38%;
-    --muted: 25 80% 96%;
-    --muted-foreground: 11 66% 32% / 0.78;
-    --accent: 18 68% 87%;
-    --accent-foreground: 11 66% 38%;
-    --diario-area-bg: 18 68% 92%;
-    --diario-area-fg: 11 66% 32%;
-    --diario-service-bg: 11 66% 38% / 0.12;
-    --diario-service-fg: 11 66% 38%;
-    --diario-team-bg: 18 68% 90%;
-    --diario-team-fg: 11 66% 28%;
-    --diario-typing: 11 50% 50%;
-    --mafe-diario-collecting: 11 66% 45%;
-    --mafe-diario-awaiting: 11 50% 55%;
-    --mafe-diario-ready: 11 66% 28%;
-    --mafe-diario-typing: 11 50% 55%;
-    --border: 11 66% 38% / 0.2;
-    --input: 11 66% 38% / 0.3;
-    --ring: 11 66% 38%;
-    --sidebar-background: 21 100% 95%;
-    --sidebar-foreground: 11 66% 38%;
-    --sidebar-primary: 11 66% 38%;
-    --sidebar-primary-foreground: 21 100% 95%;
-    --sidebar-accent: 18 68% 87%;
-    --sidebar-accent-foreground: 11 66% 38%;
-    --sidebar-border: 11 66% 38% / 0.15;
+    --background: 37 56% 92%;
+    --foreground: 8 63% 45%;
+    --card: 35 50% 95%;
+    --card-foreground: 8 63% 45%;
+    --popover: 35 50% 95%;
+    --popover-foreground: 8 63% 45%;
+    --primary: 8 63% 45%;
+    --primary-foreground: 37 56% 96%;
+    --secondary: 25 40% 87%;
+    --secondary-foreground: 8 63% 45%;
+    --muted: 30 35% 93%;
+    --muted-foreground: 8 50% 40% / 0.78;
+    --accent: 25 40% 87%;
+    --accent-foreground: 8 63% 45%;
+    --diario-area-bg: 25 40% 90%;
+    --diario-area-fg: 8 63% 36%;
+    --diario-service-bg: 8 63% 45% / 0.12;
+    --diario-service-fg: 8 63% 45%;
+    --diario-team-bg: 25 40% 88%;
+    --diario-team-fg: 8 63% 30%;
+    --diario-typing: 8 50% 50%;
+    --mafe-diario-collecting: 8 63% 50%;
+    --mafe-diario-awaiting: 8 50% 55%;
+    --mafe-diario-ready: 8 63% 30%;
+    --mafe-diario-typing: 8 50% 55%;
+    --border: 8 63% 45% / 0.18;
+    --input: 8 63% 45% / 0.25;
+    --ring: 8 63% 45%;
+    --sidebar-background: 30 40% 90%;
+    --sidebar-foreground: 8 63% 45%;
+    --sidebar-primary: 8 63% 45%;
+    --sidebar-primary-foreground: 37 56% 96%;
+    --sidebar-accent: 25 40% 85%;
+    --sidebar-accent-foreground: 8 63% 45%;
+    --sidebar-border: 8 63% 45% / 0.15;
   }
 }
 
