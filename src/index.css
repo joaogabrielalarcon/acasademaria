@@ -459,8 +459,8 @@
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(
       to right,
-      hsl(11 66% 38%),
-      hsl(11 66% 30%)
+      hsl(8 63% 45%),
+      hsl(8 63% 36%)
     );
   }
 }
