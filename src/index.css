@@ -210,33 +210,33 @@
   /* Status badges - paleta terracota monocromática */
   .diario-status-badge {
     @apply inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold;
-    border-color: hsl(8 63% 45% / 0.2);
+    border-color: hsl(10 65% 38% / 0.2);
     background: hsl(var(--muted));
     color: hsl(var(--foreground));
   }
 
   .diario-status-otimo {
-    background: hsl(25 40% 88%);
-    color: hsl(8 63% 28%);
-    border-color: hsl(8 63% 45% / 0.25);
+    background: hsl(22 50% 90%);
+    color: hsl(10 65% 22%);
+    border-color: hsl(10 65% 38% / 0.25);
   }
 
   .diario-status-bom {
-    background: hsl(25 40% 90%);
-    color: hsl(8 63% 32%);
-    border-color: hsl(8 63% 45% / 0.2);
+    background: hsl(22 50% 92%);
+    color: hsl(10 65% 26%);
+    border-color: hsl(10 65% 38% / 0.2);
   }
 
   .diario-status-requer_atencao {
-    background: hsl(8 63% 45% / 0.15);
-    color: hsl(8 63% 34%);
-    border-color: hsl(8 63% 45% / 0.25);
+    background: hsl(10 65% 38% / 0.15);
+    color: hsl(10 65% 28%);
+    border-color: hsl(10 65% 38% / 0.25);
   }
 
   .diario-status-critico {
-    background: hsl(8 63% 45% / 0.2);
-    color: hsl(8 63% 28%);
-    border-color: hsl(8 63% 45% / 0.3);
+    background: hsl(10 65% 38% / 0.2);
+    color: hsl(10 65% 22%);
+    border-color: hsl(10 65% 38% / 0.3);
   }
 
   /* Escala numérica 1-5 para qualidade - paleta terracota monocromática */
