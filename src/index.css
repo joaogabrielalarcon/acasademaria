@@ -9,114 +9,114 @@
 
 @layer base {
   :root {
-    /* Brand Colors — #B93C2A = 8 63% 45%, #F5EDE0 = 37 56% 92% */
-    --terracota: 8 63% 45%; /* #B93C2A */
-    --terracota-dark: 8 63% 36%;
-    --terracota-darker: 8 63% 28%;
-    --creme: 37 56% 92%; /* #F5EDE0 */
-    --creme-alt: 30 40% 94%; /* levemente mais claro */
-    --creme-active: 20 50% 85%; /* nude mais escuro p/ ativo */
+    /* Brand Colors — #9e3722 = 10 65% 38%, #fff0e5 = 27 100% 95% */
+    --terracota: 10 65% 38%; /* #9e3722 */
+    --terracota-dark: 10 65% 30%;
+    --terracota-darker: 10 65% 22%;
+    --creme: 27 100% 95%; /* #fff0e5 */
+    --creme-alt: 27 80% 96%;
+    --creme-active: 20 60% 88%;
     
     /* Semantic Tokens */
-    --background: 37 56% 92%; /* #F5EDE0 */
-    --foreground: 8 63% 45%; /* #B93C2A */
+    --background: 27 100% 95%; /* #fff0e5 */
+    --foreground: 10 65% 38%; /* #9e3722 */
     
-    --card: 35 50% 95%; /* um toque mais claro que o fundo */
-    --card-foreground: 8 63% 45%;
+    --card: 27 100% 97%;
+    --card-foreground: 10 65% 38%;
     
-    --popover: 35 50% 95%;
-    --popover-foreground: 8 63% 45%;
+    --popover: 27 100% 97%;
+    --popover-foreground: 10 65% 38%;
     
-    --primary: 8 63% 45%; /* #B93C2A */
-    --primary-foreground: 37 56% 96%; /* nude muito claro */
+    --primary: 10 65% 38%; /* #9e3722 */
+    --primary-foreground: 27 100% 97%;
     
-    --secondary: 25 40% 87%; /* nude um tom mais escuro */
-    --secondary-foreground: 8 63% 45%;
+    --secondary: 22 50% 89%;
+    --secondary-foreground: 10 65% 38%;
     
-    --muted: 30 35% 93%; /* nude suave */
-    --muted-foreground: 8 50% 40% / 0.78;
+    --muted: 27 60% 94%;
+    --muted-foreground: 10 50% 35% / 0.78;
     
-    --accent: 25 40% 87%;
-    --accent-foreground: 8 63% 45%;
+    --accent: 22 50% 89%;
+    --accent-foreground: 10 65% 38%;
     
     /* Success — variação escura terracota */
-    --success: 8 63% 36%;
-    --success-foreground: 37 56% 96%;
-    --diario-area-bg: 25 40% 90%;
-    --diario-area-fg: 8 63% 36%;
-    --diario-service-bg: 8 63% 45% / 0.12;
-    --diario-service-fg: 8 63% 45%;
-    --diario-team-bg: 25 40% 88%;
-    --diario-team-fg: 8 63% 30%;
-    --diario-typing: 8 50% 50%;
-    --mafe-diario-collecting: 8 63% 50%;
-    --mafe-diario-awaiting: 8 50% 55%;
-    --mafe-diario-ready: 8 63% 30%;
-    --mafe-diario-typing: 8 50% 55%;
+    --success: 10 65% 30%;
+    --success-foreground: 27 100% 97%;
+    --diario-area-bg: 22 50% 92%;
+    --diario-area-fg: 10 65% 30%;
+    --diario-service-bg: 10 65% 38% / 0.12;
+    --diario-service-fg: 10 65% 38%;
+    --diario-team-bg: 22 50% 90%;
+    --diario-team-fg: 10 65% 24%;
+    --diario-typing: 10 50% 45%;
+    --mafe-diario-collecting: 10 65% 45%;
+    --mafe-diario-awaiting: 10 50% 50%;
+    --mafe-diario-ready: 10 65% 24%;
+    --mafe-diario-typing: 10 50% 50%;
     
     /* Destructive — terracota */
-    --destructive: 8 63% 45%;
-    --destructive-foreground: 37 56% 96%;
+    --destructive: 10 65% 38%;
+    --destructive-foreground: 27 100% 97%;
     
-    --border: 8 63% 45% / 0.18; /* terracota diluído */
-    --input: 8 63% 45% / 0.25;
-    --ring: 8 63% 45%;
+    --border: 10 65% 38% / 0.18;
+    --input: 10 65% 38% / 0.25;
+    --ring: 10 65% 38%;
     
     --radius: 0.5rem;
     
     /* Sidebar — nude levemente mais escuro */
-    --sidebar-background: 30 40% 90%;
-    --sidebar-foreground: 8 63% 45%;
-    --sidebar-primary: 8 63% 45%;
-    --sidebar-primary-foreground: 37 56% 96%;
-    --sidebar-accent: 25 40% 85%;
-    --sidebar-accent-foreground: 8 63% 45%;
-    --sidebar-border: 8 63% 45% / 0.15;
-    --sidebar-ring: 8 63% 45%;
+    --sidebar-background: 25 60% 92%;
+    --sidebar-foreground: 10 65% 38%;
+    --sidebar-primary: 10 65% 38%;
+    --sidebar-primary-foreground: 27 100% 97%;
+    --sidebar-accent: 22 50% 87%;
+    --sidebar-accent-foreground: 10 65% 38%;
+    --sidebar-border: 10 65% 38% / 0.15;
+    --sidebar-ring: 10 65% 38%;
     
     /* Custom Properties */
-    --shadow-subtle: 0 2px 8px -2px hsl(8 63% 45% / 0.08);
-    --shadow-card: 0 4px 16px -4px hsl(8 63% 45% / 0.1);
-    --shadow-elevated: 0 8px 32px -8px hsl(8 63% 45% / 0.15);
+    --shadow-subtle: 0 2px 8px -2px hsl(10 65% 38% / 0.08);
+    --shadow-card: 0 4px 16px -4px hsl(10 65% 38% / 0.1);
+    --shadow-elevated: 0 8px 32px -8px hsl(10 65% 38% / 0.15);
     --transition-smooth: 250ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dark {
-    --background: 37 56% 92%;
-    --foreground: 8 63% 45%;
-    --card: 35 50% 95%;
-    --card-foreground: 8 63% 45%;
-    --popover: 35 50% 95%;
-    --popover-foreground: 8 63% 45%;
-    --primary: 8 63% 45%;
-    --primary-foreground: 37 56% 96%;
-    --secondary: 25 40% 87%;
-    --secondary-foreground: 8 63% 45%;
-    --muted: 30 35% 93%;
-    --muted-foreground: 8 50% 40% / 0.78;
-    --accent: 25 40% 87%;
-    --accent-foreground: 8 63% 45%;
-    --diario-area-bg: 25 40% 90%;
-    --diario-area-fg: 8 63% 36%;
-    --diario-service-bg: 8 63% 45% / 0.12;
-    --diario-service-fg: 8 63% 45%;
-    --diario-team-bg: 25 40% 88%;
-    --diario-team-fg: 8 63% 30%;
-    --diario-typing: 8 50% 50%;
-    --mafe-diario-collecting: 8 63% 50%;
-    --mafe-diario-awaiting: 8 50% 55%;
-    --mafe-diario-ready: 8 63% 30%;
-    --mafe-diario-typing: 8 50% 55%;
-    --border: 8 63% 45% / 0.18;
-    --input: 8 63% 45% / 0.25;
-    --ring: 8 63% 45%;
-    --sidebar-background: 30 40% 90%;
-    --sidebar-foreground: 8 63% 45%;
-    --sidebar-primary: 8 63% 45%;
-    --sidebar-primary-foreground: 37 56% 96%;
-    --sidebar-accent: 25 40% 85%;
-    --sidebar-accent-foreground: 8 63% 45%;
-    --sidebar-border: 8 63% 45% / 0.15;
+    --background: 27 100% 95%;
+    --foreground: 10 65% 38%;
+    --card: 27 100% 97%;
+    --card-foreground: 10 65% 38%;
+    --popover: 27 100% 97%;
+    --popover-foreground: 10 65% 38%;
+    --primary: 10 65% 38%;
+    --primary-foreground: 27 100% 97%;
+    --secondary: 22 50% 89%;
+    --secondary-foreground: 10 65% 38%;
+    --muted: 27 60% 94%;
+    --muted-foreground: 10 50% 35% / 0.78;
+    --accent: 22 50% 89%;
+    --accent-foreground: 10 65% 38%;
+    --diario-area-bg: 22 50% 92%;
+    --diario-area-fg: 10 65% 30%;
+    --diario-service-bg: 10 65% 38% / 0.12;
+    --diario-service-fg: 10 65% 38%;
+    --diario-team-bg: 22 50% 90%;
+    --diario-team-fg: 10 65% 24%;
+    --diario-typing: 10 50% 45%;
+    --mafe-diario-collecting: 10 65% 45%;
+    --mafe-diario-awaiting: 10 50% 50%;
+    --mafe-diario-ready: 10 65% 24%;
+    --mafe-diario-typing: 10 50% 50%;
+    --border: 10 65% 38% / 0.18;
+    --input: 10 65% 38% / 0.25;
+    --ring: 10 65% 38%;
+    --sidebar-background: 25 60% 92%;
+    --sidebar-foreground: 10 65% 38%;
+    --sidebar-primary: 10 65% 38%;
+    --sidebar-primary-foreground: 27 100% 97%;
+    --sidebar-accent: 22 50% 87%;
+    --sidebar-accent-foreground: 10 65% 38%;
+    --sidebar-border: 10 65% 38% / 0.15;
   }
 }
 
@@ -140,14 +140,14 @@
   /* Card style - fundo creme, borda terracota sutil */
   .card-botanical {
     @apply bg-card rounded-lg border;
-    border-color: hsl(8 63% 45% / 0.18);
+    border-color: hsl(10 65% 38% / 0.18);
     box-shadow: var(--shadow-subtle);
     transition: all var(--transition-smooth);
   }
   
   .card-botanical:hover {
     box-shadow: var(--shadow-card);
-    border-color: hsl(8 63% 45% / 0.3);
+    border-color: hsl(10 65% 38% / 0.3);
   }
   
   /* Timeline */
@@ -155,35 +155,35 @@
     @apply absolute left-4 top-0 bottom-0 w-0.5;
     background: linear-gradient(
       to bottom,
-      hsl(8 63% 45% / 0.1),
-      hsl(8 63% 45% / 0.3),
-      hsl(8 63% 45% / 0.1)
+      hsl(10 65% 38% / 0.1),
+      hsl(10 65% 38% / 0.3),
+      hsl(10 65% 38% / 0.1)
     );
   }
   
   .timeline-dot {
     @apply w-3 h-3 rounded-full shadow-sm;
-    background: hsl(8 63% 45%);
-    border: 2px solid hsl(37 56% 92%);
+    background: hsl(10 65% 38%);
+    border: 2px solid hsl(27 100% 95%);
   }
   
   /* Tags */
   .tag-primary {
     @apply inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium;
-    background: hsl(8 63% 45%);
-    color: hsl(37 56% 96%);
+    background: hsl(10 65% 38%);
+    color: hsl(27 100% 97%);
   }
   
   .tag-secondary {
     @apply inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium;
-    background: hsl(25 40% 87%);
-    color: hsl(8 63% 45%);
+    background: hsl(22 50% 89%);
+    color: hsl(10 65% 38%);
   }
   
   .tag-accent {
     @apply inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium;
-    background: hsl(8 63% 45% / 0.15);
-    color: hsl(8 63% 45%);
+    background: hsl(10 65% 38% / 0.15);
+    color: hsl(10 65% 38%);
   }
 
   .diario-chip-area,
@@ -210,33 +210,33 @@
   /* Status badges - paleta terracota monocromática */
   .diario-status-badge {
     @apply inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold;
-    border-color: hsl(8 63% 45% / 0.2);
+    border-color: hsl(10 65% 38% / 0.2);
     background: hsl(var(--muted));
     color: hsl(var(--foreground));
   }
 
   .diario-status-otimo {
-    background: hsl(25 40% 88%);
-    color: hsl(8 63% 28%);
-    border-color: hsl(8 63% 45% / 0.25);
+    background: hsl(22 50% 90%);
+    color: hsl(10 65% 22%);
+    border-color: hsl(10 65% 38% / 0.25);
   }
 
   .diario-status-bom {
-    background: hsl(25 40% 90%);
-    color: hsl(8 63% 32%);
-    border-color: hsl(8 63% 45% / 0.2);
+    background: hsl(22 50% 92%);
+    color: hsl(10 65% 26%);
+    border-color: hsl(10 65% 38% / 0.2);
   }
 
   .diario-status-requer_atencao {
-    background: hsl(8 63% 45% / 0.15);
-    color: hsl(8 63% 34%);
-    border-color: hsl(8 63% 45% / 0.25);
+    background: hsl(10 65% 38% / 0.15);
+    color: hsl(10 65% 28%);
+    border-color: hsl(10 65% 38% / 0.25);
   }
 
   .diario-status-critico {
-    background: hsl(8 63% 45% / 0.2);
-    color: hsl(8 63% 28%);
-    border-color: hsl(8 63% 45% / 0.3);
+    background: hsl(10 65% 38% / 0.2);
+    color: hsl(10 65% 22%);
+    border-color: hsl(10 65% 38% / 0.3);
   }
 
   /* Escala numérica 1-5 para qualidade - paleta terracota monocromática */
@@ -247,36 +247,36 @@
   }
 
   .diario-nota-1 {
-    background: hsl(8 63% 45% / 0.22);
-    color: hsl(8 63% 24%);
+    background: hsl(10 65% 38% / 0.22);
+    color: hsl(10 65% 18%);
   }
 
   .diario-nota-2 {
-    background: hsl(8 63% 45% / 0.18);
-    color: hsl(8 63% 28%);
+    background: hsl(10 65% 38% / 0.18);
+    color: hsl(10 65% 22%);
   }
 
   .diario-nota-3 {
-    background: hsl(8 63% 45% / 0.14);
-    color: hsl(8 63% 32%);
+    background: hsl(10 65% 38% / 0.14);
+    color: hsl(10 65% 26%);
   }
 
   .diario-nota-4 {
-    background: hsl(25 40% 88%);
-    color: hsl(8 63% 30%);
+    background: hsl(22 50% 90%);
+    color: hsl(10 65% 24%);
   }
 
   .diario-nota-5 {
-    background: hsl(25 40% 85%);
-    color: hsl(8 63% 26%);
+    background: hsl(22 50% 87%);
+    color: hsl(10 65% 20%);
   }
 
   .diario-trend-up {
-    color: hsl(8 63% 36%);
+    color: hsl(10 65% 30%);
   }
 
   .diario-trend-down {
-    color: hsl(8 63% 50%);
+    color: hsl(10 65% 45%);
   }
 
   .diario-media-thumb {
@@ -347,39 +347,39 @@
   .mafe-list-item::before {
     content: "•";
     @apply absolute left-0 font-bold;
-    color: hsl(8 63% 45%); /* terracota #B93C2A */
+    color: hsl(10 65% 38%); /* terracota #9e3722 */
   }
 
   .mafe-bold--status {
     @apply font-semibold;
-    color: hsl(8 63% 45%);
+    color: hsl(10 65% 38%);
   }
 
   .mafe-bold--area {
     @apply font-semibold;
-    color: hsl(8 63% 45%);
+    color: hsl(10 65% 38%);
   }
 
   .mafe-bold--person {
     @apply font-semibold;
-    color: hsl(8 63% 45%);
+    color: hsl(10 65% 38%);
   }
 
   .mafe-italic--question {
     @apply not-italic block mt-3 pt-2;
-    color: hsl(8 63% 45%);
-    border-top: 1px solid hsl(8 63% 45% / 0.1);
+    color: hsl(10 65% 38%);
+    border-top: 1px solid hsl(10 65% 38% / 0.1);
   }
 
   .mafe-alert {
     @apply rounded-xl px-4 py-3 my-2 text-sm leading-relaxed;
-    background: hsl(37 56% 92%);
-    border-left: 3px solid hsl(8 63% 45%);
+    background: hsl(27 100% 95%);
+    border-left: 3px solid hsl(10 65% 38%);
   }
 
   .mafe-hr {
     @apply my-3 border-0;
-    border-top: 1px solid hsl(8 63% 45% / 0.15);
+    border-top: 1px solid hsl(10 65% 38% / 0.15);
   }
 
   .photo-frame {
@@ -401,9 +401,9 @@
     @apply animate-pulse rounded-lg;
     background: linear-gradient(
       90deg,
-      hsl(8 63% 45% / 0.05),
-      hsl(8 63% 45% / 0.1),
-      hsl(8 63% 45% / 0.05)
+      hsl(10 65% 38% / 0.05),
+      hsl(10 65% 38% / 0.1),
+      hsl(10 65% 38% / 0.05)
     );
   }
   
@@ -414,21 +414,21 @@
   
   .empty-state-icon {
     @apply w-16 h-16 mb-4;
-    color: hsl(8 63% 45% / 0.4);
+    color: hsl(10 65% 38% / 0.4);
   }
   
   /* FAB */
   .fab {
     @apply fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-elevated flex items-center justify-center;
-    background: hsl(8 63% 45%);
-    color: hsl(37 56% 96%);
+    background: hsl(10 65% 38%);
+    color: hsl(27 100% 97%);
     transition: all var(--transition-smooth);
     z-index: 50;
   }
   
   .fab:hover {
     transform: scale(1.05);
-    box-shadow: 0 12px 40px -8px hsl(8 63% 45% / 0.3);
+    box-shadow: 0 12px 40px -8px hsl(10 65% 38% / 0.3);
   }
   
   .fab:active {
@@ -459,8 +459,8 @@
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(
       to right,
-      hsl(8 63% 45%),
-      hsl(8 63% 36%)
+      hsl(10 65% 38%),
+      hsl(10 65% 30%)
     );
   }
 }
