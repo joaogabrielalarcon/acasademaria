@@ -73,9 +73,9 @@ const CATEGORIAS_MAQUINAS = [
 ];
 
 const STATUS_OPTIONS = [
-  { value: "ativa", label: "Ativa", color: "bg-green-500" },
-  { value: "manutencao", label: "Em Manutenção", color: "bg-yellow-500" },
-  { value: "inativa", label: "Inativa", color: "bg-gray-500" },
+  { value: "ativa", label: "Ativa", color: "bg-primary/70" },
+  { value: "manutencao", label: "Em Manutenção", color: "bg-primary/40" },
+  { value: "inativa", label: "Inativa", color: "bg-primary/20" },
 ];
 
 export default function Maquinas() {
