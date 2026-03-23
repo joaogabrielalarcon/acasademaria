@@ -414,7 +414,7 @@
   
   .empty-state-icon {
     @apply w-16 h-16 mb-4;
-    color: hsl(8 63% 45% / 0.4);
+    color: hsl(10 65% 38% / 0.4);
   }
   
   /* FAB */
