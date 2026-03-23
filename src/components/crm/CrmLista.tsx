@@ -11,10 +11,10 @@ import {
 } from "@/components/ui/table";
 
 const TIPO_COLORS: Record<string, string> = {
-  Obra: "bg-[#1E4D3A] text-white",
+  Obra: "bg-primary/80 text-primary-foreground",
   Proposta: "bg-primary text-primary-foreground",
-  Manutencao: "bg-[#6A9A7A] text-white",
-  Tarefa: "bg-[#C8856A] text-white",
+  Manutencao: "bg-primary/50 text-primary-foreground",
+  Tarefa: "bg-primary/30 text-foreground",
 };
 
 const TIPO_LABELS: Record<string, string> = {

@@ -136,7 +136,7 @@ function LocalFormDialog({
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Nome */}
           <div className="space-y-2">
-            <Label className="text-[#1E4D3A]">Nome do Local *</Label>
+            <Label className="text-foreground">Nome do Local *</Label>
             <Input
               value={form.nome}
               onChange={(e) => set("nome", e.target.value)}
@@ -146,7 +146,7 @@ function LocalFormDialog({
 
           {/* Toggle PF / PJ */}
           <div className="space-y-2">
-            <Label className="text-[#1E4D3A]">Tipo de Pessoa</Label>
+            <Label className="text-foreground">Tipo de Pessoa</Label>
             <ToggleGroup
               type="single"
               value={form.tipo_pessoa}
@@ -176,7 +176,7 @@ function LocalFormDialog({
           {form.tipo_pessoa === "fisica" && (
             <div className="grid gap-4 sm:grid-cols-2 p-4 rounded-lg bg-muted/30 border border-primary/10">
               <div className="space-y-2">
-                <Label className="text-[#1E4D3A]">CPF</Label>
+                <Label className="text-foreground">CPF</Label>
                 <Input
                   value={form.cpf}
                   onChange={(e) => set("cpf", e.target.value)}
@@ -184,7 +184,7 @@ function LocalFormDialog({
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[#1E4D3A]">Data de Aniversário</Label>
+                <Label className="text-foreground">Data de Aniversário</Label>
                 <Input
                   type="date"
                   value={form.data_aniversario}
@@ -198,7 +198,7 @@ function LocalFormDialog({
           {form.tipo_pessoa === "juridica" && (
             <div className="grid gap-4 sm:grid-cols-2 p-4 rounded-lg bg-muted/30 border border-primary/10">
               <div className="space-y-2 sm:col-span-2">
-                <Label className="text-[#1E4D3A]">Razão Social</Label>
+                <Label className="text-foreground">Razão Social</Label>
                 <Input
                   value={form.razao_social}
                   onChange={(e) => set("razao_social", e.target.value)}
@@ -206,7 +206,7 @@ function LocalFormDialog({
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[#1E4D3A]">CNPJ</Label>
+                <Label className="text-foreground">CNPJ</Label>
                 <Input
                   value={form.cnpj}
                   onChange={(e) => set("cnpj", e.target.value)}
@@ -214,7 +214,7 @@ function LocalFormDialog({
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[#1E4D3A]">Inscrição Estadual</Label>
+                <Label className="text-foreground">Inscrição Estadual</Label>
                 <Input
                   value={form.inscricao_estadual}
                   onChange={(e) => set("inscricao_estadual", e.target.value)}
@@ -227,7 +227,7 @@ function LocalFormDialog({
           {/* Common fields */}
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-[#1E4D3A]">Endereço Completo</Label>
+              <Label className="text-foreground">Endereço Completo</Label>
               <Input
                 value={form.endereco_completo}
                 onChange={(e) => set("endereco_completo", e.target.value)}
@@ -236,7 +236,7 @@ function LocalFormDialog({
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label className="text-[#1E4D3A]">Contato Principal / WhatsApp</Label>
+                <Label className="text-foreground">Contato Principal / WhatsApp</Label>
                 <Input
                   value={form.contato_principal}
                   onChange={(e) => set("contato_principal", e.target.value)}
@@ -244,7 +244,7 @@ function LocalFormDialog({
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[#1E4D3A]">Email</Label>
+                <Label className="text-foreground">Email</Label>
                 <Input
                   type="email"
                   value={form.email}
@@ -254,7 +254,7 @@ function LocalFormDialog({
               </div>
             </div>
             <div className="space-y-2">
-              <Label className="text-[#1E4D3A]">Assessores</Label>
+              <Label className="text-foreground">Assessores</Label>
               <Textarea
                 value={form.assessores}
                 onChange={(e) => set("assessores", e.target.value)}
@@ -263,7 +263,7 @@ function LocalFormDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-[#1E4D3A]">Funcionários da Casa</Label>
+              <Label className="text-foreground">Funcionários da Casa</Label>
               <Textarea
                 value={form.funcionarios_casa}
                 onChange={(e) => set("funcionarios_casa", e.target.value)}
@@ -272,7 +272,7 @@ function LocalFormDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-[#1E4D3A]">Observações</Label>
+              <Label className="text-foreground">Observações</Label>
               <Textarea
                 value={form.observacoes}
                 onChange={(e) => set("observacoes", e.target.value)}

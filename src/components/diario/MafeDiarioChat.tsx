@@ -775,11 +775,11 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
                           variant={isRecording ? "ghost" : "outline"}
                           onClick={isRecording ? stopRecording : startRecording}
                           disabled={disableComposer}
-                          className={isRecording ? "relative text-[#B93C2A]" : ""}
+                          className={isRecording ? "relative text-primary" : ""}
                         >
                           <Mic className={cn("h-4 w-4", isRecording && "animate-pulse")} />
                           {isRecording && (
-                            <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-[#B93C2A] animate-pulse" />
+                            <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
                           )}
                         </Button>
 
