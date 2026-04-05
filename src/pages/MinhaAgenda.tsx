@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth, useProfile } from "@/hooks/useAuth";
-import { useAgendaTarefas, useSalvarTarefas, useAtualizarStatusTarefa, useExcluirTarefa, type AgendaTarefa } from "@/hooks/useAgenda";
+import { useAgendaTarefas, useSalvarTarefas, useAtualizarStatusTarefa, useExcluirTarefa, useEditarTarefa, type AgendaTarefa } from "@/hooks/useAgenda";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
