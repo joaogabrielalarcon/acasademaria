@@ -97,7 +97,8 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
   const { user, session } = useAuth();
   const highestRole = useHighestRole(user?.id);
   const { data: profile } = useProfile(user?.id);
-  const { data: colaboradores = [] } = useColaboradoresAtivosBasico();
+  const { data: allColaboradores = [] } = useColaboradoresAtivosBasico();
+  const colaboradores = useMemo(() => allColaboradores.filter((c) => c.area_id === "d24def1f-06b4-4998-a149-c5be3f426072"), [allColaboradores]);
   const { data: insumos = [] } = useInsumos();
   const { data: maquinas = [] } = useMaquinas();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
