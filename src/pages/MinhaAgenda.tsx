@@ -1,19 +1,20 @@
 import { useState, useRef, useEffect } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth, useProfile } from "@/hooks/useAuth";
-import { useAgendaTarefas, useSalvarTarefas, useAtualizarStatusTarefa, useExcluirTarefa, type AgendaTarefa } from "@/hooks/useAgenda";
+import { useAgendaTarefas, useSalvarTarefas, useAtualizarStatusTarefa, useExcluirTarefa, useEditarTarefa, type AgendaTarefa } from "@/hooks/useAgenda";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarCheck, Plus, Mic, Square, Sparkles, Trash2, CheckCircle, Clock, AlertTriangle, Users } from "lucide-react";
+import { CalendarCheck, Plus, Mic, Square, Sparkles, Trash2, CheckCircle, Clock, AlertTriangle, Users, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format, differenceInDays, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 interface TarefaPreview {
   titulo: string;
   prioridade: string;
@@ -53,6 +54,32 @@ export default function MinhaAgenda() {
   const salvarTarefas = useSalvarTarefas();
   const atualizarStatus = useAtualizarStatusTarefa();
   const excluirTarefa = useExcluirTarefa();
+  const editarTarefa = useEditarTarefa();
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [editData, setEditData] = useState<{ id: string; titulo: string; descricao: string; prioridade: string; prazo: string }>({ id: "", titulo: "", descricao: "", prioridade: "semana", prazo: "" });
+
+  const abrirEdicao = (tarefa: AgendaTarefa) => {
+    setEditData({
+      id: tarefa.id,
+      titulo: tarefa.titulo,
+      descricao: tarefa.descricao || "",
+      prioridade: tarefa.prioridade,
+      prazo: tarefa.prazo || "",
+    });
+    setEditOpen(true);
+  };
+
+  const handleSalvarEdicao = async () => {
+    await editarTarefa.mutateAsync({
+      id: editData.id,
+      titulo: editData.titulo,
+      descricao: editData.descricao || null,
+      prioridade: editData.prioridade,
+      prazo: editData.prazo || null,
+    });
+    setEditOpen(false);
+  };
 
   const [captureOpen, setCaptureOpen] = useState(false);
   const [texto, setTexto] = useState("");
@@ -205,8 +232,11 @@ export default function MinhaAgenda() {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
           {getPrioridadeBadge(tarefa.prioridade)}
+          <button onClick={() => abrirEdicao(tarefa)} className="text-muted-foreground hover:text-primary">
+            <Pencil className="w-4 h-4" />
+          </button>
           <button onClick={() => excluirTarefa.mutate(tarefa.id)} className="text-muted-foreground hover:text-destructive">
             <Trash2 className="w-4 h-4" />
           </button>
@@ -382,6 +412,46 @@ export default function MinhaAgenda() {
           ))}
         </Tabs>
       </div>
+
+      {/* Dialog de Edição */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Editar Tarefa</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Título</Label>
+              <Input value={editData.titulo} onChange={(e) => setEditData((d) => ({ ...d, titulo: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Descrição</Label>
+              <Textarea value={editData.descricao} onChange={(e) => setEditData((d) => ({ ...d, descricao: e.target.value }))} rows={3} />
+            </div>
+            <div className="space-y-2">
+              <Label>Prioridade</Label>
+              <Select value={editData.prioridade} onValueChange={(v) => setEditData((d) => ({ ...d, prioridade: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="urgente">Urgente</SelectItem>
+                  <SelectItem value="semana">Esta semana</SelectItem>
+                  <SelectItem value="mes">Este mês</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Prazo</Label>
+              <Input type="date" value={editData.prazo} onChange={(e) => setEditData((d) => ({ ...d, prazo: e.target.value }))} />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setEditOpen(false)} className="flex-1">Cancelar</Button>
+              <Button onClick={handleSalvarEdicao} disabled={!editData.titulo.trim() || editarTarefa.isPending} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">
+                {editarTarefa.isPending ? "Salvando..." : "Salvar"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }

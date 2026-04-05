@@ -144,6 +144,28 @@ export function useAtualizarStatusTarefa() {
   });
 }
 
+export function useEditarTarefa() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, titulo, descricao, prioridade, prazo }: { id: string; titulo: string; descricao?: string | null; prioridade: string; prazo?: string | null }) => {
+      const { error } = await supabase
+        .from("assessor_tarefas")
+        .update({ titulo, descricao, prioridade, prazo, updated_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["assessor_tarefas"] });
+      toast({ title: "Tarefa atualizada", duration: 3000 });
+    },
+    onError: (e: any) => {
+      toast({ title: "Erro ao atualizar", description: e.message, variant: "destructive" });
+    },
+  });
+}
+
 export function useExcluirTarefa() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
