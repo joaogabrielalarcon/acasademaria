@@ -54,6 +54,32 @@ export default function MinhaAgenda() {
   const salvarTarefas = useSalvarTarefas();
   const atualizarStatus = useAtualizarStatusTarefa();
   const excluirTarefa = useExcluirTarefa();
+  const editarTarefa = useEditarTarefa();
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [editData, setEditData] = useState<{ id: string; titulo: string; descricao: string; prioridade: string; prazo: string }>({ id: "", titulo: "", descricao: "", prioridade: "semana", prazo: "" });
+
+  const abrirEdicao = (tarefa: AgendaTarefa) => {
+    setEditData({
+      id: tarefa.id,
+      titulo: tarefa.titulo,
+      descricao: tarefa.descricao || "",
+      prioridade: tarefa.prioridade,
+      prazo: tarefa.prazo || "",
+    });
+    setEditOpen(true);
+  };
+
+  const handleSalvarEdicao = async () => {
+    await editarTarefa.mutateAsync({
+      id: editData.id,
+      titulo: editData.titulo,
+      descricao: editData.descricao || null,
+      prioridade: editData.prioridade,
+      prazo: editData.prazo || null,
+    });
+    setEditOpen(false);
+  };
 
   const [captureOpen, setCaptureOpen] = useState(false);
   const [texto, setTexto] = useState("");
