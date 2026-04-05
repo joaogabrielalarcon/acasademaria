@@ -80,7 +80,7 @@ export default function MinhaAgenda() {
       const end = endOfMonth(today);
       return pending.filter(
         (t) =>
-          t.prioridade !== "concluida" &&
+          t.status !== "concluida" &&
           (!t.prazo || isWithinInterval(parseISO(t.prazo), { start, end }) || parseISO(t.prazo) <= end)
       );
     }
