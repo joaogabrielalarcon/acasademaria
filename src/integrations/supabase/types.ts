@@ -44,6 +44,109 @@ export type Database = {
         }
         Relationships: []
       }
+      assessor_dependencias: {
+        Row: {
+          colaborador_id: string | null
+          created_at: string | null
+          descricao_entrega: string
+          id: string
+          status_entrega: string
+          tarefa_id: string
+          tempo_estimado_dias: number
+        }
+        Insert: {
+          colaborador_id?: string | null
+          created_at?: string | null
+          descricao_entrega: string
+          id?: string
+          status_entrega?: string
+          tarefa_id: string
+          tempo_estimado_dias?: number
+        }
+        Update: {
+          colaborador_id?: string | null
+          created_at?: string | null
+          descricao_entrega?: string
+          id?: string
+          status_entrega?: string
+          tarefa_id?: string
+          tempo_estimado_dias?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessor_dependencias_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessor_dependencias_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessor_dependencias_tarefa_id_fkey"
+            columns: ["tarefa_id"]
+            isOneToOne: false
+            referencedRelation: "assessor_tarefas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessor_tarefas: {
+        Row: {
+          created_at: string | null
+          descricao: string | null
+          id: string
+          prazo: string | null
+          prioridade: string
+          status: string
+          titulo: string
+          updated_at: string | null
+          usuario_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          prazo?: string | null
+          prioridade?: string
+          status?: string
+          titulo: string
+          updated_at?: string | null
+          usuario_id: string
+        }
+        Update: {
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          prazo?: string | null
+          prioridade?: string
+          status?: string
+          titulo?: string
+          updated_at?: string | null
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessor_tarefas_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessor_tarefas_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calendario_eventos: {
         Row: {
           created_at: string
