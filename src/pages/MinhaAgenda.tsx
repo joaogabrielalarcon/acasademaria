@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth, useProfile } from "@/hooks/useAuth";
 import { useAgendaTarefas, useSalvarTarefas, useAtualizarStatusTarefa, useExcluirTarefa, type AgendaTarefa } from "@/hooks/useAgenda";
@@ -35,7 +35,7 @@ export default function MinhaAgenda() {
   const [colaboradorId, setColaboradorId] = useState<string | undefined>();
 
   // Fetch colaborador ID on mount
-  useState(() => {
+  useEffect(() => {
     if (user?.id) {
       supabase
         .from("colaboradores")
@@ -47,7 +47,7 @@ export default function MinhaAgenda() {
           if (data) setColaboradorId(data.id);
         });
     }
-  });
+  }, [user?.id]);
 
   const { data: tarefas = [], isLoading } = useAgendaTarefas(colaboradorId);
   const salvarTarefas = useSalvarTarefas();
