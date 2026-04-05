@@ -2,6 +2,7 @@ import {
   BellRing,
   BookOpen,
   Building2,
+  CalendarCheck,
   CalendarDays,
   GitBranch,
   Leaf,
