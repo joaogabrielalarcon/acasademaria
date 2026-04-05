@@ -9,6 +9,7 @@ import {
   Wrench,
   Settings,
   BookOpen,
+  CalendarCheck,
   CalendarDays,
   GitBranch,
   Send,
