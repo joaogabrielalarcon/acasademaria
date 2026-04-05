@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth, useProfile } from "@/hooks/useAuth";
 import { useAgendaTarefas, useSalvarTarefas, useAtualizarStatusTarefa, useExcluirTarefa, type AgendaTarefa } from "@/hooks/useAgenda";
