@@ -199,7 +199,7 @@ serve(async (req) => {
     const [rolesRes, areasRes, colaboradoresRes, insumosRes, maquinasRes, lastVisitRes, visitsRes, correcoesRes] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", userId),
       supabase.from("trechos").select("nome").eq("cliente_id", clienteId).order("ordem", { ascending: true }),
-      supabase.from("colaboradores_basico").select("id, nome").eq("ativo", true).order("nome", { ascending: true }),
+      supabase.from("colaboradores_basico").select("id, nome").eq("ativo", true).eq("area_id", "d24def1f-06b4-4998-a149-c5be3f426072").order("nome", { ascending: true }),
       supabase.from("insumos").select("id, nome, unidade").eq("ativo", true).order("nome", { ascending: true }).limit(200),
       supabase.from("maquinas").select("id, nome").eq("ativo", true).order("nome", { ascending: true }).limit(100),
       supabase
