@@ -65,7 +65,6 @@ const CATEGORIAS_MAQUINAS = [
   "Cortador de Grama",
   "Motosserra",
   "Soprador",
-  "Aspirador",
   "Pulverizador",
   "Tesoura Elétrica",
   "Perfurador",
