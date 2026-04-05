@@ -412,6 +412,46 @@ export default function MinhaAgenda() {
           ))}
         </Tabs>
       </div>
+
+      {/* Dialog de Edição */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Editar Tarefa</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Título</Label>
+              <Input value={editData.titulo} onChange={(e) => setEditData((d) => ({ ...d, titulo: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Descrição</Label>
+              <Textarea value={editData.descricao} onChange={(e) => setEditData((d) => ({ ...d, descricao: e.target.value }))} rows={3} />
+            </div>
+            <div className="space-y-2">
+              <Label>Prioridade</Label>
+              <Select value={editData.prioridade} onValueChange={(v) => setEditData((d) => ({ ...d, prioridade: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="urgente">Urgente</SelectItem>
+                  <SelectItem value="semana">Esta semana</SelectItem>
+                  <SelectItem value="mes">Este mês</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Prazo</Label>
+              <Input type="date" value={editData.prazo} onChange={(e) => setEditData((d) => ({ ...d, prazo: e.target.value }))} />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setEditOpen(false)} className="flex-1">Cancelar</Button>
+              <Button onClick={handleSalvarEdicao} disabled={!editData.titulo.trim() || editarTarefa.isPending} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">
+                {editarTarefa.isPending ? "Salvando..." : "Salvar"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
