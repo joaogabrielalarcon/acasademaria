@@ -1,0 +1,1 @@
+ALTER TABLE public.maquinas ALTER COLUMN horas_limite_manutencao SET DEFAULT 10;
