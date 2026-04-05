@@ -13,7 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 import { format, differenceInDays, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 interface TarefaPreview {
   titulo: string;
   prioridade: string;
