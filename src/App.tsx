@@ -38,6 +38,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const ProcessosInternos = lazy(() => import("./pages/ProcessosInternos"));
 const Calendario = lazy(() => import("./pages/Calendario"));
 const CRM = lazy(() => import("./pages/CRM"));
+const MinhaAgenda = lazy(() => import("./pages/MinhaAgenda"));
 
 const queryClient = new QueryClient();
 
