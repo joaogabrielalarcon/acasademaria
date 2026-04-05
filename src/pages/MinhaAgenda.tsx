@@ -232,8 +232,11 @@ export default function MinhaAgenda() {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
           {getPrioridadeBadge(tarefa.prioridade)}
+          <button onClick={() => abrirEdicao(tarefa)} className="text-muted-foreground hover:text-primary">
+            <Pencil className="w-4 h-4" />
+          </button>
           <button onClick={() => excluirTarefa.mutate(tarefa.id)} className="text-muted-foreground hover:text-destructive">
             <Trash2 className="w-4 h-4" />
           </button>
