@@ -35,7 +35,7 @@ export default function MinhaAgenda() {
   const [colaboradorId, setColaboradorId] = useState<string | undefined>();
 
   // Fetch colaborador ID on mount
-  useState(() => {
+  useEffect(() => {
     if (user?.id) {
       supabase
         .from("colaboradores")
@@ -47,7 +47,7 @@ export default function MinhaAgenda() {
           if (data) setColaboradorId(data.id);
         });
     }
-  });
+  }, [user?.id]);
 
   const { data: tarefas = [], isLoading } = useAgendaTarefas(colaboradorId);
   const salvarTarefas = useSalvarTarefas();
