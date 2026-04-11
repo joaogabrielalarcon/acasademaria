@@ -22,7 +22,7 @@ import {
 import { useClientesSimples } from "@/hooks/useClientes";
 
 const BANCOS = [
-  { value: "nubank", label: "Nubank PJ" },
+  { value: "nubank", label: "Nubank PF" },
   { value: "itau", label: "Itaú Empresas" },
   { value: "safra", label: "Safra Empresas" },
 ];
