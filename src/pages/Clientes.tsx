@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Plus, Phone, Mail, MapPin, Loader2 } from "lucide-react";
+import { Search, Plus, Phone, Mail, MapPin, Loader2, Upload } from "lucide-react";
+import { ImportarClientesDialog } from "@/components/ImportarClientesDialog";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
