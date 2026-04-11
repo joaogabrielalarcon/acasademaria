@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Plus, Phone, Mail, MapPin, Loader2 } from "lucide-react";
+import { Search, Plus, Phone, Mail, MapPin, Loader2, Upload } from "lucide-react";
+import { ImportarClientesDialog } from "@/components/ImportarClientesDialog";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -90,6 +91,7 @@ function EmptyState() {
 export default function Clientes() {
   const [searchTerm, setSearchTerm] = useState("");
   const [visibleCount, setVisibleCount] = useState(20);
+  const [importOpen, setImportOpen] = useState(false);
 
   const { data: clientes = [], isLoading } = useQuery({
     queryKey: ["clientes-com-locais"],
@@ -144,12 +146,18 @@ export default function Clientes() {
             Gerencie clientes, locais e projetos
           </p>
         </div>
-        <Button variant="terracota" asChild>
-          <Link to="/clientes/novo">
-            <Plus className="w-4 h-4" />
-            Novo Cliente
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setImportOpen(true)}>
+            <Upload className="w-4 h-4" />
+            Importar
+          </Button>
+          <Button variant="terracota" asChild>
+            <Link to="/clientes/novo">
+              <Plus className="w-4 h-4" />
+              Novo Cliente
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -186,6 +194,8 @@ export default function Clientes() {
       ) : (
         <EmptyState />
       )}
+
+      <ImportarClientesDialog open={importOpen} onOpenChange={setImportOpen} />
     </AppLayout>
   );
 }
