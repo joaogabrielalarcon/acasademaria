@@ -91,6 +91,7 @@ function EmptyState() {
 export default function Clientes() {
   const [searchTerm, setSearchTerm] = useState("");
   const [visibleCount, setVisibleCount] = useState(20);
+  const [importOpen, setImportOpen] = useState(false);
 
   const { data: clientes = [], isLoading } = useQuery({
     queryKey: ["clientes-com-locais"],
