@@ -19,7 +19,7 @@ import {
   useDarBaixa,
   useConfirmarCliente,
 } from "@/hooks/useConciliacao";
-import { useClientes } from "@/hooks/useClientes";
+import { useClientesSimples } from "@/hooks/useClientes";
 
 const BANCOS = [
   { value: "nubank", label: "Nubank PJ" },
