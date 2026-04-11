@@ -504,6 +504,149 @@ export type Database = {
           },
         ]
       }
+      conciliacao_extratos: {
+        Row: {
+          arquivo_nome: string | null
+          banco: string
+          created_by: string | null
+          data_extrato: string
+          id: string
+          processado_em: string | null
+        }
+        Insert: {
+          arquivo_nome?: string | null
+          banco: string
+          created_by?: string | null
+          data_extrato: string
+          id?: string
+          processado_em?: string | null
+        }
+        Update: {
+          arquivo_nome?: string | null
+          banco?: string
+          created_by?: string | null
+          data_extrato?: string
+          id?: string
+          processado_em?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conciliacao_extratos_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conciliacao_extratos_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conciliacao_lancamentos: {
+        Row: {
+          chave_pix_raw: string | null
+          cliente_id: string | null
+          conta_raw: string | null
+          created_at: string
+          data_lancamento: string
+          descricao: string | null
+          extrato_id: string | null
+          id: string
+          remetente_raw: string | null
+          status: string
+          valor: number
+        }
+        Insert: {
+          chave_pix_raw?: string | null
+          cliente_id?: string | null
+          conta_raw?: string | null
+          created_at?: string
+          data_lancamento: string
+          descricao?: string | null
+          extrato_id?: string | null
+          id?: string
+          remetente_raw?: string | null
+          status?: string
+          valor: number
+        }
+        Update: {
+          chave_pix_raw?: string | null
+          cliente_id?: string | null
+          conta_raw?: string | null
+          created_at?: string
+          data_lancamento?: string
+          descricao?: string | null
+          extrato_id?: string | null
+          id?: string
+          remetente_raw?: string | null
+          status?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conciliacao_lancamentos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conciliacao_lancamentos_extrato_id_fkey"
+            columns: ["extrato_id"]
+            isOneToOne: false
+            referencedRelation: "conciliacao_extratos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conciliacao_regras: {
+        Row: {
+          agencia: string | null
+          chave_pix: string | null
+          cliente_id: string | null
+          conta: string | null
+          created_at: string
+          descricao_padrao: string | null
+          id: string
+          nome_remetente: string | null
+          updated_at: string
+        }
+        Insert: {
+          agencia?: string | null
+          chave_pix?: string | null
+          cliente_id?: string | null
+          conta?: string | null
+          created_at?: string
+          descricao_padrao?: string | null
+          id?: string
+          nome_remetente?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agencia?: string | null
+          chave_pix?: string | null
+          cliente_id?: string | null
+          conta?: string | null
+          created_at?: string
+          descricao_padrao?: string | null
+          id?: string
+          nome_remetente?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conciliacao_regras_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_cards: {
         Row: {
           cliente_id: string | null
