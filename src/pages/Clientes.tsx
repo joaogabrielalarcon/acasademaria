@@ -146,13 +146,18 @@ export default function Clientes() {
             Gerencie clientes, locais e projetos
           </p>
         </div>
-        <Button variant="terracota" asChild>
-          <Link to="/clientes/novo">
-            <Plus className="w-4 h-4" />
-            Novo Cliente
-          </Link>
-        </Button>
-      </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setImportOpen(true)}>
+            <Upload className="w-4 h-4" />
+            Importar
+          </Button>
+          <Button variant="terracota" asChild>
+            <Link to="/clientes/novo">
+              <Plus className="w-4 h-4" />
+              Novo Cliente
+            </Link>
+          </Button>
+        </div>
 
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="relative flex-1 max-w-md">
