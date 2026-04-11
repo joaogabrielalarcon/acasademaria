@@ -36,7 +36,7 @@ export default function Conciliacao() {
 
   const { data: extratos = [] } = useConciliacaoExtratos();
   const { data: lancamentos = [], isLoading: loadingLanc } = useConciliacaoLancamentos(extratoAtivo);
-  const { data: clientes = [] } = useClientes();
+  const { data: clientes = [] } = useClientesSimples();
   const importar = useImportarExtrato();
   const darBaixa = useDarBaixa();
   const confirmarCliente = useConfirmarCliente();
