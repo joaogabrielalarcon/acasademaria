@@ -57,10 +57,12 @@ export default function Plantas() {
 
   // Filtrar e ordenar alfabeticamente
   const filteredPlantas = useMemo(() => {
+    const term = searchTerm.toLowerCase();
     const filtered = plantas.filter((p) => {
       const matchesSearch =
-        p.nome_popular.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (p.nome_cientifico?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
+        p.nome_popular.toLowerCase().includes(term) ||
+        (p.nome_cientifico?.toLowerCase().includes(term) ?? false) ||
+        (p.embalagem?.toLowerCase().includes(term) ?? false);
       const matchesCategoria =
         filterCategoria === "todas" || p.categoria_id === filterCategoria;
       const matchesFornecedor =
