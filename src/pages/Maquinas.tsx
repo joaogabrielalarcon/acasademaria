@@ -85,6 +85,7 @@ export default function Maquinas() {
   const [filterCategoria, setFilterCategoria] = useState<string>("todas");
   const [filterStatus, setFilterStatus] = useState<string>("todos");
   const [itemToDelete, setItemToDelete] = useState<Maquina | null>(null);
+  const [detailMaquina, setDetailMaquina] = useState<Maquina | null>(null);
 
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
