@@ -1432,7 +1432,9 @@ export type Database = {
           numero_parcela: number
           observacoes: string | null
           projeto_id: string
+          renovacao_alertada: boolean
           status: string
+          tipo: string
           updated_at: string
           valor: number
         }
@@ -1444,7 +1446,9 @@ export type Database = {
           numero_parcela?: number
           observacoes?: string | null
           projeto_id: string
+          renovacao_alertada?: boolean
           status?: string
+          tipo?: string
           updated_at?: string
           valor?: number
         }
@@ -1456,7 +1460,9 @@ export type Database = {
           numero_parcela?: number
           observacoes?: string | null
           projeto_id?: string
+          renovacao_alertada?: boolean
           status?: string
+          tipo?: string
           updated_at?: string
           valor?: number
         }
@@ -2694,6 +2700,7 @@ export type Database = {
           data_inicio: string | null
           data_previsao: string | null
           descricao: string | null
+          dia_vencimento: number | null
           id: string
           local_id: string | null
           observacoes: string | null
@@ -2703,6 +2710,7 @@ export type Database = {
           titulo: string
           updated_at: string
           updated_by: string | null
+          valor_mensal: number | null
           valor_total: number | null
         }
         Insert: {
@@ -2713,6 +2721,7 @@ export type Database = {
           data_inicio?: string | null
           data_previsao?: string | null
           descricao?: string | null
+          dia_vencimento?: number | null
           id?: string
           local_id?: string | null
           observacoes?: string | null
@@ -2722,6 +2731,7 @@ export type Database = {
           titulo: string
           updated_at?: string
           updated_by?: string | null
+          valor_mensal?: number | null
           valor_total?: number | null
         }
         Update: {
@@ -2732,6 +2742,7 @@ export type Database = {
           data_inicio?: string | null
           data_previsao?: string | null
           descricao?: string | null
+          dia_vencimento?: number | null
           id?: string
           local_id?: string | null
           observacoes?: string | null
@@ -2741,6 +2752,7 @@ export type Database = {
           titulo?: string
           updated_at?: string
           updated_by?: string | null
+          valor_mensal?: number | null
           valor_total?: number | null
         }
         Relationships: [
