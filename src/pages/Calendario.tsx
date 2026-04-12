@@ -196,7 +196,7 @@ export default function Calendario() {
     });
 
     return result;
-  }, [clientes, eventosManuals, mesAtual]);
+  }, [clientes, colaboradores, eventosManuals, mesAtual]);
 
   // Filter for current month
   const eventosMes = useMemo(() => {
@@ -247,7 +247,7 @@ export default function Calendario() {
     day === hoje.getDate() && mesAtual.getMonth() === hoje.getMonth() && mesAtual.getFullYear() === hoje.getFullYear();
 
   const getEventIcon = (tipo: string) => {
-    if (tipo === "aniversario") return "🎂";
+    if (tipo === "aniversario" || tipo === "aniversario_colaborador") return "🎂";
     if (tipo === "data_importante") return "📌";
     if (tipo === "evento_manual") return "📋";
     if (tipo === "feriado_nacional") return "🇧🇷";
@@ -259,6 +259,7 @@ export default function Calendario() {
   const getEventColor = (tipo: string) => {
     if (tipo.startsWith("feriado")) return "bg-destructive/10 text-destructive";
     if (tipo === "evento_manual") return "bg-accent/50 text-accent-foreground";
+    if (tipo === "aniversario_colaborador") return "bg-secondary text-secondary-foreground";
     return "bg-primary/15 text-primary";
   };
 
