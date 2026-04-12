@@ -78,7 +78,7 @@ export function AlertasPendentesDialog({ open, onOpenChange }: AlertasPendentesD
                       onClick={() =>
                         resolveMutation.mutate({
                           alertaId: alerta.id,
-                          resolvidoPorNome: profile?.nome || user?.email || "Gestão de Campo",
+                          resolvidoPorNome: profile?.nome || user?.email || "Coordenação de Campo",
                         })
                       }
                       disabled={resolveMutation.isPending}
