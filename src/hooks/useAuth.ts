@@ -22,7 +22,7 @@ export interface UserRole {
 export const roleLabels: Record<AppRole, string> = {
   admin: "Direção",
   administrativo: "Administrativo",
-  gestao_campo: "Gestão de Campo",
+  gestao_campo: "Coordenação de Campo",
   responsavel_obra: "Responsável de Obra",
   operador_campo: "Operador de Campo",
   arquitetura: "Arquitetura",
