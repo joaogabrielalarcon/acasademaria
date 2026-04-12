@@ -2704,6 +2704,7 @@ export type Database = {
           id: string
           local_id: string | null
           observacoes: string | null
+          parcelas_config: Json | null
           responsavel_id: string | null
           status: string
           tipo: string
@@ -2725,6 +2726,7 @@ export type Database = {
           id?: string
           local_id?: string | null
           observacoes?: string | null
+          parcelas_config?: Json | null
           responsavel_id?: string | null
           status?: string
           tipo?: string
@@ -2746,6 +2748,7 @@ export type Database = {
           id?: string
           local_id?: string | null
           observacoes?: string | null
+          parcelas_config?: Json | null
           responsavel_id?: string | null
           status?: string
           tipo?: string
