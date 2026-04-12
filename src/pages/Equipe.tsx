@@ -142,6 +142,8 @@ export default function Equipe() {
   const [docTipo, setDocTipo] = useState("Outro");
   const [docDescricao, setDocDescricao] = useState("");
   const [isExtracting, setIsExtracting] = useState(false);
+  const [pendingDocFile, setPendingDocFile] = useState<File | null>(null);
+  const [pendingDocTipo, setPendingDocTipo] = useState("Outro");
 
   const { user } = useAuth();
   const canManageUsers = useIsManager(user?.id);
