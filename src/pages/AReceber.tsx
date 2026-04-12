@@ -196,6 +196,23 @@ export default function AReceber() {
           </Card>
         </div>
 
+        {/* Renewal Alerts */}
+        {renewalAlerts.length > 0 && (
+          <div className="space-y-2">
+            {renewalAlerts.map((alert: any) => (
+              <Alert key={alert.projeto.id} variant="destructive">
+                <RefreshCw className="h-4 w-4" />
+                <AlertTitle>Renovação necessária</AlertTitle>
+                <AlertDescription>
+                  O contrato de manutenção <strong>{alert.projeto.titulo}</strong> ({(alert.projeto as any).clientes?.nome}) 
+                  vence em {format(new Date(alert.ultimaData + "T12:00:00"), "dd/MM/yyyy", { locale: ptBR })}. 
+                  É necessário renovar o contrato para continuar gerando parcelas.
+                </AlertDescription>
+              </Alert>
+            ))}
+          </div>
+        )}
+
         {/* Projetos e Parcelas */}
         {isLoading ? (
           <p className="text-muted-foreground text-center py-8">Carregando...</p>
