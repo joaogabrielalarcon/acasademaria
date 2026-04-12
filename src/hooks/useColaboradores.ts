@@ -87,7 +87,7 @@ export function useColaboradoresAtivos() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("colaboradores")
-        .select("id, nome, cargo, area, area_id, sub_equipe, telefone, endereco, cidade, estado, cep, maquinas_ids, tamanho_camiseta, tamanho_calca, tamanho_calcado, observacoes, data_nascimento, cpf, ativo, foto_url, user_id, email, username")
+        .select("id, nome, cargo, area, area_id, sub_equipe, telefone, endereco, cidade, estado, cep, maquinas_ids, tamanho_camiseta, tamanho_calca, tamanho_calcado, observacoes, data_nascimento, cpf, ativo, foto_url, user_id, email, username, possui_conducao, tipo_conducao, possui_cnh, tipo_cnh")
         .eq("ativo", true)
         .order("nome", { ascending: true });
 
