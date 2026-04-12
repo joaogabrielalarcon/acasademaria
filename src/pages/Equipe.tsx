@@ -142,6 +142,8 @@ export default function Equipe() {
   const [docTipo, setDocTipo] = useState("Outro");
   const [docDescricao, setDocDescricao] = useState("");
   const [isExtracting, setIsExtracting] = useState(false);
+  const [pendingDocFile, setPendingDocFile] = useState<File | null>(null);
+  const [pendingDocTipo, setPendingDocTipo] = useState("Outro");
 
   const { user } = useAuth();
   const canManageUsers = useIsManager(user?.id);
@@ -312,6 +314,71 @@ export default function Equipe() {
     setMaquinasIds(prev => prev.includes(maquinaId) ? prev.filter(id => id !== maquinaId) : [...prev, maquinaId]);
   };
 
+  // Standalone AI extraction (works for new collaborators too — no save needed)
+  const handleAIExtractOnly = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      sonnerToast.error("Envie uma imagem do documento para extração automática.");
+      return;
+    }
+    setIsExtracting(true);
+    try {
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve((reader.result as string).split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const { data: extractData, error: extractError } = await supabase.functions.invoke("extract-doc-data", {
+        body: { imageBase64: base64, fileName: file.name },
+      });
+
+      if (extractError || extractData?.error) {
+        sonnerToast.error(extractData?.error || "Erro na extração");
+      } else if (extractData?.data) {
+        const d = extractData.data;
+        if (d.nome && !nome) setNome(capitalizeWords(d.nome));
+        if (d.cpf && !cpf) setCpf(formatCPF(d.cpf));
+        if (d.data_nascimento && !dataNascimento) {
+          try { setDataNascimento(new Date(d.data_nascimento + "T00:00:00")); } catch {}
+        }
+        if (d.endereco && !endereco) { setEndereco(capitalizeWords(d.endereco)); setEnderecoOpen(true); }
+        if (d.cidade && !cidade) setCidade(capitalizeWords(d.cidade));
+        if (d.estado && !estado) setEstado(d.estado);
+        if (d.cep && !cep) setCep(d.cep);
+        if (d.tipo_cnh) { setPossuiCnh(true); setTipoCnh(d.tipo_cnh); setPossuiConducao(true); setConducaoOpen(true); }
+        if (d.tipo_documento) setDocTipo(d.tipo_documento);
+        sonnerToast.success("Dados extraídos do documento! Confira os campos preenchidos.");
+      }
+
+      // If editing existing colaborador, also save the file
+      if (editingColaborador) {
+        const ext = file.name.split(".").pop();
+        const path = `${editingColaborador.id}/${Date.now()}.${ext}`;
+        await supabase.storage.from("colaboradores-documentos").upload(path, file);
+        await supabase.from("colaborador_documentos" as any).insert({
+          colaborador_id: editingColaborador.id,
+          nome_arquivo: file.name,
+          tipo_documento: extractData?.data?.tipo_documento || docTipo,
+          url: path,
+          descricao: docDescricao || null,
+          created_by: user?.id,
+        } as any);
+        refetchDocs();
+        sonnerToast.success("Documento também salvo no cadastro.");
+      } else {
+        // Store file temporarily so it can be saved after creating the collaborator
+        setPendingDocFile(file);
+        setPendingDocTipo(extractData?.data?.tipo_documento || docTipo);
+      }
+    } catch (aiErr) {
+      console.error("AI extraction error:", aiErr);
+      sonnerToast.error("Não foi possível extrair dados automaticamente.");
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
   // Upload document and optionally extract data with AI
   const handleDocUpload = async (file: File, extractWithAI: boolean = false) => {
     if (!editingColaborador) return;
@@ -451,6 +518,26 @@ export default function Equipe() {
       } else {
         const { data: newColaborador, error } = await supabase.from("colaboradores").insert(payload).select().single();
         if (error) throw error;
+
+        // Save pending document from AI extraction
+        if (pendingDocFile && newColaborador) {
+          try {
+            const ext = pendingDocFile.name.split(".").pop();
+            const docPath = `${newColaborador.id}/${Date.now()}.${ext}`;
+            await supabase.storage.from("colaboradores-documentos").upload(docPath, pendingDocFile);
+            await supabase.from("colaborador_documentos" as any).insert({
+              colaborador_id: newColaborador.id,
+              nome_arquivo: pendingDocFile.name,
+              tipo_documento: pendingDocTipo,
+              url: docPath,
+              created_by: user?.id,
+            } as any);
+          } catch (docErr) {
+            console.error("Error saving pending doc:", docErr);
+          }
+          setPendingDocFile(null);
+          setPendingDocTipo("Outro");
+        }
 
         if (shouldCreateAccess && newColaborador) {
           try {
@@ -712,6 +799,33 @@ export default function Equipe() {
             <div className="flex justify-center pb-2">
               <ImageUpload value={fotoUrl} onChange={setFotoUrl} bucket="colaboradores-fotos" folder="colaboradores" />
             </div>
+
+            {/* Botão IA para extrair dados de documento */}
+            <label className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-primary/40 cursor-pointer hover:bg-primary/5 hover:border-primary/60 transition-all text-sm font-medium text-primary">
+              <Sparkles className="w-5 h-5" />
+              {isExtracting ? "Analisando documento..." : "📄 Enviar documento para preencher automaticamente"}
+              <input
+                type="file"
+                className="hidden"
+                accept="image/*"
+                disabled={isExtracting}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleAIExtractOnly(file);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            {isExtracting && (
+              <p className="text-xs text-center text-muted-foreground animate-pulse">
+                A IA está lendo o documento e preenchendo os campos...
+              </p>
+            )}
+            {pendingDocFile && !editingColaborador && (
+              <p className="text-xs text-center text-muted-foreground">
+                📎 Documento "{pendingDocFile.name}" será salvo após criar o colaborador.
+              </p>
+            )}
 
             {/* Dados Básicos */}
             <div className="space-y-2">
