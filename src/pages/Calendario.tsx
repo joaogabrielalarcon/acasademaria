@@ -38,7 +38,7 @@ export default function Calendario() {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const { data: clientes = [], isLoading: loadingClientes } = useQuery({
-    queryKey: ["clientes-calendario"],
+    queryKey: ["clientes", "calendario"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clientes")
@@ -51,7 +51,7 @@ export default function Calendario() {
   });
 
   const { data: colaboradores = [], isLoading: loadingColaboradores } = useQuery({
-    queryKey: ["colaboradores-calendario"],
+    queryKey: ["colaboradores", "calendario"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("colaboradores")
