@@ -406,6 +406,48 @@ export type Database = {
         }
         Relationships: []
       }
+      colaborador_avaliacoes: {
+        Row: {
+          autor_id: string | null
+          autor_nome: string | null
+          colaborador_id: string
+          comentario: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          autor_id?: string | null
+          autor_nome?: string | null
+          colaborador_id: string
+          comentario: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          autor_id?: string | null
+          autor_nome?: string | null
+          colaborador_id?: string
+          comentario?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "colaborador_avaliacoes_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "colaborador_avaliacoes_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       colaborador_documentos: {
         Row: {
           colaborador_id: string
@@ -447,6 +489,51 @@ export type Database = {
           },
           {
             foreignKeyName: "colaborador_documentos_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      colaborador_inativacoes: {
+        Row: {
+          colaborador_id: string
+          created_at: string
+          data_inativacao: string
+          id: string
+          motivo: string
+          registrado_por: string | null
+          registrado_por_nome: string | null
+        }
+        Insert: {
+          colaborador_id: string
+          created_at?: string
+          data_inativacao?: string
+          id?: string
+          motivo: string
+          registrado_por?: string | null
+          registrado_por_nome?: string | null
+        }
+        Update: {
+          colaborador_id?: string
+          created_at?: string
+          data_inativacao?: string
+          id?: string
+          motivo?: string
+          registrado_por?: string | null
+          registrado_por_nome?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "colaborador_inativacoes_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "colaborador_inativacoes_colaborador_id_fkey"
             columns: ["colaborador_id"]
             isOneToOne: false
             referencedRelation: "colaboradores_basico"
@@ -3388,6 +3475,10 @@ export type Database = {
       }
     }
     Functions: {
+      can_access_avaliacao: {
+        Args: { p_colaborador_id: string; p_user_id: string }
+        Returns: boolean
+      }
       can_access_diario_project: {
         Args: { _projeto_id: string; _user_id: string }
         Returns: boolean
