@@ -184,6 +184,7 @@ export default function NovoProjeto() {
           </div>
         )}
 
+        <div className="space-y-2">
           <Label>Observações</Label>
           <Textarea
             value={form.observacoes}
