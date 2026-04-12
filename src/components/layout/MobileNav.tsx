@@ -4,6 +4,7 @@ import {
   LogOut,
   Settings,
   ChevronDown,
+  DollarSign,
   Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -21,7 +22,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useHighestRole } from "@/hooks/useAuth";
 import { usePendingDiarioAlertas } from "@/hooks/useDiarioAlertas";
 import { useState } from "react";
-import { alertNavigationItem, appNavigationItems, configNavigationItems } from "./navigation";
+import { alertNavigationItem, appNavigationItems, configNavigationItems, financeiroNavigationItems } from "./navigation";
 
 export function MobileNav() {
   const location = useLocation();
@@ -29,14 +30,20 @@ export function MobileNav() {
   const { user, signOut } = useAuth();
   const userRole = useHighestRole(user?.id);
   const [configOpen, setConfigOpen] = useState(false);
+  const [financeiroOpen, setFinanceiroOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
   const canAccessAlerts = alertNavigationItem.roles.includes(userRole);
   const { data: pendingAlerts = [] } = usePendingDiarioAlertas(canAccessAlerts);
 
   const visibleNavigationItems = appNavigationItems.filter(item => item.roles.includes(userRole));
   const visibleConfigItems = configNavigationItems.filter(item => item.roles.includes(userRole));
+  const visibleFinanceiroItems = financeiroNavigationItems.filter(item => item.roles.includes(userRole));
 
   const isConfigActive = visibleConfigItems.some(
+    item => location.pathname === item.href || location.pathname.startsWith(item.href)
+  );
+
+  const isFinanceiroActive = visibleFinanceiroItems.some(
     item => location.pathname === item.href || location.pathname.startsWith(item.href)
   );
 
