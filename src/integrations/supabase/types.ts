@@ -1423,6 +1423,60 @@ export type Database = {
           },
         ]
       }
+      financeiro_parcelas: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          data_vencimento: string | null
+          id: string
+          numero_parcela: number
+          observacoes: string | null
+          projeto_id: string
+          status: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          data_vencimento?: string | null
+          id?: string
+          numero_parcela?: number
+          observacoes?: string | null
+          projeto_id: string
+          status?: string
+          updated_at?: string
+          valor?: number
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          data_vencimento?: string | null
+          id?: string
+          numero_parcela?: number
+          observacoes?: string | null
+          projeto_id?: string
+          status?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financeiro_parcelas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_parcelas_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fornecedores: {
         Row: {
           cidade: string | null
