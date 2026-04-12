@@ -761,7 +761,17 @@ export default function Equipe() {
           <span className="text-xs text-muted-foreground">{colaborador.ativo ? "Ativo" : "Inativo"}</span>
           <Switch
             checked={colaborador.ativo}
-            onCheckedChange={(checked) => toggleAtivoMutation.mutate({ id: colaborador.id, ativo: checked })}
+            onCheckedChange={(checked) => {
+              if (!checked) {
+                // Deactivating: open dialog for reason
+                setColaboradorToInativar(colaborador);
+                setMotivoInativacao("");
+                setInativacaoDialogOpen(true);
+              } else {
+                // Reactivating: no reason needed
+                toggleAtivoMutation.mutate({ id: colaborador.id, ativo: true });
+              }
+            }}
           />
         </div>
         <DropdownMenu>
@@ -775,6 +785,15 @@ export default function Equipe() {
             <DropdownMenuItem onClick={() => handleOpenEntregas(colaborador)}>
               <Package className="w-4 h-4 mr-2" />Entregas
             </DropdownMenuItem>
+            {canAccessAvaliacoes(colaborador) && (
+              <DropdownMenuItem onClick={() => {
+                setSelectedColaboradorAvaliacao(colaborador);
+                setNovoComentario("");
+                setAvaliacoesDialogOpen(true);
+              }}>
+                <MessageSquare className="w-4 h-4 mr-2" />Avaliações
+              </DropdownMenuItem>
+            )}
             {isAdmin && (
               <DropdownMenuItem onClick={() => setColaboradorToDelete(colaborador)} className="text-destructive focus:text-destructive">
                 <Trash2 className="w-4 h-4 mr-2" />Excluir
