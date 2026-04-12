@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Search, Plus, UserCircle, MoreVertical, Pencil, ChevronDown, ChevronRight, Package, Trash2, Calendar, Key, RefreshCw, Upload, FileText, Car, Sparkles, X, LayoutList, Network, MessageSquare, UserX } from "lucide-react";
-import { useAuth, useIsManager, useIsAdmin } from "@/hooks/useAuth";
+import { useAuth, useIsManager, useIsAdmin, useIsAdminOrAdministrativo, useHighestRole } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
