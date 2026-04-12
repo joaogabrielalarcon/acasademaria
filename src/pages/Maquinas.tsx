@@ -524,7 +524,7 @@ export default function Maquinas() {
                     </TableCell>
                     <TableCell>{getStatusBadge(maquina.status)}</TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                         <Button
                           variant="ghost"
                           size="icon-sm"
