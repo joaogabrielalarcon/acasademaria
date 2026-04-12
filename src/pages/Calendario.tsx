@@ -23,7 +23,7 @@ interface EventoCalendario {
   descricao: string;
   clienteNome: string;
   clienteId: string;
-  tipo: "aniversario" | "data_importante" | "evento_manual" | "feriado_nacional" | "feriado_estadual" | "feriado_municipal";
+  tipo: "aniversario" | "aniversario_colaborador" | "data_importante" | "evento_manual" | "feriado_nacional" | "feriado_estadual" | "feriado_municipal";
   eventoId?: string; // for manual events (deletable)
 }
 
