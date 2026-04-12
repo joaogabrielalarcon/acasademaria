@@ -1485,6 +1485,7 @@ export type Database = {
       }
       fornecedores: {
         Row: {
+          categoria_fornecedor: string | null
           cidade: string | null
           cnpj: string | null
           created_at: string
@@ -1493,7 +1494,9 @@ export type Database = {
           endereco: string | null
           estado: string | null
           id: string
+          mercado: string | null
           nome: string
+          nome_alternativo: string | null
           observacoes: string | null
           status: string
           telefone: string | null
@@ -1502,6 +1505,7 @@ export type Database = {
           whatsapp: string | null
         }
         Insert: {
+          categoria_fornecedor?: string | null
           cidade?: string | null
           cnpj?: string | null
           created_at?: string
@@ -1510,7 +1514,9 @@ export type Database = {
           endereco?: string | null
           estado?: string | null
           id?: string
+          mercado?: string | null
           nome: string
+          nome_alternativo?: string | null
           observacoes?: string | null
           status?: string
           telefone?: string | null
@@ -1519,6 +1525,7 @@ export type Database = {
           whatsapp?: string | null
         }
         Update: {
+          categoria_fornecedor?: string | null
           cidade?: string | null
           cnpj?: string | null
           created_at?: string
@@ -1527,7 +1534,9 @@ export type Database = {
           endereco?: string | null
           estado?: string | null
           id?: string
+          mercado?: string | null
           nome?: string
+          nome_alternativo?: string | null
           observacoes?: string | null
           status?: string
           telefone?: string | null
@@ -1539,43 +1548,37 @@ export type Database = {
       }
       historico_precos: {
         Row: {
-          created_at: string
-          data_alteracao: string
+          criado_em: string | null
+          data_orcamento: string
           fornecedor_id: string | null
           id: string
-          insumo_id: string | null
-          observacao: string | null
-          planta_id: string | null
-          preco_anterior: number | null
-          preco_novo: number | null
-          tipo_item: string
-          usuario_id: string | null
+          item_id: string
+          item_tipo: string
+          observacoes: string | null
+          preco: number
+          registrado_por: string | null
         }
         Insert: {
-          created_at?: string
-          data_alteracao?: string
+          criado_em?: string | null
+          data_orcamento: string
           fornecedor_id?: string | null
           id?: string
-          insumo_id?: string | null
-          observacao?: string | null
-          planta_id?: string | null
-          preco_anterior?: number | null
-          preco_novo?: number | null
-          tipo_item: string
-          usuario_id?: string | null
+          item_id: string
+          item_tipo: string
+          observacoes?: string | null
+          preco: number
+          registrado_por?: string | null
         }
         Update: {
-          created_at?: string
-          data_alteracao?: string
+          criado_em?: string | null
+          data_orcamento?: string
           fornecedor_id?: string | null
           id?: string
-          insumo_id?: string | null
-          observacao?: string | null
-          planta_id?: string | null
-          preco_anterior?: number | null
-          preco_novo?: number | null
-          tipo_item?: string
-          usuario_id?: string | null
+          item_id?: string
+          item_tipo?: string
+          observacoes?: string | null
+          preco?: number
+          registrado_por?: string | null
         }
         Relationships: [
           {
@@ -1586,17 +1589,17 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "historico_precos_insumo_id_fkey"
-            columns: ["insumo_id"]
+            foreignKeyName: "historico_precos_registrado_por_fkey"
+            columns: ["registrado_por"]
             isOneToOne: false
-            referencedRelation: "insumos"
+            referencedRelation: "colaboradores"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "historico_precos_planta_id_fkey"
-            columns: ["planta_id"]
+            foreignKeyName: "historico_precos_registrado_por_fkey"
+            columns: ["registrado_por"]
             isOneToOne: false
-            referencedRelation: "plantas"
+            referencedRelation: "colaboradores_basico"
             referencedColumns: ["id"]
           },
         ]
@@ -1652,6 +1655,7 @@ export type Database = {
           categoria: string | null
           created_at: string
           created_by: string | null
+          descricao_produto: string | null
           fornecedor_id: string | null
           id: string
           nome: string
@@ -1659,13 +1663,16 @@ export type Database = {
           preco_unitario: number | null
           ultima_compra: string | null
           unidade: string | null
+          updated_at: string | null
           updated_by: string | null
+          volume_apresentacao: string | null
         }
         Insert: {
           ativo?: boolean
           categoria?: string | null
           created_at?: string
           created_by?: string | null
+          descricao_produto?: string | null
           fornecedor_id?: string | null
           id?: string
           nome: string
@@ -1673,13 +1680,16 @@ export type Database = {
           preco_unitario?: number | null
           ultima_compra?: string | null
           unidade?: string | null
+          updated_at?: string | null
           updated_by?: string | null
+          volume_apresentacao?: string | null
         }
         Update: {
           ativo?: boolean
           categoria?: string | null
           created_at?: string
           created_by?: string | null
+          descricao_produto?: string | null
           fornecedor_id?: string | null
           id?: string
           nome?: string
@@ -1687,7 +1697,9 @@ export type Database = {
           preco_unitario?: number | null
           ultima_compra?: string | null
           unidade?: string | null
+          updated_at?: string | null
           updated_by?: string | null
+          volume_apresentacao?: string | null
         }
         Relationships: [
           {
