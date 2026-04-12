@@ -8,11 +8,15 @@ export interface Projeto {
   descricao: string | null;
   status: string;
   valor_total: number | null;
+  valor_mensal: number | null;
+  dia_vencimento: number | null;
   data_inicio: string | null;
   data_previsao: string | null;
   data_conclusao: string | null;
   responsavel_id: string | null;
   observacoes: string | null;
+  tipo: string;
+  local_id: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -28,6 +28,8 @@ export default function NovoProjeto() {
     descricao: "",
     tipo: "implantacao",
     observacoes: "",
+    valor_mensal: "",
+    dia_vencimento: "10",
   });
 
   useEffect(() => {
@@ -39,6 +41,8 @@ export default function NovoProjeto() {
         descricao: projeto.descricao || "",
         tipo: (projeto as any).tipo || "implantacao",
         observacoes: projeto.observacoes || "",
+        valor_mensal: projeto.valor_mensal ? String(projeto.valor_mensal) : "",
+        dia_vencimento: String(projeto.dia_vencimento || 10),
       });
     }
   }, [projeto]);
@@ -62,6 +66,8 @@ export default function NovoProjeto() {
         descricao: form.descricao || null,
         tipo: form.tipo,
         observacoes: form.observacoes || null,
+        valor_mensal: form.tipo === "manutencao" && form.valor_mensal ? parseFloat(form.valor_mensal) : null,
+        dia_vencimento: form.tipo === "manutencao" ? parseInt(form.dia_vencimento) || 10 : 10,
       };
 
       if (isEditing) {
