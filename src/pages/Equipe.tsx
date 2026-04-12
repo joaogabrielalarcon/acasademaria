@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import { Search, Plus, UserCircle, MoreVertical, Pencil, ChevronDown, ChevronRight, Package, Trash2, Calendar, Key, RefreshCw, Upload, FileText, Car, Sparkles, X, LayoutList, Network } from "lucide-react";
-import { useAuth, useIsManager, useIsAdmin } from "@/hooks/useAuth";
+import { Search, Plus, UserCircle, MoreVertical, Pencil, ChevronDown, ChevronRight, Package, Trash2, Calendar, Key, RefreshCw, Upload, FileText, Car, Sparkles, X, LayoutList, Network, MessageSquare, UserX } from "lucide-react";
+import { useAuth, useIsManager, useIsAdmin, useIsAdminOrAdministrativo, useHighestRole } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -151,7 +151,19 @@ export default function Equipe() {
   const { user } = useAuth();
   const canManageUsers = useIsManager(user?.id);
   const isAdmin = useIsAdmin(user?.id);
+  const isAdminOrAdm = useIsAdminOrAdministrativo(user?.id);
+  const highestRole = useHighestRole(user?.id);
   const [colaboradorToDelete, setColaboradorToDelete] = useState<Colaborador | null>(null);
+  
+  // Inativação com motivo
+  const [inativacaoDialogOpen, setInativacaoDialogOpen] = useState(false);
+  const [colaboradorToInativar, setColaboradorToInativar] = useState<Colaborador | null>(null);
+  const [motivoInativacao, setMotivoInativacao] = useState("");
+  
+  // Avaliações
+  const [avaliacoesDialogOpen, setAvaliacoesDialogOpen] = useState(false);
+  const [selectedColaboradorAvaliacao, setSelectedColaboradorAvaliacao] = useState<Colaborador | null>(null);
+  const [novoComentario, setNovoComentario] = useState("");
   
   const { data: colaboradores = [], isLoading } = useColaboradores();
   const { data: maquinas = [] } = useMaquinas();
@@ -177,17 +189,74 @@ export default function Equipe() {
       return (data || []) as any[];
     },
   });
-  
+
+  // Fetch inativações history
+  const { data: inativacoes = [], refetch: refetchInativacoes } = useQuery({
+    queryKey: ["colaborador-inativacoes", selectedColaboradorAvaliacao?.id],
+    enabled: false, // only fetched when needed
+    queryFn: async () => {
+      if (!selectedColaboradorAvaliacao) return [];
+      const { data, error } = await supabase
+        .from("colaborador_inativacoes" as any)
+        .select("*")
+        .eq("colaborador_id", selectedColaboradorAvaliacao.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+  });
+
+  // Fetch avaliações
+  const { data: avaliacoes = [], refetch: refetchAvaliacoes, isLoading: isLoadingAvaliacoes } = useQuery({
+    queryKey: ["colaborador-avaliacoes", selectedColaboradorAvaliacao?.id],
+    enabled: !!selectedColaboradorAvaliacao?.id && avaliacoesDialogOpen,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("colaborador_avaliacoes" as any)
+        .select("*")
+        .eq("colaborador_id", selectedColaboradorAvaliacao!.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+  });
+
+  // Check if user can access evaluations for a specific colaborador
+  const canAccessAvaliacoes = (colaborador: Colaborador): boolean => {
+    if (highestRole === "admin") return true;
+    if (highestRole === "gestao_campo") {
+      const area = colaborador.area_id ? areasMap.get(colaborador.area_id) : null;
+      return area?.nome?.toLowerCase().includes("campo") || false;
+    }
+    if (highestRole === "administrativo") {
+      const area = colaborador.area_id ? areasMap.get(colaborador.area_id) : null;
+      return !area?.nome?.toLowerCase().includes("administrativo");
+    }
+    return false;
+  };
+
   const createEntregaMutation = useCreateEntrega();
   const deleteEntregaMutation = useDeleteEntrega();
 
   const toggleAtivoMutation = useMutation({
-    mutationFn: async ({ id, ativo }: { id: string; ativo: boolean }) => {
+    mutationFn: async ({ id, ativo, motivo }: { id: string; ativo: boolean; motivo?: string }) => {
       const { error } = await supabase
         .from("colaboradores")
         .update({ ativo })
         .eq("id", id);
       if (error) throw error;
+      // If deactivating, save the reason
+      if (!ativo && motivo) {
+        const { error: inativError } = await supabase
+          .from("colaborador_inativacoes" as any)
+          .insert({
+            colaborador_id: id,
+            motivo,
+            registrado_por: user?.id,
+            registrado_por_nome: user?.email || null,
+          } as any);
+        if (inativError) console.error("Erro ao salvar motivo de inativação:", inativError);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["colaboradores"] });
@@ -692,7 +761,17 @@ export default function Equipe() {
           <span className="text-xs text-muted-foreground">{colaborador.ativo ? "Ativo" : "Inativo"}</span>
           <Switch
             checked={colaborador.ativo}
-            onCheckedChange={(checked) => toggleAtivoMutation.mutate({ id: colaborador.id, ativo: checked })}
+            onCheckedChange={(checked) => {
+              if (!checked) {
+                // Deactivating: open dialog for reason
+                setColaboradorToInativar(colaborador);
+                setMotivoInativacao("");
+                setInativacaoDialogOpen(true);
+              } else {
+                // Reactivating: no reason needed
+                toggleAtivoMutation.mutate({ id: colaborador.id, ativo: true });
+              }
+            }}
           />
         </div>
         <DropdownMenu>
@@ -706,6 +785,15 @@ export default function Equipe() {
             <DropdownMenuItem onClick={() => handleOpenEntregas(colaborador)}>
               <Package className="w-4 h-4 mr-2" />Entregas
             </DropdownMenuItem>
+            {canAccessAvaliacoes(colaborador) && (
+              <DropdownMenuItem onClick={() => {
+                setSelectedColaboradorAvaliacao(colaborador);
+                setNovoComentario("");
+                setAvaliacoesDialogOpen(true);
+              }}>
+                <MessageSquare className="w-4 h-4 mr-2" />Avaliações
+              </DropdownMenuItem>
+            )}
             {isAdmin && (
               <DropdownMenuItem onClick={() => setColaboradorToDelete(colaborador)} className="text-destructive focus:text-destructive">
                 <Trash2 className="w-4 h-4 mr-2" />Excluir
@@ -1395,6 +1483,139 @@ export default function Equipe() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog de Inativação com motivo */}
+      <Dialog open={inativacaoDialogOpen} onOpenChange={(open) => { if (!open) { setInativacaoDialogOpen(false); setColaboradorToInativar(null); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserX className="w-5 h-5 text-destructive" />
+              Inativar Colaborador
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              Você está inativando <strong>{colaboradorToInativar?.nome}</strong>. Registre o motivo abaixo.
+            </p>
+            <div className="space-y-2">
+              <Label>Motivo da inativação *</Label>
+              <Textarea
+                placeholder="Descreva o motivo da inativação..."
+                value={motivoInativacao}
+                onChange={(e) => setMotivoInativacao(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => { setInativacaoDialogOpen(false); setColaboradorToInativar(null); }}>
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={!motivoInativacao.trim() || toggleAtivoMutation.isPending}
+                onClick={() => {
+                  if (colaboradorToInativar && motivoInativacao.trim()) {
+                    toggleAtivoMutation.mutate(
+                      { id: colaboradorToInativar.id, ativo: false, motivo: motivoInativacao.trim() },
+                      {
+                        onSuccess: () => {
+                          toast({ title: "Colaborador inativado", description: "O motivo foi registrado no histórico." });
+                          setInativacaoDialogOpen(false);
+                          setColaboradorToInativar(null);
+                        },
+                      }
+                    );
+                  }
+                }}
+              >
+                {toggleAtivoMutation.isPending ? "Salvando..." : "Confirmar Inativação"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Avaliações / Pontuações */}
+      <Dialog open={avaliacoesDialogOpen} onOpenChange={(open) => { if (!open) { setAvaliacoesDialogOpen(false); setSelectedColaboradorAvaliacao(null); } }}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-primary" />
+              Avaliações — {selectedColaboradorAvaliacao?.nome}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {/* New comment form */}
+            <div className="space-y-2">
+              <Label>Novo comentário</Label>
+              <Textarea
+                placeholder="Registre uma observação, pontuação ou avaliação..."
+                value={novoComentario}
+                onChange={(e) => setNovoComentario(e.target.value)}
+                className="min-h-[80px]"
+              />
+              <Button
+                variant="terracota"
+                size="sm"
+                disabled={!novoComentario.trim()}
+                onClick={async () => {
+                  if (!selectedColaboradorAvaliacao || !novoComentario.trim()) return;
+                  const { error } = await supabase
+                    .from("colaborador_avaliacoes" as any)
+                    .insert({
+                      colaborador_id: selectedColaboradorAvaliacao.id,
+                      comentario: novoComentario.trim(),
+                      autor_id: user?.id,
+                      autor_nome: user?.email || null,
+                    } as any);
+                  if (error) {
+                    toast({ title: "Erro", description: "Não foi possível salvar a avaliação.", variant: "destructive" });
+                  } else {
+                    setNovoComentario("");
+                    refetchAvaliacoes();
+                    toast({ title: "Avaliação registrada" });
+                  }
+                }}
+              >
+                Registrar
+              </Button>
+            </div>
+
+            {/* List of evaluations */}
+            <div className="space-y-3">
+              <h4 className="font-medium text-sm text-muted-foreground">Histórico</h4>
+              {isLoadingAvaliacoes ? (
+                <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
+              ) : avaliacoes.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">Nenhuma avaliação registrada.</p>
+              ) : (
+                avaliacoes.map((av: any) => (
+                  <div key={av.id} className="p-3 bg-muted/30 rounded-lg border border-primary/10">
+                    <p className="text-sm whitespace-pre-wrap">{av.comentario}</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-xs text-muted-foreground">
+                        {av.autor_nome || "—"} • {format(new Date(av.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                      </span>
+                      {isAdmin && (
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={async () => {
+                            await supabase.from("colaborador_avaliacoes" as any).delete().eq("id", av.id);
+                            refetchAvaliacoes();
+                          }}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
