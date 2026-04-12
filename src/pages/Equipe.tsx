@@ -750,7 +750,9 @@ export default function Equipe() {
         />
       </div>
 
-      {/* Grouped List */}
+      {viewMode === "organograma" ? (
+        <OrgChart colaboradores={filteredColaboradores} areas={areas} />
+      ) : (
       <div className="space-y-3">
         {isLoading ? (
           <div className="card-botanical p-4 space-y-3">
@@ -769,7 +771,42 @@ export default function Equipe() {
             {searchTerm ? "Nenhum colaborador encontrado." : "Nenhum colaborador cadastrado."}
           </div>
         ) : (
-          groupedByArea.map((group) => (
+          groupedByArea.map((group) => {
+            const isCampo = group.areaNome?.toLowerCase().includes("campo");
+            
+            // Sub-group members by sub_equipe (for campo) then cargo
+            const subGrouped = (() => {
+              if (isCampo) {
+                const bySubEquipe = new Map<string, Colaborador[]>();
+                group.membros.forEach(c => {
+                  const key = c.sub_equipe === "implantacao" ? "Implantação" : c.sub_equipe === "manutencao" ? "Manutenção" : "Não definido";
+                  const list = bySubEquipe.get(key) || [];
+                  list.push(c);
+                  bySubEquipe.set(key, list);
+                });
+                return Array.from(bySubEquipe.entries()).map(([subName, members]) => {
+                  const byCargo = new Map<string, Colaborador[]>();
+                  members.forEach(c => {
+                    const cargo = c.cargo || "Sem cargo";
+                    const list = byCargo.get(cargo) || [];
+                    list.push(c);
+                    byCargo.set(cargo, list);
+                  });
+                  return { subName, cargos: Array.from(byCargo.entries()) };
+                });
+              } else {
+                const byCargo = new Map<string, Colaborador[]>();
+                group.membros.forEach(c => {
+                  const cargo = c.cargo || "Sem cargo";
+                  const list = byCargo.get(cargo) || [];
+                  list.push(c);
+                  byCargo.set(cargo, list);
+                });
+                return [{ subName: null as string | null, cargos: Array.from(byCargo.entries()) }];
+              }
+            })();
+
+            return (
             <div key={group.areaId} className="card-botanical overflow-hidden">
               <button
                 onClick={() => toggleArea(group.areaId)}
@@ -790,14 +827,34 @@ export default function Equipe() {
                 </div>
               </button>
               {expandedAreas.has(group.areaId) && (
-                <div className="divide-y divide-primary/10 border-t border-primary/10">
-                  {group.membros.map(renderColaboradorRow)}
+                <div className="border-t border-primary/10">
+                  {subGrouped.map((sg, sgIdx) => (
+                    <div key={sgIdx}>
+                      {sg.subName && (
+                        <div className="px-4 py-2 bg-muted/40 border-b border-primary/10">
+                          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{sg.subName}</span>
+                        </div>
+                      )}
+                      {sg.cargos.map(([cargoName, members]) => (
+                        <div key={cargoName}>
+                          <div className={`px-4 py-1.5 bg-muted/20 border-b border-primary/5 ${sg.subName ? "pl-8" : ""}`}>
+                            <span className="text-xs font-medium text-muted-foreground">{cargoName}</span>
+                            <Badge variant="outline" className="text-[10px] ml-2 py-0">{members.length}</Badge>
+                          </div>
+                          <div className={`divide-y divide-primary/10 ${sg.subName ? "pl-4" : ""}`}>
+                            {members.map(renderColaboradorRow)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
-          ))
+          );})
         )}
       </div>
+      )}
 
       {/* Dialog de Cadastro/Edição */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
