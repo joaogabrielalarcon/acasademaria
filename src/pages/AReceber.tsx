@@ -5,9 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Receipt, Plus, DollarSign, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Receipt, Plus, DollarSign, AlertTriangle, CheckCircle2, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -20,7 +21,7 @@ function useProjetosAprovados() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("projetos")
-        .select("id, titulo, valor_total, status, cliente_id, clientes(nome)")
+        .select("id, titulo, valor_total, valor_mensal, tipo, status, cliente_id, clientes(nome)")
         .in("status", ["aprovado", "em_execucao"])
         .order("updated_at", { ascending: false });
       if (error) throw error;
@@ -110,6 +111,31 @@ export default function AReceber() {
     [parcelas]
   );
 
+  // Renewal alerts: maintenance projects whose last parcela is within 30 days
+  const renewalAlerts = useMemo(() => {
+    const today = new Date();
+    const in30days = new Date(today);
+    in30days.setDate(in30days.getDate() + 30);
+
+    return projetos
+      .filter((p: any) => p.tipo === "manutencao")
+      .map((p: any) => {
+        const pp = parcelasPorProjeto[p.id] || [];
+        if (pp.length === 0) return null;
+        const lastParcela = pp.reduce((latest: any, cur: any) => {
+          if (!latest || (cur.data_vencimento && cur.data_vencimento > (latest.data_vencimento || ""))) return cur;
+          return latest;
+        }, null);
+        if (!lastParcela?.data_vencimento) return null;
+        const lastDate = new Date(lastParcela.data_vencimento + "T12:00:00");
+        if (lastDate <= in30days) {
+          return { projeto: p, ultimaData: lastParcela.data_vencimento };
+        }
+        return null;
+      })
+      .filter(Boolean);
+  }, [projetos, parcelasPorProjeto]);
+
   const handleAddParcela = () => {
     if (!addModal || !novaParcelaValor) return;
     const projeto = projetos.find((p: any) => p.id === addModal);
@@ -169,6 +195,23 @@ export default function AReceber() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Renewal Alerts */}
+        {renewalAlerts.length > 0 && (
+          <div className="space-y-2">
+            {renewalAlerts.map((alert: any) => (
+              <Alert key={alert.projeto.id} variant="destructive">
+                <RefreshCw className="h-4 w-4" />
+                <AlertTitle>Renovação necessária</AlertTitle>
+                <AlertDescription>
+                  O contrato de manutenção <strong>{alert.projeto.titulo}</strong> ({(alert.projeto as any).clientes?.nome}) 
+                  vence em {format(new Date(alert.ultimaData + "T12:00:00"), "dd/MM/yyyy", { locale: ptBR })}. 
+                  É necessário renovar o contrato para continuar gerando parcelas.
+                </AlertDescription>
+              </Alert>
+            ))}
+          </div>
+        )}
 
         {/* Projetos e Parcelas */}
         {isLoading ? (

@@ -28,6 +28,8 @@ export default function NovoProjeto() {
     descricao: "",
     tipo: "implantacao",
     observacoes: "",
+    valor_mensal: "",
+    dia_vencimento: "10",
   });
 
   useEffect(() => {
@@ -39,6 +41,8 @@ export default function NovoProjeto() {
         descricao: projeto.descricao || "",
         tipo: (projeto as any).tipo || "implantacao",
         observacoes: projeto.observacoes || "",
+        valor_mensal: projeto.valor_mensal ? String(projeto.valor_mensal) : "",
+        dia_vencimento: String(projeto.dia_vencimento || 10),
       });
     }
   }, [projeto]);
@@ -62,6 +66,8 @@ export default function NovoProjeto() {
         descricao: form.descricao || null,
         tipo: form.tipo,
         observacoes: form.observacoes || null,
+        valor_mensal: form.tipo === "manutencao" && form.valor_mensal ? parseFloat(form.valor_mensal) : null,
+        dia_vencimento: form.tipo === "manutencao" ? parseInt(form.dia_vencimento) || 10 : 10,
       };
 
       if (isEditing) {
@@ -149,6 +155,34 @@ export default function NovoProjeto() {
             </SelectContent>
           </Select>
         </div>
+
+        {form.tipo === "manutencao" && (
+          <div className="grid grid-cols-2 gap-4 p-4 rounded-lg border border-border bg-muted/30">
+            <div className="space-y-2">
+              <Label>Valor Mensal (R$)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={form.valor_mensal}
+                onChange={e => setForm(f => ({ ...f, valor_mensal: e.target.value }))}
+                placeholder="Ex: 3500,00"
+              />
+              <p className="text-xs text-muted-foreground">Valor de cada parcela mensal</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Dia de Vencimento</Label>
+              <Input
+                type="number"
+                min="1"
+                max="28"
+                value={form.dia_vencimento}
+                onChange={e => setForm(f => ({ ...f, dia_vencimento: e.target.value }))}
+                placeholder="10"
+              />
+              <p className="text-xs text-muted-foreground">Dia do mês para vencimento (1-28)</p>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label>Observações</Label>

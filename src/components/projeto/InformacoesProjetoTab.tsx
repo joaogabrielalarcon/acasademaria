@@ -209,6 +209,20 @@ export function InformacoesProjetoTab({ projeto, isAdmin, userId }: InformacoesP
               </p>
             </div>
           )}
+          {(projeto as any).tipo === "manutencao" && (projeto as any).valor_mensal && (
+            <>
+              <div>
+                <p className="text-sm text-muted-foreground">Valor Mensal</p>
+                <p className="text-foreground font-semibold">
+                  R$ {Number((projeto as any).valor_mensal).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Dia de Vencimento</p>
+                <p className="text-foreground">Dia {(projeto as any).dia_vencimento || 10}</p>
+              </div>
+            </>
+          )}
           {projeto.observacoes && (
             <div className="sm:col-span-2">
               <p className="text-sm text-muted-foreground">Observações</p>
