@@ -23,7 +23,7 @@ interface EventoCalendario {
   descricao: string;
   clienteNome: string;
   clienteId: string;
-  tipo: "aniversario" | "data_importante" | "evento_manual" | "feriado_nacional" | "feriado_estadual" | "feriado_municipal";
+  tipo: "aniversario" | "aniversario_colaborador" | "data_importante" | "evento_manual" | "feriado_nacional" | "feriado_estadual" | "feriado_municipal";
   eventoId?: string; // for manual events (deletable)
 }
 
@@ -47,6 +47,23 @@ export default function Calendario() {
         .order("nome");
       if (error) throw error;
       return data;
+    },
+  });
+
+  const { data: colaboradores = [], isLoading: loadingColaboradores } = useQuery({
+    queryKey: ["colaboradores-calendario"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("colaboradores")
+        .select("id, nome, data_nascimento, ativo, cargo, area_id")
+        .not("data_nascimento", "is", null)
+        .eq("ativo", true)
+        .order("nome");
+      if (error) {
+        if (error.code === "42501") return [];
+        throw error;
+      }
+      return data || [];
     },
   });
 
@@ -93,7 +110,7 @@ export default function Calendario() {
     onError: () => toast.error("Erro ao remover evento"),
   });
 
-  const isLoading = loadingClientes || loadingEventos;
+  const isLoading = loadingClientes || loadingEventos || loadingColaboradores;
 
   // Build all events
   const eventos = useMemo(() => {
@@ -134,6 +151,20 @@ export default function Calendario() {
       });
     });
 
+    // Colaboradores birthdays
+    colaboradores.forEach((col: any) => {
+      if (col.data_nascimento) {
+        result.push({
+          data: col.data_nascimento.substring(5), // MM-DD
+          dataOriginal: col.data_nascimento,
+          descricao: `🎂 Aniversário de ${col.nome}${col.cargo ? ` (${col.cargo})` : ""}`,
+          clienteNome: "Equipe",
+          clienteId: "",
+          tipo: "aniversario_colaborador",
+        });
+      }
+    });
+
     // Manual events
     eventosManuals.forEach((evt: any) => {
       const mmdd = evt.recorrente
@@ -165,7 +196,7 @@ export default function Calendario() {
     });
 
     return result;
-  }, [clientes, eventosManuals, mesAtual]);
+  }, [clientes, colaboradores, eventosManuals, mesAtual]);
 
   // Filter for current month
   const eventosMes = useMemo(() => {
@@ -216,7 +247,7 @@ export default function Calendario() {
     day === hoje.getDate() && mesAtual.getMonth() === hoje.getMonth() && mesAtual.getFullYear() === hoje.getFullYear();
 
   const getEventIcon = (tipo: string) => {
-    if (tipo === "aniversario") return "🎂";
+    if (tipo === "aniversario" || tipo === "aniversario_colaborador") return "🎂";
     if (tipo === "data_importante") return "📌";
     if (tipo === "evento_manual") return "📋";
     if (tipo === "feriado_nacional") return "🇧🇷";
@@ -228,6 +259,7 @@ export default function Calendario() {
   const getEventColor = (tipo: string) => {
     if (tipo.startsWith("feriado")) return "bg-destructive/10 text-destructive";
     if (tipo === "evento_manual") return "bg-accent/50 text-accent-foreground";
+    if (tipo === "aniversario_colaborador") return "bg-secondary text-secondary-foreground";
     return "bg-primary/15 text-primary";
   };
 
