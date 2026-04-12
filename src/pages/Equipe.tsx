@@ -780,6 +780,33 @@ export default function Equipe() {
               <ImageUpload value={fotoUrl} onChange={setFotoUrl} bucket="colaboradores-fotos" folder="colaboradores" />
             </div>
 
+            {/* Botão IA para extrair dados de documento */}
+            <label className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-primary/40 cursor-pointer hover:bg-primary/5 hover:border-primary/60 transition-all text-sm font-medium text-primary">
+              <Sparkles className="w-5 h-5" />
+              {isExtracting ? "Analisando documento..." : "📄 Enviar documento para preencher automaticamente"}
+              <input
+                type="file"
+                className="hidden"
+                accept="image/*"
+                disabled={isExtracting}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleAIExtractOnly(file);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            {isExtracting && (
+              <p className="text-xs text-center text-muted-foreground animate-pulse">
+                A IA está lendo o documento e preenchendo os campos...
+              </p>
+            )}
+            {pendingDocFile && !editingColaborador && (
+              <p className="text-xs text-center text-muted-foreground">
+                📎 Documento "{pendingDocFile.name}" será salvo após criar o colaborador.
+              </p>
+            )}
+
             {/* Dados Básicos */}
             <div className="space-y-2">
               <Label htmlFor="nome">Nome *</Label>
