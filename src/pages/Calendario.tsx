@@ -50,6 +50,23 @@ export default function Calendario() {
     },
   });
 
+  const { data: colaboradores = [], isLoading: loadingColaboradores } = useQuery({
+    queryKey: ["colaboradores-calendario"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("colaboradores")
+        .select("id, nome, data_nascimento, ativo, cargo, area_id")
+        .not("data_nascimento", "is", null)
+        .eq("ativo", true)
+        .order("nome");
+      if (error) {
+        if (error.code === "42501") return [];
+        throw error;
+      }
+      return data || [];
+    },
+  });
+
   const { data: eventosManuals = [], isLoading: loadingEventos } = useQuery({
     queryKey: ["calendario-eventos"],
     queryFn: async () => {
