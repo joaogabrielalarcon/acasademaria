@@ -4,10 +4,12 @@ import {
   Building2,
   CalendarCheck,
   CalendarDays,
+  DollarSign,
   GitBranch,
   Landmark,
   Leaf,
   Package,
+  Receipt,
   Settings,
   Shield,
   Tags,
@@ -37,6 +39,10 @@ export const appNavigationItems: NavigationItem[] = [
   { title: "Processos Internos", icon: BookOpen, href: "/processos", roles: ["admin", "administrativo"] },
   { title: "CRM", icon: GitBranch, href: "/crm", roles: ["admin", "administrativo", "gestao_campo", "arquitetura"] },
   { title: "Minha Agenda", icon: CalendarCheck, href: "/agenda", roles: ["admin", "administrativo", "gestao_campo", "arquitetura", "responsavel_obra", "operador_campo"] },
+];
+
+export const financeiroNavigationItems: NavigationItem[] = [
+  { title: "A Receber", icon: Receipt, href: "/financeiro/a-receber", roles: ["admin", "administrativo"] },
   { title: "Conciliação", icon: Landmark, href: "/conciliacao", roles: ["admin", "administrativo"] },
 ];
 

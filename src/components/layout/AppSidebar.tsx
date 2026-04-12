@@ -6,6 +6,7 @@ import {
   LogOut,
   Settings,
   ChevronDown,
+  DollarSign,
   Lock,
   UserCircle,
 } from "lucide-react";
@@ -30,6 +31,7 @@ import {
   alertNavigationItem,
   appNavigationItems,
   configNavigationItems,
+  financeiroNavigationItems,
   type NavigationItem,
 } from "./navigation";
 
@@ -40,6 +42,7 @@ interface AppSidebarProps {
 export function AppSidebar({ className }: AppSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
+  const [financeiroOpen, setFinanceiroOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -54,6 +57,14 @@ export function AppSidebar({ className }: AppSidebarProps) {
 
   const visibleConfigItems = configNavigationItems.filter(
     item => item.roles.includes(userRole)
+  );
+
+  const visibleFinanceiroItems = financeiroNavigationItems.filter(
+    item => item.roles.includes(userRole)
+  );
+
+  const isFinanceiroActive = visibleFinanceiroItems.some(
+    item => location.pathname === item.href || location.pathname.startsWith(item.href)
   );
 
   const isConfigActive = visibleConfigItems.some(
@@ -132,7 +143,65 @@ export function AppSidebar({ className }: AppSidebarProps) {
           {visibleNavigationItems.map((item) => renderNavItem(item))}
         </ul>
 
-        {/* Configurações Collapsible Section - apenas para admin */}
+        {/* Financeiro Collapsible Section */}
+        {visibleFinanceiroItems.length > 0 && (
+          <div className="mt-4 px-2">
+            <Collapsible 
+              open={collapsed ? false : (financeiroOpen || isFinanceiroActive)} 
+              onOpenChange={setFinanceiroOpen}
+            >
+              {collapsed ? (
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <Link
+                      to="/financeiro/a-receber"
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
+                        isFinanceiroActive 
+                          ? "bg-secondary text-foreground font-bold" 
+                          : "text-foreground hover:bg-secondary/50"
+                      )}
+                    >
+                      <DollarSign className="w-5 h-5 flex-shrink-0" />
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="ml-2">
+                    Financeiro
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <CollapsibleTrigger asChild>
+                  <button
+                    className={cn(
+                      "flex items-center justify-between w-full px-3 py-2.5 rounded-lg transition-all duration-200",
+                      isFinanceiroActive 
+                        ? "bg-secondary/50 text-foreground" 
+                        : "text-foreground hover:bg-secondary/50"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <DollarSign className="w-5 h-5 flex-shrink-0" />
+                      <span className="font-medium text-sm">Financeiro</span>
+                    </div>
+                    <ChevronDown 
+                      className={cn(
+                        "w-4 h-4 transition-transform duration-200",
+                        (financeiroOpen || isFinanceiroActive) && "rotate-180"
+                      )} 
+                    />
+                  </button>
+                </CollapsibleTrigger>
+              )}
+              
+              <CollapsibleContent className="mt-1">
+                <ul className="space-y-1 pl-4">
+                  {visibleFinanceiroItems.map((item) => renderNavItem(item, true))}
+                </ul>
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+        )}
+
         {visibleConfigItems.length > 0 && (
           <div className="mt-6 px-2">
             <Collapsible 

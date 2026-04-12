@@ -11,6 +11,7 @@ import {
   BookOpen,
   CalendarCheck,
   CalendarDays,
+  DollarSign,
   GitBranch,
   Send,
   Mic,
@@ -32,6 +33,7 @@ const menuItems = [
   { title: "Máquinas", description: "Equipamentos e manutenção", icon: Wrench, href: "/maquinas", roles: ["admin", "administrativo", "gestao_campo"] as AppRole[] },
   { title: "Processos Internos", description: "Documentação de processos", icon: BookOpen, href: "/processos", roles: ["admin", "administrativo"] as AppRole[] },
   { title: "CRM", description: "Pipeline comercial", icon: GitBranch, href: "/crm", roles: ["admin", "administrativo", "gestao_campo", "arquitetura"] as AppRole[] },
+  { title: "Financeiro", description: "A receber e conciliação", icon: DollarSign, href: "/financeiro/a-receber", roles: ["admin", "administrativo"] as AppRole[] },
   { title: "Minha Agenda", description: "Tarefas pessoais com IA", icon: CalendarCheck, href: "/agenda", roles: ["admin", "administrativo", "gestao_campo", "arquitetura", "responsavel_obra", "operador_campo"] as AppRole[] },
   { title: "Configurações do Sistema", description: "Áreas, acessos e categorias", icon: Settings, href: "/areas", roles: ["admin"] as AppRole[] },
 ];
