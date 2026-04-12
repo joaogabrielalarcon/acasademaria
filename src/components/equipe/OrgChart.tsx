@@ -63,6 +63,7 @@ export function OrgChart({ colaboradores, areas }: OrgChartProps) {
     const byAreaKey: Record<string, Colaborador[]> = {
       diretoria: [],
       administrativo: [],
+      marketing: [],
       campo: [],
       arquitetura: [],
       outros: [],
@@ -75,6 +76,8 @@ export function OrgChart({ colaboradores, areas }: OrgChartProps) {
         byAreaKey.diretoria.push(c);
       } else if (nome.includes("administrativ")) {
         byAreaKey.administrativo.push(c);
+      } else if (nome.includes("marketing")) {
+        byAreaKey.marketing.push(c);
       } else if (nome.includes("campo")) {
         byAreaKey.campo.push(c);
       } else if (nome.includes("arquitetura") || nome.includes("criativ")) {
@@ -110,6 +113,7 @@ export function OrgChart({ colaboradores, areas }: OrgChartProps) {
     return {
       diretoria: byAreaKey.diretoria,
       administrativo: groupByCargo(byAreaKey.administrativo),
+      marketing: groupByCargo(byAreaKey.marketing),
       campo: {
         manutencao: groupByCargo(campoManutenção),
         implantacao: groupByCargo(campoImplantação),
@@ -120,6 +124,7 @@ export function OrgChart({ colaboradores, areas }: OrgChartProps) {
       cores: {
         diretoria: getAreaCor("diret"),
         administrativo: getAreaCor("administrativ"),
+        marketing: getAreaCor("marketing"),
         campo: getAreaCor("campo"),
         arquitetura: getAreaCor("arquitetura"),
       },
