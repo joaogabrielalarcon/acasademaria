@@ -151,6 +151,8 @@ export default function Equipe() {
   const { user } = useAuth();
   const canManageUsers = useIsManager(user?.id);
   const isAdmin = useIsAdmin(user?.id);
+  const isAdminOrAdm = useIsAdminOrAdministrativo(user?.id);
+  const highestRole = useHighestRole(user?.id);
   const [colaboradorToDelete, setColaboradorToDelete] = useState<Colaborador | null>(null);
   
   // Inativação com motivo
