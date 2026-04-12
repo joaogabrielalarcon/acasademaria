@@ -217,10 +217,20 @@ export function OrgChart({ colaboradores, areas }: OrgChartProps) {
           <div className="absolute top-0 left-1/2 -translate-x-1/2 h-px bg-border" style={{ width: "calc(100% - 120px)" }} />
 
           {/* Administrativo — ligado ao Diretor Executivo */}
-          <div className="flex flex-col items-center min-w-[180px]">
+          <div className="flex flex-col items-center min-w-[160px]">
             <Connector vertical={3} />
             <GroupBox title="Administrativo" cor={structure.cores.administrativo}>
               {structure.administrativo.length > 0 ? renderCargoGroup(structure.administrativo) : (
+                <p className="text-xs text-muted-foreground text-center py-2">Sem membros</p>
+              )}
+            </GroupBox>
+          </div>
+
+          {/* Marketing — paralelo ao administrativo, ligado ao Diretor Executivo */}
+          <div className="flex flex-col items-center min-w-[160px]">
+            <Connector vertical={3} />
+            <GroupBox title="Marketing" cor={structure.cores.marketing}>
+              {structure.marketing.length > 0 ? renderCargoGroup(structure.marketing) : (
                 <p className="text-xs text-muted-foreground text-center py-2">Sem membros</p>
               )}
             </GroupBox>
