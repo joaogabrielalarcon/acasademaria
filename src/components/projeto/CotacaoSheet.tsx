@@ -132,13 +132,12 @@ export function CotacaoSheet({
       // Save to historico_precos if linked to planta/insumo
       if (linkedId && linkedTipo && form.fornecedor_id) {
         await supabase.from("historico_precos").insert({
-          tipo_item: linkedTipo,
-          planta_id: linkedTipo === "planta" ? linkedId : null,
-          insumo_id: linkedTipo === "insumo" ? linkedId : null,
+          item_id: linkedId,
+          item_tipo: linkedTipo,
           fornecedor_id: form.fornecedor_id,
-          preco_anterior: null,
-          preco_novo: preco,
-          observacao: `Cotação projeto`,
+          preco: preco,
+          data_orcamento: new Date().toISOString().split("T")[0],
+          observacoes: `Cotação projeto`,
         });
       }
     },
