@@ -312,6 +312,71 @@ export default function Equipe() {
     setMaquinasIds(prev => prev.includes(maquinaId) ? prev.filter(id => id !== maquinaId) : [...prev, maquinaId]);
   };
 
+  // Standalone AI extraction (works for new collaborators too — no save needed)
+  const handleAIExtractOnly = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      sonnerToast.error("Envie uma imagem do documento para extração automática.");
+      return;
+    }
+    setIsExtracting(true);
+    try {
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve((reader.result as string).split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const { data: extractData, error: extractError } = await supabase.functions.invoke("extract-doc-data", {
+        body: { imageBase64: base64, fileName: file.name },
+      });
+
+      if (extractError || extractData?.error) {
+        sonnerToast.error(extractData?.error || "Erro na extração");
+      } else if (extractData?.data) {
+        const d = extractData.data;
+        if (d.nome && !nome) setNome(capitalizeWords(d.nome));
+        if (d.cpf && !cpf) setCpf(formatCPF(d.cpf));
+        if (d.data_nascimento && !dataNascimento) {
+          try { setDataNascimento(new Date(d.data_nascimento + "T00:00:00")); } catch {}
+        }
+        if (d.endereco && !endereco) { setEndereco(capitalizeWords(d.endereco)); setEnderecoOpen(true); }
+        if (d.cidade && !cidade) setCidade(capitalizeWords(d.cidade));
+        if (d.estado && !estado) setEstado(d.estado);
+        if (d.cep && !cep) setCep(d.cep);
+        if (d.tipo_cnh) { setPossuiCnh(true); setTipoCnh(d.tipo_cnh); setPossuiConducao(true); setConducaoOpen(true); }
+        if (d.tipo_documento) setDocTipo(d.tipo_documento);
+        sonnerToast.success("Dados extraídos do documento! Confira os campos preenchidos.");
+      }
+
+      // If editing existing colaborador, also save the file
+      if (editingColaborador) {
+        const ext = file.name.split(".").pop();
+        const path = `${editingColaborador.id}/${Date.now()}.${ext}`;
+        await supabase.storage.from("colaboradores-documentos").upload(path, file);
+        await supabase.from("colaborador_documentos" as any).insert({
+          colaborador_id: editingColaborador.id,
+          nome_arquivo: file.name,
+          tipo_documento: extractData?.data?.tipo_documento || docTipo,
+          url: path,
+          descricao: docDescricao || null,
+          created_by: user?.id,
+        } as any);
+        refetchDocs();
+        sonnerToast.success("Documento também salvo no cadastro.");
+      } else {
+        // Store file temporarily so it can be saved after creating the collaborator
+        setPendingDocFile(file);
+        setPendingDocTipo(extractData?.data?.tipo_documento || docTipo);
+      }
+    } catch (aiErr) {
+      console.error("AI extraction error:", aiErr);
+      sonnerToast.error("Não foi possível extrair dados automaticamente.");
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
   // Upload document and optionally extract data with AI
   const handleDocUpload = async (file: File, extractWithAI: boolean = false) => {
     if (!editingColaborador) return;
