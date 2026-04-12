@@ -30,6 +30,7 @@ import {
   alertNavigationItem,
   appNavigationItems,
   configNavigationItems,
+  financeiroNavigationItems,
   type NavigationItem,
 } from "./navigation";
 
@@ -40,6 +41,7 @@ interface AppSidebarProps {
 export function AppSidebar({ className }: AppSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
+  const [financeiroOpen, setFinanceiroOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
