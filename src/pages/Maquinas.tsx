@@ -513,7 +513,7 @@ export default function Maquinas() {
                 </TableRow>
               ) : (
                 filteredMaquinas.map((maquina) => (
-                  <TableRow key={maquina.id}>
+                  <TableRow key={maquina.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setDetailMaquina(maquina)}>
                     <TableCell className="font-medium">{maquina.nome}</TableCell>
                     <TableCell>{maquina.codigo_interno || "-"}</TableCell>
                     <TableCell>{maquina.categoria || "-"}</TableCell>
