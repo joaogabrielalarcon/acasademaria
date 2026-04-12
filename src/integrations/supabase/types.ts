@@ -406,6 +406,54 @@ export type Database = {
         }
         Relationships: []
       }
+      colaborador_documentos: {
+        Row: {
+          colaborador_id: string
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          id: string
+          nome_arquivo: string
+          tipo_documento: string
+          url: string
+        }
+        Insert: {
+          colaborador_id: string
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          nome_arquivo: string
+          tipo_documento?: string
+          url: string
+        }
+        Update: {
+          colaborador_id?: string
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          nome_arquivo?: string
+          tipo_documento?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "colaborador_documentos_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "colaborador_documentos_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       colaboradores: {
         Row: {
           area: string | null
@@ -426,11 +474,15 @@ export type Database = {
           maquinas_ids: string[] | null
           nome: string
           observacoes: string | null
+          possui_cnh: boolean | null
+          possui_conducao: boolean | null
           sub_equipe: string | null
           tamanho_calca: string | null
           tamanho_calcado: string | null
           tamanho_camiseta: string | null
           telefone: string | null
+          tipo_cnh: string | null
+          tipo_conducao: string | null
           updated_at: string
           updated_by: string | null
           user_id: string | null
@@ -455,11 +507,15 @@ export type Database = {
           maquinas_ids?: string[] | null
           nome: string
           observacoes?: string | null
+          possui_cnh?: boolean | null
+          possui_conducao?: boolean | null
           sub_equipe?: string | null
           tamanho_calca?: string | null
           tamanho_calcado?: string | null
           tamanho_camiseta?: string | null
           telefone?: string | null
+          tipo_cnh?: string | null
+          tipo_conducao?: string | null
           updated_at?: string
           updated_by?: string | null
           user_id?: string | null
@@ -484,11 +540,15 @@ export type Database = {
           maquinas_ids?: string[] | null
           nome?: string
           observacoes?: string | null
+          possui_cnh?: boolean | null
+          possui_conducao?: boolean | null
           sub_equipe?: string | null
           tamanho_calca?: string | null
           tamanho_calcado?: string | null
           tamanho_camiseta?: string | null
           telefone?: string | null
+          tipo_cnh?: string | null
+          tipo_conducao?: string | null
           updated_at?: string
           updated_by?: string | null
           user_id?: string | null
