@@ -58,6 +58,14 @@ export function AppSidebar({ className }: AppSidebarProps) {
     item => item.roles.includes(userRole)
   );
 
+  const visibleFinanceiroItems = financeiroNavigationItems.filter(
+    item => item.roles.includes(userRole)
+  );
+
+  const isFinanceiroActive = visibleFinanceiroItems.some(
+    item => location.pathname === item.href || location.pathname.startsWith(item.href)
+  );
+
   const isConfigActive = visibleConfigItems.some(
     item => location.pathname === item.href || location.pathname.startsWith(item.href)
   );
