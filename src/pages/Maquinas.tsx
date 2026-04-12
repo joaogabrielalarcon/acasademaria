@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { MaquinaDetalheSheet } from "@/components/maquinas/MaquinaDetalheSheet";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
