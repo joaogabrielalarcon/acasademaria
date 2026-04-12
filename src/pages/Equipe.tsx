@@ -725,10 +725,18 @@ export default function Equipe() {
           <h1 className="font-display text-3xl font-bold text-foreground mb-2">Equipe</h1>
           <p className="text-muted-foreground">Colaboradores do time</p>
         </div>
-        <Button variant="terracota" onClick={handleOpenNew}>
-          <Plus className="w-4 h-4" />
-          Novo Colaborador
-        </Button>
+        <div className="flex items-center gap-3">
+          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "lista" | "organograma")}>
+            <TabsList className="h-9">
+              <TabsTrigger value="lista" className="text-xs gap-1.5 px-3"><LayoutList className="w-3.5 h-3.5" />Lista</TabsTrigger>
+              <TabsTrigger value="organograma" className="text-xs gap-1.5 px-3"><Network className="w-3.5 h-3.5" />Organograma</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <Button variant="terracota" onClick={handleOpenNew}>
+            <Plus className="w-4 h-4" />
+            Novo Colaborador
+          </Button>
+        </div>
       </div>
 
       {/* Search */}
