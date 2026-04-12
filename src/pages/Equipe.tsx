@@ -1483,6 +1483,139 @@ export default function Equipe() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog de Inativação com motivo */}
+      <Dialog open={inativacaoDialogOpen} onOpenChange={(open) => { if (!open) { setInativacaoDialogOpen(false); setColaboradorToInativar(null); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserX className="w-5 h-5 text-destructive" />
+              Inativar Colaborador
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              Você está inativando <strong>{colaboradorToInativar?.nome}</strong>. Registre o motivo abaixo.
+            </p>
+            <div className="space-y-2">
+              <Label>Motivo da inativação *</Label>
+              <Textarea
+                placeholder="Descreva o motivo da inativação..."
+                value={motivoInativacao}
+                onChange={(e) => setMotivoInativacao(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => { setInativacaoDialogOpen(false); setColaboradorToInativar(null); }}>
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={!motivoInativacao.trim() || toggleAtivoMutation.isPending}
+                onClick={() => {
+                  if (colaboradorToInativar && motivoInativacao.trim()) {
+                    toggleAtivoMutation.mutate(
+                      { id: colaboradorToInativar.id, ativo: false, motivo: motivoInativacao.trim() },
+                      {
+                        onSuccess: () => {
+                          toast({ title: "Colaborador inativado", description: "O motivo foi registrado no histórico." });
+                          setInativacaoDialogOpen(false);
+                          setColaboradorToInativar(null);
+                        },
+                      }
+                    );
+                  }
+                }}
+              >
+                {toggleAtivoMutation.isPending ? "Salvando..." : "Confirmar Inativação"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Avaliações / Pontuações */}
+      <Dialog open={avaliacoesDialogOpen} onOpenChange={(open) => { if (!open) { setAvaliacoesDialogOpen(false); setSelectedColaboradorAvaliacao(null); } }}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-primary" />
+              Avaliações — {selectedColaboradorAvaliacao?.nome}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {/* New comment form */}
+            <div className="space-y-2">
+              <Label>Novo comentário</Label>
+              <Textarea
+                placeholder="Registre uma observação, pontuação ou avaliação..."
+                value={novoComentario}
+                onChange={(e) => setNovoComentario(e.target.value)}
+                className="min-h-[80px]"
+              />
+              <Button
+                variant="terracota"
+                size="sm"
+                disabled={!novoComentario.trim()}
+                onClick={async () => {
+                  if (!selectedColaboradorAvaliacao || !novoComentario.trim()) return;
+                  const { error } = await supabase
+                    .from("colaborador_avaliacoes" as any)
+                    .insert({
+                      colaborador_id: selectedColaboradorAvaliacao.id,
+                      comentario: novoComentario.trim(),
+                      autor_id: user?.id,
+                      autor_nome: user?.email || null,
+                    } as any);
+                  if (error) {
+                    toast({ title: "Erro", description: "Não foi possível salvar a avaliação.", variant: "destructive" });
+                  } else {
+                    setNovoComentario("");
+                    refetchAvaliacoes();
+                    toast({ title: "Avaliação registrada" });
+                  }
+                }}
+              >
+                Registrar
+              </Button>
+            </div>
+
+            {/* List of evaluations */}
+            <div className="space-y-3">
+              <h4 className="font-medium text-sm text-muted-foreground">Histórico</h4>
+              {isLoadingAvaliacoes ? (
+                <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
+              ) : avaliacoes.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">Nenhuma avaliação registrada.</p>
+              ) : (
+                avaliacoes.map((av: any) => (
+                  <div key={av.id} className="p-3 bg-muted/30 rounded-lg border border-primary/10">
+                    <p className="text-sm whitespace-pre-wrap">{av.comentario}</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-xs text-muted-foreground">
+                        {av.autor_nome || "—"} • {format(new Date(av.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                      </span>
+                      {isAdmin && (
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={async () => {
+                            await supabase.from("colaborador_avaliacoes" as any).delete().eq("id", av.id);
+                            refetchAvaliacoes();
+                          }}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
