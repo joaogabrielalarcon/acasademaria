@@ -1,3 +1,7 @@
+// NOTE: Em versão futura, a Mafe terá capacidade de cadastrar insumos
+// via texto ou voz — o usuário descreve o item e a IA preenche os campos
+// automaticamente, confirmando com o usuário antes de salvar.
+
 import { useState, useMemo } from "react";
 import { HistoricoPrecos } from "@/components/HistoricoPrecos";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
@@ -7,36 +11,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Plus, Pencil, Search, Trash2, History } from "lucide-react";
 import { useInsumos, Insumo } from "@/hooks/useInsumos";
@@ -47,14 +32,13 @@ import { toast } from "sonner";
 import { capitalizeWords } from "@/hooks/useInputMasks";
 
 const CATEGORIAS_INSUMOS = [
-  "Fertilizantes",
-  "Substratos",
-  "Ferramentas",
-  "Vasos e Recipientes",
-  "Defensivos",
-  "Irrigação",
-  "Decoração",
-  "Outros",
+  "Fertilizante", "Substrato", "Defensivo", "Semente", "Ferramenta",
+  "Irrigação", "Vasos / Decoração", "Materiais Construtivos", "Outros",
+];
+
+const UNIDADES_INSUMOS = [
+  "un", "kg", "litro", "m", "m²", "m³", "par", "caixa", "saco",
+  "galão", "rolo", "pacote", "Ton", "Rolo", "Peça", "Vaso",
 ];
 
 export default function Insumos() {
@@ -64,6 +48,7 @@ export default function Insumos() {
   const [filterCategoria, setFilterCategoria] = useState<string>("todas");
   const [itemToDelete, setItemToDelete] = useState<Insumo | null>(null);
   const [visibleCount, setVisibleCount] = useState(20);
+  const [showHistorico, setShowHistorico] = useState<Insumo | null>(null);
 
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
@@ -80,17 +65,15 @@ export default function Insumos() {
     unidade: "",
     fornecedor_id: "",
     preco_unitario: "",
+    descricao_produto: "",
+    volume_apresentacao: "",
     observacoes: "",
   });
 
   const resetForm = () => {
     setFormData({
-      nome: "",
-      categoria: "",
-      unidade: "",
-      fornecedor_id: "",
-      preco_unitario: "",
-      observacoes: "",
+      nome: "", categoria: "", unidade: "", fornecedor_id: "",
+      preco_unitario: "", descricao_produto: "", volume_apresentacao: "", observacoes: "",
     });
     setEditingInsumo(null);
   };
@@ -101,12 +84,18 @@ export default function Insumos() {
       nome: insumo.nome,
       categoria: insumo.categoria || "",
       unidade: insumo.unidade || "",
-      fornecedor_id: "",
-      preco_unitario: "",
-      observacoes: "",
+      fornecedor_id: insumo.fornecedor_id || "",
+      preco_unitario: insumo.preco_unitario?.toString() || "",
+      descricao_produto: insumo.descricao_produto || "",
+      volume_apresentacao: insumo.volume_apresentacao || "",
+      observacoes: insumo.observacoes || "",
     });
     setDialogOpen(true);
   };
+
+  // Get mercado from selected fornecedor
+  const selectedFornecedor = fornecedores.find((f) => f.id === formData.fornecedor_id);
+  const localizacaoFornecedor = selectedFornecedor?.mercado || null;
 
   const saveMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
@@ -116,14 +105,13 @@ export default function Insumos() {
         unidade: data.unidade || null,
         fornecedor_id: data.fornecedor_id || null,
         preco_unitario: data.preco_unitario ? parseFloat(data.preco_unitario) : null,
+        descricao_produto: data.descricao_produto || null,
+        volume_apresentacao: data.volume_apresentacao || null,
         observacoes: data.observacoes || null,
       };
 
       if (editingInsumo) {
-        const { error } = await supabase
-          .from("insumos")
-          .update(payload)
-          .eq("id", editingInsumo.id);
+        const { error } = await supabase.from("insumos").update(payload).eq("id", editingInsumo.id);
         if (error) throw error;
       } else {
         const { error } = await supabase.from("insumos").insert(payload);
@@ -143,10 +131,7 @@ export default function Insumos() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.nome.trim()) {
-      toast.error("Nome é obrigatório");
-      return;
-    }
+    if (!formData.nome.trim()) { toast.error("Nome é obrigatório"); return; }
     saveMutation.mutate(formData);
   };
 
@@ -165,18 +150,13 @@ export default function Insumos() {
     },
   });
 
-  const handleDelete = () => {
-    if (itemToDelete) {
-      deleteMutation.mutate(itemToDelete.id);
-    }
-  };
-
-  // Filtrar e ordenar alfabeticamente
+  // Search: nome OR descricao_produto
   const filteredInsumos = useMemo(() => {
+    const term = searchTerm.toLowerCase();
     const filtered = insumos.filter((i) => {
-      const matchesSearch = i.nome.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategoria =
-        filterCategoria === "todas" || i.categoria === filterCategoria;
+      const matchesSearch = i.nome.toLowerCase().includes(term) ||
+        (i.descricao_produto?.toLowerCase().includes(term) ?? false);
+      const matchesCategoria = filterCategoria === "todas" || i.categoria === filterCategoria;
       return matchesSearch && matchesCategoria;
     });
     return filtered.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
@@ -193,33 +173,22 @@ export default function Insumos() {
             <h1 className="font-display text-2xl lg:text-3xl font-bold text-foreground">
               Produtos e Insumos
             </h1>
-            <p className="text-muted-foreground">
-              Gerencie o catálogo de produtos e insumos
-            </p>
+            <p className="text-muted-foreground">Gerencie o catálogo de produtos e insumos</p>
           </div>
 
-          <Dialog open={dialogOpen} onOpenChange={(open) => {
-            setDialogOpen(open);
-            if (!open) resetForm();
-          }}>
+          <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="w-4 h-4" />
-                Novo Insumo
-              </Button>
+              <Button className="gap-2"><Plus className="w-4 h-4" /> Novo Insumo</Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>
-                  {editingInsumo ? "Editar Insumo" : "Novo Insumo"}
-                </DialogTitle>
+                <DialogTitle>{editingInsumo ? "Editar Insumo" : "Novo Insumo"}</DialogTitle>
               </DialogHeader>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="nome">Nome *</Label>
+                  <Label>Nome *</Label>
                   <Input
-                    id="nome"
                     value={formData.nome}
                     onChange={(e) => setFormData({ ...formData, nome: capitalizeWords(e.target.value) })}
                     placeholder="Nome do insumo"
@@ -228,57 +197,44 @@ export default function Insumos() {
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="categoria">Categoria</Label>
-                    <Select
-                      value={formData.categoria}
-                      onValueChange={(value) => setFormData({ ...formData, categoria: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione..." />
-                      </SelectTrigger>
+                    <Label>Categoria</Label>
+                    <Select value={formData.categoria} onValueChange={(v) => setFormData({ ...formData, categoria: v })}>
+                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>
                         {CATEGORIAS_INSUMOS.map((cat) => (
-                          <SelectItem key={cat} value={cat}>
-                            {cat}
-                          </SelectItem>
+                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="unidade">Unidade</Label>
-                    <Input
-                      id="unidade"
-                      value={formData.unidade}
-                      onChange={(e) => setFormData({ ...formData, unidade: e.target.value })}
-                      placeholder="Ex: kg, L, un, sacos"
-                    />
+                    <Label>Unidade</Label>
+                    <Select value={formData.unidade} onValueChange={(v) => setFormData({ ...formData, unidade: v })}>
+                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectContent>
+                        {UNIDADES_INSUMOS.map((u) => (
+                          <SelectItem key={u} value={u}>{u}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="fornecedor">Fornecedor</Label>
-                    <Select
-                      value={formData.fornecedor_id}
-                      onValueChange={(value) => setFormData({ ...formData, fornecedor_id: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione..." />
-                      </SelectTrigger>
+                    <Label>Fornecedor</Label>
+                    <Select value={formData.fornecedor_id} onValueChange={(v) => setFormData({ ...formData, fornecedor_id: v })}>
+                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>
                         {fornecedores.map((forn) => (
-                          <SelectItem key={forn.id} value={forn.id}>
-                            {forn.nome}
-                          </SelectItem>
+                          <SelectItem key={forn.id} value={forn.id}>{forn.nome}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="preco_unitario">Preço de Referência (R$)</Label>
+                    <Label>Preço de Referência (R$)</Label>
                     <Input
-                      id="preco_unitario"
                       type="number"
                       value={formData.preco_unitario}
                       onChange={(e) => setFormData({ ...formData, preco_unitario: e.target.value })}
@@ -286,27 +242,53 @@ export default function Insumos() {
                       min={0}
                       step="0.01"
                     />
-                    <p className="text-xs text-foreground/50">
-                      Valor estimado de referência. O preço real é registrado em cada cotação de projeto.
+                    <p className="text-xs text-muted-foreground">
+                      Valor estimado. O preço real é registrado em cada cotação.
                     </p>
                   </div>
                 </div>
 
+                {/* Localização do Fornecedor — somente leitura */}
+                {formData.fornecedor_id && (
+                  <div className="space-y-2">
+                    <Label>Localização do Fornecedor</Label>
+                    <div className="rounded-md border border-border bg-muted/50 px-3 py-2 text-sm text-foreground">
+                      {localizacaoFornecedor ? `📍 ${localizacaoFornecedor}` : "📍 Não informado"}
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-2">
-                  <Label htmlFor="observacoes">Observações</Label>
+                  <Label>Volume / Apresentação</Label>
+                  <Input
+                    value={formData.volume_apresentacao}
+                    onChange={(e) => setFormData({ ...formData, volume_apresentacao: e.target.value })}
+                    placeholder="Ex: saco 25kg, galão 5L"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Descrição do Produto</Label>
                   <Textarea
-                    id="observacoes"
+                    value={formData.descricao_produto}
+                    onChange={(e) => setFormData({ ...formData, descricao_produto: e.target.value })}
+                    placeholder="Descrição detalhada do produto"
+                    rows={2}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Observações</Label>
+                  <Textarea
                     value={formData.observacoes}
                     onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
                     placeholder="Observações sobre o insumo"
-                    rows={3}
+                    rows={2}
                   />
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4">
-                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                    Cancelar
-                  </Button>
+                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
                   <Button type="submit" disabled={saveMutation.isPending}>
                     {saveMutation.isPending ? "Salvando..." : "Salvar"}
                   </Button>
@@ -321,7 +303,7 @@ export default function Insumos() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar por nome..."
+              placeholder="Buscar por nome ou descrição..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -334,21 +316,20 @@ export default function Insumos() {
             <SelectContent>
               <SelectItem value="todas">Todas as categorias</SelectItem>
               {CATEGORIAS_INSUMOS.map((cat) => (
-                <SelectItem key={cat} value={cat}>
-                  {cat}
-                </SelectItem>
+                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
         {/* Tabela */}
-        <div className="card-botanical overflow-hidden">
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>Categoria</TableHead>
+                <TableHead>Fornecedor</TableHead>
                 <TableHead>Unidade</TableHead>
                 <TableHead className="w-16"></TableHead>
               </TableRow>
@@ -356,13 +337,13 @@ export default function Insumos() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                     Carregando...
                   </TableCell>
                 </TableRow>
               ) : filteredInsumos.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                     Nenhum insumo encontrado
                   </TableCell>
                 </TableRow>
@@ -371,28 +352,24 @@ export default function Insumos() {
                   <TableRow key={insumo.id}>
                     <TableCell className="font-medium">{insumo.nome}</TableCell>
                     <TableCell>{insumo.categoria || "-"}</TableCell>
+                    <TableCell>
+                      {insumo.fornecedor_id ? fornecedoresMap.get(insumo.fornecedor_id) || "-" : "-"}
+                    </TableCell>
                     <TableCell>{insumo.unidade || "-"}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={() => handleEdit(insumo)}
-                        >
+                        <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(insumo)}>
                           <Pencil className="w-4 h-4" />
                         </Button>
                         <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={() => { setEditingInsumo(insumo); setDialogOpen(false); }}
-                          title="Ver histórico de preços"
+                          variant="ghost" size="icon-sm" title="Ver histórico de preços"
+                          onClick={() => setShowHistorico(showHistorico?.id === insumo.id ? null : insumo)}
                         >
                           <History className="w-4 h-4" />
                         </Button>
                         {isAdmin && (
                           <Button
-                            variant="ghost"
-                            size="icon-sm"
+                            variant="ghost" size="icon-sm"
                             onClick={() => setItemToDelete(insumo)}
                             className="text-destructive hover:text-destructive"
                           >
@@ -416,27 +393,21 @@ export default function Insumos() {
         )}
       </div>
 
-      {/* Histórico de preços do insumo selecionado para edição */}
-      {editingInsumo && (
-        <Dialog open={!!editingInsumo && !dialogOpen} onOpenChange={() => {}}>
-          {/* Inline: shown below table when editing */}
-        </Dialog>
-      )}
-
-      {/* Seção de histórico inline */}
-      {editingInsumo && !dialogOpen && (
+      {/* Histórico de preços inline */}
+      {showHistorico && (
         <div className="space-y-3 mt-6">
-          <h2 className="font-display text-lg font-bold text-foreground">
-            Histórico de Preços — {editingInsumo.nome}
-          </h2>
-          <HistoricoPrecos tipo="insumo" itemId={editingInsumo.id} />
-          <Button variant="outline" size="sm" onClick={() => setEditingInsumo(null)}>
-            Fechar histórico
-          </Button>
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-lg font-bold text-foreground">
+              Histórico de Preços — {showHistorico.nome}
+            </h2>
+            <Button variant="outline" size="sm" onClick={() => setShowHistorico(null)}>
+              Fechar
+            </Button>
+          </div>
+          <HistoricoPrecos tipo="insumo" itemId={showHistorico.id} />
         </div>
       )}
 
-      {/* Dialog de confirmação de exclusão */}
       <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -447,7 +418,7 @@ export default function Insumos() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction onClick={() => itemToDelete && deleteMutation.mutate(itemToDelete.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>

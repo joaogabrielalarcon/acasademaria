@@ -1,3 +1,7 @@
+// NOTE: Em versão futura, a Mafe terá capacidade de cadastrar plantas
+// via texto ou voz — o usuário descreve o item e a IA preenche os campos
+// automaticamente, confirmando com o usuário antes de salvar.
+
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
@@ -8,19 +12,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, AlertTriangle } from "lucide-react";
 import { useCategoriasPlantas } from "@/hooks/useCategoriasPlantas";
 import { useFornecedores } from "@/hooks/useFornecedores";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { capitalizeWords } from "@/hooks/useInputMasks";
 import { MidiaUpload } from "@/components/MidiaUpload";
+
+const UNIDADES_PLANTAS = [
+  '1/2 Cuia','Bag','Bdj','Cuia','Cx','Cx com 15','Muda',
+  'Pacote','Pote','Raiz Nua','Saco','Torrão','Touceira',
+  'Unid','Vaso','Cuia 21','m','m²','m³',
+];
 
 export default function NovaPlanta() {
   const navigate = useNavigate();
@@ -40,13 +46,14 @@ export default function NovaPlanta() {
     altura_cm: "",
     dap_cm: "",
     unidade: "",
+    embalagem: "",
     nota_qualidade: "",
     preco_unitario: "",
+    alerta_validacao: "",
     observacoes: "",
   });
   const [midia, setMidia] = useState<{ url: string; tipo: string; nome: string }[]>([]);
 
-  // Fetch existing plant data if editing
   const { data: plantaExistente } = useQuery({
     queryKey: ["planta", id],
     queryFn: async () => {
@@ -73,16 +80,22 @@ export default function NovaPlanta() {
         altura_cm: plantaExistente.altura_cm?.toString() || "",
         dap_cm: plantaExistente.dap_cm?.toString() || "",
         unidade: plantaExistente.unidade || "",
+        embalagem: (plantaExistente as any).embalagem || "",
         nota_qualidade: plantaExistente.nota_qualidade?.toString() || "",
         preco_unitario: plantaExistente.preco_unitario?.toString() || "",
-        observacoes: plantaExistente.observacoes || "",
+        alerta_validacao: (plantaExistente as any).alerta_validacao || "",
+        observacoes: (plantaExistente as any).observacoes || "",
       });
       setMidia((plantaExistente.midia as any) || []);
     }
   }, [plantaExistente]);
 
   const selectedCategoria = categorias.find((c) => c.id === formData.categoria_id);
-  const isArvore = selectedCategoria?.nome.toLowerCase() === "árvore";
+  const isArvore = selectedCategoria?.nome.toLowerCase() === "árvores";
+
+  // Get mercado from selected fornecedor
+  const selectedFornecedor = fornecedores.find((f) => f.id === formData.fornecedor_id);
+  const localizacaoFornecedor = selectedFornecedor?.mercado || null;
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -95,8 +108,10 @@ export default function NovaPlanta() {
         altura_cm: formData.altura_cm ? parseFloat(formData.altura_cm) : null,
         dap_cm: isArvore && formData.dap_cm ? parseFloat(formData.dap_cm) : null,
         unidade: formData.unidade || null,
+        embalagem: formData.embalagem || null,
         nota_qualidade: formData.nota_qualidade ? parseInt(formData.nota_qualidade) : null,
         preco_unitario: formData.preco_unitario ? parseFloat(formData.preco_unitario) : null,
+        alerta_validacao: formData.alerta_validacao || null,
         observacoes: formData.observacoes || null,
         midia: midia as any,
       };
@@ -145,7 +160,15 @@ export default function NovaPlanta() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="card-botanical p-6 space-y-6">
+        {/* Alerta de Validação */}
+        {formData.alerta_validacao && (
+          <div className="flex items-start gap-3 p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800">
+            <AlertTriangle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+            <p className="text-sm">{formData.alerta_validacao}</p>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="rounded-lg border border-border bg-card p-6 space-y-6">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="nome_popular">Nome Popular *</Label>
@@ -179,9 +202,7 @@ export default function NovaPlanta() {
                 </SelectTrigger>
                 <SelectContent>
                   {categorias.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.nome}
-                    </SelectItem>
+                    <SelectItem key={cat.id} value={cat.id}>{cat.nome}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -198,13 +219,21 @@ export default function NovaPlanta() {
                 </SelectTrigger>
                 <SelectContent>
                   {fornecedores.map((forn) => (
-                    <SelectItem key={forn.id} value={forn.id}>
-                      {forn.nome}
-                    </SelectItem>
+                    <SelectItem key={forn.id} value={forn.id}>{forn.nome}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Localização do Fornecedor — somente leitura */}
+            {formData.fornecedor_id && (
+              <div className="space-y-2 sm:col-span-2">
+                <Label>Localização do Fornecedor</Label>
+                <div className="rounded-md border border-border bg-muted/50 px-3 py-2 text-sm text-foreground">
+                  {localizacaoFornecedor ? `📍 ${localizacaoFornecedor}` : "📍 Não informado"}
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="porte">Porte</Label>
@@ -246,11 +275,28 @@ export default function NovaPlanta() {
 
             <div className="space-y-2">
               <Label htmlFor="unidade">Unidade</Label>
-              <Input
-                id="unidade"
+              <Select
                 value={formData.unidade}
-                onChange={(e) => setFormData({ ...formData, unidade: e.target.value })}
-                placeholder="Ex: Muda, Caixaria, Pote"
+                onValueChange={(value) => setFormData({ ...formData, unidade: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {UNIDADES_PLANTAS.map((u) => (
+                    <SelectItem key={u} value={u}>{u}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="embalagem">Embalagem</Label>
+              <Input
+                id="embalagem"
+                value={formData.embalagem}
+                onChange={(e) => setFormData({ ...formData, embalagem: e.target.value })}
+                placeholder="Ex: Cuia 21, Saco 40L"
               />
             </div>
 
@@ -284,9 +330,20 @@ export default function NovaPlanta() {
                 min={0}
                 step="0.01"
               />
-              <p className="text-xs text-foreground/50">
-                Valor estimado de referência. O preço real é registrado em cada cotação de projeto.
+              <p className="text-xs text-muted-foreground">
+                Valor estimado de referência. O preço real é registrado em cada cotação.
               </p>
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="alerta_validacao">Alerta de Validação</Label>
+              <Textarea
+                id="alerta_validacao"
+                value={formData.alerta_validacao}
+                onChange={(e) => setFormData({ ...formData, alerta_validacao: e.target.value })}
+                placeholder="Aviso que será exibido no topo da ficha (ex: verificar disponibilidade antes de cotar)"
+                rows={2}
+              />
             </div>
 
             <div className="space-y-2 sm:col-span-2">
@@ -301,16 +358,11 @@ export default function NovaPlanta() {
             </div>
 
             <div className="sm:col-span-2">
-              <MidiaUpload
-                value={midia}
-                onChange={setMidia}
-                folder="plantas"
-                label="Fotos e Vídeos"
-              />
+              <MidiaUpload value={midia} onChange={setMidia} folder="plantas" label="Fotos e Vídeos" />
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="flex justify-end gap-3 pt-4 border-t border-border">
             <Button type="button" variant="outline" onClick={() => navigate("/plantas")}>
               Cancelar
             </Button>
