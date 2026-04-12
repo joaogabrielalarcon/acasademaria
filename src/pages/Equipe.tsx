@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, Plus, UserCircle, MoreVertical, Pencil, ChevronDown, ChevronRight, Package, Trash2, Calendar, Key, RefreshCw, Upload, FileText, Car, Sparkles, X } from "lucide-react";
+import { Search, Plus, UserCircle, MoreVertical, Pencil, ChevronDown, ChevronRight, Package, Trash2, Calendar, Key, RefreshCw, Upload, FileText, Car, Sparkles, X, LayoutList, Network } from "lucide-react";
 import { useAuth, useIsManager, useIsAdmin } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -59,6 +59,8 @@ import { ptBR } from "date-fns/locale";
 import { formatCPF, formatCEP, formatPhone, capitalizeWords } from "@/hooks/useInputMasks";
 import { ImageUpload } from "@/components/ImageUpload";
 import { toast as sonnerToast } from "sonner";
+import { OrgChart } from "@/components/equipe/OrgChart";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const ESTADOS_BRASIL = [
   "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA",
@@ -81,6 +83,7 @@ const TIPOS_CONDUCAO = ["Carro", "Moto", "Ambos"];
 
 export default function Equipe() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [viewMode, setViewMode] = useState<"lista" | "organograma">("lista");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingColaborador, setEditingColaborador] = useState<Colaborador | null>(null);
   const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set());
