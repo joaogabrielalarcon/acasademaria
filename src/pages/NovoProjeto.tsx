@@ -156,7 +156,34 @@ export default function NovoProjeto() {
           </Select>
         </div>
 
-        <div className="space-y-2">
+        {form.tipo === "manutencao" && (
+          <div className="grid grid-cols-2 gap-4 p-4 rounded-lg border border-border bg-muted/30">
+            <div className="space-y-2">
+              <Label>Valor Mensal (R$)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={form.valor_mensal}
+                onChange={e => setForm(f => ({ ...f, valor_mensal: e.target.value }))}
+                placeholder="Ex: 3500,00"
+              />
+              <p className="text-xs text-muted-foreground">Valor de cada parcela mensal</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Dia de Vencimento</Label>
+              <Input
+                type="number"
+                min="1"
+                max="28"
+                value={form.dia_vencimento}
+                onChange={e => setForm(f => ({ ...f, dia_vencimento: e.target.value }))}
+                placeholder="10"
+              />
+              <p className="text-xs text-muted-foreground">Dia do mês para vencimento (1-28)</p>
+            </div>
+          </div>
+        )}
+
           <Label>Observações</Label>
           <Textarea
             value={form.observacoes}
