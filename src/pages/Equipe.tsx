@@ -971,68 +971,75 @@ export default function Equipe() {
               </CollapsibleContent>
             </Collapsible>
 
-            {/* Uniforme — somente campo */}
-            {(() => { const areaSel = areaId ? areasMap.get(areaId) : null; return !areaSel || areaSel.nome?.toLowerCase().includes("campo"); })() && (
-            <Collapsible open={uniformeOpen} onOpenChange={setUniformeOpen}>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" className="w-full justify-between p-0 h-auto hover:bg-transparent">
-                  <span className="text-sm font-medium">Tamanhos de Uniforme</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${uniformeOpen ? "rotate-180" : ""}`} />
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-4 pt-4">
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label>Camiseta</Label>
-                    <Select value={tamanhoCamiseta} onValueChange={setTamanhoCamiseta}>
-                      <SelectTrigger><SelectValue placeholder="Tam." /></SelectTrigger>
-                      <SelectContent>{TAMANHOS_ROUPA.map((tam) => <SelectItem key={tam} value={tam}>{tam}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Calça</Label>
-                    <Select value={tamanhoCalca} onValueChange={setTamanhoCalca}>
-                      <SelectTrigger><SelectValue placeholder="Tam." /></SelectTrigger>
-                      <SelectContent>{TAMANHOS_ROUPA.map((tam) => <SelectItem key={tam} value={tam}>{tam}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Calçado</Label>
-                    <Select value={tamanhoCalcado} onValueChange={setTamanhoCalcado}>
-                      <SelectTrigger><SelectValue placeholder="Nº" /></SelectTrigger>
-                      <SelectContent>{TAMANHOS_CALCADO.map((tam) => <SelectItem key={tam} value={tam}>{tam}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* Máquinas */}
-            <Collapsible open={maquinasOpen} onOpenChange={setMaquinasOpen}>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" className="w-full justify-between p-0 h-auto hover:bg-transparent">
-                  <span className="text-sm font-medium">Máquinas que opera</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${maquinasOpen ? "rotate-180" : ""}`} />
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="pt-4">
-                {maquinas.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Nenhuma máquina cadastrada.</p>
-                ) : (
-                  <div className="space-y-2 max-h-40 overflow-y-auto">
-                    {maquinas.map((maquina) => (
-                      <div key={maquina.id} className="flex items-center gap-2">
-                        <Checkbox id={`maquina-${maquina.id}`} checked={maquinasIds.includes(maquina.id)} onCheckedChange={() => handleMaquinaToggle(maquina.id)} />
-                        <Label htmlFor={`maquina-${maquina.id}`} className="text-sm font-normal cursor-pointer">
-                          {maquina.nome}
-                          {maquina.modelo && <span className="text-muted-foreground"> ({maquina.modelo})</span>}
-                        </Label>
+            {/* Uniforme e Máquinas — somente pessoal de campo */}
+            {(() => {
+              const areaSel = areaId ? areasMap.get(areaId) : null;
+              const isCampo = !areaSel || areaSel.nome?.toLowerCase().includes("campo");
+              if (!isCampo) return null;
+              return (
+                <>
+                  <Collapsible open={uniformeOpen} onOpenChange={setUniformeOpen}>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" className="w-full justify-between p-0 h-auto hover:bg-transparent">
+                        <span className="text-sm font-medium">Tamanhos de Uniforme</span>
+                        <ChevronDown className={`w-4 h-4 transition-transform ${uniformeOpen ? "rotate-180" : ""}`} />
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="space-y-4 pt-4">
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label>Camiseta</Label>
+                          <Select value={tamanhoCamiseta} onValueChange={setTamanhoCamiseta}>
+                            <SelectTrigger><SelectValue placeholder="Tam." /></SelectTrigger>
+                            <SelectContent>{TAMANHOS_ROUPA.map((tam) => <SelectItem key={tam} value={tam}>{tam}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Calça</Label>
+                          <Select value={tamanhoCalca} onValueChange={setTamanhoCalca}>
+                            <SelectTrigger><SelectValue placeholder="Tam." /></SelectTrigger>
+                            <SelectContent>{TAMANHOS_ROUPA.map((tam) => <SelectItem key={tam} value={tam}>{tam}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Calçado</Label>
+                          <Select value={tamanhoCalcado} onValueChange={setTamanhoCalcado}>
+                            <SelectTrigger><SelectValue placeholder="Nº" /></SelectTrigger>
+                            <SelectContent>{TAMANHOS_CALCADO.map((tam) => <SelectItem key={tam} value={tam}>{tam}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CollapsibleContent>
-            </Collapsible>
+                    </CollapsibleContent>
+                  </Collapsible>
+
+                  <Collapsible open={maquinasOpen} onOpenChange={setMaquinasOpen}>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" className="w-full justify-between p-0 h-auto hover:bg-transparent">
+                        <span className="text-sm font-medium">Máquinas que opera</span>
+                        <ChevronDown className={`w-4 h-4 transition-transform ${maquinasOpen ? "rotate-180" : ""}`} />
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pt-4">
+                      {maquinas.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">Nenhuma máquina cadastrada.</p>
+                      ) : (
+                        <div className="space-y-2 max-h-40 overflow-y-auto">
+                          {maquinas.map((maquina) => (
+                            <div key={maquina.id} className="flex items-center gap-2">
+                              <Checkbox id={`maquina-${maquina.id}`} checked={maquinasIds.includes(maquina.id)} onCheckedChange={() => handleMaquinaToggle(maquina.id)} />
+                              <Label htmlFor={`maquina-${maquina.id}`} className="text-sm font-normal cursor-pointer">
+                                {maquina.nome}
+                                {maquina.modelo && <span className="text-muted-foreground"> ({maquina.modelo})</span>}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CollapsibleContent>
+                  </Collapsible>
+                </>
+              );
+            })()}
 
             {/* Documentos */}
             <Collapsible open={documentosOpen} onOpenChange={setDocumentosOpen}>
