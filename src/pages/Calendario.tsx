@@ -110,7 +110,7 @@ export default function Calendario() {
     onError: () => toast.error("Erro ao remover evento"),
   });
 
-  const isLoading = loadingClientes || loadingEventos;
+  const isLoading = loadingClientes || loadingEventos || loadingColaboradores;
 
   // Build all events
   const eventos = useMemo(() => {
@@ -149,6 +149,20 @@ export default function Calendario() {
           });
         }
       });
+    });
+
+    // Colaboradores birthdays
+    colaboradores.forEach((col: any) => {
+      if (col.data_nascimento) {
+        result.push({
+          data: col.data_nascimento.substring(5), // MM-DD
+          dataOriginal: col.data_nascimento,
+          descricao: `🎂 Aniversário de ${col.nome}${col.cargo ? ` (${col.cargo})` : ""}`,
+          clienteNome: "Equipe",
+          clienteId: "",
+          tipo: "aniversario_colaborador",
+        });
+      }
     });
 
     // Manual events
