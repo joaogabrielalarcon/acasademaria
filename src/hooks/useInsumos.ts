@@ -7,6 +7,10 @@ export interface Insumo {
   categoria: string | null;
   unidade: string | null;
   preco_unitario: number | null;
+  fornecedor_id: string | null;
+  descricao_produto: string | null;
+  volume_apresentacao: string | null;
+  observacoes: string | null;
   ativo: boolean;
 }
 
@@ -23,6 +27,6 @@ export function useInsumos() {
       if (error) throw error;
       return data as Insumo[];
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes cache
+    staleTime: 1000 * 60 * 5,
   });
 }

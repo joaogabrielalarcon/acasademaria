@@ -7,7 +7,15 @@ export interface Fornecedor {
   cnpj: string | null;
   telefone: string | null;
   email: string | null;
+  whatsapp: string | null;
+  endereco: string | null;
+  cidade: string | null;
+  estado: string | null;
+  observacoes: string | null;
   status: string;
+  mercado: string | null;
+  categoria_fornecedor: string | null;
+  nome_alternativo: string | null;
 }
 
 export function useFornecedores() {
@@ -23,6 +31,23 @@ export function useFornecedores() {
       if (error) throw error;
       return data as Fornecedor[];
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes cache
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+// Also fetch ALL fornecedores (including inactive) for admin views
+export function useFornecedoresTodos() {
+  return useQuery({
+    queryKey: ["fornecedores-todos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("fornecedores")
+        .select("*")
+        .order("nome", { ascending: true });
+
+      if (error) throw error;
+      return data as Fornecedor[];
+    },
+    staleTime: 1000 * 60 * 5,
   });
 }

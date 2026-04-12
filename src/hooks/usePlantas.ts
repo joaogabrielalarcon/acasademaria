@@ -11,6 +11,8 @@ export interface Planta {
   altura_cm: number | null;
   dap_cm: number | null;
   unidade: string | null;
+  embalagem: string | null;
+  alerta_validacao: string | null;
   nota_qualidade: number | null;
   preco_unitario: number | null;
   midia: { url: string; tipo: string; nome: string }[] | null;
@@ -30,6 +32,6 @@ export function usePlantas() {
       if (error) throw error;
       return (data ?? []) as unknown as Planta[];
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes cache
+    staleTime: 1000 * 60 * 5,
   });
 }

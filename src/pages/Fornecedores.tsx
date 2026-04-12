@@ -1,3 +1,7 @@
+// NOTE: Em versão futura, a Mafe terá capacidade de cadastrar fornecedores
+// via texto ou voz — o usuário descreve o fornecedor e a IA preenche os campos
+// automaticamente, confirmando com o usuário antes de salvar.
+
 import { useState, useMemo } from "react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -6,43 +10,36 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Plus, Pencil, Search, Trash2 } from "lucide-react";
-import { useFornecedores, Fornecedor } from "@/hooks/useFornecedores";
+import { useFornecedoresTodos, Fornecedor } from "@/hooks/useFornecedores";
 import { useAuth, useIsAdmin } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatCNPJ, formatPhone, capitalizeWords } from "@/hooks/useInputMasks";
+
+const MERCADOS = [
+  'Ceagesp','Ceaflor','Jundiaí','Ceasa','Itapetininga','Atibaia',
+  'Limeira','Ceasa Campinas','São Roque','Boituva','Miracatu',
+  'Amparo','Joanópolis','Holambra','Jarinu','Cabreúva','Outros',
+];
+
+const CATEGORIAS_FORNECEDOR = [
+  'Viveiro / Produtor','Atacadista / Distribuidor','Fornecedor Diverso',
+  'Insumos Agrícolas','Materiais / Insumos Construtivos','Vasos / Decoração',
+  'Insumos/Materiais',
+];
 
 export default function Fornecedores() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -55,11 +52,14 @@ export default function Fornecedores() {
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
 
-  const { data: fornecedores = [], isLoading } = useFornecedores();
+  const { data: fornecedores = [], isLoading } = useFornecedoresTodos();
   const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
     nome: "",
+    mercado: "",
+    categoria_fornecedor: "",
+    nome_alternativo: "",
     cnpj: "",
     telefone: "",
     whatsapp: "",
@@ -73,16 +73,9 @@ export default function Fornecedores() {
 
   const resetForm = () => {
     setFormData({
-      nome: "",
-      cnpj: "",
-      telefone: "",
-      whatsapp: "",
-      email: "",
-      endereco: "",
-      cidade: "",
-      estado: "",
-      observacoes: "",
-      status: "ativo",
+      nome: "", mercado: "", categoria_fornecedor: "", nome_alternativo: "",
+      cnpj: "", telefone: "", whatsapp: "", email: "",
+      endereco: "", cidade: "", estado: "", observacoes: "", status: "ativo",
     });
     setEditingFornecedor(null);
   };
@@ -91,14 +84,17 @@ export default function Fornecedores() {
     setEditingFornecedor(fornecedor);
     setFormData({
       nome: fornecedor.nome,
+      mercado: fornecedor.mercado || "",
+      categoria_fornecedor: fornecedor.categoria_fornecedor || "",
+      nome_alternativo: fornecedor.nome_alternativo || "",
       cnpj: fornecedor.cnpj || "",
       telefone: fornecedor.telefone || "",
-      whatsapp: (fornecedor as any).whatsapp || "",
+      whatsapp: fornecedor.whatsapp || "",
       email: fornecedor.email || "",
-      endereco: "",
-      cidade: "",
-      estado: "",
-      observacoes: "",
+      endereco: fornecedor.endereco || "",
+      cidade: fornecedor.cidade || "",
+      estado: fornecedor.estado || "",
+      observacoes: fornecedor.observacoes || "",
       status: fornecedor.status,
     });
     setDialogOpen(true);
@@ -106,19 +102,33 @@ export default function Fornecedores() {
 
   const saveMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
+      const payload = {
+        nome: data.nome,
+        mercado: data.mercado || null,
+        categoria_fornecedor: data.categoria_fornecedor || null,
+        nome_alternativo: data.nome_alternativo || null,
+        cnpj: data.cnpj || null,
+        telefone: data.telefone || null,
+        whatsapp: data.whatsapp || null,
+        email: data.email || null,
+        endereco: data.endereco || null,
+        cidade: data.cidade || null,
+        estado: data.estado || null,
+        observacoes: data.observacoes || null,
+        status: data.status,
+      };
+
       if (editingFornecedor) {
-        const { error } = await supabase
-          .from("fornecedores")
-          .update(data)
-          .eq("id", editingFornecedor.id);
+        const { error } = await supabase.from("fornecedores").update(payload).eq("id", editingFornecedor.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("fornecedores").insert(data);
+        const { error } = await supabase.from("fornecedores").insert(payload);
         if (error) throw error;
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["fornecedores"] });
+      queryClient.invalidateQueries({ queryKey: ["fornecedores-todos"] });
       toast.success(editingFornecedor ? "Fornecedor atualizado!" : "Fornecedor cadastrado!");
       setDialogOpen(false);
       resetForm();
@@ -130,10 +140,7 @@ export default function Fornecedores() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.nome.trim()) {
-      toast.error("Nome é obrigatório");
-      return;
-    }
+    if (!formData.nome.trim()) { toast.error("Nome é obrigatório"); return; }
     saveMutation.mutate(formData);
   };
 
@@ -144,6 +151,7 @@ export default function Fornecedores() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["fornecedores"] });
+      queryClient.invalidateQueries({ queryKey: ["fornecedores-todos"] });
       toast.success("Fornecedor excluído!");
       setItemToDelete(null);
     },
@@ -152,16 +160,12 @@ export default function Fornecedores() {
     },
   });
 
-  const handleDelete = () => {
-    if (itemToDelete) {
-      deleteMutation.mutate(itemToDelete.id);
-    }
-  };
-
-  // Filtrar e ordenar alfabeticamente
+  // Search: nome OR nome_alternativo
   const filteredFornecedores = useMemo(() => {
+    const term = searchTerm.toLowerCase();
     const filtered = fornecedores.filter((f) => {
-      const matchesSearch = f.nome.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = f.nome.toLowerCase().includes(term) ||
+        (f.nome_alternativo?.toLowerCase().includes(term) ?? false);
       const matchesStatus = filterStatus === "todos" || f.status === filterStatus;
       return matchesSearch && matchesStatus;
     });
@@ -179,44 +183,66 @@ export default function Fornecedores() {
             <h1 className="font-display text-2xl lg:text-3xl font-bold text-foreground">
               Fornecedores
             </h1>
-            <p className="text-muted-foreground">
-              Gerencie os fornecedores de plantas e materiais
-            </p>
+            <p className="text-muted-foreground">Gerencie os fornecedores de plantas e materiais</p>
           </div>
 
-          <Dialog open={dialogOpen} onOpenChange={(open) => {
-            setDialogOpen(open);
-            if (!open) resetForm();
-          }}>
+          <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="w-4 h-4" />
-                Novo Fornecedor
-              </Button>
+              <Button className="gap-2"><Plus className="w-4 h-4" /> Novo Fornecedor</Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>
-                  {editingFornecedor ? "Editar Fornecedor" : "Novo Fornecedor"}
-                </DialogTitle>
+                <DialogTitle>{editingFornecedor ? "Editar Fornecedor" : "Novo Fornecedor"}</DialogTitle>
               </DialogHeader>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="nome">Nome *</Label>
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label>Nome *</Label>
                     <Input
-                      id="nome"
                       value={formData.nome}
                       onChange={(e) => setFormData({ ...formData, nome: capitalizeWords(e.target.value) })}
                       placeholder="Nome do fornecedor"
                     />
                   </div>
 
+                  {/* Mercado — posição de destaque após Nome */}
                   <div className="space-y-2">
-                    <Label htmlFor="cnpj">CNPJ</Label>
+                    <Label>Mercado / Central</Label>
+                    <Select value={formData.mercado} onValueChange={(v) => setFormData({ ...formData, mercado: v })}>
+                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectContent>
+                        {MERCADOS.map((m) => (
+                          <SelectItem key={m} value={m}>{m}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Categoria</Label>
+                    <Select value={formData.categoria_fornecedor} onValueChange={(v) => setFormData({ ...formData, categoria_fornecedor: v })}>
+                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectContent>
+                        {CATEGORIAS_FORNECEDOR.map((c) => (
+                          <SelectItem key={c} value={c}>{c}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label>Nome Alternativo / Apelido</Label>
                     <Input
-                      id="cnpj"
+                      value={formData.nome_alternativo}
+                      onChange={(e) => setFormData({ ...formData, nome_alternativo: e.target.value })}
+                      placeholder="Ex: Luigi Flores, Luigi Ceaflor"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>CNPJ</Label>
+                    <Input
                       value={formData.cnpj}
                       onChange={(e) => setFormData({ ...formData, cnpj: formatCNPJ(e.target.value) })}
                       placeholder="00.000.000/0000-00"
@@ -225,9 +251,8 @@ export default function Fornecedores() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="telefone">Telefone</Label>
+                    <Label>Telefone</Label>
                     <Input
-                      id="telefone"
                       value={formData.telefone}
                       onChange={(e) => setFormData({ ...formData, telefone: formatPhone(e.target.value) })}
                       placeholder="(00) 00000-0000"
@@ -236,9 +261,8 @@ export default function Fornecedores() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="whatsapp">WhatsApp</Label>
+                    <Label>WhatsApp</Label>
                     <Input
-                      id="whatsapp"
                       value={formData.whatsapp}
                       onChange={(e) => setFormData({ ...formData, whatsapp: formatPhone(e.target.value) })}
                       placeholder="(00) 00000-0000"
@@ -247,9 +271,8 @@ export default function Fornecedores() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label>Email</Label>
                     <Input
-                      id="email"
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -258,9 +281,8 @@ export default function Fornecedores() {
                   </div>
 
                   <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="endereco">Endereço</Label>
+                    <Label>Endereço</Label>
                     <Input
-                      id="endereco"
                       value={formData.endereco}
                       onChange={(e) => setFormData({ ...formData, endereco: capitalizeWords(e.target.value) })}
                       placeholder="Rua, número, bairro"
@@ -268,9 +290,8 @@ export default function Fornecedores() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="cidade">Cidade</Label>
+                    <Label>Cidade</Label>
                     <Input
-                      id="cidade"
                       value={formData.cidade}
                       onChange={(e) => setFormData({ ...formData, cidade: capitalizeWords(e.target.value) })}
                       placeholder="Cidade"
@@ -278,9 +299,8 @@ export default function Fornecedores() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="estado">Estado</Label>
+                    <Label>Estado</Label>
                     <Input
-                      id="estado"
                       value={formData.estado}
                       onChange={(e) => setFormData({ ...formData, estado: e.target.value.toUpperCase() })}
                       placeholder="UF"
@@ -289,14 +309,9 @@ export default function Fornecedores() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="status">Status</Label>
-                    <Select
-                      value={formData.status}
-                      onValueChange={(value) => setFormData({ ...formData, status: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
+                    <Label>Status</Label>
+                    <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="ativo">Ativo</SelectItem>
                         <SelectItem value="inativo">Inativo</SelectItem>
@@ -305,9 +320,8 @@ export default function Fornecedores() {
                   </div>
 
                   <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="observacoes">Observações</Label>
+                    <Label>Observações</Label>
                     <Textarea
-                      id="observacoes"
                       value={formData.observacoes}
                       onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
                       placeholder="Observações sobre o fornecedor"
@@ -317,9 +331,7 @@ export default function Fornecedores() {
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4">
-                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                    Cancelar
-                  </Button>
+                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
                   <Button type="submit" disabled={saveMutation.isPending}>
                     {saveMutation.isPending ? "Salvando..." : "Salvar"}
                   </Button>
@@ -334,7 +346,7 @@ export default function Fornecedores() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar por nome..."
+              placeholder="Buscar por nome ou apelido..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -353,14 +365,14 @@ export default function Fornecedores() {
         </div>
 
         {/* Tabela */}
-        <div className="card-botanical overflow-hidden">
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Nome</TableHead>
-                <TableHead>CNPJ</TableHead>
+                <TableHead>Mercado</TableHead>
+                <TableHead>Categoria</TableHead>
                 <TableHead>Telefone</TableHead>
-                <TableHead>Email</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="w-16"></TableHead>
               </TableRow>
@@ -381,34 +393,34 @@ export default function Fornecedores() {
               ) : (
                 visibleFornecedores.map((fornecedor) => (
                   <TableRow key={fornecedor.id}>
-                    <TableCell className="font-medium">{fornecedor.nome}</TableCell>
-                    <TableCell>{fornecedor.cnpj || "-"}</TableCell>
-                    <TableCell>{fornecedor.telefone || "-"}</TableCell>
-                    <TableCell>{fornecedor.email || "-"}</TableCell>
                     <TableCell>
-                      <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          fornecedor.status === "ativo"
-                            ? "bg-primary/10 text-primary"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
+                      <div>
+                        <span className="font-medium">{fornecedor.nome}</span>
+                        {fornecedor.nome_alternativo && (
+                          <span className="block text-xs text-muted-foreground">{fornecedor.nome_alternativo}</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>{fornecedor.mercado || "-"}</TableCell>
+                    <TableCell className="text-sm">{fornecedor.categoria_fornecedor || "-"}</TableCell>
+                    <TableCell>{fornecedor.telefone || "-"}</TableCell>
+                    <TableCell>
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        fornecedor.status === "ativo"
+                          ? "bg-primary/10 text-primary"
+                          : "bg-muted text-muted-foreground"
+                      }`}>
                         {fornecedor.status === "ativo" ? "Ativo" : "Inativo"}
                       </span>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={() => handleEdit(fornecedor)}
-                        >
+                        <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(fornecedor)}>
                           <Pencil className="w-4 h-4" />
                         </Button>
                         {isAdmin && (
                           <Button
-                            variant="ghost"
-                            size="icon-sm"
+                            variant="ghost" size="icon-sm"
                             onClick={() => setItemToDelete(fornecedor)}
                             className="text-destructive hover:text-destructive"
                           >
@@ -432,7 +444,6 @@ export default function Fornecedores() {
         )}
       </div>
 
-      {/* Dialog de confirmação de exclusão */}
       <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -443,7 +454,7 @@ export default function Fornecedores() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction onClick={() => itemToDelete && deleteMutation.mutate(itemToDelete.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
