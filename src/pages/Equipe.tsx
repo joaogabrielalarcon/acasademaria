@@ -971,7 +971,8 @@ export default function Equipe() {
               </CollapsibleContent>
             </Collapsible>
 
-            {/* Uniforme */}
+            {/* Uniforme — somente campo */}
+            {(() => { const areaSel = areaId ? areasMap.get(areaId) : null; return !areaSel || areaSel.nome?.toLowerCase().includes("campo"); })() && (
             <Collapsible open={uniformeOpen} onOpenChange={setUniformeOpen}>
               <CollapsibleTrigger asChild>
                 <Button variant="ghost" className="w-full justify-between p-0 h-auto hover:bg-transparent">
