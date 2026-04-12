@@ -189,17 +189,74 @@ export default function Equipe() {
       return (data || []) as any[];
     },
   });
-  
+
+  // Fetch inativações history
+  const { data: inativacoes = [], refetch: refetchInativacoes } = useQuery({
+    queryKey: ["colaborador-inativacoes", selectedColaboradorAvaliacao?.id],
+    enabled: false, // only fetched when needed
+    queryFn: async () => {
+      if (!selectedColaboradorAvaliacao) return [];
+      const { data, error } = await supabase
+        .from("colaborador_inativacoes" as any)
+        .select("*")
+        .eq("colaborador_id", selectedColaboradorAvaliacao.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+  });
+
+  // Fetch avaliações
+  const { data: avaliacoes = [], refetch: refetchAvaliacoes, isLoading: isLoadingAvaliacoes } = useQuery({
+    queryKey: ["colaborador-avaliacoes", selectedColaboradorAvaliacao?.id],
+    enabled: !!selectedColaboradorAvaliacao?.id && avaliacoesDialogOpen,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("colaborador_avaliacoes" as any)
+        .select("*")
+        .eq("colaborador_id", selectedColaboradorAvaliacao!.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+  });
+
+  // Check if user can access evaluations for a specific colaborador
+  const canAccessAvaliacoes = (colaborador: Colaborador): boolean => {
+    if (highestRole === "admin") return true;
+    if (highestRole === "gestao_campo") {
+      const area = colaborador.area_id ? areasMap.get(colaborador.area_id) : null;
+      return area?.nome?.toLowerCase().includes("campo") || false;
+    }
+    if (highestRole === "administrativo") {
+      const area = colaborador.area_id ? areasMap.get(colaborador.area_id) : null;
+      return !area?.nome?.toLowerCase().includes("administrativo");
+    }
+    return false;
+  };
+
   const createEntregaMutation = useCreateEntrega();
   const deleteEntregaMutation = useDeleteEntrega();
 
   const toggleAtivoMutation = useMutation({
-    mutationFn: async ({ id, ativo }: { id: string; ativo: boolean }) => {
+    mutationFn: async ({ id, ativo, motivo }: { id: string; ativo: boolean; motivo?: string }) => {
       const { error } = await supabase
         .from("colaboradores")
         .update({ ativo })
         .eq("id", id);
       if (error) throw error;
+      // If deactivating, save the reason
+      if (!ativo && motivo) {
+        const { error: inativError } = await supabase
+          .from("colaborador_inativacoes" as any)
+          .insert({
+            colaborador_id: id,
+            motivo,
+            registrado_por: user?.id,
+            registrado_por_nome: user?.email || null,
+          } as any);
+        if (inativError) console.error("Erro ao salvar motivo de inativação:", inativError);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["colaboradores"] });
