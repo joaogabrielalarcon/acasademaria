@@ -519,6 +519,26 @@ export default function Equipe() {
         const { data: newColaborador, error } = await supabase.from("colaboradores").insert(payload).select().single();
         if (error) throw error;
 
+        // Save pending document from AI extraction
+        if (pendingDocFile && newColaborador) {
+          try {
+            const ext = pendingDocFile.name.split(".").pop();
+            const docPath = `${newColaborador.id}/${Date.now()}.${ext}`;
+            await supabase.storage.from("colaboradores-documentos").upload(docPath, pendingDocFile);
+            await supabase.from("colaborador_documentos" as any).insert({
+              colaborador_id: newColaborador.id,
+              nome_arquivo: pendingDocFile.name,
+              tipo_documento: pendingDocTipo,
+              url: docPath,
+              created_by: user?.id,
+            } as any);
+          } catch (docErr) {
+            console.error("Error saving pending doc:", docErr);
+          }
+          setPendingDocFile(null);
+          setPendingDocTipo("Outro");
+        }
+
         if (shouldCreateAccess && newColaborador) {
           try {
             const { data: accessData, error: accessError } = await supabase.functions.invoke("create-user", {
