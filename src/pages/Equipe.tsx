@@ -153,6 +153,16 @@ export default function Equipe() {
   const isAdmin = useIsAdmin(user?.id);
   const [colaboradorToDelete, setColaboradorToDelete] = useState<Colaborador | null>(null);
   
+  // Inativação com motivo
+  const [inativacaoDialogOpen, setInativacaoDialogOpen] = useState(false);
+  const [colaboradorToInativar, setColaboradorToInativar] = useState<Colaborador | null>(null);
+  const [motivoInativacao, setMotivoInativacao] = useState("");
+  
+  // Avaliações
+  const [avaliacoesDialogOpen, setAvaliacoesDialogOpen] = useState(false);
+  const [selectedColaboradorAvaliacao, setSelectedColaboradorAvaliacao] = useState<Colaborador | null>(null);
+  const [novoComentario, setNovoComentario] = useState("");
+  
   const { data: colaboradores = [], isLoading } = useColaboradores();
   const { data: maquinas = [] } = useMaquinas();
   const { data: insumos = [] } = useInsumos();
