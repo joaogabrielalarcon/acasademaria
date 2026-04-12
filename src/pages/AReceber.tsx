@@ -5,9 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Receipt, Plus, DollarSign, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Receipt, Plus, DollarSign, AlertTriangle, CheckCircle2, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -20,7 +21,7 @@ function useProjetosAprovados() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("projetos")
-        .select("id, titulo, valor_total, status, cliente_id, clientes(nome)")
+        .select("id, titulo, valor_total, valor_mensal, tipo, status, cliente_id, clientes(nome)")
         .in("status", ["aprovado", "em_execucao"])
         .order("updated_at", { ascending: false });
       if (error) throw error;
