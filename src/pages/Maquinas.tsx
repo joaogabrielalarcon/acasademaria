@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { MaquinaDetalheSheet } from "@/components/maquinas/MaquinaDetalheSheet";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -84,6 +85,7 @@ export default function Maquinas() {
   const [filterCategoria, setFilterCategoria] = useState<string>("todas");
   const [filterStatus, setFilterStatus] = useState<string>("todos");
   const [itemToDelete, setItemToDelete] = useState<Maquina | null>(null);
+  const [detailMaquina, setDetailMaquina] = useState<Maquina | null>(null);
 
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
@@ -511,7 +513,7 @@ export default function Maquinas() {
                 </TableRow>
               ) : (
                 filteredMaquinas.map((maquina) => (
-                  <TableRow key={maquina.id}>
+                  <TableRow key={maquina.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setDetailMaquina(maquina)}>
                     <TableCell className="font-medium">{maquina.nome}</TableCell>
                     <TableCell>{maquina.codigo_interno || "-"}</TableCell>
                     <TableCell>{maquina.categoria || "-"}</TableCell>
@@ -522,7 +524,7 @@ export default function Maquinas() {
                     </TableCell>
                     <TableCell>{getStatusBadge(maquina.status)}</TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                         <Button
                           variant="ghost"
                           size="icon-sm"
@@ -570,6 +572,12 @@ export default function Maquinas() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <MaquinaDetalheSheet
+        maquinaId={detailMaquina?.id || null}
+        maquinaNome={detailMaquina?.nome || ""}
+        open={!!detailMaquina}
+        onOpenChange={(open) => !open && setDetailMaquina(null)}
+      />
     </AppLayout>
   );
 }

@@ -2155,6 +2155,53 @@ export type Database = {
         }
         Relationships: []
       }
+      maquinas_manutencoes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          custo: number | null
+          data_manutencao: string
+          descricao: string
+          id: string
+          maquina_id: string
+          observacoes: string | null
+          realizado_por: string | null
+          tipo: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          custo?: number | null
+          data_manutencao: string
+          descricao: string
+          id?: string
+          maquina_id: string
+          observacoes?: string | null
+          realizado_por?: string | null
+          tipo?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          custo?: number | null
+          data_manutencao?: string
+          descricao?: string
+          id?: string
+          maquina_id?: string
+          observacoes?: string | null
+          realizado_por?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maquinas_manutencoes_maquina_id_fkey"
+            columns: ["maquina_id"]
+            isOneToOne: false
+            referencedRelation: "maquinas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memorial_descritivo: {
         Row: {
           categoria: string | null
