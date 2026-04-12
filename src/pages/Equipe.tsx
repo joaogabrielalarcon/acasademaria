@@ -475,9 +475,9 @@ export default function Equipe() {
       return;
     }
 
-    if (!editingColaborador && canManageUsers) {
-      if (!username.trim()) { toast({ title: "Campo obrigatório", description: "Informe o nome de usuário.", variant: "destructive" }); setAcessoOpen(true); return; }
-      if (!emailAcesso.trim()) { toast({ title: "Campo obrigatório", description: "Informe o email.", variant: "destructive" }); setAcessoOpen(true); return; }
+    // Validar campos de acesso somente se o usuário preencheu os dados
+    const wantsAccess = !editingColaborador && username.trim() && emailAcesso.trim();
+    if (wantsAccess) {
       if (!senhaInicial.trim()) { toast({ title: "Campo obrigatório", description: "Informe a senha inicial.", variant: "destructive" }); setAcessoOpen(true); return; }
       if (senhaInicial.length < 6) { toast({ title: "Senha muito curta", description: "Mín. 6 caracteres.", variant: "destructive" }); setAcessoOpen(true); return; }
     }
