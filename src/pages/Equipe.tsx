@@ -663,8 +663,8 @@ export default function Equipe() {
       }
     });
 
-    // Sort areas by order
-    const sortedAreas = areas.filter(a => areaMap.has(a.id)).sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+    // Show all active areas in hierarchy order, even if empty
+    const sortedAreas = areas.filter(a => a.ativo).sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
     sortedAreas.forEach((area) => {
       groups.push({
         areaId: area.id,
