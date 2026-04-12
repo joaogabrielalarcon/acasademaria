@@ -26,6 +26,11 @@ export interface Colaborador {
   user_id: string | null;
   email: string | null;
   username: string | null;
+  // Campos de condução
+  possui_conducao: boolean;
+  tipo_conducao: string | null;
+  possui_cnh: boolean;
+  tipo_cnh: string | null;
 }
 
 export function useColaboradores() {
