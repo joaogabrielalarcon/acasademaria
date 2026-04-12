@@ -572,6 +572,12 @@ export default function Maquinas() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <MaquinaDetalheSheet
+        maquinaId={detailMaquina?.id || null}
+        maquinaNome={detailMaquina?.nome || ""}
+        open={!!detailMaquina}
+        onOpenChange={(open) => !open && setDetailMaquina(null)}
+      />
     </AppLayout>
   );
 }
