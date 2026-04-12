@@ -111,6 +111,31 @@ export default function AReceber() {
     [parcelas]
   );
 
+  // Renewal alerts: maintenance projects whose last parcela is within 30 days
+  const renewalAlerts = useMemo(() => {
+    const today = new Date();
+    const in30days = new Date(today);
+    in30days.setDate(in30days.getDate() + 30);
+
+    return projetos
+      .filter((p: any) => p.tipo === "manutencao")
+      .map((p: any) => {
+        const pp = parcelasPorProjeto[p.id] || [];
+        if (pp.length === 0) return null;
+        const lastParcela = pp.reduce((latest: any, cur: any) => {
+          if (!latest || (cur.data_vencimento && cur.data_vencimento > (latest.data_vencimento || ""))) return cur;
+          return latest;
+        }, null);
+        if (!lastParcela?.data_vencimento) return null;
+        const lastDate = new Date(lastParcela.data_vencimento + "T12:00:00");
+        if (lastDate <= in30days) {
+          return { projeto: p, ultimaData: lastParcela.data_vencimento };
+        }
+        return null;
+      })
+      .filter(Boolean);
+  }, [projetos, parcelasPorProjeto]);
+
   const handleAddParcela = () => {
     if (!addModal || !novaParcelaValor) return;
     const projeto = projetos.find((p: any) => p.id === addModal);
