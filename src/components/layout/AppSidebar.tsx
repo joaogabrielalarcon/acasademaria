@@ -30,6 +30,9 @@ import { usePendingDiarioAlertas } from "@/hooks/useDiarioAlertas";
 import {
   alertNavigationItem,
   appNavigationItems,
+  comprasNavigationItems,
+  comprasIcon,
+  comprasRoles,
   configNavigationItems,
   financeiroNavigationItems,
   type NavigationItem,
@@ -43,6 +46,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
   const [financeiroOpen, setFinanceiroOpen] = useState(false);
+  const [comprasOpen, setComprasOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
