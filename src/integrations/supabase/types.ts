@@ -1570,6 +1570,119 @@ export type Database = {
           },
         ]
       }
+      estoque_movimentacoes: {
+        Row: {
+          created_at: string
+          fornecedor_id: string | null
+          id: string
+          item_id: string
+          item_tipo: string
+          observacoes: string | null
+          origem: string
+          preco_unitario: number | null
+          quantidade: number
+          referencia_id: string | null
+          registrado_por_nome: string | null
+          tipo_movimento: string
+          valor_total: number | null
+        }
+        Insert: {
+          created_at?: string
+          fornecedor_id?: string | null
+          id?: string
+          item_id: string
+          item_tipo: string
+          observacoes?: string | null
+          origem?: string
+          preco_unitario?: number | null
+          quantidade: number
+          referencia_id?: string | null
+          registrado_por_nome?: string | null
+          tipo_movimento: string
+          valor_total?: number | null
+        }
+        Update: {
+          created_at?: string
+          fornecedor_id?: string | null
+          id?: string
+          item_id?: string
+          item_tipo?: string
+          observacoes?: string | null
+          origem?: string
+          preco_unitario?: number | null
+          quantidade?: number
+          referencia_id?: string | null
+          registrado_por_nome?: string | null
+          tipo_movimento?: string
+          valor_total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estoque_movimentacoes_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financeiro_movimentacoes: {
+        Row: {
+          categoria: string
+          created_at: string
+          data_movimentacao: string
+          descricao: string
+          estoque_movimentacao_id: string | null
+          fornecedor_id: string | null
+          id: string
+          registrado_por_nome: string | null
+          tipo: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          categoria?: string
+          created_at?: string
+          data_movimentacao?: string
+          descricao: string
+          estoque_movimentacao_id?: string | null
+          fornecedor_id?: string | null
+          id?: string
+          registrado_por_nome?: string | null
+          tipo: string
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          data_movimentacao?: string
+          descricao?: string
+          estoque_movimentacao_id?: string | null
+          fornecedor_id?: string | null
+          id?: string
+          registrado_por_nome?: string | null
+          tipo?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financeiro_movimentacoes_estoque_movimentacao_id_fkey"
+            columns: ["estoque_movimentacao_id"]
+            isOneToOne: false
+            referencedRelation: "estoque_movimentacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_movimentacoes_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financeiro_parcelas: {
         Row: {
           cliente_id: string
@@ -3472,6 +3585,17 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      estoque_saldo: {
+        Row: {
+          item_id: string | null
+          item_tipo: string | null
+          saldo: number | null
+          total_entradas: number | null
+          total_saidas: number | null
+          ultima_movimentacao: string | null
+        }
+        Relationships: []
       }
     }
     Functions: {
