@@ -18,6 +18,16 @@ export default function CRM() {
   const [view, setView] = useState<"kanban" | "lista">("kanban");
   const [selectedCard, setSelectedCard] = useState<CrmCard | null>(null);
   const [showNew, setShowNew] = useState(false);
+  const { user } = useAuth();
+  const { data: colaborador } = useQuery({
+    queryKey: ["colaborador-by-user", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase.from("colaboradores").select("id").eq("user_id", user.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user?.id,
+  });
   const { data: cards = [], isLoading } = useCrmCards();
 
   const activeCards = cards.filter((c) => c.status !== "Nao Aprovado");
