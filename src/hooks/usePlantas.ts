@@ -23,13 +23,23 @@ export function usePlantas() {
   return useQuery({
     queryKey: ["plantas"],
     queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.warn("[usePlantas] Sem sessão ativa — query pode falhar com RLS");
+      }
+
       const { data, error } = await supabase
         .from("plantas")
         .select("*")
         .eq("ativo", true)
         .order("nome_popular", { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error("[usePlantas] Erro na query:", error);
+        throw error;
+      }
+
+      console.log(`[usePlantas] ${data?.length ?? 0} plantas retornadas`);
       return (data ?? []) as unknown as Planta[];
     },
     staleTime: 1000 * 60 * 5,
