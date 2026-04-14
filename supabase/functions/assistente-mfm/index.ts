@@ -60,21 +60,24 @@ const TOOLS = [
     name: "gerenciar_crm",
     description:
       "Criar, atualizar ou consultar cards no CRM/pipeline comercial. " +
-      "Ações: criar_card, mover_card, listar_cards, adicionar_historico.",
+      "Ações: criar_card, mover_card, listar_cards, adicionar_historico, criar_followup, criar_tarefa_agenda, consultar_card.",
     input_schema: {
       type: "object" as const,
       properties: {
         acao: {
           type: "string",
-          enum: ["criar_card", "mover_card", "listar_cards", "adicionar_historico"],
+          enum: ["criar_card", "mover_card", "listar_cards", "adicionar_historico", "criar_followup", "criar_tarefa_agenda", "consultar_card"],
         },
         dados: {
           type: "object",
           description:
-            "Para 'criar_card': { titulo, tipo (Obra|Proposta|Manutenção|Tarefa), cliente_id?, responsavel_id?, observacoes? }. " +
-            "Para 'mover_card': { card_id, novo_status (Lead|Proposta Enviada|Aprovado|Em Execução|Concluído|Pós-venda|Não Aprovado) }. " +
+            "Para 'criar_card': { titulo, tipo (Obra|Proposta|Manutencao|Tarefa), cliente_id?, responsavel_id?, observacoes? }. " +
+            "Para 'mover_card': { card_id, novo_status (Lead|Proposta Enviada|Aprovado|Em Execucao|Concluido|Pos-venda|Nao Aprovado) }. " +
             "Para 'listar_cards': { status?, tipo?, limite? }. " +
-            "Para 'adicionar_historico': { card_id, descricao }.",
+            "Para 'adicionar_historico': { card_id, descricao }. " +
+            "Para 'criar_followup': { card_id, data_retorno (YYYY-MM-DD), dias_alerta?, observacao? }. " +
+            "Para 'criar_tarefa_agenda': { titulo, descricao?, prioridade (urgente|semana|mes)?, prazo?, card_id? }. " +
+            "Para 'consultar_card': { card_id?, busca_titulo?, busca_cliente? }.",
         },
       },
       required: ["acao"],
