@@ -6,6 +6,7 @@ import {
   ChevronDown,
   DollarSign,
   Lock,
+  ShoppingCart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
@@ -22,7 +23,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useHighestRole } from "@/hooks/useAuth";
 import { usePendingDiarioAlertas } from "@/hooks/useDiarioAlertas";
 import { useState } from "react";
-import { alertNavigationItem, appNavigationItems, configNavigationItems, financeiroNavigationItems } from "./navigation";
+import { alertNavigationItem, appNavigationItems, comprasNavigationItems, comprasRoles, configNavigationItems, financeiroNavigationItems } from "./navigation";
 
 export function MobileNav() {
   const location = useLocation();
@@ -31,6 +32,7 @@ export function MobileNav() {
   const userRole = useHighestRole(user?.id);
   const [configOpen, setConfigOpen] = useState(false);
   const [financeiroOpen, setFinanceiroOpen] = useState(false);
+  const [comprasOpen, setComprasOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
   const canAccessAlerts = alertNavigationItem.roles.includes(userRole);
   const { data: pendingAlerts = [] } = usePendingDiarioAlertas(canAccessAlerts);
@@ -38,10 +40,13 @@ export function MobileNav() {
   const visibleNavigationItems = appNavigationItems.filter(item => item.roles.includes(userRole));
   const visibleConfigItems = configNavigationItems.filter(item => item.roles.includes(userRole));
   const visibleFinanceiroItems = financeiroNavigationItems.filter(item => item.roles.includes(userRole));
+  const visibleComprasItems = comprasNavigationItems.filter(item => item.roles.includes(userRole));
 
   const isConfigActive = visibleConfigItems.some(
     item => location.pathname === item.href || location.pathname.startsWith(item.href)
   );
+
+  const isComprasActive = location.pathname.startsWith("/compras");
 
   const isFinanceiroActive = visibleFinanceiroItems.some(
     item => location.pathname === item.href || location.pathname.startsWith(item.href)
@@ -86,6 +91,58 @@ export function MobileNav() {
             );
           })}
         </ul>
+
+        {/* Compras */}
+        {visibleComprasItems.length > 0 && (
+          <div className="mt-4 px-3">
+            <Collapsible open={comprasOpen || isComprasActive} onOpenChange={setComprasOpen}>
+              <CollapsibleTrigger asChild>
+                <button
+                  className={cn(
+                    "flex items-center justify-between w-full px-4 py-3 rounded-lg transition-all duration-200",
+                    isComprasActive 
+                      ? "bg-secondary/50 text-foreground" 
+                      : "text-foreground hover:bg-secondary/50"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <ShoppingCart className="w-5 h-5" />
+                    <span className="font-medium">Compras</span>
+                  </div>
+                  <ChevronDown className={cn(
+                    "w-4 h-4 transition-transform duration-200",
+                    (comprasOpen || isComprasActive) && "rotate-180"
+                  )} />
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-1">
+                <ul className="space-y-1 pl-4">
+                  {visibleComprasItems.map((item) => {
+                    const isActive = location.pathname + location.search === item.href;
+                    return (
+                      <li key={item.title}>
+                        <SheetClose asChild>
+                          <Link
+                            to={item.href}
+                            className={cn(
+                              "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200",
+                              isActive 
+                                ? "bg-secondary text-foreground font-bold" 
+                                : "text-foreground hover:bg-secondary/50"
+                            )}
+                          >
+                            <item.icon className="w-4 h-4" />
+                            <span className="font-medium">{item.title}</span>
+                          </Link>
+                        </SheetClose>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+        )}
 
         {/* Financeiro */}
         {visibleFinanceiroItems.length > 0 && (

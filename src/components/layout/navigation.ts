@@ -7,11 +7,14 @@ import {
   DollarSign,
   GitBranch,
   Landmark,
+  Leaf,
+  Package,
   Receipt,
   Settings,
   Shield,
   ShoppingCart,
   Tags,
+  Truck,
   UserCircle,
   Users,
   Wrench,
@@ -30,12 +33,20 @@ export const appNavigationItems: NavigationItem[] = [
   { title: "Clientes", icon: Users, href: "/clientes", roles: ["admin", "administrativo", "gestao_campo", "arquitetura", "responsavel_obra"] },
   { title: "Equipe", icon: UserCircle, href: "/equipe", roles: ["admin", "administrativo", "gestao_campo"] },
   { title: "Calendário", icon: CalendarDays, href: "/calendario", roles: ["admin", "administrativo", "gestao_campo", "arquitetura", "responsavel_obra"] },
-  { title: "Compras", icon: ShoppingCart, href: "/compras", roles: ["admin", "administrativo", "gestao_campo", "arquitetura"] },
   { title: "Máquinas", icon: Wrench, href: "/maquinas", roles: ["admin", "administrativo", "gestao_campo"] },
   { title: "Processos Internos", icon: BookOpen, href: "/processos", roles: ["admin", "administrativo"] },
   { title: "CRM", icon: GitBranch, href: "/crm", roles: ["admin", "administrativo", "gestao_campo", "arquitetura"] },
   { title: "Minha Agenda", icon: CalendarCheck, href: "/agenda", roles: ["admin", "administrativo", "gestao_campo", "arquitetura", "responsavel_obra", "operador_campo"] },
 ];
+
+export const comprasNavigationItems: NavigationItem[] = [
+  { title: "Fornecedores", icon: Truck, href: "/compras?tab=fornecedores", roles: ["admin", "administrativo", "gestao_campo"] },
+  { title: "Produtos e Insumos", icon: Package, href: "/compras?tab=insumos", roles: ["admin", "administrativo", "gestao_campo"] },
+  { title: "Plantas", icon: Leaf, href: "/compras?tab=plantas", roles: ["admin", "administrativo", "arquitetura"] },
+];
+
+export const comprasIcon = ShoppingCart;
+export const comprasRoles: AppRole[] = ["admin", "administrativo", "gestao_campo", "arquitetura"];
 
 export const financeiroNavigationItems: NavigationItem[] = [
   { title: "A Receber", icon: Receipt, href: "/financeiro/a-receber", roles: ["admin", "administrativo"] },

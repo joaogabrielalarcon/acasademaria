@@ -30,6 +30,9 @@ import { usePendingDiarioAlertas } from "@/hooks/useDiarioAlertas";
 import {
   alertNavigationItem,
   appNavigationItems,
+  comprasNavigationItems,
+  comprasIcon as ComprasIcon,
+  comprasRoles,
   configNavigationItems,
   financeiroNavigationItems,
   type NavigationItem,
@@ -43,6 +46,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
   const [financeiroOpen, setFinanceiroOpen] = useState(false);
+  const [comprasOpen, setComprasOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -63,6 +67,12 @@ export function AppSidebar({ className }: AppSidebarProps) {
     item => item.roles.includes(userRole)
   );
 
+  const visibleComprasItems = comprasNavigationItems.filter(
+    item => item.roles.includes(userRole)
+  );
+
+  const isComprasActive = location.pathname.startsWith("/compras");
+
   const isFinanceiroActive = visibleFinanceiroItems.some(
     item => location.pathname === item.href || location.pathname.startsWith(item.href)
   );
@@ -77,8 +87,10 @@ export function AppSidebar({ className }: AppSidebarProps) {
   };
 
   const renderNavItem = (item: NavigationItem, isSubItem = false) => {
-    const isActive = location.pathname === item.href || 
-      (item.href !== "/" && location.pathname.startsWith(item.href));
+    const hrefPath = item.href.split("?")[0];
+    const isActive = item.href.includes("?")
+      ? location.pathname + location.search === item.href
+      : location.pathname === item.href || (item.href !== "/" && location.pathname.startsWith(item.href));
     
     const linkContent = (
       <Link
@@ -142,6 +154,65 @@ export function AppSidebar({ className }: AppSidebarProps) {
         <ul className="space-y-1 px-2">
           {visibleNavigationItems.map((item) => renderNavItem(item))}
         </ul>
+
+        {/* Compras Collapsible Section */}
+        {visibleComprasItems.length > 0 && (
+          <div className="mt-4 px-2">
+            <Collapsible 
+              open={collapsed ? false : (comprasOpen || isComprasActive)} 
+              onOpenChange={setComprasOpen}
+            >
+              {collapsed ? (
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <Link
+                      to="/compras"
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
+                        isComprasActive 
+                          ? "bg-secondary text-foreground font-bold" 
+                          : "text-foreground hover:bg-secondary/50"
+                      )}
+                    >
+                      <ComprasIcon className="w-5 h-5 flex-shrink-0" />
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="ml-2">
+                    Compras
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <CollapsibleTrigger asChild>
+                  <button
+                    className={cn(
+                      "flex items-center justify-between w-full px-3 py-2.5 rounded-lg transition-all duration-200",
+                      isComprasActive 
+                        ? "bg-secondary/50 text-foreground" 
+                        : "text-foreground hover:bg-secondary/50"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <ComprasIcon className="w-5 h-5 flex-shrink-0" />
+                      <span className="font-medium text-sm">Compras</span>
+                    </div>
+                    <ChevronDown 
+                      className={cn(
+                        "w-4 h-4 transition-transform duration-200",
+                        (comprasOpen || isComprasActive) && "rotate-180"
+                      )} 
+                    />
+                  </button>
+                </CollapsibleTrigger>
+              )}
+              
+              <CollapsibleContent className="mt-1">
+                <ul className="space-y-1 pl-4">
+                  {visibleComprasItems.map((item) => renderNavItem(item, true))}
+                </ul>
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+        )}
 
         {/* Financeiro Collapsible Section */}
         {visibleFinanceiroItems.length > 0 && (
