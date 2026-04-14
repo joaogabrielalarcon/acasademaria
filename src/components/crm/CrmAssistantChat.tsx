@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Send, Loader2, User, Mic, Square, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
 import floraAvatar from "@/assets/flora-avatar.webp";
 
@@ -33,6 +34,7 @@ export function CrmAssistantChat({ colaboradorId }: CrmAssistantChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -165,6 +167,10 @@ export function CrmAssistantChat({ colaboradorId }: CrmAssistantChatProps) {
       if (!assistantSoFar) setMessages((prev) => prev.slice(0, -1));
     } finally {
       setIsLoading(false);
+      // Invalidate CRM queries so cards reflect AI changes
+      queryClient.invalidateQueries({ queryKey: ["crm-cards"] });
+      queryClient.invalidateQueries({ queryKey: ["crm-historico"] });
+      queryClient.invalidateQueries({ queryKey: ["crm-followups"] });
     }
   };
 
