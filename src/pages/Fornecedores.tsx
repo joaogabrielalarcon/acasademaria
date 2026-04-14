@@ -176,7 +176,7 @@ export function FornecedoresContent() {
   const hasMore = visibleCount < filteredFornecedores.length;
 
   return (
-    <AppLayout>
+    <>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -460,6 +460,14 @@ export function FornecedoresContent() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </>
+  );
+}
+
+export default function Fornecedores() {
+  return (
+    <AppLayout>
+      <FornecedoresContent />
     </AppLayout>
   );
 }

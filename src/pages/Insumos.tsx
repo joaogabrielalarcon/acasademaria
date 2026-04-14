@@ -166,7 +166,7 @@ export function InsumosContent() {
   const hasMore = visibleCount < filteredInsumos.length;
 
   return (
-    <AppLayout>
+    <>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -424,6 +424,14 @@ export function InsumosContent() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </>
+  );
+}
+
+export default function Insumos() {
+  return (
+    <AppLayout>
+      <InsumosContent />
     </AppLayout>
   );
 }
