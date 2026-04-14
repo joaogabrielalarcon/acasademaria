@@ -67,6 +67,12 @@ export function AppSidebar({ className }: AppSidebarProps) {
     item => item.roles.includes(userRole)
   );
 
+  const visibleComprasItems = comprasNavigationItems.filter(
+    item => item.roles.includes(userRole)
+  );
+
+  const isComprasActive = location.pathname.startsWith("/compras");
+
   const isFinanceiroActive = visibleFinanceiroItems.some(
     item => location.pathname === item.href || location.pathname.startsWith(item.href)
   );
