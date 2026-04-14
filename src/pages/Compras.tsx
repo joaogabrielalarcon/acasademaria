@@ -1,15 +1,17 @@
 import { useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Truck, Package, Leaf } from "lucide-react";
+import { Truck, Package, Leaf, Warehouse } from "lucide-react";
 import { FornecedoresContent } from "./Fornecedores";
 import { InsumosContent } from "./Insumos";
 import { PlantasContent } from "./Plantas";
+import { EstoqueTab } from "@/components/estoque/EstoqueTab";
 
 const tabs = [
   { value: "fornecedores", label: "Fornecedores", icon: Truck },
   { value: "insumos", label: "Produtos e Insumos", icon: Package },
   { value: "plantas", label: "Plantas", icon: Leaf },
+  { value: "estoque", label: "Estoque", icon: Warehouse },
 ] as const;
 
 export default function Compras() {
@@ -28,7 +30,7 @@ export default function Compras() {
             Compras
           </h1>
           <p className="text-muted-foreground mt-1">
-            Fornecedores, produtos e plantas
+            Fornecedores, produtos, plantas e estoque
           </p>
         </div>
 
@@ -52,6 +54,10 @@ export default function Compras() {
 
           <TabsContent value="plantas" className="mt-6">
             <PlantasContent />
+          </TabsContent>
+
+          <TabsContent value="estoque" className="mt-6">
+            <EstoqueTab />
           </TabsContent>
         </Tabs>
       </div>
