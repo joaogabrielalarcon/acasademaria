@@ -41,7 +41,7 @@ const UNIDADES_INSUMOS = [
   "galão", "rolo", "pacote", "Ton", "Rolo", "Peça", "Vaso",
 ];
 
-export default function Insumos() {
+export function InsumosContent() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingInsumo, setEditingInsumo] = useState<Insumo | null>(null);
   const [searchTerm, setSearchTerm] = useState("");

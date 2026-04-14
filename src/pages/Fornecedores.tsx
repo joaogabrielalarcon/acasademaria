@@ -41,7 +41,7 @@ const CATEGORIAS_FORNECEDOR = [
   'Insumos/Materiais',
 ];
 
-export default function Fornecedores() {
+export function FornecedoresContent() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingFornecedor, setEditingFornecedor] = useState<Fornecedor | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
