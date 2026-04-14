@@ -22,20 +22,29 @@ export function useFornecedores() {
   return useQuery({
     queryKey: ["fornecedores"],
     queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.warn("[useFornecedores] Sem sessão ativa");
+      }
+
       const { data, error } = await supabase
         .from("fornecedores")
         .select("*")
         .eq("status", "ativo")
         .order("nome", { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error("[useFornecedores] Erro na query:", error);
+        throw error;
+      }
+
+      console.log(`[useFornecedores] ${data?.length ?? 0} fornecedores retornados`);
       return data as Fornecedor[];
     },
     staleTime: 1000 * 60 * 5,
   });
 }
 
-// Also fetch ALL fornecedores (including inactive) for admin views
 export function useFornecedoresTodos() {
   return useQuery({
     queryKey: ["fornecedores-todos"],
