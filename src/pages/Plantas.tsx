@@ -47,7 +47,7 @@ export function PlantasContent() {
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
 
-  const { data: plantas = [], isLoading } = usePlantas();
+  const { data: plantas = [], isLoading, error: plantasError } = usePlantas();
   const { data: categorias = [] } = useCategoriasPlantas();
   const { data: fornecedores = [] } = useFornecedores();
   const queryClient = useQueryClient();
