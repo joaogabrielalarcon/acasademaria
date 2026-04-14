@@ -32,6 +32,7 @@ export function MobileNav() {
   const userRole = useHighestRole(user?.id);
   const [configOpen, setConfigOpen] = useState(false);
   const [financeiroOpen, setFinanceiroOpen] = useState(false);
+  const [comprasOpen, setComprasOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
   const canAccessAlerts = alertNavigationItem.roles.includes(userRole);
   const { data: pendingAlerts = [] } = usePendingDiarioAlertas(canAccessAlerts);
@@ -39,6 +40,7 @@ export function MobileNav() {
   const visibleNavigationItems = appNavigationItems.filter(item => item.roles.includes(userRole));
   const visibleConfigItems = configNavigationItems.filter(item => item.roles.includes(userRole));
   const visibleFinanceiroItems = financeiroNavigationItems.filter(item => item.roles.includes(userRole));
+  const visibleComprasItems = comprasNavigationItems.filter(item => item.roles.includes(userRole));
 
   const isConfigActive = visibleConfigItems.some(
     item => location.pathname === item.href || location.pathname.startsWith(item.href)
