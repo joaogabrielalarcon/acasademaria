@@ -46,6 +46,8 @@ export function MobileNav() {
     item => location.pathname === item.href || location.pathname.startsWith(item.href)
   );
 
+  const isComprasActive = location.pathname.startsWith("/compras");
+
   const isFinanceiroActive = visibleFinanceiroItems.some(
     item => location.pathname === item.href || location.pathname.startsWith(item.href)
   );
