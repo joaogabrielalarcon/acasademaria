@@ -10,8 +10,7 @@ const corsHeaders = {
 const TOOLS = [
   {
     name: "listar_cards",
-    description:
-      "Listar cards do CRM. Filtre por status, tipo, cliente ou busca textual.",
+    description: "Listar cards do CRM. Filtre por status, tipo, cliente ou busca textual.",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -36,8 +35,7 @@ const TOOLS = [
   },
   {
     name: "mover_card",
-    description:
-      "Mover um card para outro estágio do pipeline.",
+    description: "Mover um card para outro estágio do pipeline.",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -52,8 +50,7 @@ const TOOLS = [
   },
   {
     name: "adicionar_observacao",
-    description:
-      "Adicionar uma observação/nota/comentário ao histórico de um card. Use para registrar atualizações, ligações, reuniões, etc.",
+    description: "Adicionar uma observação/nota/comentário ao histórico de um card.",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -65,8 +62,7 @@ const TOOLS = [
   },
   {
     name: "criar_followup",
-    description:
-      "Agendar um follow-up/retorno para um card. Gera alerta automático.",
+    description: "Agendar um follow-up/retorno para um card. Gera alerta automático.",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -80,8 +76,7 @@ const TOOLS = [
   },
   {
     name: "criar_tarefa_agenda",
-    description:
-      "Criar uma tarefa na agenda pessoal vinculada a um card do CRM.",
+    description: "Criar uma tarefa na agenda pessoal vinculada a um card do CRM.",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -89,15 +84,14 @@ const TOOLS = [
         descricao: { type: "string", description: "Descrição da tarefa" },
         prioridade: { type: "string", enum: ["urgente", "semana", "mes"], description: "Prioridade" },
         prazo: { type: "string", description: "Data limite (YYYY-MM-DD)" },
-        card_id: { type: "string", description: "ID do card CRM relacionado (para referência no histórico)" },
+        card_id: { type: "string", description: "ID do card CRM relacionado" },
       },
       required: ["titulo"],
     },
   },
   {
     name: "atualizar_card",
-    description:
-      "Atualizar dados de um card: contato, prazo, observações, responsável, etc.",
+    description: "Atualizar dados de um card: contato, prazo, observações, responsável, etc.",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -134,9 +128,20 @@ const TOOLS = [
       required: ["titulo", "tipo"],
     },
   },
+  {
+    name: "registrar_correcao",
+    description: "Registrar um aprendizado/correção quando o usuário apontar que você errou algo. Use quando o usuário disser 'você errou', 'não era isso', 'o nome correto é...', 'corrija para...', etc.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        o_que_fez: { type: "string", description: "O que a IA fez de errado" },
+        o_que_deveria_ter_feito: { type: "string", description: "O que deveria ter feito / o correto" },
+        contexto: { type: "string", description: "Contexto adicional (nome do cliente, tipo de correção)" },
+      },
+      required: ["o_que_fez", "o_que_deveria_ter_feito"],
+    },
+  },
 ];
-
-// ── Tool execution ───────────────────────────────────────────────────────
 
 async function executeTool(
   toolName: string,
@@ -210,7 +215,6 @@ async function executeTool(
 
         if (!cardData) return { error: "Card não encontrado" };
 
-        // Get historico and followups
         const [histRes, followRes] = await Promise.all([
           client.from("crm_historico").select("descricao, created_at, colaboradores(nome)").eq("card_id", cardData.id).order("created_at", { ascending: false }).limit(15),
           client.from("crm_followups").select("*").eq("card_id", cardData.id).order("data_retorno", { ascending: true }),
@@ -233,7 +237,6 @@ async function executeTool(
       }
 
       case "mover_card": {
-        // Get old status first
         const { data: oldCard } = await client.from("crm_cards").select("status, titulo").eq("id", input.card_id).single();
         const oldStatus = oldCard?.status || "desconhecido";
 
@@ -245,7 +248,6 @@ async function executeTool(
           .single();
         if (error) throw error;
 
-        // Add history
         await client.from("crm_historico").insert({
           card_id: input.card_id,
           descricao: `Status alterado de "${oldStatus}" para "${input.novo_status}"`,
@@ -274,7 +276,6 @@ async function executeTool(
         });
         if (error) throw error;
 
-        // Also add to history
         const dateFormatted = new Date(input.data_retorno + "T12:00:00").toLocaleDateString("pt-BR");
         await client.from("crm_historico").insert({
           card_id: input.card_id,
@@ -297,7 +298,6 @@ async function executeTool(
         }).select("id").single();
         if (error) throw error;
 
-        // If card_id, add to CRM history too
         if (input.card_id) {
           await client.from("crm_historico").insert({
             card_id: input.card_id,
@@ -311,7 +311,6 @@ async function executeTool(
 
       case "atualizar_card": {
         const { card_id, ...updates } = input;
-        // Remove undefined fields
         const cleanUpdates: Record<string, any> = {};
         for (const [k, v] of Object.entries(updates)) {
           if (v !== undefined && v !== null) cleanUpdates[k] = v;
@@ -325,7 +324,6 @@ async function executeTool(
           .single();
         if (error) throw error;
 
-        // History entry
         const fields = Object.keys(cleanUpdates).join(", ");
         await client.from("crm_historico").insert({
           card_id,
@@ -360,6 +358,17 @@ async function executeTool(
         return { sucesso: true, mensagem: `Card "${data.titulo}" criado no CRM.`, card: data };
       }
 
+      case "registrar_correcao": {
+        const { error } = await client.from("crm_correcoes_ia").insert({
+          o_que_fez: input.o_que_fez,
+          o_que_deveria_ter_feito: input.o_que_deveria_ter_feito,
+          contexto: input.contexto || null,
+          colaborador_id: colaboradorId,
+        });
+        if (error) throw error;
+        return { sucesso: true, mensagem: "Aprendizado registrado. Vou aplicar essa correção nas próximas interações." };
+      }
+
       default:
         return { error: `Ferramenta '${toolName}' não reconhecida` };
     }
@@ -368,8 +377,6 @@ async function executeTool(
     return { error: err instanceof Error ? err.message : "Erro ao executar operação" };
   }
 }
-
-// ── Anthropic orchestration (multi-round) ────────────────────────────────
 
 async function callClaude(messages: any[], systemPrompt: string, apiKey: string) {
   const resp = await fetch("https://api.anthropic.com/v1/messages", {
@@ -454,8 +461,6 @@ function streamText(text: string) {
   });
 }
 
-// ── Main ─────────────────────────────────────────────────────────────────
-
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -470,12 +475,10 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization") || "";
     const { messages, colaboradorId } = await req.json();
 
-    // Admin client for operations
     const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // Get user ID from auth if possible
     let userId = "";
     if (authHeader) {
       const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
@@ -488,11 +491,12 @@ serve(async (req) => {
       }
     }
 
-    // Build context: list current cards summary + clients + collaborators
-    const [cardsRes, clientesRes, colabsRes] = await Promise.all([
+    // Build context
+    const [cardsRes, clientesRes, colabsRes, correcoesRes] = await Promise.all([
       adminClient.from("crm_cards").select("id, titulo, tipo, status, prazo, contato_nome, clientes(nome)").order("updated_at", { ascending: false }).limit(50),
       adminClient.from("clientes").select("id, nome").order("nome").limit(100),
       adminClient.from("colaboradores").select("id, nome").eq("ativo", true).order("nome").limit(50),
+      adminClient.from("crm_correcoes_ia").select("o_que_fez, o_que_deveria_ter_feito, contexto").order("created_at", { ascending: false }).limit(30),
     ]);
 
     const cardsCtx = (cardsRes.data || []).map((c: any) =>
@@ -502,9 +506,12 @@ serve(async (req) => {
     const clientesCtx = (clientesRes.data || []).map((c: any) => `${c.nome} [id:${c.id}]`).join(", ");
     const colabsCtx = (colabsRes.data || []).map((c: any) => `${c.nome} [id:${c.id}]`).join(", ");
 
+    const correcoesCtx = (correcoesRes.data || []).map((c: any) =>
+      `- Errado: "${c.o_que_fez}" → Correto: "${c.o_que_deveria_ter_feito}"${c.contexto ? ` (${c.contexto})` : ""}`
+    ).join("\n");
+
     const agora = new Date();
     const dataHora = agora.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
-    const dataHoje = agora.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
     const dataISO = agora.toISOString().split("T")[0];
 
     const systemPrompt = `Hoje é ${dataHora} (${dataISO}). Fuso: América/São Paulo.
@@ -524,6 +531,15 @@ Você recebe relatos falados ou escritos sobre clientes e executa as ações nec
 7. Nunca mencione "ferramenta", "tool", "sistema", "banco de dados".
 8. Confirme brevemente o que foi feito após executar.
 
+## SELF-LEARNING
+Quando o usuário corrigir algo que você fez ("não era isso", "o nome correto é...", "você errou", "corrija para..."), use a ferramenta registrar_correcao para gravar o aprendizado. Aplique TODOS os aprendizados abaixo nas suas próximas respostas.
+
+Ao transcrever áudio/voz, use os aprendizados para corrigir nomes, termos e expressões que o usuário já ensinou anteriormente. Preste atenção em:
+- Nomes próprios de clientes, colaboradores e locais
+- Termos técnicos de paisagismo e jardinagem
+- Palavras em inglês que podem ser confundidas foneticamente
+- Datas e horários falados ("semana que vem" = próxima semana útil, etc.)
+
 ## PIPELINE DO CRM
 Lead → Proposta Enviada → Aprovado → Em Execução → Concluído → Pós-venda
 (Ou: Não Aprovado — quando proposta é recusada)
@@ -533,6 +549,8 @@ Lead → Proposta Enviada → Aprovado → Em Execução → Concluído → Pós
 - "A Maria aprovou o orçamento da piscina" → Buscar card da Maria, mover para "Aprovado", registrar.
 - "Preciso ligar pro Carlos semana que vem" → Encontrar card, criar follow-up, criar tarefa na agenda.
 - "Cria um card novo pro Pedro, quer orçamento de jardim" → Criar card tipo "Proposta".
+
+${correcoesCtx ? `## APRENDIZADOS ANTERIORES (APLIQUE SEMPRE)\n${correcoesCtx}` : ""}
 
 ## CARDS ATUAIS NO CRM
 ${cardsCtx || "Nenhum card encontrado."}
