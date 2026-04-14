@@ -877,6 +877,48 @@ export type Database = {
           },
         ]
       }
+      crm_correcoes_ia: {
+        Row: {
+          colaborador_id: string | null
+          contexto: string | null
+          created_at: string | null
+          id: string
+          o_que_deveria_ter_feito: string
+          o_que_fez: string
+        }
+        Insert: {
+          colaborador_id?: string | null
+          contexto?: string | null
+          created_at?: string | null
+          id?: string
+          o_que_deveria_ter_feito: string
+          o_que_fez: string
+        }
+        Update: {
+          colaborador_id?: string | null
+          contexto?: string | null
+          created_at?: string | null
+          id?: string
+          o_que_deveria_ter_feito?: string
+          o_que_fez?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_correcoes_ia_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_correcoes_ia_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_followups: {
         Row: {
           card_id: string

@@ -35,7 +35,7 @@ export default function CRM() {
 
   return (
     <AppLayout>
-      <div className="flex flex-col gap-6 py-4">
+      <div className="flex flex-col gap-4 py-4">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <h1 className="text-2xl font-serif font-semibold text-foreground">CRM</h1>
@@ -64,6 +64,9 @@ export default function CRM() {
           </div>
         </div>
 
+        {/* Flora Assistant - inline panel */}
+        <CrmAssistantChat colaboradorId={colaborador?.id || null} />
+
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -91,8 +94,6 @@ export default function CRM() {
       {showNew && (
         <CrmNovoCard open={showNew} onClose={() => setShowNew(false)} />
       )}
-
-      <CrmAssistantChat colaboradorId={colaborador?.id || null} />
     </AppLayout>
   );
 }
