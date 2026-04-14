@@ -76,12 +76,13 @@ const App = () => (
             <Route path="/recebimentos/novo" element={<ProtectedRoute><NovoRecebimento /></ProtectedRoute>} />
             <Route path="/solicitacoes/nova" element={<ProtectedRoute><NovaSolicitacao /></ProtectedRoute>} />
             <Route path="/propostas/nova" element={<ProtectedRoute><NovaProposta /></ProtectedRoute>} />
-            <Route path="/fornecedores" element={<ProtectedRoute><Fornecedores /></ProtectedRoute>} />
+            <Route path="/fornecedores" element={<Navigate to="/compras?tab=fornecedores" replace />} />
             <Route path="/categorias-plantas" element={<ProtectedRoute><CategoriasPlantas /></ProtectedRoute>} />
-            <Route path="/plantas" element={<ProtectedRoute><Plantas /></ProtectedRoute>} />
+            <Route path="/plantas" element={<Navigate to="/compras?tab=plantas" replace />} />
             <Route path="/plantas/nova" element={<ProtectedRoute><NovaPlanta /></ProtectedRoute>} />
             <Route path="/plantas/:id/editar" element={<ProtectedRoute><NovaPlanta /></ProtectedRoute>} />
-            <Route path="/insumos" element={<ProtectedRoute><Insumos /></ProtectedRoute>} />
+            <Route path="/insumos" element={<Navigate to="/compras?tab=insumos" replace />} />
+            <Route path="/compras" element={<ProtectedRoute><Compras /></ProtectedRoute>} />
             <Route path="/projetos/novo" element={<ProtectedRoute><NovoProjeto /></ProtectedRoute>} />
             <Route path="/projetos/:id" element={<ProtectedRoute><ProjetoDetalhe /></ProtectedRoute>} />
             <Route path="/projetos/:id/editar" element={<ProtectedRoute><NovoProjeto /></ProtectedRoute>} />
