@@ -6,6 +6,7 @@ import {
   ChevronDown,
   DollarSign,
   Lock,
+  ShoppingCart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
@@ -22,7 +23,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useHighestRole } from "@/hooks/useAuth";
 import { usePendingDiarioAlertas } from "@/hooks/useDiarioAlertas";
 import { useState } from "react";
-import { alertNavigationItem, appNavigationItems, configNavigationItems, financeiroNavigationItems } from "./navigation";
+import { alertNavigationItem, appNavigationItems, comprasNavigationItems, comprasRoles, configNavigationItems, financeiroNavigationItems } from "./navigation";
 
 export function MobileNav() {
   const location = useLocation();

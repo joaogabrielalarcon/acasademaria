@@ -155,6 +155,65 @@ export function AppSidebar({ className }: AppSidebarProps) {
           {visibleNavigationItems.map((item) => renderNavItem(item))}
         </ul>
 
+        {/* Compras Collapsible Section */}
+        {visibleComprasItems.length > 0 && (
+          <div className="mt-4 px-2">
+            <Collapsible 
+              open={collapsed ? false : (comprasOpen || isComprasActive)} 
+              onOpenChange={setComprasOpen}
+            >
+              {collapsed ? (
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <Link
+                      to="/compras"
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
+                        isComprasActive 
+                          ? "bg-secondary text-foreground font-bold" 
+                          : "text-foreground hover:bg-secondary/50"
+                      )}
+                    >
+                      <comprasIcon className="w-5 h-5 flex-shrink-0" />
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="ml-2">
+                    Compras
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <CollapsibleTrigger asChild>
+                  <button
+                    className={cn(
+                      "flex items-center justify-between w-full px-3 py-2.5 rounded-lg transition-all duration-200",
+                      isComprasActive 
+                        ? "bg-secondary/50 text-foreground" 
+                        : "text-foreground hover:bg-secondary/50"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <comprasIcon className="w-5 h-5 flex-shrink-0" />
+                      <span className="font-medium text-sm">Compras</span>
+                    </div>
+                    <ChevronDown 
+                      className={cn(
+                        "w-4 h-4 transition-transform duration-200",
+                        (comprasOpen || isComprasActive) && "rotate-180"
+                      )} 
+                    />
+                  </button>
+                </CollapsibleTrigger>
+              )}
+              
+              <CollapsibleContent className="mt-1">
+                <ul className="space-y-1 pl-4">
+                  {visibleComprasItems.map((item) => renderNavItem(item, true))}
+                </ul>
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+        )}
+
         {/* Financeiro Collapsible Section */}
         {visibleFinanceiroItems.length > 0 && (
           <div className="mt-4 px-2">
