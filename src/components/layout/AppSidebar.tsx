@@ -87,8 +87,10 @@ export function AppSidebar({ className }: AppSidebarProps) {
   };
 
   const renderNavItem = (item: NavigationItem, isSubItem = false) => {
-    const isActive = location.pathname === item.href || 
-      (item.href !== "/" && location.pathname.startsWith(item.href));
+    const hrefPath = item.href.split("?")[0];
+    const isActive = item.href.includes("?")
+      ? location.pathname + location.search === item.href
+      : location.pathname === item.href || (item.href !== "/" && location.pathname.startsWith(item.href));
     
     const linkContent = (
       <Link
