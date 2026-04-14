@@ -192,16 +192,22 @@ async function manageCrm(client: ReturnType<typeof createClient>, input: any) {
         observacoes: dados.observacoes || null,
       }).select("id, titulo, tipo, status").single();
       if (error) throw error;
+      await client.from("crm_historico").insert({ card_id: data.id, descricao: "Card criado" });
       return { sucesso: true, mensagem: `Card "${data.titulo}" criado no CRM.`, card: data };
     }
     case "mover_card": {
       if (!dados.card_id || !dados.novo_status) return { error: "card_id e novo_status são obrigatórios" };
+      const { data: oldCard } = await client.from("crm_cards").select("status").eq("id", dados.card_id).single();
       const { data, error } = await client.from("crm_cards")
         .update({ status: dados.novo_status })
         .eq("id", dados.card_id)
         .select("id, titulo, status")
         .single();
       if (error) throw error;
+      await client.from("crm_historico").insert({
+        card_id: dados.card_id,
+        descricao: `Status alterado de "${oldCard?.status}" para "${dados.novo_status}"`,
+      });
       return { sucesso: true, mensagem: `Card movido para "${data.status}".`, card: data };
     }
     case "listar_cards": {
@@ -220,6 +226,56 @@ async function manageCrm(client: ReturnType<typeof createClient>, input: any) {
       });
       if (error) throw error;
       return { sucesso: true, mensagem: "Histórico adicionado ao card." };
+    }
+    case "criar_followup": {
+      if (!dados.card_id || !dados.data_retorno) return { error: "card_id e data_retorno são obrigatórios" };
+      const { error } = await client.from("crm_followups").insert({
+        card_id: dados.card_id,
+        data_retorno: dados.data_retorno,
+        dias_alerta: dados.dias_alerta || 3,
+        observacao: dados.observacao || null,
+      });
+      if (error) throw error;
+      const dtFmt = new Date(dados.data_retorno + "T12:00:00").toLocaleDateString("pt-BR");
+      await client.from("crm_historico").insert({
+        card_id: dados.card_id,
+        descricao: `Follow-up agendado para ${dtFmt}${dados.observacao ? ` — ${dados.observacao}` : ""}`,
+      });
+      return { sucesso: true, mensagem: `Follow-up agendado para ${dtFmt}.` };
+    }
+    case "criar_tarefa_agenda": {
+      if (!dados.titulo) return { error: "Título da tarefa é obrigatório" };
+      // Need a colaborador_id — try to find from context
+      // For now, return instruction
+      return { error: "Para criar tarefa na agenda, use o assistente do CRM diretamente na página do CRM." };
+    }
+    case "consultar_card": {
+      let cardData: any = null;
+      if (dados.card_id) {
+        const { data } = await client.from("crm_cards").select("*, clientes(nome), colaboradores(nome)").eq("id", dados.card_id).maybeSingle();
+        cardData = data;
+      } else if (dados.busca_titulo) {
+        const { data } = await client.from("crm_cards").select("*, clientes(nome), colaboradores(nome)").ilike("titulo", `%${dados.busca_titulo}%`).limit(1).maybeSingle();
+        cardData = data;
+      } else if (dados.busca_cliente) {
+        const { data: clientes } = await client.from("clientes").select("id").ilike("nome", `%${dados.busca_cliente}%`).limit(5);
+        if (clientes?.length) {
+          const { data } = await client.from("crm_cards").select("*, clientes(nome), colaboradores(nome)").in("cliente_id", clientes.map((c: any) => c.id)).order("updated_at", { ascending: false }).limit(5);
+          if (data?.length === 1) cardData = data[0];
+          else return { sucesso: true, total: data?.length || 0, cards: data };
+        }
+      }
+      if (!cardData) return { error: "Card não encontrado" };
+      const [histRes, followRes] = await Promise.all([
+        client.from("crm_historico").select("descricao, created_at").eq("card_id", cardData.id).order("created_at", { ascending: false }).limit(10),
+        client.from("crm_followups").select("*").eq("card_id", cardData.id).order("data_retorno"),
+      ]);
+      return {
+        sucesso: true,
+        card: { ...cardData, cliente_nome: cardData.clientes?.nome, responsavel_nome: cardData.colaboradores?.nome },
+        historico: histRes.data || [],
+        followups: followRes.data || [],
+      };
     }
     default:
       return { error: `Ação CRM '${acao}' não reconhecida` };
