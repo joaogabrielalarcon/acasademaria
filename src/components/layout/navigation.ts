@@ -43,6 +43,7 @@ export const comprasNavigationItems: NavigationItem[] = [
   { title: "Fornecedores", icon: Truck, href: "/compras?tab=fornecedores", roles: ["admin", "administrativo", "gestao_campo"] },
   { title: "Produtos e Insumos", icon: Package, href: "/compras?tab=insumos", roles: ["admin", "administrativo", "gestao_campo"] },
   { title: "Plantas", icon: Leaf, href: "/compras?tab=plantas", roles: ["admin", "administrativo", "arquitetura"] },
+  { title: "Estoque", icon: Package, href: "/compras?tab=estoque", roles: ["admin", "administrativo", "gestao_campo"] },
 ];
 
 export const comprasIcon = ShoppingCart;
@@ -50,6 +51,7 @@ export const comprasRoles: AppRole[] = ["admin", "administrativo", "gestao_campo
 
 export const financeiroNavigationItems: NavigationItem[] = [
   { title: "A Receber", icon: Receipt, href: "/financeiro/a-receber", roles: ["admin", "administrativo"] },
+  { title: "Movimentações", icon: DollarSign, href: "/financeiro/movimentacoes", roles: ["admin", "administrativo"] },
   { title: "Conciliação", icon: Landmark, href: "/conciliacao", roles: ["admin", "administrativo"] },
 ];
 
