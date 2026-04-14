@@ -3,9 +3,7 @@ import { Link } from "react-router-dom";
 import {
   Users,
   UserCircle,
-  Leaf,
   Package,
-  Truck,
   Wrench,
   Settings,
   BookOpen,
