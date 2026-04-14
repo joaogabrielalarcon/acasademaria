@@ -42,6 +42,7 @@ const MinhaAgenda = lazy(() => import("./pages/MinhaAgenda"));
 const Conciliacao = lazy(() => import("./pages/Conciliacao"));
 const AReceber = lazy(() => import("./pages/AReceber"));
 const CategoriasPlantas = lazy(() => import("./pages/CategoriasPlantas"));
+const Movimentacoes = lazy(() => import("./pages/Movimentacoes"));
 
 const queryClient = new QueryClient();
 
@@ -96,6 +97,7 @@ const App = () => (
             <Route path="/agenda" element={<ProtectedRoute><MinhaAgenda /></ProtectedRoute>} />
             <Route path="/conciliacao" element={<ProtectedRoute><Conciliacao /></ProtectedRoute>} />
             <Route path="/financeiro/a-receber" element={<ProtectedRoute><AReceber /></ProtectedRoute>} />
+            <Route path="/financeiro/movimentacoes" element={<ProtectedRoute><Movimentacoes /></ProtectedRoute>} />
             <Route path="/diario" element={<Navigate to="/" replace />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
