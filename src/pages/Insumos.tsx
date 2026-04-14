@@ -41,7 +41,7 @@ const UNIDADES_INSUMOS = [
   "galão", "rolo", "pacote", "Ton", "Rolo", "Peça", "Vaso",
 ];
 
-export default function Insumos() {
+export function InsumosContent() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingInsumo, setEditingInsumo] = useState<Insumo | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -166,16 +166,9 @@ export default function Insumos() {
   const hasMore = visibleCount < filteredInsumos.length;
 
   return (
-    <AppLayout>
+    <>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="font-display text-2xl lg:text-3xl font-bold text-foreground">
-              Produtos e Insumos
-            </h1>
-            <p className="text-muted-foreground">Gerencie o catálogo de produtos e insumos</p>
-          </div>
-
           <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
               <Button className="gap-2"><Plus className="w-4 h-4" /> Novo Insumo</Button>
@@ -424,6 +417,14 @@ export default function Insumos() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </>
+  );
+}
+
+export default function Insumos() {
+  return (
+    <AppLayout>
+      <InsumosContent />
     </AppLayout>
   );
 }

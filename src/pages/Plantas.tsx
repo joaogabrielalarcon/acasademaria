@@ -37,7 +37,7 @@ import { useAuth, useIsAdmin } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-export default function Plantas() {
+export function PlantasContent() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategoria, setFilterCategoria] = useState<string>("todas");
   const [filterFornecedor, setFilterFornecedor] = useState<string>("todos");
@@ -97,18 +97,9 @@ export default function Plantas() {
   };
 
   return (
-    <AppLayout>
+    <>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="font-display text-2xl lg:text-3xl font-bold text-foreground">
-              Plantas
-            </h1>
-            <p className="text-muted-foreground">
-              Gerencie o catálogo de plantas disponíveis
-            </p>
-          </div>
-
           <Button asChild className="gap-2">
             <Link to="/plantas/nova">
               <Plus className="w-4 h-4" />
@@ -249,6 +240,14 @@ export default function Plantas() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </>
+  );
+}
+
+export default function Plantas() {
+  return (
+    <AppLayout>
+      <PlantasContent />
     </AppLayout>
   );
 }
