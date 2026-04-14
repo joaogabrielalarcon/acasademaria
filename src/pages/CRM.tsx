@@ -7,6 +7,10 @@ import { CrmKanban } from "@/components/crm/CrmKanban";
 import { CrmLista } from "@/components/crm/CrmLista";
 import { CrmCardDetail } from "@/components/crm/CrmCardDetail";
 import { CrmNovoCard } from "@/components/crm/CrmNovoCard";
+import { CrmAssistantChat } from "@/components/crm/CrmAssistantChat";
+import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const CRM_STATUSES = ["Lead", "Proposta Enviada", "Aprovado", "Em Execucao", "Concluido", "Pos-venda"] as const;
 
