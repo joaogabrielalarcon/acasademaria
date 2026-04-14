@@ -7,6 +7,10 @@ import { CrmKanban } from "@/components/crm/CrmKanban";
 import { CrmLista } from "@/components/crm/CrmLista";
 import { CrmCardDetail } from "@/components/crm/CrmCardDetail";
 import { CrmNovoCard } from "@/components/crm/CrmNovoCard";
+import { CrmAssistantChat } from "@/components/crm/CrmAssistantChat";
+import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const CRM_STATUSES = ["Lead", "Proposta Enviada", "Aprovado", "Em Execucao", "Concluido", "Pos-venda"] as const;
 
@@ -14,6 +18,16 @@ export default function CRM() {
   const [view, setView] = useState<"kanban" | "lista">("kanban");
   const [selectedCard, setSelectedCard] = useState<CrmCard | null>(null);
   const [showNew, setShowNew] = useState(false);
+  const { user } = useAuth();
+  const { data: colaborador } = useQuery({
+    queryKey: ["colaborador-by-user", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase.from("colaboradores").select("id").eq("user_id", user.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user?.id,
+  });
   const { data: cards = [], isLoading } = useCrmCards();
 
   const activeCards = cards.filter((c) => c.status !== "Nao Aprovado");
@@ -77,6 +91,8 @@ export default function CRM() {
       {showNew && (
         <CrmNovoCard open={showNew} onClose={() => setShowNew(false)} />
       )}
+
+      <CrmAssistantChat colaboradorId={colaborador?.id || null} />
     </AppLayout>
   );
 }
