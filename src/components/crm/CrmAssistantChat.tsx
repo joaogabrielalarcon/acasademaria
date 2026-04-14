@@ -167,6 +167,10 @@ export function CrmAssistantChat({ colaboradorId }: CrmAssistantChatProps) {
       if (!assistantSoFar) setMessages((prev) => prev.slice(0, -1));
     } finally {
       setIsLoading(false);
+      // Invalidate CRM queries so cards reflect AI changes
+      queryClient.invalidateQueries({ queryKey: ["crm-cards"] });
+      queryClient.invalidateQueries({ queryKey: ["crm-historico"] });
+      queryClient.invalidateQueries({ queryKey: ["crm-followups"] });
     }
   };
 
