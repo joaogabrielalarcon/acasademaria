@@ -31,7 +31,7 @@ import {
   alertNavigationItem,
   appNavigationItems,
   comprasNavigationItems,
-  comprasIcon,
+  comprasIcon as ComprasIcon,
   comprasRoles,
   configNavigationItems,
   financeiroNavigationItems,
