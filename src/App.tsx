@@ -20,12 +20,12 @@ const NovaProposta = lazy(() => import("./pages/NovaProposta"));
 const NovoRecebimento = lazy(() => import("./pages/NovoRecebimento"));
 const NovaSolicitacao = lazy(() => import("./pages/NovaSolicitacao"));
 const Fornecedores = lazy(() => import("./pages/Fornecedores"));
-const CategoriasPlantas = lazy(() => import("./pages/CategoriasPlantas"));
 const Plantas = lazy(() => import("./pages/Plantas"));
 const NovaPlanta = lazy(() => import("./pages/NovaPlanta"));
 const NovoProjeto = lazy(() => import("./pages/NovoProjeto"));
 const ProjetoDetalhe = lazy(() => import("./pages/ProjetoDetalhe"));
 const Insumos = lazy(() => import("./pages/Insumos"));
+const Compras = lazy(() => import("./pages/Compras"));
 const CustosEquipe = lazy(() => import("./pages/CustosEquipe"));
 const Maquinas = lazy(() => import("./pages/Maquinas"));
 const AlterarSenha = lazy(() => import("./pages/AlterarSenha"));
@@ -41,6 +41,7 @@ const CRM = lazy(() => import("./pages/CRM"));
 const MinhaAgenda = lazy(() => import("./pages/MinhaAgenda"));
 const Conciliacao = lazy(() => import("./pages/Conciliacao"));
 const AReceber = lazy(() => import("./pages/AReceber"));
+const CategoriasPlantas = lazy(() => import("./pages/CategoriasPlantas"));
 
 const queryClient = new QueryClient();
 
