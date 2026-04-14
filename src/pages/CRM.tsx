@@ -91,6 +91,8 @@ export default function CRM() {
       {showNew && (
         <CrmNovoCard open={showNew} onClose={() => setShowNew(false)} />
       )}
+
+      <CrmAssistantChat colaboradorId={colaborador?.id || null} />
     </AppLayout>
   );
 }
