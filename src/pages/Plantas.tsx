@@ -168,10 +168,16 @@ export function PlantasContent() {
                     Carregando...
                   </TableCell>
                 </TableRow>
+              ) : plantasError ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-destructive">
+                    Erro ao carregar plantas: {plantasError.message}
+                  </TableCell>
+                </TableRow>
               ) : filteredPlantas.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                    Nenhuma planta encontrada
+                    Nenhuma planta encontrada {plantas.length === 0 ? "(tabela vazia no banco)" : "(verifique os filtros)"}
                   </TableCell>
                 </TableRow>
               ) : (
