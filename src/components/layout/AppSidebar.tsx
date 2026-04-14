@@ -174,7 +174,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
                           : "text-foreground hover:bg-secondary/50"
                       )}
                     >
-                      <comprasIcon className="w-5 h-5 flex-shrink-0" />
+                      <ComprasIcon className="w-5 h-5 flex-shrink-0" />
                     </Link>
                   </TooltipTrigger>
                   <TooltipContent side="right" className="ml-2">
@@ -192,7 +192,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
                     )}
                   >
                     <div className="flex items-center gap-3">
-                      <comprasIcon className="w-5 h-5 flex-shrink-0" />
+                      <ComprasIcon className="w-5 h-5 flex-shrink-0" />
                       <span className="font-medium text-sm">Compras</span>
                     </div>
                     <ChevronDown 
