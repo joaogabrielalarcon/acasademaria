@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const SOURCE_URL = "https://yjaqxhuqqpnxvvrpxjls.supabase.co";
-const TABLES = ["fornecedores", "plantas", "insumos", "historico_precos"] as const;
+const TABLES = ["fornecedores", "categorias_plantas", "plantas", "insumos", "historico_precos"] as const;
 const PAGE = 1000;
 
 serve(async (req) => {
