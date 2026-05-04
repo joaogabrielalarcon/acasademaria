@@ -326,11 +326,26 @@ export function FornecedoresContent() {
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-                  <Button type="submit" disabled={saveMutation.isPending}>
-                    {saveMutation.isPending ? "Salvando..." : "Salvar"}
-                  </Button>
+                <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 pt-4">
+                  <div>
+                    {editingFornecedor && podeMesclar && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="gap-2"
+                        onClick={() => setMesclarOpen(true)}
+                      >
+                        <GitMerge className="w-4 h-4" />
+                        Mesclar fornecedores
+                      </Button>
+                    )}
+                  </div>
+                  <div className="flex justify-end gap-3">
+                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+                    <Button type="submit" disabled={saveMutation.isPending}>
+                      {saveMutation.isPending ? "Salvando..." : "Salvar"}
+                    </Button>
+                  </div>
                 </div>
               </form>
             </DialogContent>
