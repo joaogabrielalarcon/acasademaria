@@ -1,0 +1,1 @@
+ALTER TABLE public.insumos DROP CONSTRAINT IF EXISTS insumos_unidade_check;
