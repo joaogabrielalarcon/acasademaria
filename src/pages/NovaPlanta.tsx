@@ -241,13 +241,26 @@ export default function NovaPlanta() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="altura_m">Altura (m)</Label>
+              <Label htmlFor="altura_min_m">Altura mínima (m)</Label>
               <Input
-                id="altura_m"
+                id="altura_min_m"
                 type="number"
-                value={formData.altura_m}
-                onChange={(e) => setFormData({ ...formData, altura_m: e.target.value })}
-                placeholder="Ex: 1.50"
+                value={formData.altura_min_m}
+                onChange={(e) => setFormData({ ...formData, altura_min_m: e.target.value })}
+                placeholder="Ex: 1,50"
+                min={0}
+                step="0.01"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="altura_max_m">Altura máxima (m)</Label>
+              <Input
+                id="altura_max_m"
+                type="number"
+                value={formData.altura_max_m}
+                onChange={(e) => setFormData({ ...formData, altura_max_m: e.target.value })}
+                placeholder="Ex: 2,00 (deixe igual à mínima se não houver variação)"
                 min={0}
                 step="0.01"
               />
