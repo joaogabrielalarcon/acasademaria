@@ -2,7 +2,7 @@
 // via texto ou voz — o usuário descreve o item e a IA preenche os campos
 // automaticamente, confirmando com o usuário antes de salvar.
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { HistoricoPrecos } from "@/components/HistoricoPrecos";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -10,9 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -23,7 +20,8 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Search, Trash2, History } from "lucide-react";
+import { Plus, Pencil, Trash2, History } from "lucide-react";
+import { DataTableExcel, DataTableColumn } from "@/components/ui/data-table-excel";
 import { useInsumos, Insumo } from "@/hooks/useInsumos";
 import { useFornecedores } from "@/hooks/useFornecedores";
 import { useAuth, useIsAdmin } from "@/hooks/useAuth";
