@@ -10,9 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
-import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import {
@@ -22,7 +19,8 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Search, Trash2, GitMerge } from "lucide-react";
+import { Plus, Pencil, Trash2, GitMerge } from "lucide-react";
+import { DataTableExcel, DataTableColumn } from "@/components/ui/data-table-excel";
 import { useFornecedoresTodos, Fornecedor } from "@/hooks/useFornecedores";
 import { useAuth, useIsAdmin, useIsAdminOrAdministrativo } from "@/hooks/useAuth";
 import { MesclarManualDialog } from "@/components/fornecedores/MesclarManualDialog";
