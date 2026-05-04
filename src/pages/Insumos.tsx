@@ -42,10 +42,7 @@ const UNIDADES_INSUMOS = [
 export function InsumosContent() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingInsumo, setEditingInsumo] = useState<Insumo | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterCategoria, setFilterCategoria] = useState<string>("todas");
   const [itemToDelete, setItemToDelete] = useState<Insumo | null>(null);
-  const [visibleCount, setVisibleCount] = useState(20);
   const [showHistorico, setShowHistorico] = useState<Insumo | null>(null);
 
   const { user } = useAuth();
