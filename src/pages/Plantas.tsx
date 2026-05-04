@@ -128,7 +128,7 @@ export function PlantasContent() {
           rowKey={(p) => p.id}
           loading={isLoading}
           searchPlaceholder="Buscar plantas..."
-          globalSearchKeys={["nome_popular", "nome_cientifico", "categoria", "fornecedor", "embalagem"] as any}
+          globalSearchKeys={["nome_popular", "nome_cientifico", "categoria", "fornecedor", "embalagem"]}
           rowActions={(planta) => (
             <div className="flex items-center gap-1">
               <Button variant="ghost" size="icon-sm" asChild>

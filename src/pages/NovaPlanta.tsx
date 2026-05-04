@@ -42,8 +42,7 @@ export default function NovaPlanta() {
     nome_cientifico: "",
     categoria_id: "",
     fornecedor_id: "",
-    porte: "",
-    altura_cm: "",
+    altura_m: "",
     dap_cm: "",
     unidade: "",
     embalagem: "",
@@ -76,8 +75,7 @@ export default function NovaPlanta() {
         nome_cientifico: plantaExistente.nome_cientifico || "",
         categoria_id: plantaExistente.categoria_id || "",
         fornecedor_id: plantaExistente.fornecedor_id || "",
-        porte: plantaExistente.porte || "",
-        altura_cm: plantaExistente.altura_cm?.toString() || "",
+        altura_m: (plantaExistente as any).altura_m?.toString() || "",
         dap_cm: plantaExistente.dap_cm?.toString() || "",
         unidade: plantaExistente.unidade || "",
         embalagem: (plantaExistente as any).embalagem || "",
@@ -104,8 +102,7 @@ export default function NovaPlanta() {
         nome_cientifico: formData.nome_cientifico || null,
         categoria_id: formData.categoria_id || null,
         fornecedor_id: formData.fornecedor_id || null,
-        porte: formData.porte || null,
-        altura_cm: formData.altura_cm ? parseFloat(formData.altura_cm) : null,
+        altura_m: formData.altura_m ? parseFloat(formData.altura_m) : null,
         dap_cm: isArvore && formData.dap_cm ? parseFloat(formData.dap_cm) : null,
         unidade: formData.unidade || null,
         embalagem: formData.embalagem || null,
@@ -236,23 +233,13 @@ export default function NovaPlanta() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="porte">Porte</Label>
+              <Label htmlFor="altura_m">Altura (m)</Label>
               <Input
-                id="porte"
-                value={formData.porte}
-                onChange={(e) => setFormData({ ...formData, porte: e.target.value })}
-                placeholder="Ex: Pequeno, Médio, Grande"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="altura_cm">Altura (cm)</Label>
-              <Input
-                id="altura_cm"
+                id="altura_m"
                 type="number"
-                value={formData.altura_cm}
-                onChange={(e) => setFormData({ ...formData, altura_cm: e.target.value })}
-                placeholder="Ex: 150"
+                value={formData.altura_m}
+                onChange={(e) => setFormData({ ...formData, altura_m: e.target.value })}
+                placeholder="Ex: 1.50"
                 min={0}
                 step="0.01"
               />
