@@ -22,9 +22,10 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Search, Trash2 } from "lucide-react";
+import { Plus, Pencil, Search, Trash2, GitMerge } from "lucide-react";
 import { useFornecedoresTodos, Fornecedor } from "@/hooks/useFornecedores";
-import { useAuth, useIsAdmin } from "@/hooks/useAuth";
+import { useAuth, useIsAdmin, useIsAdminOrAdministrativo } from "@/hooks/useAuth";
+import { MesclarManualDialog } from "@/components/fornecedores/MesclarManualDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatCNPJ, formatPhone, capitalizeWords } from "@/hooks/useInputMasks";
@@ -48,9 +49,11 @@ export function FornecedoresContent() {
   const [filterStatus, setFilterStatus] = useState<string>("ativo");
   const [itemToDelete, setItemToDelete] = useState<Fornecedor | null>(null);
   const [visibleCount, setVisibleCount] = useState(20);
+  const [mesclarOpen, setMesclarOpen] = useState(false);
 
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
+  const podeMesclar = useIsAdminOrAdministrativo(user?.id);
 
   const { data: fornecedores = [], isLoading } = useFornecedoresTodos();
   const queryClient = useQueryClient();
@@ -323,11 +326,26 @@ export function FornecedoresContent() {
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-                  <Button type="submit" disabled={saveMutation.isPending}>
-                    {saveMutation.isPending ? "Salvando..." : "Salvar"}
-                  </Button>
+                <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 pt-4">
+                  <div>
+                    {editingFornecedor && podeMesclar && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="gap-2"
+                        onClick={() => setMesclarOpen(true)}
+                      >
+                        <GitMerge className="w-4 h-4" />
+                        Mesclar fornecedores
+                      </Button>
+                    )}
+                  </div>
+                  <div className="flex justify-end gap-3">
+                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+                    <Button type="submit" disabled={saveMutation.isPending}>
+                      {saveMutation.isPending ? "Salvando..." : "Salvar"}
+                    </Button>
+                  </div>
                 </div>
               </form>
             </DialogContent>
@@ -453,6 +471,15 @@ export function FornecedoresContent() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {editingFornecedor && (
+        <MesclarManualDialog
+          open={mesclarOpen}
+          onOpenChange={setMesclarOpen}
+          principal={editingFornecedor}
+          onMerged={() => { setDialogOpen(false); resetForm(); }}
+        />
+      )}
     </>
   );
 }
