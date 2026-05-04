@@ -1,22 +1,28 @@
 import { useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Truck, Package, Leaf, Warehouse } from "lucide-react";
+import { Truck, Package, Leaf, Warehouse, Copy } from "lucide-react";
 import { FornecedoresContent } from "./Fornecedores";
 import { InsumosContent } from "./Insumos";
 import { PlantasContent } from "./Plantas";
 import { EstoqueTab } from "@/components/estoque/EstoqueTab";
-
-const tabs = [
-  { value: "fornecedores", label: "Fornecedores", icon: Truck },
-  { value: "insumos", label: "Produtos e Insumos", icon: Package },
-  { value: "plantas", label: "Plantas", icon: Leaf },
-  { value: "estoque", label: "Estoque", icon: Warehouse },
-] as const;
+import { DuplicadosTab } from "@/components/fornecedores/DuplicadosTab";
+import { useAuth, useIsAdminOrAdministrativo } from "@/hooks/useAuth";
 
 export default function Compras() {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") || "fornecedores";
+
+  const { user } = useAuth();
+  const podeMesclar = useIsAdminOrAdministrativo(user?.id);
+
+  const tabs = [
+    { value: "fornecedores", label: "Fornecedores", icon: Truck },
+    { value: "insumos", label: "Produtos e Insumos", icon: Package },
+    { value: "plantas", label: "Plantas", icon: Leaf },
+    { value: "estoque", label: "Estoque", icon: Warehouse },
+    ...(podeMesclar ? [{ value: "duplicados", label: "Duplicados", icon: Copy }] : []),
+  ] as const;
 
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value }, { replace: true });
@@ -59,6 +65,12 @@ export default function Compras() {
           <TabsContent value="estoque" className="mt-6">
             <EstoqueTab />
           </TabsContent>
+
+          {podeMesclar && (
+            <TabsContent value="duplicados" className="mt-6">
+              <DuplicadosTab />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </AppLayout>
