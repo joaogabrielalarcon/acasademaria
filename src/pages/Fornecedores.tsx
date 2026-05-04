@@ -2,7 +2,7 @@
 // via texto ou voz — o usuário descreve o fornecedor e a IA preenche os campos
 // automaticamente, confirmando com o usuário antes de salvar.
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
