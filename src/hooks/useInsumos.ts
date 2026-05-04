@@ -11,6 +11,7 @@ export interface Insumo {
   descricao_produto: string | null;
   volume_apresentacao: string | null;
   observacoes: string | null;
+  ultima_compra: string | null;
   ativo: boolean;
 }
 
