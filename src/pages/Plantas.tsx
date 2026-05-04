@@ -17,42 +17,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export function PlantasContent() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterCategoria, setFilterCategoria] = useState<string>("todas");
-  const [filterFornecedor, setFilterFornecedor] = useState<string>("todos");
   const [itemToDelete, setItemToDelete] = useState<Planta | null>(null);
-  const [visibleCount, setVisibleCount] = useState(20);
 
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
 
-  const { data: plantas = [], isLoading, error: plantasError } = usePlantas();
+  const { data: plantas = [], isLoading } = usePlantas();
   const { data: categorias = [] } = useCategoriasPlantas();
   const { data: fornecedores = [] } = useFornecedores();
   const queryClient = useQueryClient();
 
   const categoriasMap = new Map(categorias.map((c) => [c.id, c.nome]));
   const fornecedoresMap = new Map(fornecedores.map((f) => [f.id, f.nome]));
-
-  // Filtrar e ordenar alfabeticamente
-  const filteredPlantas = useMemo(() => {
-    const term = searchTerm.toLowerCase();
-    const filtered = plantas.filter((p) => {
-      const matchesSearch =
-        p.nome_popular.toLowerCase().includes(term) ||
-        (p.nome_cientifico?.toLowerCase().includes(term) ?? false) ||
-        (p.embalagem?.toLowerCase().includes(term) ?? false);
-      const matchesCategoria =
-        filterCategoria === "todas" || p.categoria_id === filterCategoria;
-      const matchesFornecedor =
-        filterFornecedor === "todos" || p.fornecedor_id === filterFornecedor;
-      return matchesSearch && matchesCategoria && matchesFornecedor;
-    });
-    return filtered.sort((a, b) => a.nome_popular.localeCompare(b.nome_popular, 'pt-BR'));
-  }, [plantas, searchTerm, filterCategoria, filterFornecedor]);
-
-  const visiblePlantas = filteredPlantas.slice(0, visibleCount);
-  const hasMore = visibleCount < filteredPlantas.length;
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -64,16 +40,71 @@ export function PlantasContent() {
       toast.success("Planta excluída!");
       setItemToDelete(null);
     },
-    onError: (error) => {
-      toast.error("Erro ao excluir: " + error.message);
-    },
+    onError: (error) => toast.error("Erro ao excluir: " + error.message),
   });
 
-  const handleDelete = () => {
-    if (itemToDelete) {
-      deleteMutation.mutate(itemToDelete.id);
-    }
-  };
+  const columns: DataTableColumn<Planta>[] = [
+    {
+      key: "nome_popular", header: "Nome Popular", width: 200,
+      accessor: (p) => p.nome_popular,
+      render: (p) => <span className="font-medium">{p.nome_popular}</span>,
+    },
+    {
+      key: "nome_cientifico", header: "Nome Científico", width: 200,
+      accessor: (p) => p.nome_cientifico ?? "",
+      render: (p) => <span className="italic text-muted-foreground">{p.nome_cientifico || "—"}</span>,
+    },
+    {
+      key: "categoria", header: "Categoria", width: 150,
+      accessor: (p) => (p.categoria_id ? categoriasMap.get(p.categoria_id) ?? "" : ""),
+    },
+    {
+      key: "fornecedor", header: "Fornecedor", width: 180,
+      accessor: (p) => (p.fornecedor_id ? fornecedoresMap.get(p.fornecedor_id) ?? "" : ""),
+    },
+    { key: "porte", header: "Porte", width: 110, accessor: (p) => p.porte ?? "" },
+    { key: "altura_cm", header: "Altura (cm)", width: 110, type: "number", accessor: (p) => p.altura_cm },
+    { key: "dap_cm", header: "DAP (cm)", width: 100, type: "number", accessor: (p) => p.dap_cm },
+    { key: "unidade", header: "Unidade", width: 100, accessor: (p) => p.unidade ?? "" },
+    { key: "embalagem", header: "Embalagem", width: 120, accessor: (p) => p.embalagem ?? "" },
+    {
+      key: "preco_unitario", header: "Preço (R$)", width: 110, type: "number",
+      accessor: (p) => p.preco_unitario,
+      render: (p) => p.preco_unitario != null
+        ? `R$ ${Number(p.preco_unitario).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
+        : <span className="text-muted-foreground">—</span>,
+    },
+    {
+      key: "nota_qualidade", header: "Qualidade", width: 110, type: "number",
+      accessor: (p) => p.nota_qualidade,
+      render: (p) => p.nota_qualidade != null
+        ? (
+          <span className="inline-flex items-center gap-0.5 text-primary">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Star key={i} className="w-3.5 h-3.5" fill={i < (p.nota_qualidade ?? 0) ? "currentColor" : "none"} />
+            ))}
+          </span>
+        )
+        : <span className="text-muted-foreground">—</span>,
+    },
+    {
+      key: "midia", header: "Mídia", width: 80, disableFilter: true, disableSort: true,
+      accessor: (p) => (p.midia?.length ?? 0),
+      render: (p) => {
+        const n = p.midia?.length ?? 0;
+        return n > 0
+          ? <span className="inline-flex items-center gap-1 text-foreground"><ImageIcon className="w-4 h-4" />{n}</span>
+          : <span className="text-muted-foreground">—</span>;
+      },
+    },
+    {
+      key: "alerta_validacao", header: "Alerta", width: 140,
+      accessor: (p) => p.alerta_validacao ?? "",
+      render: (p) => p.alerta_validacao
+        ? <span className="text-xs px-2 py-0.5 rounded bg-amber-500/10 text-amber-700">{p.alerta_validacao}</span>
+        : <span className="text-muted-foreground">—</span>,
+    },
+  ];
 
   return (
     <>
@@ -81,134 +112,39 @@ export function PlantasContent() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <Button asChild className="gap-2">
             <Link to="/plantas/nova">
-              <Plus className="w-4 h-4" />
-              Nova Planta
+              <Plus className="w-4 h-4" /> Nova Planta
             </Link>
           </Button>
         </div>
 
-        {/* Filtros */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nome..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <Select value={filterCategoria} onValueChange={setFilterCategoria}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Categoria" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todas">Todas as categorias</SelectItem>
-              {categorias.map((cat) => (
-                <SelectItem key={cat.id} value={cat.id}>
-                  {cat.nome}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={filterFornecedor} onValueChange={setFilterFornecedor}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Fornecedor" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos os fornecedores</SelectItem>
-              {fornecedores.map((forn) => (
-                <SelectItem key={forn.id} value={forn.id}>
-                  {forn.nome}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Tabela */}
-        <div className="card-botanical overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome Popular</TableHead>
-                <TableHead>Nome Científico</TableHead>
-                <TableHead>Categoria</TableHead>
-                <TableHead>Fornecedor</TableHead>
-                <TableHead>Porte</TableHead>
-                <TableHead>Unidade</TableHead>
-                <TableHead className="w-16"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                    Carregando...
-                  </TableCell>
-                </TableRow>
-              ) : plantasError ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-destructive">
-                    Erro ao carregar plantas: {plantasError.message}
-                  </TableCell>
-                </TableRow>
-              ) : filteredPlantas.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                    Nenhuma planta encontrada {plantas.length === 0 ? "(tabela vazia no banco)" : "(verifique os filtros)"}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                visiblePlantas.map((planta) => (
-                  <TableRow key={planta.id}>
-                    <TableCell className="font-medium">{planta.nome_popular}</TableCell>
-                    <TableCell className="text-muted-foreground italic">
-                      {planta.nome_cientifico || "-"}
-                    </TableCell>
-                    <TableCell>
-                      {planta.categoria_id ? categoriasMap.get(planta.categoria_id) || "-" : "-"}
-                    </TableCell>
-                    <TableCell>
-                      {planta.fornecedor_id ? fornecedoresMap.get(planta.fornecedor_id) || "-" : "-"}
-                    </TableCell>
-                    <TableCell>{planta.porte || "-"}</TableCell>
-                    <TableCell>{planta.unidade || "-"}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon-sm" asChild>
-                          <Link to={`/plantas/${planta.id}/editar`}>
-                            <Pencil className="w-4 h-4" />
-                          </Link>
-                        </Button>
-                        {isAdmin && (
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => setItemToDelete(planta)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+        <DataTableExcel
+          data={plantas}
+          columns={columns}
+          rowKey={(p) => p.id}
+          loading={isLoading}
+          searchPlaceholder="Buscar plantas..."
+          globalSearchKeys={["nome_popular", "nome_cientifico", "categoria", "fornecedor", "embalagem"]}
+          rowActions={(planta) => (
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon-sm" asChild>
+                <Link to={`/plantas/${planta.id}/editar`}>
+                  <Pencil className="w-4 h-4" />
+                </Link>
+              </Button>
+              {isAdmin && (
+                <Button
+                  variant="ghost" size="icon-sm"
+                  onClick={() => setItemToDelete(planta)}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
               )}
-            </TableBody>
-          </Table>
-        </div>
-        {hasMore && (
-          <div className="flex justify-center mt-4">
-            <Button variant="outline" onClick={() => setVisibleCount((c) => c + 20)}>
-              Carregar mais ({filteredPlantas.length - visibleCount} restantes)
-            </Button>
-          </div>
-        )}
+            </div>
+          )}
+        />
       </div>
 
-      {/* Dialog de confirmação de exclusão */}
       <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -219,7 +155,10 @@ export function PlantasContent() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={() => itemToDelete && deleteMutation.mutate(itemToDelete.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
