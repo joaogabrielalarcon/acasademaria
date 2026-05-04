@@ -59,6 +59,24 @@ serve(async (req) => {
       let destCols: Set<string> | null = null;
       if (probe && probe.length > 0) destCols = new Set(Object.keys(probe[0]));
 
+      // Per-table row transform (for tables whose schemas diverge between source and dest)
+      const transformRow = (row: any): any => {
+        if (table === "historico_precos") {
+          return {
+            id: row.id,
+            item_id: row.tipo_item === "planta" ? row.planta_id : row.insumo_id,
+            item_tipo: row.tipo_item,
+            fornecedor_id: row.fornecedor_id,
+            preco: row.preco_novo ?? row.preco_anterior,
+            data_orcamento: row.data_alteracao,
+            registrado_por: null, // usuario_id likely refers to external auth.users; safer to null
+            observacoes: row.observacao,
+            criado_em: row.created_at,
+          };
+        }
+        return row;
+      };
+
       let inserted = 0;
       let from = 0;
       while (from < (srcCount ?? 0)) {
@@ -67,9 +85,9 @@ serve(async (req) => {
         if (error) throw error;
         if (!rows || rows.length === 0) break;
 
-        let payload = rows;
+        let payload = rows.map(transformRow);
         if (destCols) {
-          payload = rows.map(row => {
+          payload = payload.map((row: any) => {
             const o: any = {};
             for (const k of Object.keys(row)) if (destCols!.has(k)) o[k] = row[k];
             return o;
