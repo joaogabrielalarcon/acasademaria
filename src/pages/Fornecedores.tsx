@@ -2,16 +2,13 @@
 // via texto ou voz — o usuário descreve o fornecedor e a IA preenche os campos
 // automaticamente, confirmando com o usuário antes de salvar.
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -22,7 +19,8 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Search, Trash2, GitMerge } from "lucide-react";
+import { Plus, Pencil, Trash2, GitMerge } from "lucide-react";
+import { DataTableExcel, DataTableColumn } from "@/components/ui/data-table-excel";
 import { useFornecedoresTodos, Fornecedor } from "@/hooks/useFornecedores";
 import { useAuth, useIsAdmin, useIsAdminOrAdministrativo } from "@/hooks/useAuth";
 import { MesclarManualDialog } from "@/components/fornecedores/MesclarManualDialog";
@@ -45,10 +43,7 @@ const CATEGORIAS_FORNECEDOR = [
 export function FornecedoresContent() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingFornecedor, setEditingFornecedor] = useState<Fornecedor | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState<string>("ativo");
   const [itemToDelete, setItemToDelete] = useState<Fornecedor | null>(null);
-  const [visibleCount, setVisibleCount] = useState(20);
   const [mesclarOpen, setMesclarOpen] = useState(false);
 
   const { user } = useAuth();
@@ -163,20 +158,41 @@ export function FornecedoresContent() {
     },
   });
 
-  // Search: nome OR nome_alternativo
-  const filteredFornecedores = useMemo(() => {
-    const term = searchTerm.toLowerCase();
-    const filtered = fornecedores.filter((f) => {
-      const matchesSearch = f.nome.toLowerCase().includes(term) ||
-        (f.nome_alternativo?.toLowerCase().includes(term) ?? false);
-      const matchesStatus = filterStatus === "todos" || f.status === filterStatus;
-      return matchesSearch && matchesStatus;
-    });
-    return filtered.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-  }, [fornecedores, searchTerm, filterStatus]);
-
-  const visibleFornecedores = filteredFornecedores.slice(0, visibleCount);
-  const hasMore = visibleCount < filteredFornecedores.length;
+  const columns: DataTableColumn<Fornecedor>[] = [
+    {
+      key: "nome", header: "Nome", width: 220,
+      accessor: (f) => f.nome,
+      render: (f) => (
+        <div>
+          <span className="font-medium">{f.nome}</span>
+          {f.nome_alternativo && (
+            <span className="block text-xs text-muted-foreground">{f.nome_alternativo}</span>
+          )}
+        </div>
+      ),
+    },
+    { key: "nome_alternativo", header: "Apelido", width: 160, accessor: (f) => f.nome_alternativo ?? "" },
+    { key: "mercado", header: "Mercado", width: 140, accessor: (f) => f.mercado ?? "" },
+    { key: "categoria_fornecedor", header: "Categoria", width: 200, accessor: (f) => f.categoria_fornecedor ?? "" },
+    { key: "cnpj", header: "CNPJ", width: 160, accessor: (f) => f.cnpj ?? "" },
+    { key: "telefone", header: "Telefone", width: 140, accessor: (f) => f.telefone ?? "" },
+    { key: "whatsapp", header: "WhatsApp", width: 140, accessor: (f) => f.whatsapp ?? "" },
+    { key: "email", header: "Email", width: 200, accessor: (f) => f.email ?? "" },
+    { key: "cidade", header: "Cidade", width: 140, accessor: (f) => f.cidade ?? "" },
+    { key: "estado", header: "UF", width: 70, accessor: (f) => f.estado ?? "" },
+    { key: "endereco", header: "Endereço", width: 220, accessor: (f) => f.endereco ?? "" },
+    {
+      key: "status", header: "Status", width: 100, accessor: (f) => f.status,
+      render: (f) => (
+        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+          f.status === "ativo" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+        }`}>
+          {f.status === "ativo" ? "Ativo" : "Inativo"}
+        </span>
+      ),
+    },
+    { key: "observacoes", header: "Observações", width: 240, accessor: (f) => f.observacoes ?? "" },
+  ];
 
   return (
     <>
@@ -352,107 +368,30 @@ export function FornecedoresContent() {
           </Dialog>
         </div>
 
-        {/* Filtros */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nome ou apelido..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-full sm:w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos</SelectItem>
-              <SelectItem value="ativo">Ativos</SelectItem>
-              <SelectItem value="inativo">Inativos</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Tabela */}
-        <div className="rounded-lg border border-border bg-card overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Mercado</TableHead>
-                <TableHead>Categoria</TableHead>
-                <TableHead>Telefone</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-16"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    Carregando...
-                  </TableCell>
-                </TableRow>
-              ) : filteredFornecedores.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    Nenhum fornecedor encontrado
-                  </TableCell>
-                </TableRow>
-              ) : (
-                visibleFornecedores.map((fornecedor) => (
-                  <TableRow key={fornecedor.id}>
-                    <TableCell>
-                      <div>
-                        <span className="font-medium">{fornecedor.nome}</span>
-                        {fornecedor.nome_alternativo && (
-                          <span className="block text-xs text-muted-foreground">{fornecedor.nome_alternativo}</span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>{fornecedor.mercado || "-"}</TableCell>
-                    <TableCell className="text-sm">{fornecedor.categoria_fornecedor || "-"}</TableCell>
-                    <TableCell>{fornecedor.telefone || "-"}</TableCell>
-                    <TableCell>
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        fornecedor.status === "ativo"
-                          ? "bg-primary/10 text-primary"
-                          : "bg-muted text-muted-foreground"
-                      }`}>
-                        {fornecedor.status === "ativo" ? "Ativo" : "Inativo"}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(fornecedor)}>
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        {isAdmin && (
-                          <Button
-                            variant="ghost" size="icon-sm"
-                            onClick={() => setItemToDelete(fornecedor)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+        <DataTableExcel
+          data={fornecedores}
+          columns={columns}
+          rowKey={(f) => f.id}
+          loading={isLoading}
+          searchPlaceholder="Buscar fornecedores..."
+          globalSearchKeys={["nome", "nome_alternativo", "cnpj", "cidade", "email", "categoria_fornecedor", "mercado"]}
+          rowActions={(fornecedor) => (
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(fornecedor)}>
+                <Pencil className="w-4 h-4" />
+              </Button>
+              {isAdmin && (
+                <Button
+                  variant="ghost" size="icon-sm"
+                  onClick={() => setItemToDelete(fornecedor)}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
               )}
-            </TableBody>
-          </Table>
-        </div>
-        {hasMore && (
-          <div className="flex justify-center mt-4">
-            <Button variant="outline" onClick={() => setVisibleCount((c) => c + 20)}>
-              Carregar mais ({filteredFornecedores.length - visibleCount} restantes)
-            </Button>
-          </div>
-        )}
+            </div>
+          )}
+        />
       </div>
 
       <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>

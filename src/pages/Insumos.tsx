@@ -2,7 +2,7 @@
 // via texto ou voz — o usuário descreve o item e a IA preenche os campos
 // automaticamente, confirmando com o usuário antes de salvar.
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { HistoricoPrecos } from "@/components/HistoricoPrecos";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -10,9 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -23,7 +20,8 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Search, Trash2, History } from "lucide-react";
+import { Plus, Pencil, Trash2, History } from "lucide-react";
+import { DataTableExcel, DataTableColumn } from "@/components/ui/data-table-excel";
 import { useInsumos, Insumo } from "@/hooks/useInsumos";
 import { useFornecedores } from "@/hooks/useFornecedores";
 import { useAuth, useIsAdmin } from "@/hooks/useAuth";
@@ -44,10 +42,7 @@ const UNIDADES_INSUMOS = [
 export function InsumosContent() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingInsumo, setEditingInsumo] = useState<Insumo | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterCategoria, setFilterCategoria] = useState<string>("todas");
   const [itemToDelete, setItemToDelete] = useState<Insumo | null>(null);
-  const [visibleCount, setVisibleCount] = useState(20);
   const [showHistorico, setShowHistorico] = useState<Insumo | null>(null);
 
   const { user } = useAuth();
@@ -150,20 +145,36 @@ export function InsumosContent() {
     },
   });
 
-  // Search: nome OR descricao_produto
-  const filteredInsumos = useMemo(() => {
-    const term = searchTerm.toLowerCase();
-    const filtered = insumos.filter((i) => {
-      const matchesSearch = i.nome.toLowerCase().includes(term) ||
-        (i.descricao_produto?.toLowerCase().includes(term) ?? false);
-      const matchesCategoria = filterCategoria === "todas" || i.categoria === filterCategoria;
-      return matchesSearch && matchesCategoria;
-    });
-    return filtered.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-  }, [insumos, searchTerm, filterCategoria]);
-
-  const visibleInsumos = filteredInsumos.slice(0, visibleCount);
-  const hasMore = visibleCount < filteredInsumos.length;
+  const columns: DataTableColumn<Insumo>[] = [
+    {
+      key: "nome", header: "Nome", width: 220,
+      accessor: (i) => i.nome,
+      render: (i) => <span className="font-medium">{i.nome}</span>,
+    },
+    { key: "categoria", header: "Categoria", width: 160, accessor: (i) => i.categoria ?? "" },
+    {
+      key: "fornecedor", header: "Fornecedor", width: 200,
+      accessor: (i) => (i.fornecedor_id ? fornecedoresMap.get(i.fornecedor_id) ?? "" : ""),
+    },
+    { key: "unidade", header: "Unidade", width: 90, accessor: (i) => i.unidade ?? "" },
+    { key: "volume_apresentacao", header: "Volume / Apresentação", width: 170, accessor: (i) => i.volume_apresentacao ?? "" },
+    {
+      key: "preco_unitario", header: "Preço (R$)", width: 110, type: "number",
+      accessor: (i) => i.preco_unitario,
+      render: (i) => i.preco_unitario != null
+        ? `R$ ${Number(i.preco_unitario).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
+        : <span className="text-muted-foreground">—</span>,
+    },
+    {
+      key: "ultima_compra", header: "Última compra", width: 130,
+      accessor: (i) => i.ultima_compra ?? "",
+      render: (i) => i.ultima_compra
+        ? new Date(i.ultima_compra).toLocaleDateString("pt-BR")
+        : <span className="text-muted-foreground">—</span>,
+    },
+    { key: "descricao_produto", header: "Descrição", width: 260, accessor: (i) => i.descricao_produto ?? "" },
+    { key: "observacoes", header: "Observações", width: 220, accessor: (i) => i.observacoes ?? "" },
+  ];
 
   return (
     <>
@@ -241,7 +252,6 @@ export function InsumosContent() {
                   </div>
                 </div>
 
-                {/* Localização do Fornecedor — somente leitura */}
                 {formData.fornecedor_id && (
                   <div className="space-y-2">
                     <Label>Localização do Fornecedor</Label>
@@ -291,99 +301,36 @@ export function InsumosContent() {
           </Dialog>
         </div>
 
-        {/* Filtros */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nome ou descrição..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <Select value={filterCategoria} onValueChange={setFilterCategoria}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Categoria" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todas">Todas as categorias</SelectItem>
-              {CATEGORIAS_INSUMOS.map((cat) => (
-                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Tabela */}
-        <div className="rounded-lg border border-border bg-card overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Categoria</TableHead>
-                <TableHead>Fornecedor</TableHead>
-                <TableHead>Unidade</TableHead>
-                <TableHead className="w-16"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                    Carregando...
-                  </TableCell>
-                </TableRow>
-              ) : filteredInsumos.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                    Nenhum insumo encontrado
-                  </TableCell>
-                </TableRow>
-              ) : (
-                visibleInsumos.map((insumo) => (
-                  <TableRow key={insumo.id}>
-                    <TableCell className="font-medium">{insumo.nome}</TableCell>
-                    <TableCell>{insumo.categoria || "-"}</TableCell>
-                    <TableCell>
-                      {insumo.fornecedor_id ? fornecedoresMap.get(insumo.fornecedor_id) || "-" : "-"}
-                    </TableCell>
-                    <TableCell>{insumo.unidade || "-"}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(insumo)}>
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost" size="icon-sm" title="Ver histórico de preços"
-                          onClick={() => setShowHistorico(showHistorico?.id === insumo.id ? null : insumo)}
-                        >
-                          <History className="w-4 h-4" />
-                        </Button>
-                        {isAdmin && (
-                          <Button
-                            variant="ghost" size="icon-sm"
-                            onClick={() => setItemToDelete(insumo)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+        <DataTableExcel
+          data={insumos}
+          columns={columns}
+          rowKey={(i) => i.id}
+          loading={isLoading}
+          searchPlaceholder="Buscar insumos..."
+          globalSearchKeys={["nome", "categoria", "fornecedor", "descricao_produto", "observacoes"]}
+          rowActions={(insumo) => (
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(insumo)}>
+                <Pencil className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost" size="icon-sm" title="Ver histórico de preços"
+                onClick={() => setShowHistorico(showHistorico?.id === insumo.id ? null : insumo)}
+              >
+                <History className="w-4 h-4" />
+              </Button>
+              {isAdmin && (
+                <Button
+                  variant="ghost" size="icon-sm"
+                  onClick={() => setItemToDelete(insumo)}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
               )}
-            </TableBody>
-          </Table>
-        </div>
-        {hasMore && (
-          <div className="flex justify-center mt-4">
-            <Button variant="outline" onClick={() => setVisibleCount((c) => c + 20)}>
-              Carregar mais ({filteredInsumos.length - visibleCount} restantes)
-            </Button>
-          </div>
-        )}
+            </div>
+          )}
+        />
       </div>
 
       {/* Histórico de preços inline */}
