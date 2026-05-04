@@ -2542,6 +2542,7 @@ export type Database = {
       }
       memorial_descritivo: {
         Row: {
+          altura_m: number | null
           categoria: string | null
           created_at: string
           dap: string | null
@@ -2551,7 +2552,6 @@ export type Database = {
           nome_popular: string
           ordem: number | null
           planta_id: string | null
-          porte: string | null
           projeto_id: string
           quantidade: number
           tipo: string
@@ -2559,6 +2559,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          altura_m?: number | null
           categoria?: string | null
           created_at?: string
           dap?: string | null
@@ -2568,7 +2569,6 @@ export type Database = {
           nome_popular?: string
           ordem?: number | null
           planta_id?: string | null
-          porte?: string | null
           projeto_id: string
           quantidade?: number
           tipo?: string
@@ -2576,6 +2576,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          altura_m?: number | null
           categoria?: string | null
           created_at?: string
           dap?: string | null
@@ -2585,7 +2586,6 @@ export type Database = {
           nome_popular?: string
           ordem?: number | null
           planta_id?: string | null
-          porte?: string | null
           projeto_id?: string
           quantidade?: number
           tipo?: string
@@ -2751,7 +2751,7 @@ export type Database = {
       }
       plantas: {
         Row: {
-          altura_cm: number | null
+          altura_m: number | null
           ativo: boolean
           categoria_id: string | null
           created_at: string
@@ -2764,7 +2764,6 @@ export type Database = {
           nome_popular: string
           nota_qualidade: number | null
           observacoes: string | null
-          porte: string | null
           preco_unitario: number | null
           ultima_compra: string | null
           unidade: string | null
@@ -2772,7 +2771,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
-          altura_cm?: number | null
+          altura_m?: number | null
           ativo?: boolean
           categoria_id?: string | null
           created_at?: string
@@ -2785,7 +2784,6 @@ export type Database = {
           nome_popular: string
           nota_qualidade?: number | null
           observacoes?: string | null
-          porte?: string | null
           preco_unitario?: number | null
           ultima_compra?: string | null
           unidade?: string | null
@@ -2793,7 +2791,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
-          altura_cm?: number | null
+          altura_m?: number | null
           ativo?: boolean
           categoria_id?: string | null
           created_at?: string
@@ -2806,7 +2804,6 @@ export type Database = {
           nome_popular?: string
           nota_qualidade?: number | null
           observacoes?: string | null
-          porte?: string | null
           preco_unitario?: number | null
           ultima_compra?: string | null
           unidade?: string | null
@@ -3233,42 +3230,39 @@ export type Database = {
       }
       recebimento_itens: {
         Row: {
-          altura_cm: number | null
+          altura_m: number | null
           created_at: string
           dap_cm: number | null
           id: string
           insumo_id: string | null
           observacao: string | null
           planta_id: string | null
-          porte: string | null
           quantidade: number
           registro_id: string
           tipo_item: string
           unidade: string | null
         }
         Insert: {
-          altura_cm?: number | null
+          altura_m?: number | null
           created_at?: string
           dap_cm?: number | null
           id?: string
           insumo_id?: string | null
           observacao?: string | null
           planta_id?: string | null
-          porte?: string | null
           quantidade: number
           registro_id: string
           tipo_item: string
           unidade?: string | null
         }
         Update: {
-          altura_cm?: number | null
+          altura_m?: number | null
           created_at?: string
           dap_cm?: number | null
           id?: string
           insumo_id?: string | null
           observacao?: string | null
           planta_id?: string | null
-          porte?: string | null
           quantidade?: number
           registro_id?: string
           tipo_item?: string
