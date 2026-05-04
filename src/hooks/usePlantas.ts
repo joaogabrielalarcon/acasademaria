@@ -8,6 +8,8 @@ export interface Planta {
   categoria_id: string | null;
   fornecedor_id: string | null;
   altura_m: number | null;
+  altura_min_m: number | null;
+  altura_max_m: number | null;
   dap_cm: number | null;
   unidade: string | null;
   embalagem: string | null;

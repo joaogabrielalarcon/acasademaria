@@ -42,7 +42,8 @@ export default function NovaPlanta() {
     nome_cientifico: "",
     categoria_id: "",
     fornecedor_id: "",
-    altura_m: "",
+    altura_min_m: "",
+    altura_max_m: "",
     dap_cm: "",
     unidade: "",
     embalagem: "",
@@ -75,7 +76,8 @@ export default function NovaPlanta() {
         nome_cientifico: plantaExistente.nome_cientifico || "",
         categoria_id: plantaExistente.categoria_id || "",
         fornecedor_id: plantaExistente.fornecedor_id || "",
-        altura_m: (plantaExistente as any).altura_m?.toString() || "",
+        altura_min_m: (plantaExistente as any).altura_min_m?.toString() ?? (plantaExistente as any).altura_m?.toString() ?? "",
+        altura_max_m: (plantaExistente as any).altura_max_m?.toString() ?? (plantaExistente as any).altura_m?.toString() ?? "",
         dap_cm: plantaExistente.dap_cm?.toString() || "",
         unidade: plantaExistente.unidade || "",
         embalagem: (plantaExistente as any).embalagem || "",
@@ -102,7 +104,13 @@ export default function NovaPlanta() {
         nome_cientifico: formData.nome_cientifico || null,
         categoria_id: formData.categoria_id || null,
         fornecedor_id: formData.fornecedor_id || null,
-        altura_m: formData.altura_m ? parseFloat(formData.altura_m) : null,
+        altura_min_m: formData.altura_min_m ? parseFloat(formData.altura_min_m) : null,
+        altura_max_m: formData.altura_max_m ? parseFloat(formData.altura_max_m) : null,
+        altura_m: formData.altura_min_m && formData.altura_max_m
+          ? (parseFloat(formData.altura_min_m) + parseFloat(formData.altura_max_m)) / 2
+          : formData.altura_min_m
+            ? parseFloat(formData.altura_min_m)
+            : null,
         dap_cm: isArvore && formData.dap_cm ? parseFloat(formData.dap_cm) : null,
         unidade: formData.unidade || null,
         embalagem: formData.embalagem || null,
@@ -233,13 +241,26 @@ export default function NovaPlanta() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="altura_m">Altura (m)</Label>
+              <Label htmlFor="altura_min_m">Altura mínima (m)</Label>
               <Input
-                id="altura_m"
+                id="altura_min_m"
                 type="number"
-                value={formData.altura_m}
-                onChange={(e) => setFormData({ ...formData, altura_m: e.target.value })}
-                placeholder="Ex: 1.50"
+                value={formData.altura_min_m}
+                onChange={(e) => setFormData({ ...formData, altura_min_m: e.target.value })}
+                placeholder="Ex: 1,50"
+                min={0}
+                step="0.01"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="altura_max_m">Altura máxima (m)</Label>
+              <Input
+                id="altura_max_m"
+                type="number"
+                value={formData.altura_max_m}
+                onChange={(e) => setFormData({ ...formData, altura_max_m: e.target.value })}
+                placeholder="Ex: 2,00 (deixe igual à mínima se não houver variação)"
                 min={0}
                 step="0.01"
               />

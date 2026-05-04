@@ -2543,6 +2543,8 @@ export type Database = {
       memorial_descritivo: {
         Row: {
           altura_m: number | null
+          altura_max_m: number | null
+          altura_min_m: number | null
           categoria: string | null
           created_at: string
           dap: string | null
@@ -2560,6 +2562,8 @@ export type Database = {
         }
         Insert: {
           altura_m?: number | null
+          altura_max_m?: number | null
+          altura_min_m?: number | null
           categoria?: string | null
           created_at?: string
           dap?: string | null
@@ -2577,6 +2581,8 @@ export type Database = {
         }
         Update: {
           altura_m?: number | null
+          altura_max_m?: number | null
+          altura_min_m?: number | null
           categoria?: string | null
           created_at?: string
           dap?: string | null
@@ -2752,6 +2758,8 @@ export type Database = {
       plantas: {
         Row: {
           altura_m: number | null
+          altura_max_m: number | null
+          altura_min_m: number | null
           ativo: boolean
           categoria_id: string | null
           created_at: string
@@ -2772,6 +2780,8 @@ export type Database = {
         }
         Insert: {
           altura_m?: number | null
+          altura_max_m?: number | null
+          altura_min_m?: number | null
           ativo?: boolean
           categoria_id?: string | null
           created_at?: string
@@ -2792,6 +2802,8 @@ export type Database = {
         }
         Update: {
           altura_m?: number | null
+          altura_max_m?: number | null
+          altura_min_m?: number | null
           ativo?: boolean
           categoria_id?: string | null
           created_at?: string
@@ -3231,6 +3243,8 @@ export type Database = {
       recebimento_itens: {
         Row: {
           altura_m: number | null
+          altura_max_m: number | null
+          altura_min_m: number | null
           created_at: string
           dap_cm: number | null
           id: string
@@ -3244,6 +3258,8 @@ export type Database = {
         }
         Insert: {
           altura_m?: number | null
+          altura_max_m?: number | null
+          altura_min_m?: number | null
           created_at?: string
           dap_cm?: number | null
           id?: string
@@ -3257,6 +3273,8 @@ export type Database = {
         }
         Update: {
           altura_m?: number | null
+          altura_max_m?: number | null
+          altura_min_m?: number | null
           created_at?: string
           dap_cm?: number | null
           id?: string

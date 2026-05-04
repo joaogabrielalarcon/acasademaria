@@ -63,11 +63,16 @@ export function PlantasContent() {
       accessor: (p) => (p.fornecedor_id ? fornecedoresMap.get(p.fornecedor_id) ?? "" : ""),
     },
     {
-      key: "altura_m", header: "Altura (m)", width: 110, type: "number",
-      accessor: (p) => p.altura_m,
-      render: (p) => p.altura_m != null
-        ? `${Number(p.altura_m).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m`
-        : <span className="text-muted-foreground">—</span>,
+      key: "altura_m", header: "Altura (m)", width: 140, type: "number",
+      accessor: (p) => p.altura_max_m ?? p.altura_min_m ?? p.altura_m,
+      render: (p) => {
+        const fmt = (v: number) => Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const min = p.altura_min_m ?? p.altura_m;
+        const max = p.altura_max_m ?? p.altura_m;
+        if (min == null && max == null) return <span className="text-muted-foreground">—</span>;
+        if (min != null && max != null && Number(min) !== Number(max)) return `${fmt(min)} – ${fmt(max)} m`;
+        return `${fmt((min ?? max) as number)} m`;
+      },
     },
     { key: "dap_cm", header: "DAP (cm)", width: 100, type: "number", accessor: (p) => p.dap_cm },
     { key: "unidade", header: "Unidade", width: 100, accessor: (p) => p.unidade ?? "" },
