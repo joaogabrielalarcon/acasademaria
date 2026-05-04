@@ -368,107 +368,30 @@ export function FornecedoresContent() {
           </Dialog>
         </div>
 
-        {/* Filtros */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nome ou apelido..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-full sm:w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos</SelectItem>
-              <SelectItem value="ativo">Ativos</SelectItem>
-              <SelectItem value="inativo">Inativos</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Tabela */}
-        <div className="rounded-lg border border-border bg-card overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Mercado</TableHead>
-                <TableHead>Categoria</TableHead>
-                <TableHead>Telefone</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-16"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    Carregando...
-                  </TableCell>
-                </TableRow>
-              ) : filteredFornecedores.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    Nenhum fornecedor encontrado
-                  </TableCell>
-                </TableRow>
-              ) : (
-                visibleFornecedores.map((fornecedor) => (
-                  <TableRow key={fornecedor.id}>
-                    <TableCell>
-                      <div>
-                        <span className="font-medium">{fornecedor.nome}</span>
-                        {fornecedor.nome_alternativo && (
-                          <span className="block text-xs text-muted-foreground">{fornecedor.nome_alternativo}</span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>{fornecedor.mercado || "-"}</TableCell>
-                    <TableCell className="text-sm">{fornecedor.categoria_fornecedor || "-"}</TableCell>
-                    <TableCell>{fornecedor.telefone || "-"}</TableCell>
-                    <TableCell>
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        fornecedor.status === "ativo"
-                          ? "bg-primary/10 text-primary"
-                          : "bg-muted text-muted-foreground"
-                      }`}>
-                        {fornecedor.status === "ativo" ? "Ativo" : "Inativo"}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(fornecedor)}>
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        {isAdmin && (
-                          <Button
-                            variant="ghost" size="icon-sm"
-                            onClick={() => setItemToDelete(fornecedor)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+        <DataTableExcel
+          data={fornecedores}
+          columns={columns}
+          rowKey={(f) => f.id}
+          loading={isLoading}
+          searchPlaceholder="Buscar fornecedores..."
+          globalSearchKeys={["nome", "nome_alternativo", "cnpj", "cidade", "email", "categoria_fornecedor", "mercado"]}
+          rowActions={(fornecedor) => (
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(fornecedor)}>
+                <Pencil className="w-4 h-4" />
+              </Button>
+              {isAdmin && (
+                <Button
+                  variant="ghost" size="icon-sm"
+                  onClick={() => setItemToDelete(fornecedor)}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
               )}
-            </TableBody>
-          </Table>
-        </div>
-        {hasMore && (
-          <div className="flex justify-center mt-4">
-            <Button variant="outline" onClick={() => setVisibleCount((c) => c + 20)}>
-              Carregar mais ({filteredFornecedores.length - visibleCount} restantes)
-            </Button>
-          </div>
-        )}
+            </div>
+          )}
+        />
       </div>
 
       <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
