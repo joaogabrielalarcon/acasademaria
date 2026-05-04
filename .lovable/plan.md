@@ -1,71 +1,65 @@
-
-
-# Planilha de Importação em Massa de Clientes
+# Mesclagem de Fornecedores Duplicados
 
 ## Objetivo
-Criar uma planilha Excel (.xlsx) com todas as colunas necessárias para cadastrar clientes no sistema, pronta para preenchimento. Depois, criar uma funcionalidade de importação que leia essa planilha e insira todos os clientes de uma vez.
+Permitir que Diretoria e Administrativo unifiquem fornecedores duplicados em um único registro, mantendo todas as plantas, insumos, históricos de preços e movimentações vinculados ao fornecedor escolhido como principal.
 
-## Estrutura da Planilha
+## Onde fica
+Nova aba **"Duplicados"** dentro de `/compras?tab=fornecedores` (ou botão "Mesclar duplicados" no canto superior do tab atual). Mantém o padrão visual existente (cream + terracota, sem novo header).
 
-A planilha terá **uma aba principal** com as seguintes colunas:
+## Fluxo do usuário
 
-| Coluna | Exemplo | Obrigatório? |
-|--------|---------|-------------|
-| Nome | João da Silva | Sim |
-| Status | ativo / inativo / prospecto | Sim (default: ativo) |
-| Telefone | (11) 99999-9999 | Não |
-| Email | joao@email.com | Não |
-| CPF/CNPJ | 000.000.000-00 | Não |
-| Inscrição Estadual | 123456789 | Não |
-| Endereço | Rua das Flores, 123 | Não |
-| Bairro | Jardim Europa | Não |
-| Cidade | São Paulo | Não |
-| Estado | SP | Não |
-| CEP | 01234-567 | Não |
-| Condomínio | Alphaville | Não |
-| Particularidades | Portão lateral | Não |
-| Notas | Cliente VIP | Não |
-| Proprietário 1 - Nome | Maria Silva | Não |
-| Proprietário 1 - Telefone | (11) 98888-8888 | Não |
-| Proprietário 1 - Email | maria@email.com | Não |
-| Proprietário 2 - Nome | | Não |
-| Proprietário 2 - Telefone | | Não |
-| Proprietário 2 - Email | | Não |
-| Funcionário Casa 1 - Nome | José | Não |
-| Funcionário Casa 1 - Função | Caseiro | Não |
-| Funcionário Casa 1 - Telefone | (11) 97777-7777 | Não |
-| Funcionário Casa 2 - Nome | | Não |
-| Funcionário Casa 2 - Função | | Não |
-| Funcionário Casa 2 - Telefone | | Não |
-| Assessor 1 - Nome | Ana Paisagista | Não |
-| Assessor 1 - Empresa | Studio Verde | Não |
-| Assessor 1 - Telefone | (11) 96666-6666 | Não |
-| Assessor 2 - Nome | | Não |
-| Assessor 2 - Empresa | | Não |
-| Assessor 2 - Telefone | | Não |
-| Data Importante 1 - Data | 15/03 | Não |
-| Data Importante 1 - Descrição | Aniversário | Não |
-| Data Importante 2 - Data | | Não |
-| Data Importante 2 - Descrição | | Não |
+1. **Detecção automática**: ao abrir, o sistema mostra grupos sugeridos de duplicados (ordenados por confiança).
+2. **Seleção manual**: caminho alternativo — botão "Mesclar manualmente" abre um buscador para escolher 2+ fornecedores arbitrários.
+3. **Tela de comparação** do grupo selecionado:
+   - Cards lado a lado de cada fornecedor com: nome, CNPJ, telefone, email, cidade, mercado, e contadores de uso (X plantas, Y insumos, Z movimentações, W cotações).
+   - Radio para escolher o **principal** (sugerido: o que tem mais vínculos).
+   - Preview do resultado: campos do principal, com vazios preenchidos pelos duplicados (regra "principal + preencher vazios").
+4. **Confirmação** ("Mesclar X fornecedores em 1") com resumo dos impactos.
+5. Toast de sucesso (3s) e a lista é recarregada.
 
-## Entregáveis
+## Regras de detecção de duplicados
+Um grupo é sugerido quando ≥2 fornecedores compartilham qualquer uma destas chaves:
+- **CNPJ idêntico** (após limpar pontuação) — confiança alta
+- **Nome normalizado idêntico** (lowercase, sem acentos, sem espaços/símbolos extras) — confiança alta
+- **Nome normalizado com similaridade ≥ 85%** (trigram) — confiança média
+- **Email ou telefone idêntico** — confiança média
 
-1. **Planilha Excel formatada** com:
-   - Headers coloridos e organizados por seção (Identificação, Endereço, Proprietários, etc.)
-   - Validação de dados no campo Status (dropdown: ativo/inativo/prospecto)
-   - Uma linha de exemplo preenchida
-   - Colunas com largura adequada
+Cada grupo mostra um badge: Alta / Média.
 
-2. **Funcionalidade de importação** na página de Clientes:
-   - Botão "Importar Clientes" que aceita arquivo .xlsx
-   - Leitura da planilha no frontend usando biblioteca xlsx (SheetJS)
-   - Preview dos dados antes de confirmar importação
-   - Inserção em lote na tabela `clientes` com os campos JSON (proprietários, funcionários, assessores, datas) montados automaticamente
-   - Feedback de sucesso/erro por linha
+## Comportamento da mesclagem
+Para cada duplicado D mesclado no principal P:
+1. Reaponta `fornecedor_id` em: `plantas`, `insumos`, `historico_precos`, `estoque_movimentacoes`, `financeiro_movimentacoes`, `orcamento_cotacoes`.
+2. Atualiza P aplicando regra "principal + preencher vazios" para: `nome`, `cnpj`, `telefone`, `whatsapp`, `email`, `endereco`, `cidade`, `estado`, `categoria_fornecedor`, `mercado`, `nome_alternativo`, `observacoes`.
+3. Registra histórico do merge em uma nova tabela `fornecedores_merge_log` (auditoria: quem, quando, qual D virou P, snapshot dos dados de D).
+4. Apaga D.
 
-## Arquivos a criar/editar
-- Gerar `/mnt/documents/template_clientes.xlsx` (template para download)
-- `src/pages/Clientes.tsx` — adicionar botão de importação
-- `src/components/ImportarClientesDialog.tsx` — modal com upload, preview e confirmação
-- `package.json` — adicionar dependência `xlsx`
+Tudo dentro de uma transação Postgres — se algo falhar, nada é alterado.
 
+## Permissão
+- Diretoria: papel `admin`
+- Administrativo: papel `administrativo`
+
+Nenhum outro papel vê o botão nem consegue executar.
+
+---
+
+## Detalhes técnicos
+
+### Migration
+1. Habilitar extensão `pg_trgm` (para similaridade de nomes).
+2. Criar tabela `fornecedores_merge_log` (id, principal_id, duplicado_id, dados_anteriores jsonb, executado_por, executado_em). RLS: leitura para admin/administrativo.
+3. Criar função `public.merge_fornecedores(p_principal_id uuid, p_duplicado_ids uuid[])` SECURITY DEFINER:
+   - Verifica papel via `has_any_role(auth.uid(), ARRAY['admin','administrativo'])`.
+   - Loop em cada duplicado: UPDATE nas 6 tabelas relacionadas, registra log, atualiza principal com COALESCE para preencher vazios, DELETE do duplicado.
+   - Tudo em uma única transação.
+4. Criar função `public.detectar_fornecedores_duplicados()` retornando `setof jsonb` com grupos sugeridos (chave do grupo, confiança, array de fornecedores com contagens de uso).
+
+### Frontend
+- Hook `useFornecedoresDuplicados()` que chama a função de detecção via `supabase.rpc`.
+- Componente `MesclagemFornecedoresDialog.tsx` com a tela de comparação.
+- Componente `DuplicadosTab.tsx` em `src/pages/Compras.tsx`.
+- Mutation `useMergeFornecedores()` chamando `rpc('merge_fornecedores', ...)` e invalidando queries de fornecedores, plantas, insumos.
+
+### Não-objetivos (fora do escopo)
+- Mesclagem de plantas duplicadas, insumos duplicados ou clientes duplicados (mesmo padrão pode ser aplicado depois).
+- Desfazer mesclagem (o log permite reconstrução manual se necessário, mas sem botão "undo").
