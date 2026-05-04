@@ -7,8 +7,7 @@ export interface Planta {
   nome_cientifico: string | null;
   categoria_id: string | null;
   fornecedor_id: string | null;
-  porte: string | null;
-  altura_cm: number | null;
+  altura_m: number | null;
   dap_cm: number | null;
   unidade: string | null;
   embalagem: string | null;

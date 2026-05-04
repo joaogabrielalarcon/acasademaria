@@ -62,8 +62,13 @@ export function PlantasContent() {
       key: "fornecedor", header: "Fornecedor", width: 180,
       accessor: (p) => (p.fornecedor_id ? fornecedoresMap.get(p.fornecedor_id) ?? "" : ""),
     },
-    { key: "porte", header: "Porte", width: 110, accessor: (p) => p.porte ?? "" },
-    { key: "altura_cm", header: "Altura (cm)", width: 110, type: "number", accessor: (p) => p.altura_cm },
+    {
+      key: "altura_m", header: "Altura (m)", width: 110, type: "number",
+      accessor: (p) => p.altura_m,
+      render: (p) => p.altura_m != null
+        ? `${Number(p.altura_m).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m`
+        : <span className="text-muted-foreground">—</span>,
+    },
     { key: "dap_cm", header: "DAP (cm)", width: 100, type: "number", accessor: (p) => p.dap_cm },
     { key: "unidade", header: "Unidade", width: 100, accessor: (p) => p.unidade ?? "" },
     { key: "embalagem", header: "Embalagem", width: 120, accessor: (p) => p.embalagem ?? "" },
