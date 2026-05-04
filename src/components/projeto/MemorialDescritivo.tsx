@@ -18,7 +18,7 @@ interface MemorialItem {
   tipo: string;
   nome_popular: string;
   nome_cientifico: string;
-  porte: string;
+  altura_m: number | null;
   quantidade: number;
   unidade: string;
   ordem: number;
@@ -158,7 +158,7 @@ function PlantasSection({
                 <TableHead>Categoria</TableHead>
                 <TableHead>Nome Popular</TableHead>
                 <TableHead>Nome Científico</TableHead>
-                <TableHead>Porte</TableHead>
+                <TableHead>Altura (m)</TableHead>
                 <TableHead className="w-24">DAP</TableHead>
                 <TableHead className="w-20">Qtd</TableHead>
                 <TableHead className="w-20">Unid.</TableHead>
@@ -170,7 +170,7 @@ function PlantasSection({
                 const selectPlanta = (planta: Planta) => {
                   onUpdate(idx, "nome_popular", planta.nome_popular);
                   onUpdate(idx, "nome_cientifico", planta.nome_cientifico || "");
-                  onUpdate(idx, "porte", planta.porte || "");
+                  onUpdate(idx, "altura_m", planta.altura_m);
                   onUpdate(idx, "unidade", planta.unidade || "un");
                   onUpdate(idx, "dap", planta.dap_cm ? String(planta.dap_cm) : "");
                   onUpdate(idx, "categoria", planta.categoria_id ? (categoriasMap[planta.categoria_id] || "") : "");
@@ -231,13 +231,15 @@ function PlantasSection({
                     <TableCell>
                       {isEditing ? (
                         <Input
-                          value={item.porte}
-                          onChange={(e) => onUpdate(idx, "porte", e.target.value)}
-                          className="h-8 text-sm"
-                          placeholder="Porte"
+                          type="number"
+                          step="0.01"
+                          value={item.altura_m ?? ""}
+                          onChange={(e) => onUpdate(idx, "altura_m", e.target.value === "" ? null : Number(e.target.value))}
+                          className="h-8 text-sm w-24"
+                          placeholder="Altura"
                         />
                       ) : (
-                        <span>{item.porte || "—"}</span>
+                        <span>{item.altura_m != null ? `${Number(item.altura_m).toFixed(2)} m` : "—"}</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -486,7 +488,7 @@ export function MemorialDescritivo({ projetoId, isAdmin }: MemorialDescritivoPro
     tipo,
     nome_popular: "",
     nome_cientifico: "",
-    porte: "",
+    altura_m: null,
     quantidade: 1,
     unidade: "un",
     ordem: 0,
@@ -550,7 +552,7 @@ export function MemorialDescritivo({ projetoId, isAdmin }: MemorialDescritivoPro
           tipo: item.tipo,
           nome_popular: item.nome_popular,
           nome_cientifico: item.nome_cientifico || "",
-          porte: item.porte || "",
+          altura_m: item.altura_m,
           quantidade: item.quantidade || 1,
           unidade: item.unidade || "un",
           ordem: idx,
