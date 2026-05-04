@@ -43,10 +43,7 @@ const CATEGORIAS_FORNECEDOR = [
 export function FornecedoresContent() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingFornecedor, setEditingFornecedor] = useState<Fornecedor | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState<string>("ativo");
   const [itemToDelete, setItemToDelete] = useState<Fornecedor | null>(null);
-  const [visibleCount, setVisibleCount] = useState(20);
   const [mesclarOpen, setMesclarOpen] = useState(false);
 
   const { user } = useAuth();
