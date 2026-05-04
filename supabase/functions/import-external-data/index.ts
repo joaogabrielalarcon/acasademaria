@@ -13,8 +13,19 @@ const BATCH_SIZE = 500;
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  const sourceUrl = Deno.env.get("TARGET_SUPABASE_DB_URL");
-  const destUrl = Deno.env.get("SUPABASE_DB_URL");
+  const fixUrl = (raw?: string) => {
+    if (!raw) return raw;
+    // Encode special chars in password: postgres://user:PASSWORD@host...
+    const m = raw.match(/^(postgres(?:ql)?:\/\/[^:]+:)([^@]+)(@.+)$/);
+    if (!m) return raw;
+    const encoded = encodeURIComponent(decodeURIComponent(m[2]).replace(/%/g, "%25"))
+      // re-encode safely: take raw password and percent-encode reserved chars
+      ;
+    const safePw = m[2].replace(/[#?&\s]/g, (c) => encodeURIComponent(c));
+    return m[1] + safePw + m[3];
+  };
+  const sourceUrl = fixUrl(Deno.env.get("TARGET_SUPABASE_DB_URL"));
+  const destUrl = fixUrl(Deno.env.get("SUPABASE_DB_URL"));
   if (!sourceUrl || !destUrl) {
     return new Response(JSON.stringify({ error: "Missing TARGET_SUPABASE_DB_URL or SUPABASE_DB_URL" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
