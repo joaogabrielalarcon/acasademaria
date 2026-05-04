@@ -49,9 +49,11 @@ export function FornecedoresContent() {
   const [filterStatus, setFilterStatus] = useState<string>("ativo");
   const [itemToDelete, setItemToDelete] = useState<Fornecedor | null>(null);
   const [visibleCount, setVisibleCount] = useState(20);
+  const [mesclarOpen, setMesclarOpen] = useState(false);
 
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
+  const podeMesclar = useIsAdminOrAdministrativo(user?.id);
 
   const { data: fornecedores = [], isLoading } = useFornecedoresTodos();
   const queryClient = useQueryClient();
