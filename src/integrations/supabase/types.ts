@@ -1848,6 +1848,42 @@ export type Database = {
         }
         Relationships: []
       }
+      fornecedores_merge_log: {
+        Row: {
+          contadores: Json
+          dados_anteriores: Json
+          duplicado_id: string
+          duplicado_nome: string
+          executado_em: string
+          executado_por: string | null
+          executado_por_nome: string | null
+          id: string
+          principal_id: string
+        }
+        Insert: {
+          contadores?: Json
+          dados_anteriores: Json
+          duplicado_id: string
+          duplicado_nome: string
+          executado_em?: string
+          executado_por?: string | null
+          executado_por_nome?: string | null
+          id?: string
+          principal_id: string
+        }
+        Update: {
+          contadores?: Json
+          dados_anteriores?: Json
+          duplicado_id?: string
+          duplicado_nome?: string
+          executado_em?: string
+          executado_por?: string | null
+          executado_por_nome?: string | null
+          id?: string
+          principal_id?: string
+        }
+        Relationships: []
+      }
       historico_precos: {
         Row: {
           criado_em: string | null
@@ -3659,6 +3695,7 @@ export type Database = {
         Args: { payload: Json }
         Returns: string
       }
+      detectar_fornecedores_duplicados: { Args: never; Returns: Json }
       get_colaborador_id: { Args: { _user_id: string }; Returns: string }
       get_user_area: { Args: { _user_id: string }; Returns: string }
       get_user_id_by_username: { Args: { _username: string }; Returns: string }
@@ -3682,6 +3719,14 @@ export type Database = {
       }
       is_colaborador_ativo: { Args: { _user_id: string }; Returns: boolean }
       is_manager_or_admin: { Args: { _user_id: string }; Returns: boolean }
+      merge_fornecedores: {
+        Args: { p_duplicado_ids: string[]; p_principal_id: string }
+        Returns: Json
+      }
+      normalize_cnpj: { Args: { _cnpj: string }; Returns: string }
+      normalize_fornecedor_nome: { Args: { _nome: string }; Returns: string }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       user_role:
