@@ -158,20 +158,41 @@ export function FornecedoresContent() {
     },
   });
 
-  // Search: nome OR nome_alternativo
-  const filteredFornecedores = useMemo(() => {
-    const term = searchTerm.toLowerCase();
-    const filtered = fornecedores.filter((f) => {
-      const matchesSearch = f.nome.toLowerCase().includes(term) ||
-        (f.nome_alternativo?.toLowerCase().includes(term) ?? false);
-      const matchesStatus = filterStatus === "todos" || f.status === filterStatus;
-      return matchesSearch && matchesStatus;
-    });
-    return filtered.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-  }, [fornecedores, searchTerm, filterStatus]);
-
-  const visibleFornecedores = filteredFornecedores.slice(0, visibleCount);
-  const hasMore = visibleCount < filteredFornecedores.length;
+  const columns: DataTableColumn<Fornecedor>[] = [
+    {
+      key: "nome", header: "Nome", width: 220,
+      accessor: (f) => f.nome,
+      render: (f) => (
+        <div>
+          <span className="font-medium">{f.nome}</span>
+          {f.nome_alternativo && (
+            <span className="block text-xs text-muted-foreground">{f.nome_alternativo}</span>
+          )}
+        </div>
+      ),
+    },
+    { key: "nome_alternativo", header: "Apelido", width: 160, accessor: (f) => f.nome_alternativo ?? "" },
+    { key: "mercado", header: "Mercado", width: 140, accessor: (f) => f.mercado ?? "" },
+    { key: "categoria_fornecedor", header: "Categoria", width: 200, accessor: (f) => f.categoria_fornecedor ?? "" },
+    { key: "cnpj", header: "CNPJ", width: 160, accessor: (f) => f.cnpj ?? "" },
+    { key: "telefone", header: "Telefone", width: 140, accessor: (f) => f.telefone ?? "" },
+    { key: "whatsapp", header: "WhatsApp", width: 140, accessor: (f) => f.whatsapp ?? "" },
+    { key: "email", header: "Email", width: 200, accessor: (f) => f.email ?? "" },
+    { key: "cidade", header: "Cidade", width: 140, accessor: (f) => f.cidade ?? "" },
+    { key: "estado", header: "UF", width: 70, accessor: (f) => f.estado ?? "" },
+    { key: "endereco", header: "Endereço", width: 220, accessor: (f) => f.endereco ?? "" },
+    {
+      key: "status", header: "Status", width: 100, accessor: (f) => f.status,
+      render: (f) => (
+        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+          f.status === "ativo" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+        }`}>
+          {f.status === "ativo" ? "Ativo" : "Inativo"}
+        </span>
+      ),
+    },
+    { key: "observacoes", header: "Observações", width: 240, accessor: (f) => f.observacoes ?? "" },
+  ];
 
   return (
     <>
