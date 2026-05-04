@@ -179,11 +179,11 @@ export default function NovoRecebimento() {
 
       if (registroError) throw registroError;
 
-      // Inserir os itens recebidos - converter altura para cm se necessário
+      // Inserir os itens recebidos - converter altura para metros se necessário
       const itensParaInserir = itens.map((item) => {
-        let alturaCm = null;
+        let alturaM: number | null = null;
         if (item.altura) {
-          alturaCm = item.alturaUnidade === "m" ? item.altura * 100 : item.altura;
+          alturaM = item.alturaUnidade === "cm" ? item.altura / 100 : item.altura;
         }
         return {
           registro_id: registro.id,
@@ -192,8 +192,7 @@ export default function NovoRecebimento() {
           insumo_id: item.insumoId || null,
           quantidade: item.quantidade,
           unidade: item.unidade,
-          porte: item.altura ? `${item.altura}${item.alturaUnidade}` : null,
-          altura_cm: alturaCm,
+          altura_m: alturaM,
           dap_cm: item.dap ? parseFloat(item.dap) : null,
           observacao: item.observacao || null,
         };
