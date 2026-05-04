@@ -104,7 +104,13 @@ export default function NovaPlanta() {
         nome_cientifico: formData.nome_cientifico || null,
         categoria_id: formData.categoria_id || null,
         fornecedor_id: formData.fornecedor_id || null,
-        altura_m: formData.altura_m ? parseFloat(formData.altura_m) : null,
+        altura_min_m: formData.altura_min_m ? parseFloat(formData.altura_min_m) : null,
+        altura_max_m: formData.altura_max_m ? parseFloat(formData.altura_max_m) : null,
+        altura_m: formData.altura_min_m && formData.altura_max_m
+          ? (parseFloat(formData.altura_min_m) + parseFloat(formData.altura_max_m)) / 2
+          : formData.altura_min_m
+            ? parseFloat(formData.altura_min_m)
+            : null,
         dap_cm: isArvore && formData.dap_cm ? parseFloat(formData.dap_cm) : null,
         unidade: formData.unidade || null,
         embalagem: formData.embalagem || null,
