@@ -471,6 +471,15 @@ export function FornecedoresContent() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {editingFornecedor && (
+        <MesclarManualDialog
+          open={mesclarOpen}
+          onOpenChange={setMesclarOpen}
+          principal={editingFornecedor}
+          onMerged={() => { setDialogOpen(false); resetForm(); }}
+        />
+      )}
     </>
   );
 }
