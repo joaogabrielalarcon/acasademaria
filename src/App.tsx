@@ -43,6 +43,8 @@ const Conciliacao = lazy(() => import("./pages/Conciliacao"));
 const AReceber = lazy(() => import("./pages/AReceber"));
 const CategoriasPlantas = lazy(() => import("./pages/CategoriasPlantas"));
 const Movimentacoes = lazy(() => import("./pages/Movimentacoes"));
+const Orcamentos = lazy(() => import("./pages/Orcamentos"));
+const NovoOrcamento = lazy(() => import("./pages/NovoOrcamento"));
 
 const queryClient = new QueryClient();
 
@@ -94,6 +96,9 @@ const App = () => (
             <Route path="/processos" element={<ProtectedRoute><ProcessosInternos /></ProtectedRoute>} />
             <Route path="/calendario" element={<ProtectedRoute><Calendario /></ProtectedRoute>} />
             <Route path="/crm" element={<ProtectedRoute><CRM /></ProtectedRoute>} />
+            <Route path="/orcamentos" element={<ProtectedRoute><Orcamentos /></ProtectedRoute>} />
+            <Route path="/orcamentos/novo" element={<ProtectedRoute><NovoOrcamento /></ProtectedRoute>} />
+            <Route path="/orcamentos/:id" element={<ProtectedRoute><NovoOrcamento /></ProtectedRoute>} />
             <Route path="/agenda" element={<ProtectedRoute><MinhaAgenda /></ProtectedRoute>} />
             <Route path="/conciliacao" element={<ProtectedRoute><Conciliacao /></ProtectedRoute>} />
             <Route path="/financeiro/a-receber" element={<ProtectedRoute><AReceber /></ProtectedRoute>} />
