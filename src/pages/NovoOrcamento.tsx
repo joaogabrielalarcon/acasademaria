@@ -695,8 +695,256 @@ export default function NovoOrcamento() {
             </Card>
           )}
 
-          {/* Etapas 2-7 (placeholders) */}
-          {etapaAtual > 1 && (
+          {/* Etapa 2 — Memorial Descritivo */}
+          {etapaAtual === 2 && (
+            <Card className="p-6 space-y-6">
+              <div>
+                <h2 className="font-display text-xl text-foreground">Memorial Descritivo</h2>
+                <p className="text-sm text-muted-foreground">
+                  Faça upload do PDF e revise os itens extraídos pela IA
+                </p>
+              </div>
+
+              {/* Upload */}
+              <div>
+                <label
+                  htmlFor="memorial-pdf-input"
+                  className={cn(
+                    "block border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
+                    pdfFile
+                      ? "border-primary/40 bg-primary/5"
+                      : "border-border hover:border-primary/50 hover:bg-muted/30",
+                  )}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const f = e.dataTransfer.files?.[0];
+                    if (f) handlePdfSelect(f);
+                  }}
+                >
+                  {!pdfFile ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <Upload className="w-10 h-10 text-muted-foreground" />
+                      <p className="text-foreground font-medium">
+                        Arraste o PDF do memorial descritivo aqui
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        ou clique para selecionar o arquivo
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center gap-3">
+                      <CheckCircle2 className="w-6 h-6 text-primary" />
+                      <FileText className="w-5 h-5 text-foreground" />
+                      <span className="font-medium text-foreground">{pdfFile.name}</span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setPdfFile(null);
+                          setPdfCarregado(false);
+                          setItensMaterial([]);
+                        }}
+                      >
+                        Trocar arquivo
+                      </Button>
+                    </div>
+                  )}
+                  <input
+                    id="memorial-pdf-input"
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    className="hidden"
+                    onChange={(e) => handlePdfSelect(e.target.files?.[0] ?? null)}
+                  />
+                </label>
+
+                {pdfFile && (
+                  <div className="mt-4 flex justify-center">
+                    <Button
+                      variant="terracota"
+                      onClick={extrairItens}
+                      disabled={processandoPdf}
+                    >
+                      {processandoPdf ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-4 h-4" />
+                      )}
+                      Extrair itens com IA
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* Loading */}
+              {processandoPdf && (
+                <div className="flex flex-col items-center justify-center gap-3 py-8 border rounded-lg bg-muted/30">
+                  <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                  <p className="text-foreground font-medium">Mafe está lendo o memorial...</p>
+                </div>
+              )}
+
+              {/* Tabela */}
+              {pdfCarregado && itensMaterial.length > 0 && (
+                <div className="space-y-3">
+                  {itensBaixaConfianca > 0 && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full bg-destructive text-destructive-foreground font-semibold">
+                        {itensBaixaConfianca}
+                      </span>
+                      <span className="text-foreground">
+                        ⚠️ {itensBaixaConfianca === 1 ? "item precisa" : "itens precisam"} de
+                        verificação — revise antes de continuar
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="border rounded-lg overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/50 text-muted-foreground">
+                        <tr>
+                          <th className="px-2 py-2 text-left w-10">#</th>
+                          <th className="px-2 py-2 text-left">Nome Popular</th>
+                          <th className="px-2 py-2 text-left">Nome Científico</th>
+                          <th className="px-2 py-2 text-left">Porte</th>
+                          <th className="px-2 py-2 text-left w-20">Qtd</th>
+                          <th className="px-2 py-2 text-left w-28">Unidade</th>
+                          <th className="px-2 py-2 text-left w-44">Categoria</th>
+                          <th className="px-2 py-2 text-center w-20">Confiança</th>
+                          <th className="px-2 py-2 text-center w-16">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {itensMaterial.map((it, idx) => (
+                          <tr
+                            key={idx}
+                            data-memorial-row
+                            className={cn(
+                              "border-t",
+                              it.confianca === "baixa" && "bg-yellow-50",
+                            )}
+                          >
+                            <td className="px-2 py-1 text-muted-foreground">{idx + 1}</td>
+                            <td className="px-2 py-1">
+                              <Input
+                                data-field="nome_popular"
+                                value={it.nome_popular}
+                                onChange={(e) =>
+                                  updateItem(idx, { nome_popular: e.target.value })
+                                }
+                                className="h-8"
+                              />
+                            </td>
+                            <td className="px-2 py-1">
+                              <Input
+                                value={it.nome_cientifico ?? ""}
+                                onChange={(e) =>
+                                  updateItem(idx, {
+                                    nome_cientifico: e.target.value || null,
+                                  })
+                                }
+                                className="h-8 italic"
+                              />
+                            </td>
+                            <td className="px-2 py-1">
+                              <Input
+                                value={it.porte}
+                                onChange={(e) => updateItem(idx, { porte: e.target.value })}
+                                className="h-8"
+                              />
+                            </td>
+                            <td className="px-2 py-1">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={it.quantidade}
+                                onChange={(e) =>
+                                  updateItem(idx, {
+                                    quantidade: parseFloat(e.target.value) || 0,
+                                  })
+                                }
+                                className="h-8"
+                              />
+                            </td>
+                            <td className="px-2 py-1">
+                              <Select
+                                value={it.unidade}
+                                onValueChange={(v) => updateItem(idx, { unidade: v })}
+                              >
+                                <SelectTrigger className="h-8">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {UNIDADES_ITEM.map((u) => (
+                                    <SelectItem key={u} value={u}>
+                                      {u}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </td>
+                            <td className="px-2 py-1">
+                              <Select
+                                value={it.categoria}
+                                onValueChange={(v) => updateItem(idx, { categoria: v })}
+                              >
+                                <SelectTrigger className="h-8">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {CATEGORIAS_ITEM.map((c) => (
+                                    <SelectItem key={c} value={c}>
+                                      {c}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </td>
+                            <td className="px-2 py-1 text-center">
+                              {it.confianca === "alta" && (
+                                <Check className="w-4 h-4 text-primary inline" />
+                              )}
+                              {it.confianca === "media" && (
+                                <Minus className="w-4 h-4 text-muted-foreground inline" />
+                              )}
+                              {it.confianca === "baixa" && (
+                                <AlertTriangle className="w-4 h-4 text-yellow-600 inline" />
+                              )}
+                            </td>
+                            <td className="px-2 py-1 text-center">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => removeItem(idx)}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <Button variant="outline" onClick={addItem}>
+                    <Plus className="w-4 h-4" />
+                    Adicionar item
+                  </Button>
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* Etapas 3-7 (placeholders) */}
+          {etapaAtual > 2 && (
             <Card className="p-6">
               <h2 className="font-display text-xl text-foreground">{ETAPAS[etapaAtual - 1]}</h2>
               <p className="text-sm text-muted-foreground mt-2">Etapa em desenvolvimento.</p>
@@ -708,7 +956,7 @@ export default function NovoOrcamento() {
             <Button
               variant="outline"
               onClick={() => setEtapaAtual((e) => Math.max(1, e - 1))}
-              disabled={etapaAtual === 1}
+              disabled={etapaAtual === 1 || processandoPdf}
             >
               <ArrowLeft className="w-4 h-4" />
               Etapa anterior
@@ -718,7 +966,7 @@ export default function NovoOrcamento() {
               <Button
                 variant="ghost"
                 onClick={() => saveMutation.mutate()}
-                disabled={saveMutation.isPending}
+                disabled={saveMutation.isPending || processandoPdf}
               >
                 {saveMutation.isPending ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -734,16 +982,25 @@ export default function NovoOrcamento() {
                     <Button
                       variant="terracota"
                       onClick={handleProxima}
-                      disabled={!camposObrigatoriosOk || etapaAtual === ETAPAS.length || saveMutation.isPending}
+                      disabled={
+                        !podeAvancar ||
+                        etapaAtual === ETAPAS.length ||
+                        saveMutation.isPending ||
+                        processandoPdf
+                      }
                     >
                       Próxima etapa
                       <ArrowRight className="w-4 h-4" />
                     </Button>
                   </span>
                 </TooltipTrigger>
-                {!camposObrigatoriosOk && (
+                {!podeAvancar && (
                   <TooltipContent>
-                    Preencha todos os campos obrigatórios para continuar
+                    {etapaAtual === 1
+                      ? "Preencha todos os campos obrigatórios para continuar"
+                      : etapaAtual === 2
+                        ? "Carregue o PDF e extraia os itens para continuar"
+                        : "Complete a etapa para continuar"}
                   </TooltipContent>
                 )}
               </Tooltip>
