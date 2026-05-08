@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { capitalizeWords } from "@/hooks/useInputMasks";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -1044,7 +1045,7 @@ export default function NovoOrcamento() {
         cliente_id: orcamento.cliente_id || "",
         local_endereco: orcamento.local_endereco || "",
         tipo_cliente: orcamento.tipo_cliente || "",
-        cidade: orcamento.cidade || "",
+        cidade: orcamento.cidade ? capitalizeWords(orcamento.cidade) : "",
         estado: orcamento.estado || "",
         area_m2: orcamento.area_m2?.toString() || "",
         perfil_markup_id: orcamento.perfil_markup_id || "",
@@ -1302,6 +1303,25 @@ export default function NovoOrcamento() {
       toast({ title: "Erro ao cadastrar", description: e?.message, variant: "destructive" });
     }
   };
+
+  const REQUIRED_LABELS: Record<string, string> = {
+    tipo_proposta_id: "Tipo de Proposta",
+    cliente_id: "Cliente",
+    local_endereco: "Local / Endereço",
+    tipo_cliente: "Tipo de cliente",
+    cidade: "Cidade",
+    estado: "Estado",
+    area_m2: "Área total (m²)",
+    perfil_markup_id: "Perfil de markup",
+  };
+
+  const camposFaltando = useMemo(
+    () =>
+      REQUIRED_FIELDS.filter(
+        (k) => String((form as any)[k] ?? "").trim() === "",
+      ).map((k) => REQUIRED_LABELS[k] || k),
+    [form],
+  );
 
   const podeAvancar = useMemo(() => {
     if (etapaAtual === 1) return camposObrigatoriosOk;
@@ -1562,7 +1582,9 @@ export default function NovoOrcamento() {
                       <Label>Cidade<Req /></Label>
                       <Input
                         value={form.cidade}
-                        onChange={(e) => setForm((c) => ({ ...c, cidade: e.target.value }))}
+                        onChange={(e) =>
+                          setForm((c) => ({ ...c, cidade: capitalizeWords(e.target.value) }))
+                        }
                       />
                     </div>
                     <div className="space-y-2">
@@ -3332,7 +3354,9 @@ export default function NovoOrcamento() {
                   <Label>Cidade</Label>
                   <Input
                     value={novoForn.cidade}
-                    onChange={(e) => setNovoForn((c) => ({ ...c, cidade: e.target.value }))}
+                    onChange={(e) =>
+                      setNovoForn((c) => ({ ...c, cidade: capitalizeWords(e.target.value) }))
+                    }
                   />
                 </div>
               </div>
@@ -3346,6 +3370,14 @@ export default function NovoOrcamento() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
+          {/* Aviso de campos obrigatórios faltando */}
+          {etapaAtual === 1 && camposFaltando.length > 0 && (
+            <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              <strong>Para avançar, preencha:</strong>{" "}
+              {camposFaltando.join(", ")}
+            </div>
+          )}
 
           {/* Navegação */}
           <div className="flex items-center justify-between gap-2">
