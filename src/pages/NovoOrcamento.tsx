@@ -130,6 +130,11 @@ export default function NovoOrcamento() {
   const [etapaAtual, setEtapaAtual] = useState(1);
   const [form, setForm] = useState({ ...initialForm });
 
+  // Etapa 2 — Memorial
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfCarregado, setPdfCarregado] = useState(false);
+  const [processandoPdf, setProcessandoPdf] = useState(false);
+  const [itensMaterial, setItensMaterial] = useState<ItemMemorial[]>([]);
   const { data: tipos = [] } = useQuery({
     queryKey: ["tipos-proposta"],
     queryFn: async () => {
