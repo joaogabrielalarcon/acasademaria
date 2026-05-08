@@ -1303,6 +1303,120 @@ export default function NovoOrcamento() {
     }
   };
 
+  // ===== QuickAdd: cadastro rápido inline para correlações =====
+  type QuickKind = "cliente" | "fornecedor_insumo" | "cargo" | "transportadora" | "perfil_markup";
+  const [quickAdd, setQuickAdd] = useState<{
+    open: boolean;
+    kind: QuickKind | null;
+    fields: Record<string, string>;
+    onCreated?: (id: string, label: string) => void;
+  }>({ open: false, kind: null, fields: {} });
+  const [quickSaving, setQuickSaving] = useState(false);
+
+  const openQuickAdd = (kind: QuickKind, onCreated?: (id: string, label: string) => void) => {
+    setQuickAdd({ open: true, kind, fields: {}, onCreated });
+  };
+  const updateQuickField = (k: string, v: string) =>
+    setQuickAdd((s) => ({ ...s, fields: { ...s.fields, [k]: v } }));
+
+  const QUICK_TITLES: Record<QuickKind, string> = {
+    cliente: "Novo cliente",
+    fornecedor_insumo: "Novo fornecedor",
+    cargo: "Novo cargo",
+    transportadora: "Nova transportadora",
+    perfil_markup: "Novo perfil de markup",
+  };
+
+  const salvarQuickAdd = async () => {
+    if (!quickAdd.kind) return;
+    const f = quickAdd.fields;
+    if (!String(f.nome || "").trim()) {
+      toast({ title: "Nome obrigatório", variant: "destructive" });
+      return;
+    }
+    setQuickSaving(true);
+    try {
+      let inserted: { id: string; label: string } | null = null;
+      if (quickAdd.kind === "cliente") {
+        const { data, error } = await (supabase as any)
+          .from("clientes")
+          .insert({ nome: f.nome.trim(), status: "ativo" })
+          .select("id, nome")
+          .single();
+        if (error) throw error;
+        inserted = { id: data.id, label: data.nome };
+        queryClient.invalidateQueries({ queryKey: ["clientes-list-ativos"] });
+      } else if (quickAdd.kind === "fornecedor_insumo") {
+        const { data, error } = await (supabase as any)
+          .from("fornecedores")
+          .insert({
+            nome: f.nome.trim(),
+            telefone: f.contato || null,
+            cidade: f.cidade ? capitalizeWords(f.cidade) : null,
+            status: "ativo",
+            categoria_fornecedor: "Fornecedor Diverso",
+          })
+          .select("id, nome")
+          .single();
+        if (error) throw error;
+        inserted = { id: data.id, label: data.nome };
+        queryClient.invalidateQueries({ queryKey: ["fornecedores-ativos-lista"] });
+      } else if (quickAdd.kind === "transportadora") {
+        const { data, error } = await (supabase as any)
+          .from("fornecedores")
+          .insert({
+            nome: f.nome.trim(),
+            telefone: f.contato || null,
+            cidade: f.cidade ? capitalizeWords(f.cidade) : null,
+            status: "ativo",
+            categoria_fornecedor: "Transportadora",
+          })
+          .select("id, nome")
+          .single();
+        if (error) throw error;
+        inserted = { id: data.id, label: data.nome };
+        queryClient.invalidateQueries({ queryKey: ["transportadoras"] });
+      } else if (quickAdd.kind === "cargo") {
+        const sal = Number(f.salario_mensal) || 0;
+        if (!sal) {
+          toast({ title: "Salário mensal obrigatório", variant: "destructive" });
+          setQuickSaving(false);
+          return;
+        }
+        const { data, error } = await (supabase as any)
+          .from("cargos_mo")
+          .insert({ nome: f.nome.trim(), salario_mensal: sal, ativo: true })
+          .select("id, nome")
+          .single();
+        if (error) throw error;
+        inserted = { id: data.id, label: data.nome };
+        queryClient.invalidateQueries({ queryKey: ["cargos-mo-ativos"] });
+      } else if (quickAdd.kind === "perfil_markup") {
+        const { data, error } = await (supabase as any)
+          .from("perfis_markup")
+          .insert({ nome: f.nome.trim(), descricao: f.descricao || null, ativo: true })
+          .select("id, nome")
+          .single();
+        if (error) throw error;
+        inserted = { id: data.id, label: data.nome };
+        queryClient.invalidateQueries({ queryKey: ["perfis-markup-ativos"] });
+      }
+      if (inserted) {
+        toast({ title: "Cadastrado com sucesso" });
+        quickAdd.onCreated?.(inserted.id, inserted.label);
+        setQuickAdd({ open: false, kind: null, fields: {} });
+      }
+    } catch (e: any) {
+      toast({
+        title: "Erro ao cadastrar",
+        description: e?.message,
+        variant: "destructive",
+      });
+    } finally {
+      setQuickSaving(false);
+    }
+  };
+
   const REQUIRED_LABELS: Record<string, string> = {
     tipo_proposta_id: "Tipo de Proposta",
     cliente_id: "Cliente",
