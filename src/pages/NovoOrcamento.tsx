@@ -1435,24 +1435,26 @@ export default function NovoOrcamento() {
     [form],
   );
 
-  const podeAvancar = useMemo(() => {
-    if (etapaAtual === 1) return camposObrigatoriosOk;
-    if (etapaAtual === 2) return pdfCarregado && itensMaterial.length > 0;
-    return etapaAtual < ETAPAS.length;
-  }, [etapaAtual, camposObrigatoriosOk, pdfCarregado, itensMaterial.length]);
+  // Navegação livre — usuário pode pular entre etapas a qualquer momento.
+  // Avisos amarelos sinalizam pendências (campos faltando, memorial vazio etc.)
+  // mas não bloqueiam a navegação, pois nem todo tipo de proposta usa todas as etapas.
+  const podeAvancar = etapaAtual < ETAPAS.length;
 
-  const handleProxima = async () => {
-    if (!podeAvancar) return;
-    if (etapaAtual === 1) {
+  const irParaEtapa = async (destino: number) => {
+    if (destino === etapaAtual) return;
+    // Se estamos saindo da etapa 1 e os campos básicos estão ok, salva rascunho.
+    if (etapaAtual === 1 && camposObrigatoriosOk) {
       try {
         await saveMutation.mutateAsync();
       } catch {
-        return;
+        // Não bloqueia navegação por falha de save.
       }
     }
-    setEtapaAtual((e) => Math.min(ETAPAS.length, e + 1));
+    setEtapaAtual(Math.max(1, Math.min(ETAPAS.length, destino)));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  const handleProxima = () => irParaEtapa(etapaAtual + 1);
 
   const copiarCodigo = async () => {
     if (!form.codigo) return;
