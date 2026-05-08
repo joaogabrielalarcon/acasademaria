@@ -1514,6 +1514,43 @@ export default function NovoOrcamento() {
     }
   };
 
+  const extrairItensTexto = async () => {
+    if (!memorialTexto.trim()) {
+      toast({ title: "Cole o texto do memorial primeiro", variant: "destructive" });
+      return;
+    }
+    setProcessandoPdf(true);
+    try {
+      const { data, error } = await (supabase.functions as any).invoke("ler-memorial-texto", {
+        body: { texto: memorialTexto },
+      });
+      if (error) throw error;
+      const arr = Array.isArray(data?.itens) ? data.itens : [];
+      const normalizados: ItemMemorial[] = arr.map((it: any) => ({
+        nome_popular: String(it?.nome_popular ?? "").trim(),
+        nome_cientifico: it?.nome_cientifico ?? null,
+        porte: String(it?.porte ?? "").trim(),
+        quantidade: Number(it?.quantidade ?? 0) || 0,
+        unidade: String(it?.unidade ?? "UNID").toUpperCase(),
+        categoria: String(it?.categoria ?? CATEGORIAS_ITEM[0]),
+        confianca:
+          ["alta", "media", "baixa"].includes(String(it?.confianca))
+            ? (it.confianca as ItemMemorial["confianca"])
+            : "media",
+      }));
+      setItensMaterial(normalizados);
+      setPdfCarregado(true);
+      toast({ title: `${normalizados.length} itens extraídos` });
+    } catch (e: any) {
+      toast({
+        title: "Erro ao interpretar texto",
+        description: e?.message || "Tente novamente",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessandoPdf(false);
+    }
+
   const updateItem = (idx: number, patch: Partial<ItemMemorial>) => {
     setItensMaterial((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
   };
