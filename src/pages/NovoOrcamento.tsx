@@ -145,6 +145,8 @@ export default function NovoOrcamento() {
   const [form, setForm] = useState({ ...initialForm });
 
   // Etapa 2 — Memorial
+  const [memorialModo, setMemorialModo] = useState<"pdf" | "texto">("pdf");
+  const [memorialTexto, setMemorialTexto] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfCarregado, setPdfCarregado] = useState(false);
   const [processandoPdf, setProcessandoPdf] = useState(false);
