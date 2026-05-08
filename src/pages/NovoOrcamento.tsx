@@ -308,6 +308,173 @@ export default function NovoOrcamento() {
     (i) => i.nome && (!i.quantidade_esperada || Number(i.quantidade_esperada) <= 0),
   );
 
+  // ============ Etapa 6 — Mão de obra, fretes, transporte, indiretos ============
+  type MoLinha = {
+    cargo_id: string;
+    cargo_nome: string;
+    qtd: string;
+    dias: string;
+    salario_diario: string;
+  };
+  type FreteLinha = {
+    transportador_id: string;
+    transportador_nome: string;
+    modo_transp: "cad" | "livre";
+    percurso: string;
+    valor_unitario: string;
+    qtd_esperada: string;
+    margem: string;
+  };
+  type TranspEquipeLinha = {
+    tipo: "MFM" | "Moto" | "Carro";
+    valor_km: string;
+    dias: string;
+    km: string;
+  };
+  const TIPOS_INDIRETO = [
+    { value: "refeicao_almoco_janta", label: "Refeição almoço+janta", padrao: 30 },
+    { value: "cafe_manha", label: "Café da manhã", padrao: 15 },
+    { value: "escritorio", label: "Custo escritório", padrao: 0 },
+    { value: "maria_fernanda", label: "Maria Fernanda", padrao: 0 },
+    { value: "administrativo", label: "Administrativo", padrao: 0 },
+    { value: "outros", label: "Outros", padrao: 0 },
+  ];
+  type CustoIndiretoLinha = {
+    tipo: string;
+    descricao: string;
+    valor_unitario: string;
+    quantidade: string;
+  };
+
+  const [moLinhas, setMoLinhas] = useState<MoLinha[]>([]);
+  const [fretes, setFretes] = useState<FreteLinha[]>([]);
+  const [transporte, setTransporte] = useState<TranspEquipeLinha[]>([
+    { tipo: "MFM", valor_km: "2.12", dias: "", km: "" },
+    { tipo: "Moto", valor_km: "0.60", dias: "", km: "" },
+    { tipo: "Carro", valor_km: "1.00", dias: "", km: "" },
+  ]);
+  const [custosIndiretos, setCustosIndiretos] = useState<CustoIndiretoLinha[]>([]);
+  const [aliquotaMes, setAliquotaMes] = useState<number>(8.09);
+  const [tipoNf, setTipoNf] = useState<"pj" | "cpf">("pj");
+
+  const { data: cargosMo = [] } = useQuery({
+    queryKey: ["cargos-mo-ativos"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("cargos_mo")
+        .select("id, nome, salario_diario")
+        .eq("ativo", true)
+        .order("nome");
+      if (error) {
+        console.warn("[cargos_mo] erro:", error);
+        return [];
+      }
+      return data || [];
+    },
+  });
+
+  const { data: transportadoras = [] } = useQuery({
+    queryKey: ["transportadoras"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("fornecedores")
+        .select("id, nome")
+        .eq("status", "ativo")
+        .eq("categoria_fornecedor", "Transportadora")
+        .order("nome");
+      if (error) {
+        console.warn("[transportadoras] erro:", error);
+        return [];
+      }
+      return data || [];
+    },
+  });
+
+  const addMoLinha = () =>
+    setMoLinhas((p) => [
+      ...p,
+      { cargo_id: "", cargo_nome: "", qtd: "1", dias: "", salario_diario: "0" },
+    ]);
+  const updateMoLinha = (idx: number, patch: Partial<MoLinha>) =>
+    setMoLinhas((p) => p.map((l, i) => (i === idx ? { ...l, ...patch } : l)));
+  const removeMoLinha = (idx: number) => setMoLinhas((p) => p.filter((_, i) => i !== idx));
+
+  const custoMoBruto = useMemo(
+    () =>
+      moLinhas.reduce(
+        (s, l) =>
+          s +
+          (Number(l.qtd) || 0) * (Number(l.dias) || 0) * (Number(l.salario_diario) || 0),
+        0,
+      ),
+    [moLinhas],
+  );
+  const valorNfMo = useMemo(() => {
+    const aliq = Number(aliquotaMes) || 0;
+    const denom = tipoNf === "pj" ? (100 - (aliq + 11)) / 100 : (100 - aliq) / 100;
+    if (denom <= 0) return 0;
+    return custoMoBruto / denom;
+  }, [custoMoBruto, aliquotaMes, tipoNf]);
+
+  const addFrete = () =>
+    setFretes((p) => [
+      ...p,
+      {
+        transportador_id: "",
+        transportador_nome: "",
+        modo_transp: "cad",
+        percurso: "",
+        valor_unitario: "",
+        qtd_esperada: "",
+        margem: "0",
+      },
+    ]);
+  const updateFrete = (idx: number, patch: Partial<FreteLinha>) =>
+    setFretes((p) => p.map((l, i) => (i === idx ? { ...l, ...patch } : l)));
+  const removeFrete = (idx: number) => setFretes((p) => p.filter((_, i) => i !== idx));
+
+  const totalFretes = useMemo(
+    () =>
+      fretes.reduce((s, f) => {
+        const qtd = Math.ceil((Number(f.qtd_esperada) || 0) * (1 + (Number(f.margem) || 0) / 100));
+        return s + qtd * (Number(f.valor_unitario) || 0);
+      }, 0),
+    [fretes],
+  );
+
+  const updateTransporte = (idx: number, patch: Partial<TranspEquipeLinha>) =>
+    setTransporte((p) => p.map((l, i) => (i === idx ? { ...l, ...patch } : l)));
+  const totalTransporte = useMemo(
+    () =>
+      transporte.reduce(
+        (s, t) => s + (Number(t.valor_km) || 0) * (Number(t.dias) || 0) * (Number(t.km) || 0),
+        0,
+      ),
+    [transporte],
+  );
+
+  const addIndireto = () =>
+    setCustosIndiretos((p) => [
+      ...p,
+      { tipo: "outros", descricao: "", valor_unitario: "0", quantidade: "1" },
+    ]);
+  const updateIndireto = (idx: number, patch: Partial<CustoIndiretoLinha>) =>
+    setCustosIndiretos((p) => p.map((l, i) => (i === idx ? { ...l, ...patch } : l)));
+  const removeIndireto = (idx: number) =>
+    setCustosIndiretos((p) => p.filter((_, i) => i !== idx));
+  const totalIndiretos = useMemo(
+    () =>
+      custosIndiretos.reduce(
+        (s, c) => s + (Number(c.valor_unitario) || 0) * (Number(c.quantidade) || 0),
+        0,
+      ),
+    [custosIndiretos],
+  );
+
+  const totalEtapa6 = valorNfMo + totalFretes + totalTransporte + totalIndiretos;
+  const fmtBRL = (n: number) =>
+    n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
   const setCotacao = (itemIdx: number, fornId: string, patch: Partial<CotacaoLinha>) => {
     setCotacoes((prev) => {
       const itemMap = { ...(prev[itemIdx] || {}) };
