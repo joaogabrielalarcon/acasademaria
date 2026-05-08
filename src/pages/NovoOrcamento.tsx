@@ -3816,8 +3816,14 @@ export default function NovoOrcamento() {
 
           {etapaAtual === 1 && camposFaltando.length > 0 && (
             <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-              <strong>Para avançar, preencha:</strong>{" "}
-              {camposFaltando.join(", ")}
+              <strong>Campos pendentes:</strong> {camposFaltando.join(", ")}
+              <span className="ml-1 text-amber-800/80">— você pode avançar e voltar depois.</span>
+            </div>
+          )}
+
+          {etapaAtual === 2 && itensMaterial.length === 0 && (
+            <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              Nenhum item de memorial cadastrado. Se a proposta não tiver memorial (ex.: desenvolvimento de projeto), você pode pular esta etapa normalmente.
             </div>
           )}
 
@@ -3825,7 +3831,7 @@ export default function NovoOrcamento() {
           <div className="flex items-center justify-between gap-2">
             <Button
               variant="outline"
-              onClick={() => setEtapaAtual((e) => Math.max(1, e - 1))}
+              onClick={() => irParaEtapa(etapaAtual - 1)}
               disabled={etapaAtual === 1 || processandoPdf}
             >
               <ArrowLeft className="w-4 h-4" />
@@ -3846,34 +3852,18 @@ export default function NovoOrcamento() {
                 Salvar rascunho
               </Button>
 
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>
-                    <Button
-                      variant="terracota"
-                      onClick={handleProxima}
-                      disabled={
-                        !podeAvancar ||
-                        etapaAtual === ETAPAS.length ||
-                        saveMutation.isPending ||
-                        processandoPdf
-                      }
-                    >
-                      Próxima etapa
-                      <ArrowRight className="w-4 h-4" />
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                {!podeAvancar && (
-                  <TooltipContent>
-                    {etapaAtual === 1
-                      ? "Preencha todos os campos obrigatórios para continuar"
-                      : etapaAtual === 2
-                        ? "Carregue o PDF e extraia os itens para continuar"
-                        : "Complete a etapa para continuar"}
-                  </TooltipContent>
-                )}
-              </Tooltip>
+              <Button
+                variant="terracota"
+                onClick={handleProxima}
+                disabled={
+                  etapaAtual === ETAPAS.length ||
+                  saveMutation.isPending ||
+                  processandoPdf
+                }
+              >
+                Próxima etapa
+                <ArrowRight className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </div>
