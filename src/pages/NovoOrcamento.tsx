@@ -114,7 +114,6 @@ const REQUIRED_FIELDS: Array<keyof typeof initialForm> = [
   "cidade",
   "estado",
   "area_m2",
-  "perfil_markup_id",
 ];
 
 const initialForm = {
@@ -1304,6 +1303,120 @@ export default function NovoOrcamento() {
     }
   };
 
+  // ===== QuickAdd: cadastro rápido inline para correlações =====
+  type QuickKind = "cliente" | "fornecedor_insumo" | "cargo" | "transportadora" | "perfil_markup";
+  const [quickAdd, setQuickAdd] = useState<{
+    open: boolean;
+    kind: QuickKind | null;
+    fields: Record<string, string>;
+    onCreated?: (id: string, label: string) => void;
+  }>({ open: false, kind: null, fields: {} });
+  const [quickSaving, setQuickSaving] = useState(false);
+
+  const openQuickAdd = (kind: QuickKind, onCreated?: (id: string, label: string) => void) => {
+    setQuickAdd({ open: true, kind, fields: {}, onCreated });
+  };
+  const updateQuickField = (k: string, v: string) =>
+    setQuickAdd((s) => ({ ...s, fields: { ...s.fields, [k]: v } }));
+
+  const QUICK_TITLES: Record<QuickKind, string> = {
+    cliente: "Novo cliente",
+    fornecedor_insumo: "Novo fornecedor",
+    cargo: "Novo cargo",
+    transportadora: "Nova transportadora",
+    perfil_markup: "Novo perfil de markup",
+  };
+
+  const salvarQuickAdd = async () => {
+    if (!quickAdd.kind) return;
+    const f = quickAdd.fields;
+    if (!String(f.nome || "").trim()) {
+      toast({ title: "Nome obrigatório", variant: "destructive" });
+      return;
+    }
+    setQuickSaving(true);
+    try {
+      let inserted: { id: string; label: string } | null = null;
+      if (quickAdd.kind === "cliente") {
+        const { data, error } = await (supabase as any)
+          .from("clientes")
+          .insert({ nome: f.nome.trim(), status: "ativo" })
+          .select("id, nome")
+          .single();
+        if (error) throw error;
+        inserted = { id: data.id, label: data.nome };
+        queryClient.invalidateQueries({ queryKey: ["clientes-list-ativos"] });
+      } else if (quickAdd.kind === "fornecedor_insumo") {
+        const { data, error } = await (supabase as any)
+          .from("fornecedores")
+          .insert({
+            nome: f.nome.trim(),
+            telefone: f.contato || null,
+            cidade: f.cidade ? capitalizeWords(f.cidade) : null,
+            status: "ativo",
+            categoria_fornecedor: "Fornecedor Diverso",
+          })
+          .select("id, nome")
+          .single();
+        if (error) throw error;
+        inserted = { id: data.id, label: data.nome };
+        queryClient.invalidateQueries({ queryKey: ["fornecedores-ativos-lista"] });
+      } else if (quickAdd.kind === "transportadora") {
+        const { data, error } = await (supabase as any)
+          .from("fornecedores")
+          .insert({
+            nome: f.nome.trim(),
+            telefone: f.contato || null,
+            cidade: f.cidade ? capitalizeWords(f.cidade) : null,
+            status: "ativo",
+            categoria_fornecedor: "Transportadora",
+          })
+          .select("id, nome")
+          .single();
+        if (error) throw error;
+        inserted = { id: data.id, label: data.nome };
+        queryClient.invalidateQueries({ queryKey: ["transportadoras"] });
+      } else if (quickAdd.kind === "cargo") {
+        const sal = Number(f.salario_mensal) || 0;
+        if (!sal) {
+          toast({ title: "Salário mensal obrigatório", variant: "destructive" });
+          setQuickSaving(false);
+          return;
+        }
+        const { data, error } = await (supabase as any)
+          .from("cargos_mo")
+          .insert({ nome: f.nome.trim(), salario_mensal: sal, ativo: true })
+          .select("id, nome")
+          .single();
+        if (error) throw error;
+        inserted = { id: data.id, label: data.nome };
+        queryClient.invalidateQueries({ queryKey: ["cargos-mo-ativos"] });
+      } else if (quickAdd.kind === "perfil_markup") {
+        const { data, error } = await (supabase as any)
+          .from("perfis_markup")
+          .insert({ nome: f.nome.trim(), descricao: f.descricao || null, ativo: true })
+          .select("id, nome")
+          .single();
+        if (error) throw error;
+        inserted = { id: data.id, label: data.nome };
+        queryClient.invalidateQueries({ queryKey: ["perfis-markup-ativos"] });
+      }
+      if (inserted) {
+        toast({ title: "Cadastrado com sucesso" });
+        quickAdd.onCreated?.(inserted.id, inserted.label);
+        setQuickAdd({ open: false, kind: null, fields: {} });
+      }
+    } catch (e: any) {
+      toast({
+        title: "Erro ao cadastrar",
+        description: e?.message,
+        variant: "destructive",
+      });
+    } finally {
+      setQuickSaving(false);
+    }
+  };
+
   const REQUIRED_LABELS: Record<string, string> = {
     tipo_proposta_id: "Tipo de Proposta",
     cliente_id: "Cliente",
@@ -1312,7 +1425,6 @@ export default function NovoOrcamento() {
     cidade: "Cidade",
     estado: "Estado",
     area_m2: "Área total (m²)",
-    perfil_markup_id: "Perfil de markup",
   };
 
   const camposFaltando = useMemo(
@@ -1528,17 +1640,32 @@ export default function NovoOrcamento() {
                   {/* Cliente */}
                   <div className="space-y-2">
                     <Label>Cliente<Req /></Label>
-                    <Select
-                      value={form.cliente_id}
-                      onValueChange={(v) => setForm((c) => ({ ...c, cliente_id: v }))}
-                    >
-                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                      <SelectContent>
-                        {(clientes as any[]).map((cl) => (
-                          <SelectItem key={cl.id} value={cl.id}>{cl.nome}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex gap-2">
+                      <Select
+                        value={form.cliente_id}
+                        onValueChange={(v) => setForm((c) => ({ ...c, cliente_id: v }))}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                        <SelectContent>
+                          {(clientes as any[]).map((cl) => (
+                            <SelectItem key={cl.id} value={cl.id}>{cl.nome}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        title="Cadastrar novo cliente"
+                        onClick={() =>
+                          openQuickAdd("cliente", (id) =>
+                            setForm((c) => ({ ...c, cliente_id: id })),
+                          )
+                        }
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
 
                   {/* Local / Endereço */}
@@ -1617,26 +1744,48 @@ export default function NovoOrcamento() {
                     />
                   </div>
 
-                  {/* Perfil de markup */}
+                  {/* Perfil de markup (opcional) */}
                   <div className="space-y-2">
-                    <Label>Perfil de markup<Req /></Label>
-                    {(perfisMarkup as any[]).length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
-                        Nenhum perfil cadastrado. Crie um em Configurações → Perfis de Markup
-                      </p>
-                    ) : (
+                    <Label>
+                      Perfil de markup{" "}
+                      <span className="text-xs text-muted-foreground font-normal">
+                        (opcional — pode definir depois)
+                      </span>
+                    </Label>
+                    <div className="flex gap-2">
                       <Select
                         value={form.perfil_markup_id}
                         onValueChange={(v) => setForm((c) => ({ ...c, perfil_markup_id: v }))}
                       >
-                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={
+                              (perfisMarkup as any[]).length === 0
+                                ? "Nenhum perfil cadastrado"
+                                : "Selecione..."
+                            }
+                          />
+                        </SelectTrigger>
                         <SelectContent>
                           {(perfisMarkup as any[]).map((p) => (
                             <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                    )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        title="Cadastrar novo perfil de markup"
+                        onClick={() =>
+                          openQuickAdd("perfil_markup", (id) =>
+                            setForm((c) => ({ ...c, perfil_markup_id: id })),
+                          )
+                        }
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
 
                   {/* Prazo validade */}
@@ -2414,21 +2563,37 @@ export default function NovoOrcamento() {
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                             <div className="space-y-1">
                               <Label className="text-xs">Fornecedor</Label>
-                              <Select
-                                value={ins.fornecedor_id}
-                                onValueChange={(v) => updateInsumoAdic(idx, { fornecedor_id: v })}
-                              >
-                                <SelectTrigger className="h-9">
-                                  <SelectValue placeholder="Selecione" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {(fornecedoresLista as any[]).map((f) => (
-                                    <SelectItem key={f.id} value={f.id}>
-                                      {f.nome}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              <div className="flex gap-1">
+                                <Select
+                                  value={ins.fornecedor_id}
+                                  onValueChange={(v) => updateInsumoAdic(idx, { fornecedor_id: v })}
+                                >
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue placeholder="Selecione" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {(fornecedoresLista as any[]).map((f) => (
+                                      <SelectItem key={f.id} value={f.id}>
+                                        {f.nome}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-9 w-9 shrink-0"
+                                  title="Cadastrar novo fornecedor"
+                                  onClick={() =>
+                                    openQuickAdd("fornecedor_insumo", (id) =>
+                                      updateInsumoAdic(idx, { fornecedor_id: id }),
+                                    )
+                                  }
+                                >
+                                  <Plus className="w-4 h-4" />
+                                </Button>
+                              </div>
                             </div>
                             <div className="space-y-1">
                               <Label className="text-xs">Quantidade esperada</Label>
@@ -2571,28 +2736,47 @@ export default function NovoOrcamento() {
                           return (
                             <tr key={idx} className="border-t">
                               <td className="p-2">
-                                <Select
-                                  value={l.cargo_id}
-                                  onValueChange={(v) => {
-                                    const c = (cargosMo as any[]).find((x) => x.id === v);
-                                    updateMoLinha(idx, {
-                                      cargo_id: v,
-                                      cargo_nome: c?.nome || "",
-                                      salario_diario: String(c?.salario_diario ?? "0"),
-                                    });
-                                  }}
-                                >
-                                  <SelectTrigger className="h-8">
-                                    <SelectValue placeholder="Selecione" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {(cargosMo as any[]).map((c) => (
-                                      <SelectItem key={c.id} value={c.id}>
-                                        {c.nome}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                <div className="flex gap-1">
+                                  <Select
+                                    value={l.cargo_id}
+                                    onValueChange={(v) => {
+                                      const c = (cargosMo as any[]).find((x) => x.id === v);
+                                      updateMoLinha(idx, {
+                                        cargo_id: v,
+                                        cargo_nome: c?.nome || "",
+                                        salario_diario: String(c?.salario_diario ?? "0"),
+                                      });
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-8">
+                                      <SelectValue placeholder="Selecione" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {(cargosMo as any[]).map((c) => (
+                                        <SelectItem key={c.id} value={c.id}>
+                                          {c.nome}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-8 w-8 shrink-0"
+                                    title="Cadastrar novo cargo"
+                                    onClick={() =>
+                                      openQuickAdd("cargo", (id, label) => {
+                                        updateMoLinha(idx, {
+                                          cargo_id: id,
+                                          cargo_nome: label,
+                                        });
+                                      })
+                                    }
+                                  >
+                                    <Plus className="w-4 h-4" />
+                                  </Button>
+                                </div>
                               </td>
                               <td className="p-2">
                                 <Input
@@ -2743,27 +2927,46 @@ export default function NovoOrcamento() {
                             <div className="space-y-1">
                               <Label className="text-xs">Transportador</Label>
                               {f.modo_transp === "cad" ? (
-                                <Select
-                                  value={f.transportador_id}
-                                  onValueChange={(v) => {
-                                    const t = (transportadoras as any[]).find((x) => x.id === v);
-                                    updateFrete(idx, {
-                                      transportador_id: v,
-                                      transportador_nome: t?.nome || "",
-                                    });
-                                  }}
-                                >
-                                  <SelectTrigger className="h-9">
-                                    <SelectValue placeholder="Selecione" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {(transportadoras as any[]).map((t) => (
-                                      <SelectItem key={t.id} value={t.id}>
-                                        {t.nome}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                <div className="flex gap-1">
+                                  <Select
+                                    value={f.transportador_id}
+                                    onValueChange={(v) => {
+                                      const t = (transportadoras as any[]).find((x) => x.id === v);
+                                      updateFrete(idx, {
+                                        transportador_id: v,
+                                        transportador_nome: t?.nome || "",
+                                      });
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-9">
+                                      <SelectValue placeholder="Selecione" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {(transportadoras as any[]).map((t) => (
+                                        <SelectItem key={t.id} value={t.id}>
+                                          {t.nome}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-9 w-9 shrink-0"
+                                    title="Cadastrar nova transportadora"
+                                    onClick={() =>
+                                      openQuickAdd("transportadora", (id, label) =>
+                                        updateFrete(idx, {
+                                          transportador_id: id,
+                                          transportador_nome: label,
+                                        }),
+                                      )
+                                    }
+                                  >
+                                    <Plus className="w-4 h-4" />
+                                  </Button>
+                                </div>
                               ) : (
                                 <Input
                                   value={f.transportador_nome}
@@ -3036,6 +3239,52 @@ export default function NovoOrcamento() {
           {/* Etapa 7 (placeholder) */}
           {etapaAtual === 7 && (
             <div className="space-y-6 pb-32">
+              {/* Perfil de Markup (opcional) */}
+              <Card className="p-4">
+                <div className="flex flex-col md:flex-row md:items-end gap-3">
+                  <div className="flex-1 space-y-1">
+                    <Label>Perfil de markup</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Selecione um perfil para aplicar markups padrão por categoria, ou edite manualmente abaixo.
+                    </p>
+                  </div>
+                  <div className="flex gap-2 md:w-80">
+                    <Select
+                      value={form.perfil_markup_id}
+                      onValueChange={(v) => setForm((c) => ({ ...c, perfil_markup_id: v }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={
+                            (perfisMarkup as any[]).length === 0
+                              ? "Nenhum perfil cadastrado"
+                              : "Selecione..."
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(perfisMarkup as any[]).map((p) => (
+                          <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      title="Cadastrar novo perfil de markup"
+                      onClick={() =>
+                        openQuickAdd("perfil_markup", (id) =>
+                          setForm((c) => ({ ...c, perfil_markup_id: id })),
+                        )
+                      }
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Coluna esquerda — Tabela por categoria */}
                 <Card className="p-4 lg:col-span-2 space-y-3">
@@ -3371,7 +3620,98 @@ export default function NovoOrcamento() {
             </DialogContent>
           </Dialog>
 
-          {/* Aviso de campos obrigatórios faltando */}
+          {/* Modal: cadastro rápido (QuickAdd) */}
+          <Dialog
+            open={quickAdd.open}
+            onOpenChange={(o) =>
+              setQuickAdd((s) => (o ? s : { open: false, kind: null, fields: {} }))
+            }
+          >
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  {quickAdd.kind ? QUICK_TITLES[quickAdd.kind] : "Cadastro rápido"}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label>Nome *</Label>
+                  <Input
+                    autoFocus
+                    value={quickAdd.fields.nome || ""}
+                    onChange={(e) => updateQuickField("nome", e.target.value)}
+                  />
+                </div>
+
+                {(quickAdd.kind === "fornecedor_insumo" ||
+                  quickAdd.kind === "transportadora") && (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label>Contato</Label>
+                      <Input
+                        value={quickAdd.fields.contato || ""}
+                        onChange={(e) => updateQuickField("contato", e.target.value)}
+                        placeholder="Telefone / WhatsApp"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Cidade</Label>
+                      <Input
+                        value={quickAdd.fields.cidade || ""}
+                        onChange={(e) =>
+                          updateQuickField("cidade", capitalizeWords(e.target.value))
+                        }
+                      />
+                    </div>
+                  </>
+                )}
+
+                {quickAdd.kind === "cargo" && (
+                  <div className="space-y-1.5">
+                    <Label>Salário mensal (R$) *</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={quickAdd.fields.salario_mensal || ""}
+                      onChange={(e) => updateQuickField("salario_mensal", e.target.value)}
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      O salário diário será calculado automaticamente (mensal ÷ 21).
+                    </p>
+                  </div>
+                )}
+
+                {quickAdd.kind === "perfil_markup" && (
+                  <div className="space-y-1.5">
+                    <Label>Descrição</Label>
+                    <Textarea
+                      rows={2}
+                      value={quickAdd.fields.descricao || ""}
+                      onChange={(e) => updateQuickField("descricao", e.target.value)}
+                    />
+                  </div>
+                )}
+
+                <p className="text-xs text-muted-foreground">
+                  Cadastro rápido — você pode completar os demais campos depois na tela específica.
+                </p>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setQuickAdd({ open: false, kind: null, fields: {} })}
+                  disabled={quickSaving}
+                >
+                  Cancelar
+                </Button>
+                <Button variant="terracota" onClick={salvarQuickAdd} disabled={quickSaving}>
+                  {quickSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Salvar
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
           {etapaAtual === 1 && camposFaltando.length > 0 && (
             <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
               <strong>Para avançar, preencha:</strong>{" "}
