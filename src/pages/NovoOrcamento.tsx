@@ -1909,11 +1909,36 @@ export default function NovoOrcamento() {
               <div>
                 <h2 className="font-display text-xl text-foreground">Memorial Descritivo</h2>
                 <p className="text-sm text-muted-foreground">
-                  Faça upload do PDF e revise os itens extraídos pela IA
+                  Envie o PDF, cole o texto do memorial, ou pule esta etapa se a proposta não tiver memorial (ex.: desenvolvimento de projeto).
                 </p>
               </div>
 
+              {/* Alternador PDF / Texto */}
+              <div className="inline-flex rounded-md border border-border p-1 bg-muted/30 w-fit">
+                <button
+                  type="button"
+                  onClick={() => setMemorialModo("pdf")}
+                  className={cn(
+                    "px-3 py-1.5 text-sm rounded transition-colors",
+                    memorialModo === "pdf" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                  )}
+                >
+                  Upload de PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMemorialModo("texto")}
+                  className={cn(
+                    "px-3 py-1.5 text-sm rounded transition-colors",
+                    memorialModo === "texto" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                  )}
+                >
+                  Colar texto
+                </button>
+              </div>
+
               {/* Upload */}
+              {memorialModo === "pdf" && (
               <div>
                 <label
                   htmlFor="memorial-pdf-input"
