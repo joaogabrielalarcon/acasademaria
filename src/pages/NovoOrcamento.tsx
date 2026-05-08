@@ -1640,17 +1640,32 @@ export default function NovoOrcamento() {
                   {/* Cliente */}
                   <div className="space-y-2">
                     <Label>Cliente<Req /></Label>
-                    <Select
-                      value={form.cliente_id}
-                      onValueChange={(v) => setForm((c) => ({ ...c, cliente_id: v }))}
-                    >
-                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                      <SelectContent>
-                        {(clientes as any[]).map((cl) => (
-                          <SelectItem key={cl.id} value={cl.id}>{cl.nome}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex gap-2">
+                      <Select
+                        value={form.cliente_id}
+                        onValueChange={(v) => setForm((c) => ({ ...c, cliente_id: v }))}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                        <SelectContent>
+                          {(clientes as any[]).map((cl) => (
+                            <SelectItem key={cl.id} value={cl.id}>{cl.nome}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        title="Cadastrar novo cliente"
+                        onClick={() =>
+                          openQuickAdd("cliente", (id) =>
+                            setForm((c) => ({ ...c, cliente_id: id })),
+                          )
+                        }
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
 
                   {/* Local / Endereço */}
