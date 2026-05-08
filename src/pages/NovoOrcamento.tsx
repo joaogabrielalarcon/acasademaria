@@ -152,6 +152,40 @@ export default function NovoOrcamento() {
   const [novoFornModalOpen, setNovoFornModalOpen] = useState(false);
   const [novoFornItemIdx, setNovoFornItemIdx] = useState<number | null>(null);
   const [novoForn, setNovoForn] = useState({ nome: "", contato: "", cidade: "" });
+
+  // Etapa 4 — Cotação
+  type CotacaoLinha = {
+    valor_unitario: string;
+    porte_ofertado: string;
+    disponivel: "sim" | "nao" | "nc";
+    status_selecao: "principal" | "backup1" | "backup2" | "descartado";
+    obs: string;
+  };
+  const [cotacoes, setCotacoes] = useState<Record<number, Record<string, CotacaoLinha>>>({});
+  const [margensSeg, setMargensSeg] = useState<Record<number, number>>({});
+  const [cardsColapsados, setCardsColapsados] = useState<Record<number, boolean>>({});
+
+  const setCotacao = (itemIdx: number, fornId: string, patch: Partial<CotacaoLinha>) => {
+    setCotacoes((prev) => {
+      const itemMap = { ...(prev[itemIdx] || {}) };
+      const atual: CotacaoLinha = itemMap[fornId] || {
+        valor_unitario: "",
+        porte_ofertado: "",
+        disponivel: "nc",
+        status_selecao: "descartado",
+        obs: "",
+      };
+      itemMap[fornId] = { ...atual, ...patch };
+      if (patch.status_selecao === "principal") {
+        Object.keys(itemMap).forEach((k) => {
+          if (k !== fornId && itemMap[k].status_selecao === "principal") {
+            itemMap[k] = { ...itemMap[k], status_selecao: "backup1" };
+          }
+        });
+      }
+      return { ...prev, [itemIdx]: itemMap };
+    });
+  };
   const { data: tipos = [] } = useQuery({
     queryKey: ["tipos-proposta"],
     queryFn: async () => {
