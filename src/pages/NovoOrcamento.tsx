@@ -30,6 +30,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   ArrowLeft,
   ArrowRight,
@@ -474,6 +477,463 @@ export default function NovoOrcamento() {
   const totalEtapa6 = valorNfMo + totalFretes + totalTransporte + totalIndiretos;
   const fmtBRL = (n: number) =>
     n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+  // ============ Etapa 7 — Resumo financeiro ============
+  const CATEGORIAS_PLANTAS = [
+    "Árvores",
+    "Arbustos e Herbáceas",
+    "Forrações",
+    "Gramado",
+    "Palmeiras",
+    "Trepadeiras",
+    "Vasos",
+  ];
+  const CATEGORIAS_OUTROS = ["Insumos", "Fretes", "Mão de Obra", "Transporte", "Custos Indiretos"];
+  const CATEGORIAS_RESUMO = [...CATEGORIAS_PLANTAS, ...CATEGORIAS_OUTROS];
+
+  const [markupsCategoria, setMarkupsCategoria] = useState<Record<string, number>>({});
+  const [markupModal, setMarkupModal] = useState<{
+    open: boolean;
+    categoria: string;
+    anterior: number;
+    novo: number;
+    motivo: string;
+  }>({ open: false, categoria: "", anterior: 0, novo: 0, motivo: "" });
+  const [versoesPendentes, setVersoesPendentes] = useState<
+    Array<{ campo_alterado: string; valor_anterior: string; valor_novo: string; motivo: string }>
+  >([]);
+
+  const [comissaoOn, setComissaoOn] = useState(false);
+  const [comissaoTipo, setComissaoTipo] = useState<"vendas" | "indicacao">("vendas");
+  const [comissaoPct, setComissaoPct] = useState<string>("0");
+  const [comissaoBeneficiario, setComissaoBeneficiario] = useState("");
+  const [comissaoAberta, setComissaoAberta] = useState(false);
+
+  const [margemNegPct, setMargemNegPct] = useState<number>(0);
+
+  const [aprovarModal, setAprovarModal] = useState<{ open: boolean; valor: string }>({
+    open: false,
+    valor: "",
+  });
+  const [savingFinal, setSavingFinal] = useState(false);
+
+  useEffect(() => {
+    if (etapaAtual !== 7) return;
+    setMarkupsCategoria((prev) => {
+      const next = { ...prev };
+      CATEGORIAS_RESUMO.forEach((c) => {
+        if (next[c] === undefined) {
+          next[c] = c === "Fretes" ? 0 : 100;
+        }
+      });
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [etapaAtual]);
+
+  const custoPorCategoria = useMemo(() => {
+    const acc: Record<string, number> = {};
+    CATEGORIAS_PLANTAS.forEach((c) => (acc[c] = 0));
+    itensMaterial.forEach((it, idx) => {
+      const cat = CATEGORIAS_PLANTAS.find(
+        (c) => c.toLowerCase() === (it.categoria || "").toLowerCase(),
+      );
+      if (!cat) return;
+      const itemCotacoes = cotacoes[idx] || {};
+      const principal = Object.values(itemCotacoes).find((l) => l.status_selecao === "principal");
+      if (!principal) return;
+      const margem = margensSeg[idx] ?? 0;
+      const qtdOrcar = Math.ceil((Number(it.quantidade) || 0) * (1 + margem / 100));
+      acc[cat] += (Number(principal.valor_unitario) || 0) * qtdOrcar;
+    });
+    return acc;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itensMaterial, cotacoes, margensSeg]);
+
+  const totalCustoPlantas = useMemo(
+    () => Object.values(custoPorCategoria).reduce((s, v) => s + v, 0),
+    [custoPorCategoria],
+  );
+
+  const totalCustoInsumos = useMemo(
+    () =>
+      insumosAdicionais.reduce((s, i) => {
+        const qtdEsp = Number(i.quantidade_esperada) || 0;
+        const margem = Number(i.margem) || 0;
+        const qtd = Math.ceil(qtdEsp * (1 + margem / 100));
+        return s + qtd * (Number(i.valor_unitario) || 0);
+      }, 0),
+    [insumosAdicionais],
+  );
+
+  const impostoProdutos = (totalCustoPlantas + totalCustoInsumos) * 0.135;
+
+  const custoLinha = (cat: string) => {
+    if (cat === "Insumos") return totalCustoInsumos;
+    if (cat === "Fretes") return totalFretes;
+    if (cat === "Mão de Obra") return valorNfMo;
+    if (cat === "Transporte") return totalTransporte;
+    if (cat === "Custos Indiretos") return totalIndiretos;
+    return custoPorCategoria[cat] || 0;
+  };
+
+  const linhasResumo = useMemo(() => {
+    return CATEGORIAS_RESUMO.map((cat) => {
+      const custo = custoLinha(cat);
+      const markup = markupsCategoria[cat] ?? 0;
+      const venda = custo * (1 + markup / 100);
+      const margemBruta = venda > 0 ? ((venda - custo) / venda) * 100 : 0;
+      return { categoria: cat, custo, markup, venda, margemBruta };
+    }).filter((l) => l.custo > 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    markupsCategoria,
+    custoPorCategoria,
+    totalCustoInsumos,
+    totalFretes,
+    valorNfMo,
+    totalTransporte,
+    totalIndiretos,
+  ]);
+
+  const totaisResumo = useMemo(() => {
+    const totalCusto = linhasResumo.reduce((s, l) => s + l.custo, 0);
+    const totalVenda = linhasResumo.reduce((s, l) => s + l.venda, 0) + impostoProdutos;
+    const margemBrutaVal = totalVenda - totalCusto;
+    const markupMedio = totalCusto > 0 ? (totalVenda / totalCusto - 1) * 100 : 0;
+    return { totalCusto, totalVenda, margemBrutaVal, markupMedio };
+  }, [linhasResumo, impostoProdutos]);
+
+  const valorComissao = comissaoOn
+    ? ((Number(comissaoPct) || 0) * totaisResumo.totalVenda) / 100
+    : 0;
+  const totalCliente = totaisResumo.totalVenda - valorComissao;
+  const descontoMaximo = totalCliente * (margemNegPct / 100);
+  const valorMinimo = totalCliente - descontoMaximo;
+  const areaM2 = Number(form.area_m2) || 0;
+  const custoPorM2 = areaM2 > 0 ? totaisResumo.totalCusto / areaM2 : 0;
+  const margemBrutaPctTotal =
+    totaisResumo.totalVenda > 0
+      ? (totaisResumo.margemBrutaVal / totaisResumo.totalVenda) * 100
+      : 0;
+
+  const abrirEdicaoMarkup = (categoria: string) => {
+    setMarkupModal({
+      open: true,
+      categoria,
+      anterior: markupsCategoria[categoria] ?? 0,
+      novo: markupsCategoria[categoria] ?? 0,
+      motivo: "",
+    });
+  };
+
+  const confirmarMarkup = () => {
+    if (!markupModal.motivo.trim()) {
+      toast({ title: "Informe o motivo da alteração", variant: "destructive" });
+      return;
+    }
+    setMarkupsCategoria((p) => ({ ...p, [markupModal.categoria]: markupModal.novo }));
+    setVersoesPendentes((p) => [
+      ...p,
+      {
+        campo_alterado: `markup_${markupModal.categoria}`,
+        valor_anterior: String(markupModal.anterior),
+        valor_novo: String(markupModal.novo),
+        motivo: markupModal.motivo,
+      },
+    ]);
+    setMarkupModal((m) => ({ ...m, open: false }));
+  };
+
+  const persistirOrcamentoCompleto = async (
+    statusFinal: string,
+    extras?: Record<string, any>,
+  ) => {
+    setSavingFinal(true);
+    try {
+      const basePayload: any = {
+        ...buildPayload(),
+        status: statusFinal,
+        aliquota_mes_pct: aliquotaMes,
+        tipo_nf: tipoNf,
+        margem_negociacao_pct: margemNegPct,
+        ...(extras || {}),
+      };
+      if (statusFinal === "aguardando_aprovacao") {
+        basePayload.data_envio = new Date().toISOString().slice(0, 10);
+      }
+
+      let orcId = id as string | undefined;
+      if (isEdit && orcId) {
+        const { error } = await (supabase as any)
+          .from("orcamentos")
+          .update(basePayload)
+          .eq("id", orcId);
+        if (error) throw error;
+      } else {
+        const { data, error } = await (supabase as any)
+          .from("orcamentos")
+          .insert(basePayload)
+          .select("id")
+          .single();
+        if (error) throw error;
+        orcId = data.id;
+      }
+      if (!orcId) throw new Error("Orçamento sem ID");
+
+      const tabelas = [
+        "orcamento_versoes",
+        "orcamento_comissoes",
+        "orcamento_custos_indiretos",
+        "orcamento_transporte",
+        "orcamento_mo",
+        "orcamento_fretes",
+        "orcamento_insumos",
+      ];
+      for (const t of tabelas) {
+        await (supabase as any).from(t).delete().eq("orcamento_id", orcId);
+      }
+      const { data: itensExistentes } = await (supabase as any)
+        .from("orcamento_itens")
+        .select("id")
+        .eq("orcamento_id", orcId);
+      const idsItensExist = (itensExistentes || []).map((r: any) => r.id);
+      if (idsItensExist.length > 0) {
+        await (supabase as any).from("orcamento_cotacoes").delete().in("item_id", idsItensExist);
+        await (supabase as any).from("orcamento_itens").delete().eq("orcamento_id", orcId);
+      }
+
+      for (let idx = 0; idx < itensMaterial.length; idx++) {
+        const it = itensMaterial[idx];
+        const margem = margensSeg[idx] ?? 0;
+        const qtdOrcar = Math.ceil((Number(it.quantidade) || 0) * (1 + margem / 100));
+        const itemCotacoes = cotacoes[idx] || {};
+        const principal = Object.entries(itemCotacoes).find(
+          ([, l]) => l.status_selecao === "principal",
+        );
+        const principalForn = principal ? principal[0] : null;
+        const principalLinha = principal ? principal[1] : null;
+        const custoUnit = principalLinha ? Number(principalLinha.valor_unitario) || 0 : 0;
+        const markupCat = markupsCategoria[it.categoria] ?? 0;
+        const venda = custoUnit * (1 + markupCat / 100);
+
+        const { data: itemRow, error: iErr } = await (supabase as any)
+          .from("orcamento_itens")
+          .insert({
+            orcamento_id: orcId,
+            categoria: it.categoria,
+            nome_popular: it.nome_popular,
+            nome_cientifico: it.nome_cientifico,
+            porte_solicitado: it.porte,
+            quantidade_esperada: it.quantidade,
+            margem_seguranca_pct: margem,
+            quantidade_orcar: qtdOrcar,
+            unidade: it.unidade,
+            fornecedor_escolhido_id: principalForn,
+            custo_unitario: custoUnit,
+            porte_fornecedor: principalLinha?.porte_ofertado || null,
+            porte_divergente: principalLinha?.porte_ofertado
+              ? (principalLinha.porte_ofertado || "").toLowerCase() !==
+                (it.porte || "").toLowerCase()
+              : false,
+            markup_pct: markupCat,
+            preco_venda_unitario: venda,
+            imposto_pct: 13.5,
+            preco_venda_final: venda * 1.135,
+            ordem: idx,
+          })
+          .select("id")
+          .single();
+        if (iErr) throw iErr;
+
+        for (const [fornId, l] of Object.entries(itemCotacoes)) {
+          await (supabase as any).from("orcamento_cotacoes").insert({
+            item_id: itemRow.id,
+            fornecedor_id: fornId,
+            valor_unitario_cotado: Number(l.valor_unitario) || 0,
+            porte_ofertado: l.porte_ofertado || null,
+            disponivel: l.disponivel,
+            status_selecao: l.status_selecao,
+            obs: l.obs || null,
+          });
+        }
+      }
+
+      let ord = 0;
+      for (const c of insumosCalc) {
+        await (supabase as any).from("orcamento_insumos").insert({
+          orcamento_id: orcId,
+          nome: c.nome,
+          quantidade_orcar: c.quantidade,
+          unidade: c.unidade,
+          valor_unitario: 0,
+          valor_total: 0,
+          calculado_automaticamente: true,
+          ordem: ord++,
+        });
+      }
+      for (const i of insumosAdicionais) {
+        if (!i.nome) continue;
+        const qtdEsp = Number(i.quantidade_esperada) || 0;
+        const margem = Number(i.margem) || 0;
+        const qtd = Math.ceil(qtdEsp * (1 + margem / 100));
+        const vt = qtd * (Number(i.valor_unitario) || 0);
+        const markupIns = markupsCategoria["Insumos"] ?? 0;
+        await (supabase as any).from("orcamento_insumos").insert({
+          orcamento_id: orcId,
+          nome: i.nome,
+          fornecedor_id: i.fornecedor_id || null,
+          quantidade_esperada: qtdEsp,
+          margem_seguranca_pct: margem,
+          quantidade_orcar: qtd,
+          unidade: i.unidade,
+          valor_unitario: Number(i.valor_unitario) || 0,
+          valor_total: vt,
+          markup_pct: markupIns,
+          preco_venda_unitario:
+            (Number(i.valor_unitario) || 0) * (1 + markupIns / 100),
+          preco_venda_total: vt * (1 + markupIns / 100),
+          calculado_automaticamente: false,
+          obs_interna: i.obs_interna || null,
+          obs_proposta: i.obs_proposta || null,
+          ordem: ord++,
+        });
+      }
+
+      for (const f of fretes) {
+        const qtd = Math.ceil((Number(f.qtd_esperada) || 0) * (1 + (Number(f.margem) || 0) / 100));
+        await (supabase as any).from("orcamento_fretes").insert({
+          orcamento_id: orcId,
+          transportador: f.transportador_nome || null,
+          descricao_percurso: f.percurso || null,
+          valor_unitario: Number(f.valor_unitario) || 0,
+          qtd_esperada: Number(f.qtd_esperada) || 0,
+          margem_seguranca_pct: Number(f.margem) || 0,
+          qtd_orcar: qtd,
+          valor_total: qtd * (Number(f.valor_unitario) || 0),
+        });
+      }
+
+      for (const m of moLinhas) {
+        const bruto =
+          (Number(m.qtd) || 0) * (Number(m.dias) || 0) * (Number(m.salario_diario) || 0);
+        const aliq = (aliquotaMes || 0) + (tipoNf === "pj" ? 11 : 0);
+        const denom = (100 - aliq) / 100;
+        const valNf = denom > 0 ? bruto / denom : 0;
+        await (supabase as any).from("orcamento_mo").insert({
+          orcamento_id: orcId,
+          cargo_id: m.cargo_id || null,
+          qtd_funcionarios: Number(m.qtd) || 0,
+          qtd_dias: Number(m.dias) || 0,
+          salario_diario: Number(m.salario_diario) || 0,
+          custo_total: bruto,
+          aliquota_mes_pct: aliquotaMes,
+          tipo_nf: tipoNf,
+          valor_com_imposto: valNf,
+        });
+      }
+
+      for (const t of transporte) {
+        const sub =
+          (Number(t.valor_km) || 0) * (Number(t.dias) || 0) * (Number(t.km) || 0);
+        await (supabase as any).from("orcamento_transporte").insert({
+          orcamento_id: orcId,
+          tipo: t.tipo,
+          valor_km: Number(t.valor_km) || 0,
+          qtd_dias: Number(t.dias) || 0,
+          qtd_km: Number(t.km) || 0,
+          subtotal: sub,
+        });
+      }
+
+      for (const c of custosIndiretos) {
+        const total = (Number(c.valor_unitario) || 0) * (Number(c.quantidade) || 0);
+        await (supabase as any).from("orcamento_custos_indiretos").insert({
+          orcamento_id: orcId,
+          tipo: c.tipo,
+          descricao: c.descricao || null,
+          valor_unitario: Number(c.valor_unitario) || 0,
+          quantidade: Number(c.quantidade) || 0,
+          total,
+        });
+      }
+
+      if (comissaoOn && Number(comissaoPct) > 0) {
+        await (supabase as any).from("orcamento_comissoes").insert({
+          orcamento_id: orcId,
+          tipo: comissaoTipo,
+          percentual: Number(comissaoPct) || 0,
+          beneficiario: comissaoBeneficiario || null,
+          valor_calculado: valorComissao,
+        });
+      }
+
+      const { data: userData } = await supabase.auth.getUser();
+      const uid = userData?.user?.id || null;
+      for (const v of versoesPendentes) {
+        await (supabase as any).from("orcamento_versoes").insert({
+          orcamento_id: orcId,
+          campo_alterado: v.campo_alterado,
+          valor_anterior: v.valor_anterior,
+          valor_novo: v.valor_novo,
+          motivo: v.motivo,
+          usuario_id: uid,
+        });
+      }
+      setVersoesPendentes([]);
+
+      queryClient.invalidateQueries({ queryKey: ["orcamentos"] });
+      if (!isEdit) navigate(`/orcamentos/${orcId}`, { replace: true });
+      return orcId;
+    } finally {
+      setSavingFinal(false);
+    }
+  };
+
+  const handleSalvarRascunho = async () => {
+    try {
+      await persistirOrcamentoCompleto("rascunho");
+      toast({ title: "Rascunho salvo com sucesso" });
+    } catch (e: any) {
+      toast({ title: "Erro ao salvar", description: e?.message, variant: "destructive" });
+    }
+  };
+
+  const handleEnviarCliente = async () => {
+    try {
+      await persistirOrcamentoCompleto("aguardando_aprovacao");
+      const validade = form.prazo_validade_dias ? Number(form.prazo_validade_dias) : 30;
+      const dataValid = new Date();
+      dataValid.setDate(dataValid.getDate() + validade);
+      toast({
+        title: "Orçamento enviado ao cliente",
+        description: `Válido até ${dataValid.toLocaleDateString("pt-BR")}`,
+      });
+    } catch (e: any) {
+      toast({ title: "Erro ao enviar", description: e?.message, variant: "destructive" });
+    }
+  };
+
+  const handleAprovar = async () => {
+    try {
+      await persistirOrcamentoCompleto("aprovado", {
+        valor_negociado_final: Number(aprovarModal.valor) || totalCliente,
+        data_aprovacao: new Date().toISOString(),
+        editavel: false,
+      });
+      if (form.cliente_id) {
+        await (supabase as any)
+          .from("crm_cards")
+          .update({ status: "Aprovado" })
+          .eq("cliente_id", form.cliente_id);
+      }
+      setAprovarModal({ open: false, valor: "" });
+      toast({ title: "Orçamento aprovado com sucesso!" });
+      setTimeout(() => navigate("/orcamentos"), 2000);
+    } catch (e: any) {
+      toast({ title: "Erro ao aprovar", description: e?.message, variant: "destructive" });
+    }
+  };
 
   const setCotacao = (itemIdx: number, fornId: string, patch: Partial<CotacaoLinha>) => {
     setCotacoes((prev) => {
@@ -2553,11 +3013,299 @@ export default function NovoOrcamento() {
 
           {/* Etapa 7 (placeholder) */}
           {etapaAtual === 7 && (
-            <Card className="p-6">
-              <h2 className="font-display text-xl text-foreground">{ETAPAS[etapaAtual - 1]}</h2>
-              <p className="text-sm text-muted-foreground mt-2">Etapa em desenvolvimento.</p>
-            </Card>
+            <div className="space-y-6 pb-32">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Coluna esquerda — Tabela por categoria */}
+                <Card className="p-4 lg:col-span-2 space-y-3">
+                  <div>
+                    <h2 className="font-display text-lg text-foreground">Resumo por categoria</h2>
+                    <p className="text-xs text-muted-foreground">
+                      Edite o markup de cada categoria. Alterações exigem motivo.
+                    </p>
+                  </div>
+                  <div className="border rounded-md overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/50 text-xs">
+                        <tr>
+                          <th className="text-left p-2">Categoria</th>
+                          <th className="text-right p-2 w-32">Custo</th>
+                          <th className="text-right p-2 w-28">Markup %</th>
+                          <th className="text-right p-2 w-32">Venda</th>
+                          <th className="text-right p-2 w-28">Margem %</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {linhasResumo.map((l) => (
+                          <tr key={l.categoria} className="border-t">
+                            <td className="p-2 font-medium">{l.categoria}</td>
+                            <td className="p-2 text-right">{fmtBRL(l.custo)}</td>
+                            <td className="p-2 text-right">
+                              <button
+                                className="text-primary underline-offset-2 hover:underline"
+                                onClick={() => abrirEdicaoMarkup(l.categoria)}
+                              >
+                                {l.markup.toFixed(1)}%
+                              </button>
+                            </td>
+                            <td className="p-2 text-right">{fmtBRL(l.venda)}</td>
+                            <td className="p-2 text-right">{l.margemBruta.toFixed(1)}%</td>
+                          </tr>
+                        ))}
+                        <tr className="border-t bg-muted/30 font-semibold">
+                          <td className="p-2">Imposto produtos (13.5%)</td>
+                          <td className="p-2 text-right">—</td>
+                          <td className="p-2 text-right">—</td>
+                          <td className="p-2 text-right">{fmtBRL(impostoProdutos)}</td>
+                          <td className="p-2 text-right">—</td>
+                        </tr>
+                        <tr className="border-t bg-primary/5 font-bold">
+                          <td className="p-2">Totais</td>
+                          <td className="p-2 text-right">{fmtBRL(totaisResumo.totalCusto)}</td>
+                          <td className="p-2 text-right">{totaisResumo.markupMedio.toFixed(1)}%</td>
+                          <td className="p-2 text-right">{fmtBRL(totaisResumo.totalVenda)}</td>
+                          <td className="p-2 text-right">{margemBrutaPctTotal.toFixed(1)}%</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+
+                {/* Coluna direita — Cards de indicadores */}
+                <div className="space-y-3">
+                  <Card className="p-4 bg-primary/10 border-primary/30">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Total ao Cliente
+                    </p>
+                    <p className="font-display text-3xl text-primary mt-1">
+                      {fmtBRL(totalCliente)}
+                    </p>
+                  </Card>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Card className="p-3">
+                      <p className="text-[11px] uppercase text-muted-foreground">Custo Total</p>
+                      <p className="font-medium">{fmtBRL(totaisResumo.totalCusto)}</p>
+                    </Card>
+                    <Card className="p-3">
+                      <p className="text-[11px] uppercase text-muted-foreground">Margem Bruta</p>
+                      <p className="font-medium">{fmtBRL(totaisResumo.margemBrutaVal)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {margemBrutaPctTotal.toFixed(1)}%
+                      </p>
+                    </Card>
+                    <Card className="p-3">
+                      <p className="text-[11px] uppercase text-muted-foreground">Impostos</p>
+                      <p className="font-medium">{fmtBRL(impostoProdutos)}</p>
+                    </Card>
+                    <Card className="p-3">
+                      <p className="text-[11px] uppercase text-muted-foreground">Custo / m²</p>
+                      <p className="font-medium">
+                        {areaM2 > 0 ? fmtBRL(custoPorM2) : "—"}
+                      </p>
+                    </Card>
+                    <Card className="p-3 col-span-2">
+                      <p className="text-[11px] uppercase text-muted-foreground">
+                        Markup médio ponderado
+                      </p>
+                      <p className="font-medium">{totaisResumo.markupMedio.toFixed(1)}%</p>
+                    </Card>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bloco Comissão */}
+              <Card className="p-4">
+                <button
+                  className="w-full flex items-center justify-between"
+                  onClick={() => setComissaoAberta((v) => !v)}
+                >
+                  <div className="flex items-center gap-3">
+                    <h3 className="font-display text-base">Comissão</h3>
+                    <Switch
+                      checked={comissaoOn}
+                      onCheckedChange={(v) => {
+                        setComissaoOn(v);
+                        if (v) setComissaoAberta(true);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                  {comissaoAberta ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </button>
+                {comissaoAberta && comissaoOn && (
+                  <div className="mt-3 grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div className="space-y-1 md:col-span-2">
+                      <Label className="text-xs">Tipo</Label>
+                      <RadioGroup
+                        value={comissaoTipo}
+                        onValueChange={(v: any) => setComissaoTipo(v)}
+                        className="flex gap-4"
+                      >
+                        <label className="flex items-center gap-2 text-sm">
+                          <RadioGroupItem value="vendas" /> Vendas
+                        </label>
+                        <label className="flex items-center gap-2 text-sm">
+                          <RadioGroupItem value="indicacao" /> Indicação
+                        </label>
+                      </RadioGroup>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Percentual (%)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={comissaoPct}
+                        onChange={(e) => setComissaoPct(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Beneficiário</Label>
+                      <Input
+                        value={comissaoBeneficiario}
+                        onChange={(e) => setComissaoBeneficiario(e.target.value)}
+                      />
+                    </div>
+                    <div className="md:col-span-4 text-sm text-muted-foreground">
+                      Valor calculado: <strong className="text-foreground">{fmtBRL(valorComissao)}</strong>
+                    </div>
+                  </div>
+                )}
+              </Card>
+
+              {/* Bloco margem de negociação */}
+              <Card className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-display text-base">Margem de negociação disponível</h3>
+                  <span className="text-sm font-medium">{margemNegPct}%</span>
+                </div>
+                <Slider
+                  value={[margemNegPct]}
+                  min={0}
+                  max={30}
+                  step={1}
+                  onValueChange={(v) => setMargemNegPct(v[0])}
+                />
+                <div className="text-sm text-muted-foreground flex flex-wrap gap-4">
+                  <span>
+                    Desconto máximo: <strong className="text-foreground">{fmtBRL(descontoMaximo)}</strong>
+                  </span>
+                  <span>
+                    Valor mínimo aceitável: <strong className="text-foreground">{fmtBRL(valorMinimo)}</strong>
+                  </span>
+                </div>
+              </Card>
+
+              {/* Botões de ação sticky */}
+              <div className="sticky bottom-0 z-10 -mx-4 px-4 py-3 bg-background/95 backdrop-blur border-t border-primary/20 flex flex-wrap gap-2 justify-end">
+                <Button variant="outline" onClick={handleSalvarRascunho} disabled={savingFinal}>
+                  {savingFinal ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  Salvar rascunho
+                </Button>
+                <Button variant="outline" onClick={handleEnviarCliente} disabled={savingFinal}>
+                  📤 Enviar ao cliente
+                </Button>
+                <Button
+                  variant="terracota"
+                  onClick={() =>
+                    setAprovarModal({ open: true, valor: totalCliente.toFixed(2) })
+                  }
+                  disabled={savingFinal}
+                >
+                  ✅ Marcar como aprovado
+                </Button>
+              </div>
+            </div>
           )}
+
+          {/* Modal: editar markup */}
+          <Dialog
+            open={markupModal.open}
+            onOpenChange={(o) => setMarkupModal((m) => ({ ...m, open: o }))}
+          >
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Alterar markup — {markupModal.categoria}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>Markup anterior</Label>
+                    <Input value={`${markupModal.anterior}%`} readOnly className="bg-muted/40" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Novo markup (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={markupModal.novo}
+                      onChange={(e) =>
+                        setMarkupModal((m) => ({ ...m, novo: Number(e.target.value) || 0 }))
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Motivo da alteração *</Label>
+                  <Textarea
+                    value={markupModal.motivo}
+                    onChange={(e) => setMarkupModal((m) => ({ ...m, motivo: e.target.value }))}
+                    rows={3}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setMarkupModal((m) => ({ ...m, open: false }))}
+                >
+                  Cancelar
+                </Button>
+                <Button variant="terracota" onClick={confirmarMarkup}>
+                  Salvar alteração
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Modal: aprovar */}
+          <Dialog
+            open={aprovarModal.open}
+            onOpenChange={(o) => setAprovarModal((m) => ({ ...m, open: o }))}
+          >
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Aprovar orçamento</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label>Valor negociado final (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={aprovarModal.valor}
+                    onChange={(e) =>
+                      setAprovarModal((m) => ({ ...m, valor: e.target.value }))
+                    }
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Tem certeza? Esta ação não pode ser desfeita.
+                </p>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setAprovarModal({ open: false, valor: "" })}
+                  disabled={savingFinal}
+                >
+                  Cancelar
+                </Button>
+                <Button variant="terracota" onClick={handleAprovar} disabled={savingFinal}>
+                  {savingFinal && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Confirmar aprovação
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           {/* Modal: novo fornecedor */}
           <Dialog open={novoFornModalOpen} onOpenChange={setNovoFornModalOpen}>
