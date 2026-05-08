@@ -135,6 +135,14 @@ export default function NovoOrcamento() {
   const [pdfCarregado, setPdfCarregado] = useState(false);
   const [processandoPdf, setProcessandoPdf] = useState(false);
   const [itensMaterial, setItensMaterial] = useState<ItemMemorial[]>([]);
+
+  // Etapa 3 — Fornecedores
+  const [fornecedoresSelecionados, setFornecedoresSelecionados] = useState<
+    Record<number, string[]>
+  >({});
+  const [novoFornModalOpen, setNovoFornModalOpen] = useState(false);
+  const [novoFornItemIdx, setNovoFornItemIdx] = useState<number | null>(null);
+  const [novoForn, setNovoForn] = useState({ nome: "", contato: "", cidade: "" });
   const { data: tipos = [] } = useQuery({
     queryKey: ["tipos-proposta"],
     queryFn: async () => {
