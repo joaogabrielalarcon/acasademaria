@@ -2736,28 +2736,47 @@ export default function NovoOrcamento() {
                           return (
                             <tr key={idx} className="border-t">
                               <td className="p-2">
-                                <Select
-                                  value={l.cargo_id}
-                                  onValueChange={(v) => {
-                                    const c = (cargosMo as any[]).find((x) => x.id === v);
-                                    updateMoLinha(idx, {
-                                      cargo_id: v,
-                                      cargo_nome: c?.nome || "",
-                                      salario_diario: String(c?.salario_diario ?? "0"),
-                                    });
-                                  }}
-                                >
-                                  <SelectTrigger className="h-8">
-                                    <SelectValue placeholder="Selecione" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {(cargosMo as any[]).map((c) => (
-                                      <SelectItem key={c.id} value={c.id}>
-                                        {c.nome}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                <div className="flex gap-1">
+                                  <Select
+                                    value={l.cargo_id}
+                                    onValueChange={(v) => {
+                                      const c = (cargosMo as any[]).find((x) => x.id === v);
+                                      updateMoLinha(idx, {
+                                        cargo_id: v,
+                                        cargo_nome: c?.nome || "",
+                                        salario_diario: String(c?.salario_diario ?? "0"),
+                                      });
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-8">
+                                      <SelectValue placeholder="Selecione" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {(cargosMo as any[]).map((c) => (
+                                        <SelectItem key={c.id} value={c.id}>
+                                          {c.nome}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-8 w-8 shrink-0"
+                                    title="Cadastrar novo cargo"
+                                    onClick={() =>
+                                      openQuickAdd("cargo", (id, label) => {
+                                        updateMoLinha(idx, {
+                                          cargo_id: id,
+                                          cargo_nome: label,
+                                        });
+                                      })
+                                    }
+                                  >
+                                    <Plus className="w-4 h-4" />
+                                  </Button>
+                                </div>
                               </td>
                               <td className="p-2">
                                 <Input
