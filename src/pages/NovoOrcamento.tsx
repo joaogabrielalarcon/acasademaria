@@ -46,6 +46,8 @@ import {
   Minus,
   FileText,
   UserPlus,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -152,6 +154,40 @@ export default function NovoOrcamento() {
   const [novoFornModalOpen, setNovoFornModalOpen] = useState(false);
   const [novoFornItemIdx, setNovoFornItemIdx] = useState<number | null>(null);
   const [novoForn, setNovoForn] = useState({ nome: "", contato: "", cidade: "" });
+
+  // Etapa 4 — Cotação
+  type CotacaoLinha = {
+    valor_unitario: string;
+    porte_ofertado: string;
+    disponivel: "sim" | "nao" | "nc";
+    status_selecao: "principal" | "backup1" | "backup2" | "descartado";
+    obs: string;
+  };
+  const [cotacoes, setCotacoes] = useState<Record<number, Record<string, CotacaoLinha>>>({});
+  const [margensSeg, setMargensSeg] = useState<Record<number, number>>({});
+  const [cardsColapsados, setCardsColapsados] = useState<Record<number, boolean>>({});
+
+  const setCotacao = (itemIdx: number, fornId: string, patch: Partial<CotacaoLinha>) => {
+    setCotacoes((prev) => {
+      const itemMap = { ...(prev[itemIdx] || {}) };
+      const atual: CotacaoLinha = itemMap[fornId] || {
+        valor_unitario: "",
+        porte_ofertado: "",
+        disponivel: "nc",
+        status_selecao: "descartado",
+        obs: "",
+      };
+      itemMap[fornId] = { ...atual, ...patch };
+      if (patch.status_selecao === "principal") {
+        Object.keys(itemMap).forEach((k) => {
+          if (k !== fornId && itemMap[k].status_selecao === "principal") {
+            itemMap[k] = { ...itemMap[k], status_selecao: "backup1" };
+          }
+        });
+      }
+      return { ...prev, [itemIdx]: itemMap };
+    });
+  };
   const { data: tipos = [] } = useQuery({
     queryKey: ["tipos-proposta"],
     queryFn: async () => {
@@ -404,6 +440,36 @@ export default function NovoOrcamento() {
     });
     return { semForn, risco, ok };
   }, [itensMaterial, fornecedoresSelecionados, historicoPorItem]);
+
+  const resumoCotacoes = useMemo(() => {
+    let semCot = 0;
+    let porteDiv = 0;
+    let completos = 0;
+    itensMaterial.forEach((it, idx) => {
+      const sel = fornecedoresSelecionados[idx] || [];
+      const linhas = cotacoes[idx] || {};
+      const preenchidos = sel.filter(
+        (fid) => linhas[fid] && Number(linhas[fid].valor_unitario) > 0,
+      );
+      if (preenchidos.length === 0) semCot++;
+      const algumDivergente = sel.some(
+        (fid) =>
+          linhas[fid]?.porte_ofertado &&
+          it.porte &&
+          linhas[fid].porte_ofertado.trim().toLowerCase() !==
+            it.porte.trim().toLowerCase(),
+      );
+      if (algumDivergente) porteDiv++;
+      const temPrincipal = sel.some((fid) => linhas[fid]?.status_selecao === "principal");
+      if (preenchidos.length > 0 && temPrincipal) completos++;
+    });
+    return { semCot, porteDiv, completos };
+  }, [itensMaterial, fornecedoresSelecionados, cotacoes]);
+
+  const nomeFornecedor = (item: ItemMemorial, fornId: string) => {
+    const row = fornecedoresDoItem(item).find((r: any) => r.fornecedor_id === fornId);
+    return row?.fornecedores?.nome || "Fornecedor";
+  };
 
   const toggleFornecedor = (itemIdx: number, fornId: string) => {
     setFornecedoresSelecionados((prev) => {
@@ -1210,8 +1276,243 @@ export default function NovoOrcamento() {
             </div>
           )}
 
-          {/* Etapas 4-7 (placeholders) */}
-          {etapaAtual > 3 && (
+          {etapaAtual === 4 && (
+            <div className="space-y-4">
+              <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border rounded-lg p-3 flex flex-wrap gap-3 text-sm">
+                <span className="text-destructive font-medium">
+                  {resumoCotacoes.semCot} sem cotação
+                </span>
+                <span className="text-muted-foreground">|</span>
+                <span className="text-yellow-700 font-medium">
+                  {resumoCotacoes.porteDiv} com porte divergente
+                </span>
+                <span className="text-muted-foreground">|</span>
+                <span className="text-primary font-medium">
+                  {resumoCotacoes.completos} completos
+                </span>
+              </div>
+
+              {itensMaterial.length === 0 && (
+                <Card className="p-6">
+                  <p className="text-sm text-muted-foreground">
+                    Nenhum item no memorial. Volte à Etapa 2 para adicionar itens.
+                  </p>
+                </Card>
+              )}
+
+              {itensMaterial.map((item, idx) => {
+                const sel = fornecedoresSelecionados[idx] || [];
+                const linhas = cotacoes[idx] || {};
+                const margem = margensSeg[idx] ?? 0;
+                const qtdEsperada = Number(item.quantidade) || 0;
+                const qtdOrcar = Math.ceil(qtdEsperada * (1 + margem / 100));
+                const colapsado = !!cardsColapsados[idx];
+                const principalId = sel.find((fid) => linhas[fid]?.status_selecao === "principal");
+                const principalLinha = principalId ? linhas[principalId] : undefined;
+
+                return (
+                  <Card key={idx} className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <p className="font-semibold text-foreground">
+                          {item.nome_popular || "(sem nome)"}
+                          {item.nome_cientifico && (
+                            <span className="ml-2 italic font-normal text-muted-foreground">
+                              {item.nome_cientifico}
+                            </span>
+                          )}
+                        </p>
+                        <div className="flex flex-wrap gap-2 mt-1.5 items-center text-xs">
+                          {item.porte && (
+                            <span className="px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
+                              Porte: {item.porte}
+                            </span>
+                          )}
+                          <span className="text-muted-foreground">
+                            Qtd a orçar: <strong className="text-foreground">{qtdOrcar}</strong> {item.unidade}
+                          </span>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() =>
+                          setCardsColapsados((p) => ({ ...p, [idx]: !p[idx] }))
+                        }
+                      >
+                        {colapsado ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                      </Button>
+                    </div>
+
+                    {!colapsado && (
+                      <>
+                        {sel.length === 0 ? (
+                          <p className="text-sm text-muted-foreground italic">
+                            Nenhum fornecedor selecionado na Etapa 3.
+                          </p>
+                        ) : (
+                          <div className="space-y-2">
+                            {sel.map((fid) => {
+                              const linha: CotacaoLinha = linhas[fid] || {
+                                valor_unitario: "",
+                                porte_ofertado: "",
+                                disponivel: "nc",
+                                status_selecao: "descartado",
+                                obs: "",
+                              };
+                              const porteDivergente =
+                                linha.porte_ofertado &&
+                                item.porte &&
+                                linha.porte_ofertado.trim().toLowerCase() !==
+                                  item.porte.trim().toLowerCase();
+                              return (
+                                <div key={fid} className="border rounded-md p-3 space-y-2">
+                                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                                    <p className="font-semibold text-sm text-foreground">
+                                      {nomeFornecedor(item, fid)}
+                                    </p>
+                                    <div className="flex gap-1">
+                                      {(["principal", "backup1", "backup2", "descartado"] as const).map((st) => {
+                                        const labels: Record<string, string> = {
+                                          principal: "● Principal",
+                                          backup1: "Backup 1",
+                                          backup2: "Backup 2",
+                                          descartado: "Descartado",
+                                        };
+                                        const isSel = linha.status_selecao === st;
+                                        return (
+                                          <button
+                                            key={st}
+                                            type="button"
+                                            onClick={() => setCotacao(idx, fid, { status_selecao: st })}
+                                            className={cn(
+                                              "px-2 py-1 text-xs rounded-md border transition-colors",
+                                              isSel
+                                                ? st === "principal"
+                                                  ? "bg-primary text-primary-foreground border-primary"
+                                                  : "bg-muted border-foreground/20"
+                                                : "hover:bg-muted/50",
+                                            )}
+                                          >
+                                            {labels[st]}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+
+                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                                    <div className="space-y-1">
+                                      <Label className="text-xs">Valor unitário (R$) *</Label>
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={linha.valor_unitario}
+                                        onChange={(e) =>
+                                          setCotacao(idx, fid, { valor_unitario: e.target.value })
+                                        }
+                                      />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <Label className="text-xs">Porte ofertado</Label>
+                                      <Input
+                                        value={linha.porte_ofertado}
+                                        onChange={(e) =>
+                                          setCotacao(idx, fid, { porte_ofertado: e.target.value })
+                                        }
+                                      />
+                                      {porteDivergente && (
+                                        <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] bg-yellow-100 text-yellow-800">
+                                          ⚠️ Porte divergente
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="space-y-1">
+                                      <Label className="text-xs">Disponibilidade</Label>
+                                      <div className="flex gap-1">
+                                        {(["sim", "nao", "nc"] as const).map((d) => {
+                                          const labels: Record<string, string> = {
+                                            sim: "✓ Sim",
+                                            nao: "✗ Não",
+                                            nc: "? N/C",
+                                          };
+                                          const isSel = linha.disponivel === d;
+                                          return (
+                                            <button
+                                              key={d}
+                                              type="button"
+                                              onClick={() => setCotacao(idx, fid, { disponivel: d })}
+                                              className={cn(
+                                                "px-2 py-1 text-xs rounded-md border flex-1",
+                                                isSel ? "bg-muted border-foreground/30" : "hover:bg-muted/50",
+                                              )}
+                                            >
+                                              {labels[d]}
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="space-y-1">
+                                    <Label className="text-xs">Observação</Label>
+                                    <Input
+                                      value={linha.obs}
+                                      onChange={(e) => setCotacao(idx, fid, { obs: e.target.value })}
+                                      placeholder="Opcional"
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        <div className="flex flex-wrap items-end gap-3 pt-2 border-t">
+                          <div className="space-y-1">
+                            <Label className="text-xs">Margem de segurança (%)</Label>
+                            <Input
+                              type="number"
+                              step="1"
+                              min="0"
+                              className="w-28"
+                              value={margem}
+                              onChange={(e) =>
+                                setMargensSeg((p) => ({ ...p, [idx]: Number(e.target.value) || 0 }))
+                              }
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground pb-2">
+                            Quantidade esperada: <strong>{qtdEsperada}</strong> | Quantidade a orçar:{" "}
+                            <strong>{qtdOrcar}</strong>
+                          </p>
+                        </div>
+                      </>
+                    )}
+
+                    <div className="flex justify-end pt-1">
+                      {!principalId ? (
+                        <span className="px-2 py-1 rounded-md text-xs font-medium bg-destructive/15 text-destructive">
+                          Selecione o fornecedor principal
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          Principal: <strong className="text-foreground">{nomeFornecedor(item, principalId)}</strong>
+                          {principalLinha?.valor_unitario &&
+                            ` — R$ ${Number(principalLinha.valor_unitario).toFixed(2)}`}
+                        </span>
+                      )}
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Etapas 5-7 (placeholders) */}
+          {etapaAtual > 4 && (
             <Card className="p-6">
               <h2 className="font-display text-xl text-foreground">{ETAPAS[etapaAtual - 1]}</h2>
               <p className="text-sm text-muted-foreground mt-2">Etapa em desenvolvimento.</p>
