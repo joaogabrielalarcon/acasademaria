@@ -1045,7 +1045,7 @@ export default function NovoOrcamento() {
         cliente_id: orcamento.cliente_id || "",
         local_endereco: orcamento.local_endereco || "",
         tipo_cliente: orcamento.tipo_cliente || "",
-        cidade: orcamento.cidade || "",
+        cidade: orcamento.cidade ? capitalizeWords(orcamento.cidade) : "",
         estado: orcamento.estado || "",
         area_m2: orcamento.area_m2?.toString() || "",
         perfil_markup_id: orcamento.perfil_markup_id || "",
