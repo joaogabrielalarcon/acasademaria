@@ -3620,7 +3620,98 @@ export default function NovoOrcamento() {
             </DialogContent>
           </Dialog>
 
-          {/* Aviso de campos obrigatórios faltando */}
+          {/* Modal: cadastro rápido (QuickAdd) */}
+          <Dialog
+            open={quickAdd.open}
+            onOpenChange={(o) =>
+              setQuickAdd((s) => (o ? s : { open: false, kind: null, fields: {} }))
+            }
+          >
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  {quickAdd.kind ? QUICK_TITLES[quickAdd.kind] : "Cadastro rápido"}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label>Nome *</Label>
+                  <Input
+                    autoFocus
+                    value={quickAdd.fields.nome || ""}
+                    onChange={(e) => updateQuickField("nome", e.target.value)}
+                  />
+                </div>
+
+                {(quickAdd.kind === "fornecedor_insumo" ||
+                  quickAdd.kind === "transportadora") && (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label>Contato</Label>
+                      <Input
+                        value={quickAdd.fields.contato || ""}
+                        onChange={(e) => updateQuickField("contato", e.target.value)}
+                        placeholder="Telefone / WhatsApp"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Cidade</Label>
+                      <Input
+                        value={quickAdd.fields.cidade || ""}
+                        onChange={(e) =>
+                          updateQuickField("cidade", capitalizeWords(e.target.value))
+                        }
+                      />
+                    </div>
+                  </>
+                )}
+
+                {quickAdd.kind === "cargo" && (
+                  <div className="space-y-1.5">
+                    <Label>Salário mensal (R$) *</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={quickAdd.fields.salario_mensal || ""}
+                      onChange={(e) => updateQuickField("salario_mensal", e.target.value)}
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      O salário diário será calculado automaticamente (mensal ÷ 21).
+                    </p>
+                  </div>
+                )}
+
+                {quickAdd.kind === "perfil_markup" && (
+                  <div className="space-y-1.5">
+                    <Label>Descrição</Label>
+                    <Textarea
+                      rows={2}
+                      value={quickAdd.fields.descricao || ""}
+                      onChange={(e) => updateQuickField("descricao", e.target.value)}
+                    />
+                  </div>
+                )}
+
+                <p className="text-xs text-muted-foreground">
+                  Cadastro rápido — você pode completar os demais campos depois na tela específica.
+                </p>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setQuickAdd({ open: false, kind: null, fields: {} })}
+                  disabled={quickSaving}
+                >
+                  Cancelar
+                </Button>
+                <Button variant="terracota" onClick={salvarQuickAdd} disabled={quickSaving}>
+                  {quickSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Salvar
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
           {etapaAtual === 1 && camposFaltando.length > 0 && (
             <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
               <strong>Para avançar, preencha:</strong>{" "}
