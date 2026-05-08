@@ -23,6 +23,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
   ArrowLeft,
   ArrowRight,
   Loader2,
@@ -37,6 +45,7 @@ import {
   CheckCircle2,
   Minus,
   FileText,
+  UserPlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -135,6 +144,14 @@ export default function NovoOrcamento() {
   const [pdfCarregado, setPdfCarregado] = useState(false);
   const [processandoPdf, setProcessandoPdf] = useState(false);
   const [itensMaterial, setItensMaterial] = useState<ItemMemorial[]>([]);
+
+  // Etapa 3 — Fornecedores
+  const [fornecedoresSelecionados, setFornecedoresSelecionados] = useState<
+    Record<number, string[]>
+  >({});
+  const [novoFornModalOpen, setNovoFornModalOpen] = useState(false);
+  const [novoFornItemIdx, setNovoFornItemIdx] = useState<number | null>(null);
+  const [novoForn, setNovoForn] = useState({ nome: "", contato: "", cidade: "" });
   const { data: tipos = [] } = useQuery({
     queryKey: ["tipos-proposta"],
     queryFn: async () => {
@@ -315,6 +332,142 @@ export default function NovoOrcamento() {
     () => itensMaterial.filter((i) => i.confianca === "baixa").length,
     [itensMaterial],
   );
+
+  // === ETAPA 3 — Histórico de fornecedores por item ===
+  const nomesItens = useMemo(
+    () => Array.from(new Set(itensMaterial.map((i) => i.nome_popular.trim()).filter(Boolean))),
+    [itensMaterial],
+  );
+
+  const { data: historicoPorItem = {}, refetch: refetchHistorico } = useQuery({
+    queryKey: ["historico-fornecedores-orc", nomesItens],
+    enabled: etapaAtual === 3 && nomesItens.length > 0,
+    queryFn: async () => {
+      // 1) Encontrar plantas pelo nome popular
+      const { data: plantas, error: pErr } = await (supabase as any)
+        .from("plantas")
+        .select("id, nome_popular")
+        .in("nome_popular", nomesItens);
+      if (pErr) throw pErr;
+
+      const plantaIdToNome = new Map<string, string>();
+      const nomeToPlantaId = new Map<string, string>();
+      (plantas || []).forEach((p: any) => {
+        plantaIdToNome.set(p.id, p.nome_popular);
+        nomeToPlantaId.set((p.nome_popular || "").toLowerCase(), p.id);
+      });
+
+      const plantaIds = Array.from(plantaIdToNome.keys());
+      if (plantaIds.length === 0) return {} as Record<string, any[]>;
+
+      // 2) Buscar histórico de preços (item_tipo = 'planta')
+      const { data: hist, error: hErr } = await (supabase as any)
+        .from("historico_precos")
+        .select(
+          "item_id, preco, data_orcamento, fornecedor_id, fornecedores(id, nome, mercado, cidade)",
+        )
+        .eq("item_tipo", "planta")
+        .in("item_id", plantaIds)
+        .order("data_orcamento", { ascending: false });
+      if (hErr) throw hErr;
+
+      // Agrupa por nome popular (lowercase) -> último preço por fornecedor
+      const map: Record<string, any[]> = {};
+      for (const row of hist || []) {
+        const nome = plantaIdToNome.get(row.item_id);
+        if (!nome) continue;
+        const key = nome.toLowerCase();
+        if (!map[key]) map[key] = [];
+        // Mantém só a entrada mais recente por fornecedor_id (lista já vem ordenada desc)
+        if (!map[key].some((r) => r.fornecedor_id === row.fornecedor_id)) {
+          map[key].push(row);
+        }
+      }
+      return map;
+    },
+  });
+
+  const fornecedoresDoItem = (item: ItemMemorial) =>
+    (historicoPorItem as Record<string, any[]>)[item.nome_popular.trim().toLowerCase()] || [];
+
+  const resumoFornecedores = useMemo(() => {
+    let semForn = 0;
+    let risco = 0;
+    let ok = 0;
+    itensMaterial.forEach((it, idx) => {
+      const sel = fornecedoresSelecionados[idx]?.length || 0;
+      const disp = fornecedoresDoItem(it).length;
+      const total = Math.max(sel, disp);
+      if (total === 0) semForn++;
+      else if (total === 1) risco++;
+      else if (total >= 3 || sel >= 2) ok++;
+    });
+    return { semForn, risco, ok };
+  }, [itensMaterial, fornecedoresSelecionados, historicoPorItem]);
+
+  const toggleFornecedor = (itemIdx: number, fornId: string) => {
+    setFornecedoresSelecionados((prev) => {
+      const atuais = prev[itemIdx] || [];
+      const novo = atuais.includes(fornId)
+        ? atuais.filter((id) => id !== fornId)
+        : [...atuais, fornId];
+      return { ...prev, [itemIdx]: novo };
+    });
+  };
+
+  const abrirNovoFornecedor = (itemIdx: number) => {
+    setNovoFornItemIdx(itemIdx);
+    setNovoForn({ nome: "", contato: "", cidade: "" });
+    setNovoFornModalOpen(true);
+  };
+
+  const salvarNovoFornecedor = async () => {
+    if (!novoForn.nome.trim()) {
+      toast({ title: "Nome obrigatório", variant: "destructive" });
+      return;
+    }
+    try {
+      const { data, error } = await (supabase as any)
+        .from("fornecedores")
+        .insert({
+          nome: novoForn.nome.trim(),
+          telefone: novoForn.contato || null,
+          cidade: novoForn.cidade || null,
+          status: "ativo",
+          categoria_fornecedor: "Fornecedor Diverso",
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+
+      // Inserir entrada placeholder no estado local para aparecer na lista
+      const item = novoFornItemIdx !== null ? itensMaterial[novoFornItemIdx] : null;
+      if (item) {
+        const key = item.nome_popular.trim().toLowerCase();
+        const map = { ...(historicoPorItem as Record<string, any[]>) };
+        map[key] = [
+          ...(map[key] || []),
+          {
+            fornecedor_id: data.id,
+            preco: null,
+            data_orcamento: null,
+            fornecedores: { id: data.id, nome: novoForn.nome.trim(), mercado: null, cidade: novoForn.cidade || null },
+          },
+        ];
+        queryClient.setQueryData(["historico-fornecedores-orc", nomesItens], map);
+        // Marcar como selecionado
+        setFornecedoresSelecionados((prev) => ({
+          ...prev,
+          [novoFornItemIdx!]: [...(prev[novoFornItemIdx!] || []), data.id],
+        }));
+      }
+      toast({ title: "Fornecedor cadastrado" });
+      setNovoFornModalOpen(false);
+      refetchHistorico();
+    } catch (e: any) {
+      toast({ title: "Erro ao cadastrar", description: e?.message, variant: "destructive" });
+    }
+  };
 
   const podeAvancar = useMemo(() => {
     if (etapaAtual === 1) return camposObrigatoriosOk;
@@ -943,13 +1096,167 @@ export default function NovoOrcamento() {
             </Card>
           )}
 
-          {/* Etapas 3-7 (placeholders) */}
-          {etapaAtual > 2 && (
+          {/* Etapa 3 — Seleção de Fornecedores */}
+          {etapaAtual === 3 && (
+            <div className="space-y-4">
+              <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border rounded-lg p-3 flex flex-wrap gap-3 text-sm">
+                <span className="text-destructive font-medium">
+                  {resumoFornecedores.semForn} sem fornecedor
+                </span>
+                <span className="text-muted-foreground">|</span>
+                <span className="text-orange-600 font-medium">
+                  {resumoFornecedores.risco} com risco alto
+                </span>
+                <span className="text-muted-foreground">|</span>
+                <span className="text-primary font-medium">
+                  {resumoFornecedores.ok} OK
+                </span>
+              </div>
+
+              {itensMaterial.length === 0 && (
+                <Card className="p-6">
+                  <p className="text-sm text-muted-foreground">
+                    Nenhum item no memorial. Volte à Etapa 2 para adicionar itens.
+                  </p>
+                </Card>
+              )}
+
+              {itensMaterial.map((item, idx) => {
+                const fornsDisp = fornecedoresDoItem(item);
+                const selecionados = fornecedoresSelecionados[idx] || [];
+                const total = Math.max(selecionados.length, fornsDisp.length);
+                let badge = { cls: "bg-primary/15 text-primary", label: "OK" };
+                if (total === 0) badge = { cls: "bg-destructive/15 text-destructive", label: "⚠️ Sem fornecedor" };
+                else if (total === 1) badge = { cls: "bg-orange-100 text-orange-700", label: "⚠️ Risco alto" };
+                else if (total === 2) badge = { cls: "bg-yellow-100 text-yellow-700", label: "Atenção" };
+
+                return (
+                  <Card key={idx} className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div>
+                        <p className="font-semibold text-foreground">
+                          {item.nome_popular || "(sem nome)"}
+                          {item.nome_cientifico && (
+                            <span className="ml-2 italic font-normal text-muted-foreground">
+                              {item.nome_cientifico}
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {item.porte && <>Porte: {item.porte} · </>}
+                          {item.quantidade} {item.unidade}
+                        </p>
+                      </div>
+                      <span className={cn("px-2 py-1 rounded-md text-xs font-medium", badge.cls)}>
+                        {badge.label}
+                      </span>
+                    </div>
+
+                    {fornsDisp.length === 0 ? (
+                      <p className="text-sm text-muted-foreground italic">
+                        Nenhum fornecedor cadastrado para este item.
+                      </p>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {fornsDisp.map((row: any) => {
+                          const f = row.fornecedores || {};
+                          const checked = selecionados.includes(row.fornecedor_id);
+                          return (
+                            <label
+                              key={row.fornecedor_id}
+                              className={cn(
+                                "flex items-start gap-3 p-2 border rounded-md cursor-pointer transition-colors",
+                                checked ? "border-primary bg-primary/5" : "hover:bg-muted/30",
+                              )}
+                            >
+                              <Checkbox
+                                checked={checked}
+                                onCheckedChange={() => toggleFornecedor(idx, row.fornecedor_id)}
+                              />
+                              <div className="flex-1 text-sm">
+                                <p className="font-medium text-foreground">
+                                  {f.nome || "Fornecedor"}
+                                </p>
+                                {(f.mercado || f.cidade) && (
+                                  <p className="text-xs text-muted-foreground">
+                                    {[f.mercado, f.cidade].filter(Boolean).join(" · ")}
+                                  </p>
+                                )}
+                                {row.preco != null && (
+                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                    Último preço: R$ {Number(row.preco).toFixed(2)}
+                                    {row.data_orcamento &&
+                                      ` em ${new Date(row.data_orcamento).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" })}`}
+                                  </p>
+                                )}
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => abrirNovoFornecedor(idx)}
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      Adicionar fornecedor não cadastrado
+                    </Button>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Etapas 4-7 (placeholders) */}
+          {etapaAtual > 3 && (
             <Card className="p-6">
               <h2 className="font-display text-xl text-foreground">{ETAPAS[etapaAtual - 1]}</h2>
               <p className="text-sm text-muted-foreground mt-2">Etapa em desenvolvimento.</p>
             </Card>
           )}
+
+          {/* Modal: novo fornecedor */}
+          <Dialog open={novoFornModalOpen} onOpenChange={setNovoFornModalOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Novo fornecedor</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label>Nome *</Label>
+                  <Input
+                    value={novoForn.nome}
+                    onChange={(e) => setNovoForn((c) => ({ ...c, nome: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Contato</Label>
+                  <Input
+                    value={novoForn.contato}
+                    onChange={(e) => setNovoForn((c) => ({ ...c, contato: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Cidade</Label>
+                  <Input
+                    value={novoForn.cidade}
+                    onChange={(e) => setNovoForn((c) => ({ ...c, cidade: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setNovoFornModalOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button variant="terracota" onClick={salvarNovoFornecedor}>
+                  Salvar
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           {/* Navegação */}
           <div className="flex items-center justify-between gap-2">
