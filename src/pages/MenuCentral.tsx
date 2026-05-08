@@ -213,31 +213,37 @@ export default function MenuCentral() {
           </div>
         </div>
 
-        {/* Menu Grid — full width */}
-        <div>
-          <h2 className="text-base font-medium text-muted-foreground mb-4">Módulos</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
-            {visibleItems.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                className={cn(
-                  "flex flex-col items-center gap-4 p-6 rounded-xl",
-                  "bg-card border border-border",
-                  "hover:bg-secondary hover:shadow-md hover:scale-[1.02]",
-                  "transition-all duration-200 text-center group"
-                )}
-              >
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                  <item.icon className="w-8 h-8 text-foreground" />
-                </div>
-                <div>
-                  <p className="font-semibold text-base text-foreground">{item.title}</p>
-                  <p className="text-sm text-muted-foreground mt-1 hidden sm:block">{item.description}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
+        {/* Menu Grid — sections matching sidebar groups */}
+        <div className="space-y-8">
+          {visibleSections.map((section) => (
+            <div key={section.title}>
+              <h2 className="text-base font-medium text-muted-foreground mb-4">{section.title}</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
+                {section.items.map((item) => (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    className={cn(
+                      "flex flex-col items-center gap-4 p-6 rounded-xl",
+                      "bg-card border border-border",
+                      "hover:bg-secondary hover:shadow-md hover:scale-[1.02]",
+                      "transition-all duration-200 text-center group"
+                    )}
+                  >
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                      <item.icon className="w-8 h-8 text-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-base text-foreground">{item.title}</p>
+                      {item.description && (
+                        <p className="text-sm text-muted-foreground mt-1 hidden sm:block">{item.description}</p>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </AppLayout>
