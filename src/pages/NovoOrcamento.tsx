@@ -23,6 +23,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
   ArrowLeft,
   ArrowRight,
   Loader2,
@@ -37,6 +45,7 @@ import {
   CheckCircle2,
   Minus,
   FileText,
+  UserPlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
