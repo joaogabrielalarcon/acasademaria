@@ -333,6 +333,142 @@ export default function NovoOrcamento() {
     [itensMaterial],
   );
 
+  // === ETAPA 3 — Histórico de fornecedores por item ===
+  const nomesItens = useMemo(
+    () => Array.from(new Set(itensMaterial.map((i) => i.nome_popular.trim()).filter(Boolean))),
+    [itensMaterial],
+  );
+
+  const { data: historicoPorItem = {}, refetch: refetchHistorico } = useQuery({
+    queryKey: ["historico-fornecedores-orc", nomesItens],
+    enabled: etapaAtual === 3 && nomesItens.length > 0,
+    queryFn: async () => {
+      // 1) Encontrar plantas pelo nome popular
+      const { data: plantas, error: pErr } = await (supabase as any)
+        .from("plantas")
+        .select("id, nome_popular")
+        .in("nome_popular", nomesItens);
+      if (pErr) throw pErr;
+
+      const plantaIdToNome = new Map<string, string>();
+      const nomeToPlantaId = new Map<string, string>();
+      (plantas || []).forEach((p: any) => {
+        plantaIdToNome.set(p.id, p.nome_popular);
+        nomeToPlantaId.set((p.nome_popular || "").toLowerCase(), p.id);
+      });
+
+      const plantaIds = Array.from(plantaIdToNome.keys());
+      if (plantaIds.length === 0) return {} as Record<string, any[]>;
+
+      // 2) Buscar histórico de preços (item_tipo = 'planta')
+      const { data: hist, error: hErr } = await (supabase as any)
+        .from("historico_precos")
+        .select(
+          "item_id, preco, data_orcamento, fornecedor_id, fornecedores(id, nome, mercado, cidade)",
+        )
+        .eq("item_tipo", "planta")
+        .in("item_id", plantaIds)
+        .order("data_orcamento", { ascending: false });
+      if (hErr) throw hErr;
+
+      // Agrupa por nome popular (lowercase) -> último preço por fornecedor
+      const map: Record<string, any[]> = {};
+      for (const row of hist || []) {
+        const nome = plantaIdToNome.get(row.item_id);
+        if (!nome) continue;
+        const key = nome.toLowerCase();
+        if (!map[key]) map[key] = [];
+        // Mantém só a entrada mais recente por fornecedor_id (lista já vem ordenada desc)
+        if (!map[key].some((r) => r.fornecedor_id === row.fornecedor_id)) {
+          map[key].push(row);
+        }
+      }
+      return map;
+    },
+  });
+
+  const fornecedoresDoItem = (item: ItemMemorial) =>
+    (historicoPorItem as Record<string, any[]>)[item.nome_popular.trim().toLowerCase()] || [];
+
+  const resumoFornecedores = useMemo(() => {
+    let semForn = 0;
+    let risco = 0;
+    let ok = 0;
+    itensMaterial.forEach((it, idx) => {
+      const sel = fornecedoresSelecionados[idx]?.length || 0;
+      const disp = fornecedoresDoItem(it).length;
+      const total = Math.max(sel, disp);
+      if (total === 0) semForn++;
+      else if (total === 1) risco++;
+      else if (total >= 3 || sel >= 2) ok++;
+    });
+    return { semForn, risco, ok };
+  }, [itensMaterial, fornecedoresSelecionados, historicoPorItem]);
+
+  const toggleFornecedor = (itemIdx: number, fornId: string) => {
+    setFornecedoresSelecionados((prev) => {
+      const atuais = prev[itemIdx] || [];
+      const novo = atuais.includes(fornId)
+        ? atuais.filter((id) => id !== fornId)
+        : [...atuais, fornId];
+      return { ...prev, [itemIdx]: novo };
+    });
+  };
+
+  const abrirNovoFornecedor = (itemIdx: number) => {
+    setNovoFornItemIdx(itemIdx);
+    setNovoForn({ nome: "", contato: "", cidade: "" });
+    setNovoFornModalOpen(true);
+  };
+
+  const salvarNovoFornecedor = async () => {
+    if (!novoForn.nome.trim()) {
+      toast({ title: "Nome obrigatório", variant: "destructive" });
+      return;
+    }
+    try {
+      const { data, error } = await (supabase as any)
+        .from("fornecedores")
+        .insert({
+          nome: novoForn.nome.trim(),
+          telefone: novoForn.contato || null,
+          cidade: novoForn.cidade || null,
+          status: "ativo",
+          categoria_fornecedor: "Fornecedor Diverso",
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+
+      // Inserir entrada placeholder no estado local para aparecer na lista
+      const item = novoFornItemIdx !== null ? itensMaterial[novoFornItemIdx] : null;
+      if (item) {
+        const key = item.nome_popular.trim().toLowerCase();
+        const map = { ...(historicoPorItem as Record<string, any[]>) };
+        map[key] = [
+          ...(map[key] || []),
+          {
+            fornecedor_id: data.id,
+            preco: null,
+            data_orcamento: null,
+            fornecedores: { id: data.id, nome: novoForn.nome.trim(), mercado: null, cidade: novoForn.cidade || null },
+          },
+        ];
+        queryClient.setQueryData(["historico-fornecedores-orc", nomesItens], map);
+        // Marcar como selecionado
+        setFornecedoresSelecionados((prev) => ({
+          ...prev,
+          [novoFornItemIdx!]: [...(prev[novoFornItemIdx!] || []), data.id],
+        }));
+      }
+      toast({ title: "Fornecedor cadastrado" });
+      setNovoFornModalOpen(false);
+      refetchHistorico();
+    } catch (e: any) {
+      toast({ title: "Erro ao cadastrar", description: e?.message, variant: "destructive" });
+    }
+  };
+
   const podeAvancar = useMemo(() => {
     if (etapaAtual === 1) return camposObrigatoriosOk;
     if (etapaAtual === 2) return pdfCarregado && itensMaterial.length > 0;
