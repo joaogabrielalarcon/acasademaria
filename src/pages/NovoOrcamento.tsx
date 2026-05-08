@@ -439,7 +439,36 @@ export default function NovoOrcamento() {
     return { semForn, risco, ok };
   }, [itensMaterial, fornecedoresSelecionados, historicoPorItem]);
 
-  const toggleFornecedor = (itemIdx: number, fornId: string) => {
+  const resumoCotacoes = useMemo(() => {
+    let semCot = 0;
+    let porteDiv = 0;
+    let completos = 0;
+    itensMaterial.forEach((it, idx) => {
+      const sel = fornecedoresSelecionados[idx] || [];
+      const linhas = cotacoes[idx] || {};
+      const preenchidos = sel.filter(
+        (fid) => linhas[fid] && Number(linhas[fid].valor_unitario) > 0,
+      );
+      if (preenchidos.length === 0) semCot++;
+      const algumDivergente = sel.some(
+        (fid) =>
+          linhas[fid]?.porte_ofertado &&
+          it.porte &&
+          linhas[fid].porte_ofertado.trim().toLowerCase() !==
+            it.porte.trim().toLowerCase(),
+      );
+      if (algumDivergente) porteDiv++;
+      const temPrincipal = sel.some((fid) => linhas[fid]?.status_selecao === "principal");
+      if (preenchidos.length > 0 && temPrincipal) completos++;
+    });
+    return { semCot, porteDiv, completos };
+  }, [itensMaterial, fornecedoresSelecionados, cotacoes]);
+
+  const nomeFornecedor = (item: ItemMemorial, fornId: string) => {
+    const row = fornecedoresDoItem(item).find((r: any) => r.fornecedor_id === fornId);
+    return row?.fornecedores?.nome || "Fornecedor";
+  };
+
     setFornecedoresSelecionados((prev) => {
       const atuais = prev[itemIdx] || [];
       const novo = atuais.includes(fornId)
