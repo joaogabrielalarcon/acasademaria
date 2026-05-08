@@ -1096,13 +1096,167 @@ export default function NovoOrcamento() {
             </Card>
           )}
 
-          {/* Etapas 3-7 (placeholders) */}
-          {etapaAtual > 2 && (
+          {/* Etapa 3 — Seleção de Fornecedores */}
+          {etapaAtual === 3 && (
+            <div className="space-y-4">
+              <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border rounded-lg p-3 flex flex-wrap gap-3 text-sm">
+                <span className="text-destructive font-medium">
+                  {resumoFornecedores.semForn} sem fornecedor
+                </span>
+                <span className="text-muted-foreground">|</span>
+                <span className="text-orange-600 font-medium">
+                  {resumoFornecedores.risco} com risco alto
+                </span>
+                <span className="text-muted-foreground">|</span>
+                <span className="text-primary font-medium">
+                  {resumoFornecedores.ok} OK
+                </span>
+              </div>
+
+              {itensMaterial.length === 0 && (
+                <Card className="p-6">
+                  <p className="text-sm text-muted-foreground">
+                    Nenhum item no memorial. Volte à Etapa 2 para adicionar itens.
+                  </p>
+                </Card>
+              )}
+
+              {itensMaterial.map((item, idx) => {
+                const fornsDisp = fornecedoresDoItem(item);
+                const selecionados = fornecedoresSelecionados[idx] || [];
+                const total = Math.max(selecionados.length, fornsDisp.length);
+                let badge = { cls: "bg-primary/15 text-primary", label: "OK" };
+                if (total === 0) badge = { cls: "bg-destructive/15 text-destructive", label: "⚠️ Sem fornecedor" };
+                else if (total === 1) badge = { cls: "bg-orange-100 text-orange-700", label: "⚠️ Risco alto" };
+                else if (total === 2) badge = { cls: "bg-yellow-100 text-yellow-700", label: "Atenção" };
+
+                return (
+                  <Card key={idx} className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div>
+                        <p className="font-semibold text-foreground">
+                          {item.nome_popular || "(sem nome)"}
+                          {item.nome_cientifico && (
+                            <span className="ml-2 italic font-normal text-muted-foreground">
+                              {item.nome_cientifico}
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {item.porte && <>Porte: {item.porte} · </>}
+                          {item.quantidade} {item.unidade}
+                        </p>
+                      </div>
+                      <span className={cn("px-2 py-1 rounded-md text-xs font-medium", badge.cls)}>
+                        {badge.label}
+                      </span>
+                    </div>
+
+                    {fornsDisp.length === 0 ? (
+                      <p className="text-sm text-muted-foreground italic">
+                        Nenhum fornecedor cadastrado para este item.
+                      </p>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {fornsDisp.map((row: any) => {
+                          const f = row.fornecedores || {};
+                          const checked = selecionados.includes(row.fornecedor_id);
+                          return (
+                            <label
+                              key={row.fornecedor_id}
+                              className={cn(
+                                "flex items-start gap-3 p-2 border rounded-md cursor-pointer transition-colors",
+                                checked ? "border-primary bg-primary/5" : "hover:bg-muted/30",
+                              )}
+                            >
+                              <Checkbox
+                                checked={checked}
+                                onCheckedChange={() => toggleFornecedor(idx, row.fornecedor_id)}
+                              />
+                              <div className="flex-1 text-sm">
+                                <p className="font-medium text-foreground">
+                                  {f.nome || "Fornecedor"}
+                                </p>
+                                {(f.mercado || f.cidade) && (
+                                  <p className="text-xs text-muted-foreground">
+                                    {[f.mercado, f.cidade].filter(Boolean).join(" · ")}
+                                  </p>
+                                )}
+                                {row.preco != null && (
+                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                    Último preço: R$ {Number(row.preco).toFixed(2)}
+                                    {row.data_orcamento &&
+                                      ` em ${new Date(row.data_orcamento).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" })}`}
+                                  </p>
+                                )}
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => abrirNovoFornecedor(idx)}
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      Adicionar fornecedor não cadastrado
+                    </Button>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Etapas 4-7 (placeholders) */}
+          {etapaAtual > 3 && (
             <Card className="p-6">
               <h2 className="font-display text-xl text-foreground">{ETAPAS[etapaAtual - 1]}</h2>
               <p className="text-sm text-muted-foreground mt-2">Etapa em desenvolvimento.</p>
             </Card>
           )}
+
+          {/* Modal: novo fornecedor */}
+          <Dialog open={novoFornModalOpen} onOpenChange={setNovoFornModalOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Novo fornecedor</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label>Nome *</Label>
+                  <Input
+                    value={novoForn.nome}
+                    onChange={(e) => setNovoForn((c) => ({ ...c, nome: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Contato</Label>
+                  <Input
+                    value={novoForn.contato}
+                    onChange={(e) => setNovoForn((c) => ({ ...c, contato: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Cidade</Label>
+                  <Input
+                    value={novoForn.cidade}
+                    onChange={(e) => setNovoForn((c) => ({ ...c, cidade: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setNovoFornModalOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button variant="terracota" onClick={salvarNovoFornecedor}>
+                  Salvar
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           {/* Navegação */}
           <div className="flex items-center justify-between gap-2">
