@@ -1468,8 +1468,15 @@ export default function NovoOrcamento() {
 
   const handlePdfSelect = (file: File | null) => {
     if (!file) return;
-    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
-      toast({ title: "Selecione um arquivo PDF", variant: "destructive" });
+    const name = file.name.toLowerCase();
+    const t = (file.type || "").toLowerCase();
+    const ok =
+      t === "application/pdf" || name.endsWith(".pdf") ||
+      t.startsWith("image/") || /\.(jpe?g|png|webp|gif|bmp|heic)$/i.test(name) ||
+      name.endsWith(".xlsx") || name.endsWith(".xls") || name.endsWith(".csv") ||
+      t.includes("spreadsheet") || t.includes("excel") || t === "text/csv";
+    if (!ok) {
+      toast({ title: "Envie PDF, imagem (JPG/PNG) ou planilha (XLS/XLSX/CSV)", variant: "destructive" });
       return;
     }
     setPdfFile(file);
@@ -1482,7 +1489,7 @@ export default function NovoOrcamento() {
     setProcessandoPdf(true);
     try {
       const fd = new FormData();
-      fd.append("pdf", pdfFile);
+      fd.append("arquivo", pdfFile);
       const { data, error } = await (supabase.functions as any).invoke("ler-memorial-pdf", {
         body: fd,
       });
