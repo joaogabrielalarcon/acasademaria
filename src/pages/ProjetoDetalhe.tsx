@@ -217,11 +217,12 @@ export default function ProjetoDetalhe() {
         observacao: itemForm.observacao || null,
       };
 
+      const sb = supabase as any;
       if (editingItem) {
-        const { error } = await supabase.from("orcamento_itens").update(payload).eq("id", editingItem.id);
+        const { error } = await sb.from("orcamento_itens").update(payload).eq("id", editingItem.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("orcamento_itens").insert(payload);
+        const { error } = await sb.from("orcamento_itens").insert(payload);
         if (error) throw error;
       }
     },

@@ -1,5 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+
+// NOTE: Legacy hooks. The original orcamento_itens / orcamento_cotacoes tables
+// were replaced by the new "Módulo de Orçamento" schema (cabeçalho em
+// `orcamentos` + `orcamento_itens` com nova estrutura). Estes hooks foram
+// neutralizados para manter o build até a UI antiga ser substituída.
 
 export interface OrcamentoItem {
   id: string;
@@ -29,38 +33,19 @@ export interface OrcamentoCotacao {
   observacao: string | null;
 }
 
-export function useOrcamentoItens(projetoId: string | undefined) {
+export function useOrcamentoItens(_projetoId: string | undefined) {
   return useQuery({
-    queryKey: ["orcamento-itens", projetoId],
-    queryFn: async () => {
-      if (!projetoId) return [];
-      const { data, error } = await supabase
-        .from("orcamento_itens")
-        .select("*")
-        .eq("projeto_id", projetoId)
-        .order("tipo")
-        .order("ordem");
-      if (error) throw error;
-      return data as OrcamentoItem[];
-    },
-    enabled: !!projetoId,
+    queryKey: ["orcamento-itens-legacy", _projetoId],
+    queryFn: async () => [] as OrcamentoItem[],
+    enabled: false,
   });
 }
 
-export function useOrcamentoCotacoes(itemIds: string[]) {
+export function useOrcamentoCotacoes(_itemIds: string[]) {
   return useQuery({
-    queryKey: ["orcamento-cotacoes", itemIds],
-    queryFn: async () => {
-      if (itemIds.length === 0) return [];
-      const { data, error } = await supabase
-        .from("orcamento_cotacoes")
-        .select("*")
-        .in("item_id", itemIds)
-        .order("created_at");
-      if (error) throw error;
-      return data as OrcamentoCotacao[];
-    },
-    enabled: itemIds.length > 0,
+    queryKey: ["orcamento-cotacoes-legacy", _itemIds],
+    queryFn: async () => [] as OrcamentoCotacao[],
+    enabled: false,
   });
 }
 
