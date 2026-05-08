@@ -1550,6 +1550,7 @@ export default function NovoOrcamento() {
     } finally {
       setProcessandoPdf(false);
     }
+  };
 
   const updateItem = (idx: number, patch: Partial<ItemMemorial>) => {
     setItensMaterial((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
