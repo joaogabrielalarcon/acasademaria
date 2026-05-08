@@ -1563,8 +1563,8 @@ export default function NovoOrcamento() {
             </div>
           </div>
 
-          {/* Barra de progresso */}
-          <Card className="p-4">
+          {/* Barra de etapas (navegação livre) */}
+          <Card className="p-4 sticky top-0 z-20 bg-card/95 backdrop-blur">
             <div className="flex items-center justify-between gap-2 overflow-x-auto">
               {ETAPAS.map((nome, idx) => {
                 const numero = idx + 1;
@@ -1572,24 +1572,32 @@ export default function NovoOrcamento() {
                 const concluida = numero < etapaAtual;
                 return (
                   <div key={nome} className="flex items-center gap-2 flex-shrink-0">
-                    <div
-                      className={cn(
-                        "w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold border-2 transition-colors",
-                        ativa && "bg-primary text-primary-foreground border-primary",
-                        concluida && "bg-primary/20 text-primary border-primary/40",
-                        !ativa && !concluida && "bg-muted text-muted-foreground border-border"
-                      )}
+                    <button
+                      type="button"
+                      onClick={() => irParaEtapa(numero)}
+                      className="flex items-center gap-2 group"
+                      title={`Ir para ${nome}`}
                     >
-                      {concluida ? <Check className="w-4 h-4" /> : numero}
-                    </div>
-                    <span
-                      className={cn(
-                        "text-xs whitespace-nowrap",
-                        ativa ? "text-foreground font-semibold" : "text-muted-foreground"
-                      )}
-                    >
-                      {nome}
-                    </span>
+                      <div
+                        className={cn(
+                          "w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold border-2 transition-colors",
+                          ativa && "bg-primary text-primary-foreground border-primary",
+                          concluida && "bg-primary/20 text-primary border-primary/40",
+                          !ativa && !concluida && "bg-muted text-muted-foreground border-border",
+                          "group-hover:border-primary"
+                        )}
+                      >
+                        {concluida ? <Check className="w-4 h-4" /> : numero}
+                      </div>
+                      <span
+                        className={cn(
+                          "text-xs whitespace-nowrap",
+                          ativa ? "text-foreground font-semibold" : "text-muted-foreground group-hover:text-foreground"
+                        )}
+                      >
+                        {nome}
+                      </span>
+                    </button>
                     {idx < ETAPAS.length - 1 && <div className="w-6 h-px bg-border" />}
                   </div>
                 );
