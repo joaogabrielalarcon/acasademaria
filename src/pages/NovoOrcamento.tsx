@@ -1652,8 +1652,239 @@ export default function NovoOrcamento() {
             </div>
           )}
 
-          {/* Etapas 5-7 (placeholders) */}
-          {etapaAtual > 4 && (
+          {etapaAtual === 5 && (
+            <div className="space-y-6">
+              {/* Seção A — Insumos calculados */}
+              <Card className="p-4 space-y-3">
+                <div>
+                  <h2 className="font-display text-lg text-foreground">
+                    Insumos de Plantio (calculados automaticamente)
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    Quantidades calculadas a partir dos coeficientes vigentes. Ajuste se necessário.
+                  </p>
+                </div>
+                {insumosCalc.length === 0 ? (
+                  <p className="text-sm text-muted-foreground italic">
+                    Nenhum insumo calculado para os itens selecionados.
+                  </p>
+                ) : (
+                  <div className="border rounded-md overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/50 text-xs">
+                        <tr>
+                          <th className="text-left p-2">Insumo</th>
+                          <th className="text-left p-2 w-40">Quantidade</th>
+                          <th className="text-left p-2 w-24">Unidade</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {insumosCalc.map((linha, idx) => (
+                          <tr key={linha.tipo} className="border-t">
+                            <td className="p-2 font-medium">{linha.nome}</td>
+                            <td className="p-2">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={linha.quantidade}
+                                onChange={(e) =>
+                                  setInsumosCalc((prev) =>
+                                    prev.map((l, i) =>
+                                      i === idx ? { ...l, quantidade: Number(e.target.value) || 0 } : l,
+                                    ),
+                                  )
+                                }
+                                className="h-8"
+                              />
+                            </td>
+                            <td className="p-2 text-muted-foreground">{linha.unidade}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </Card>
+
+              {/* Seção B — Insumos adicionais */}
+              <Card className="p-4 space-y-3">
+                <div>
+                  <h2 className="font-display text-lg text-foreground">Insumos Adicionais</h2>
+                  <p className="text-xs text-muted-foreground">
+                    Selecione os insumos extras necessários para este projeto.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {INSUMOS_SUGERIDOS.map((nome) => {
+                    const sel = insumosAdicionais.some((i) => i.nome === nome);
+                    return (
+                      <label
+                        key={nome}
+                        className={cn(
+                          "flex items-center gap-2 px-3 py-1.5 rounded-md border text-xs cursor-pointer transition-colors",
+                          sel ? "bg-primary/10 border-primary text-primary" : "hover:bg-muted/50",
+                        )}
+                      >
+                        <Checkbox
+                          checked={sel}
+                          onCheckedChange={() => toggleInsumoSugerido(nome)}
+                        />
+                        {nome}
+                      </label>
+                    );
+                  })}
+                </div>
+
+                {insumosAdicionais.length > 0 && (
+                  <div className="space-y-3 pt-2">
+                    {insumosAdicionais.map((ins, idx) => {
+                      const qtdEsp = Number(ins.quantidade_esperada) || 0;
+                      const margem = Number(ins.margem) || 0;
+                      const qtdOrcar = Math.ceil(qtdEsp * (1 + margem / 100));
+                      const valor = (Number(ins.valor_unitario) || 0) * qtdOrcar;
+                      return (
+                        <div key={idx} className="border rounded-md p-3 space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <Input
+                              value={ins.nome}
+                              onChange={(e) => updateInsumoAdic(idx, { nome: e.target.value })}
+                              placeholder="Nome do insumo"
+                              className="font-medium max-w-md"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() =>
+                                setInsumosAdicionais((p) => p.filter((_, i) => i !== idx))
+                              }
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                            <div className="space-y-1">
+                              <Label className="text-xs">Fornecedor</Label>
+                              <Select
+                                value={ins.fornecedor_id}
+                                onValueChange={(v) => updateInsumoAdic(idx, { fornecedor_id: v })}
+                              >
+                                <SelectTrigger className="h-9">
+                                  <SelectValue placeholder="Selecione" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {(fornecedoresLista as any[]).map((f) => (
+                                    <SelectItem key={f.id} value={f.id}>
+                                      {f.nome}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Quantidade esperada</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={ins.quantidade_esperada}
+                                onChange={(e) =>
+                                  updateInsumoAdic(idx, { quantidade_esperada: e.target.value })
+                                }
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Unidade</Label>
+                              <Select
+                                value={ins.unidade}
+                                onValueChange={(v) => updateInsumoAdic(idx, { unidade: v })}
+                              >
+                                <SelectTrigger className="h-9">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {UNIDADES_INSUMO.map((u) => (
+                                    <SelectItem key={u} value={u}>
+                                      {u}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Margem segurança (%)</Label>
+                              <Input
+                                type="number"
+                                step="1"
+                                value={ins.margem}
+                                onChange={(e) => updateInsumoAdic(idx, { margem: e.target.value })}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Quantidade a orçar</Label>
+                              <Input value={qtdOrcar} readOnly className="bg-muted/40" />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Valor unitário (R$)</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={ins.valor_unitario}
+                                onChange={(e) =>
+                                  updateInsumoAdic(idx, { valor_unitario: e.target.value })
+                                }
+                              />
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground pt-1">
+                            <span>
+                              Valor total:{" "}
+                              <strong className="text-foreground">
+                                R$ {valor.toFixed(2).replace(".", ",")}
+                              </strong>
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                              <Label className="text-xs">Observação interna</Label>
+                              <Input
+                                value={ins.obs_interna}
+                                onChange={(e) => updateInsumoAdic(idx, { obs_interna: e.target.value })}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Observação na proposta</Label>
+                              <Input
+                                value={ins.obs_proposta}
+                                onChange={(e) => updateInsumoAdic(idx, { obs_proposta: e.target.value })}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <Button variant="outline" size="sm" onClick={addInsumoCustom}>
+                  <Plus className="w-4 h-4" />
+                  Adicionar insumo personalizado
+                </Button>
+
+                {insumosSemQtd.length > 0 && (
+                  <div className="rounded-md border border-yellow-300 bg-yellow-50 text-yellow-800 p-3 text-sm">
+                    ⚠️ {insumosSemQtd.length} insumo(s) sem quantidade:{" "}
+                    <strong>{insumosSemQtd.map((i) => i.nome).join(", ")}</strong>
+                    <div className="text-xs mt-1">
+                      Você pode avançar, mas eles não entrarão no orçamento.
+                    </div>
+                  </div>
+                )}
+              </Card>
+            </div>
+          )}
+
+          {/* Etapas 6-7 (placeholders) */}
+          {etapaAtual > 5 && (
             <Card className="p-6">
               <h2 className="font-display text-xl text-foreground">{ETAPAS[etapaAtual - 1]}</h2>
               <p className="text-sm text-muted-foreground mt-2">Etapa em desenvolvimento.</p>
