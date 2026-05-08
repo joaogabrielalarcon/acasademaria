@@ -2050,8 +2050,509 @@ export default function NovoOrcamento() {
             </div>
           )}
 
-          {/* Etapas 6-7 (placeholders) */}
-          {etapaAtual > 5 && (
+          {etapaAtual === 6 && (
+            <div className="space-y-6 pb-24">
+              {/* Seção A — MÃO DE OBRA */}
+              <Card className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="font-display text-lg text-foreground">Mão de Obra Prevista</h2>
+                    <p className="text-xs text-muted-foreground">
+                      Adicione cargos previstos para execução do projeto.
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={addMoLinha}>
+                    <Plus className="w-4 h-4" />
+                    Adicionar cargo
+                  </Button>
+                </div>
+
+                {moLinhas.length === 0 ? (
+                  <p className="text-sm text-muted-foreground italic">Nenhum cargo adicionado.</p>
+                ) : (
+                  <div className="border rounded-md overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/50 text-xs">
+                        <tr>
+                          <th className="text-left p-2">Cargo</th>
+                          <th className="text-left p-2 w-24">Qtd func.</th>
+                          <th className="text-left p-2 w-24">Dias</th>
+                          <th className="text-left p-2 w-32">Salário/dia</th>
+                          <th className="text-left p-2 w-32">Custo bruto</th>
+                          <th className="w-12"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {moLinhas.map((l, idx) => {
+                          const bruto =
+                            (Number(l.qtd) || 0) * (Number(l.dias) || 0) * (Number(l.salario_diario) || 0);
+                          return (
+                            <tr key={idx} className="border-t">
+                              <td className="p-2">
+                                <Select
+                                  value={l.cargo_id}
+                                  onValueChange={(v) => {
+                                    const c = (cargosMo as any[]).find((x) => x.id === v);
+                                    updateMoLinha(idx, {
+                                      cargo_id: v,
+                                      cargo_nome: c?.nome || "",
+                                      salario_diario: String(c?.salario_diario ?? "0"),
+                                    });
+                                  }}
+                                >
+                                  <SelectTrigger className="h-8">
+                                    <SelectValue placeholder="Selecione" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {(cargosMo as any[]).map((c) => (
+                                      <SelectItem key={c.id} value={c.id}>
+                                        {c.nome}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </td>
+                              <td className="p-2">
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={l.qtd}
+                                  onChange={(e) => updateMoLinha(idx, { qtd: e.target.value })}
+                                  className="h-8"
+                                />
+                              </td>
+                              <td className="p-2">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={l.dias}
+                                  onChange={(e) => updateMoLinha(idx, { dias: e.target.value })}
+                                  className="h-8"
+                                />
+                              </td>
+                              <td className="p-2">
+                                <Input
+                                  value={Number(l.salario_diario || 0).toFixed(2)}
+                                  readOnly
+                                  className="h-8 bg-muted/40"
+                                />
+                              </td>
+                              <td className="p-2 text-foreground font-medium">{fmtBRL(bruto)}</td>
+                              <td className="p-2">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() => removeMoLinha(idx)}
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Bloco fiscal */}
+                <div className="border-t pt-3 space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Alíquota do mês (%)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={aliquotaMes}
+                        onChange={(e) => setAliquotaMes(Number(e.target.value) || 0)}
+                      />
+                      <p className="text-[11px] text-muted-foreground">
+                        Informar conforme orientação da contabilidade.
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Tipo de NF</Label>
+                      <div className="flex gap-2">
+                        <Button
+                          variant={tipoNf === "pj" ? "terracota" : "outline"}
+                          size="sm"
+                          onClick={() => setTipoNf("pj")}
+                        >
+                          PJ (com INSS 11%)
+                        </Button>
+                        <Button
+                          variant={tipoNf === "cpf" ? "terracota" : "outline"}
+                          size="sm"
+                          onClick={() => setTipoNf("cpf")}
+                        >
+                          CPF (sem INSS)
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="rounded-md bg-muted/40 p-3 text-sm flex flex-wrap gap-x-6 gap-y-1">
+                    <span>
+                      Custo MO: <strong>{fmtBRL(custoMoBruto)}</strong>
+                    </span>
+                    <span>
+                      Valor NF: <strong>{fmtBRL(valorNfMo)}</strong>
+                    </span>
+                    <span>
+                      Diferença (imposto): <strong>{fmtBRL(valorNfMo - custoMoBruto)}</strong>
+                    </span>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Seção B — FRETES */}
+              <Card className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="font-display text-lg text-foreground">Fretes do Projeto</h2>
+                    <p className="text-xs text-muted-foreground">
+                      Todos os fretes são repassados ao cliente.
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={addFrete}>
+                    <Plus className="w-4 h-4" />
+                    Adicionar frete
+                  </Button>
+                </div>
+
+                {fretes.length === 0 ? (
+                  <p className="text-sm text-muted-foreground italic">Nenhum frete adicionado.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {fretes.map((f, idx) => {
+                      const qtdOrcar = Math.ceil(
+                        (Number(f.qtd_esperada) || 0) * (1 + (Number(f.margem) || 0) / 100),
+                      );
+                      const total = qtdOrcar * (Number(f.valor_unitario) || 0);
+                      return (
+                        <div key={idx} className="border rounded-md p-3 space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                variant={f.modo_transp === "cad" ? "terracota" : "outline"}
+                                onClick={() => updateFrete(idx, { modo_transp: "cad" })}
+                              >
+                                Cadastrado
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant={f.modo_transp === "livre" ? "terracota" : "outline"}
+                                onClick={() => updateFrete(idx, { modo_transp: "livre" })}
+                              >
+                                Livre
+                              </Button>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => removeFrete(idx)}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                            <div className="space-y-1">
+                              <Label className="text-xs">Transportador</Label>
+                              {f.modo_transp === "cad" ? (
+                                <Select
+                                  value={f.transportador_id}
+                                  onValueChange={(v) => {
+                                    const t = (transportadoras as any[]).find((x) => x.id === v);
+                                    updateFrete(idx, {
+                                      transportador_id: v,
+                                      transportador_nome: t?.nome || "",
+                                    });
+                                  }}
+                                >
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue placeholder="Selecione" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {(transportadoras as any[]).map((t) => (
+                                      <SelectItem key={t.id} value={t.id}>
+                                        {t.nome}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                <Input
+                                  value={f.transportador_nome}
+                                  onChange={(e) =>
+                                    updateFrete(idx, {
+                                      transportador_nome: e.target.value,
+                                      transportador_id: "",
+                                    })
+                                  }
+                                  placeholder="Nome do transportador"
+                                />
+                              )}
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Percurso</Label>
+                              <Input
+                                value={f.percurso}
+                                onChange={(e) => updateFrete(idx, { percurso: e.target.value })}
+                                placeholder="Origem → Destino"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">R$ / viagem</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={f.valor_unitario}
+                                onChange={(e) =>
+                                  updateFrete(idx, { valor_unitario: e.target.value })
+                                }
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Qtd esperada</Label>
+                              <Input
+                                type="number"
+                                value={f.qtd_esperada}
+                                onChange={(e) =>
+                                  updateFrete(idx, { qtd_esperada: e.target.value })
+                                }
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Margem (%)</Label>
+                              <Input
+                                type="number"
+                                value={f.margem}
+                                onChange={(e) => updateFrete(idx, { margem: e.target.value })}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Qtd a orçar</Label>
+                              <Input value={qtdOrcar} readOnly className="bg-muted/40" />
+                            </div>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Total: <strong className="text-foreground">{fmtBRL(total)}</strong>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </Card>
+
+              {/* Seção C — TRANSPORTE DA EQUIPE */}
+              <Card className="p-4 space-y-3">
+                <div>
+                  <h2 className="font-display text-lg text-foreground">Transporte da Equipe</h2>
+                  <p className="text-xs text-muted-foreground">
+                    Custos de deslocamento da equipe e acompanhamento técnico.
+                  </p>
+                </div>
+                <div className="border rounded-md overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50 text-xs">
+                      <tr>
+                        <th className="text-left p-2">Tipo</th>
+                        <th className="text-left p-2 w-32">Valor/km</th>
+                        <th className="text-left p-2 w-24">Dias</th>
+                        <th className="text-left p-2 w-24">Km</th>
+                        <th className="text-left p-2 w-32">Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {transporte.map((t, idx) => {
+                        const sub =
+                          (Number(t.valor_km) || 0) *
+                          (Number(t.dias) || 0) *
+                          (Number(t.km) || 0);
+                        return (
+                          <tr key={t.tipo} className="border-t">
+                            <td className="p-2 font-medium">
+                              {t.tipo}
+                              {t.tipo === "MFM" && (
+                                <span className="text-xs text-muted-foreground"> (acompanhamento)</span>
+                              )}
+                            </td>
+                            <td className="p-2">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={t.valor_km}
+                                onChange={(e) => updateTransporte(idx, { valor_km: e.target.value })}
+                                className="h-8"
+                              />
+                            </td>
+                            <td className="p-2">
+                              <Input
+                                type="number"
+                                value={t.dias}
+                                onChange={(e) => updateTransporte(idx, { dias: e.target.value })}
+                                className="h-8"
+                              />
+                            </td>
+                            <td className="p-2">
+                              <Input
+                                type="number"
+                                value={t.km}
+                                onChange={(e) => updateTransporte(idx, { km: e.target.value })}
+                                className="h-8"
+                              />
+                            </td>
+                            <td className="p-2 font-medium">{fmtBRL(sub)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+
+              {/* Seção D — CUSTOS INDIRETOS */}
+              <Card className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="font-display text-lg text-foreground">Custos Indiretos</h2>
+                    <p className="text-xs text-muted-foreground">
+                      Refeições, escritório e demais despesas indiretas.
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={addIndireto}>
+                    <Plus className="w-4 h-4" />
+                    Adicionar custo
+                  </Button>
+                </div>
+
+                {custosIndiretos.length === 0 ? (
+                  <p className="text-sm text-muted-foreground italic">
+                    Nenhum custo indireto adicionado.
+                  </p>
+                ) : (
+                  <div className="border rounded-md overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/50 text-xs">
+                        <tr>
+                          <th className="text-left p-2 w-48">Tipo</th>
+                          <th className="text-left p-2">Descrição</th>
+                          <th className="text-left p-2 w-32">Valor unit.</th>
+                          <th className="text-left p-2 w-24">Qtd</th>
+                          <th className="text-left p-2 w-32">Total</th>
+                          <th className="w-12"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {custosIndiretos.map((c, idx) => {
+                          const total =
+                            (Number(c.valor_unitario) || 0) * (Number(c.quantidade) || 0);
+                          return (
+                            <tr key={idx} className="border-t">
+                              <td className="p-2">
+                                <Select
+                                  value={c.tipo}
+                                  onValueChange={(v) => {
+                                    const ref = TIPOS_INDIRETO.find((t) => t.value === v);
+                                    updateIndireto(idx, {
+                                      tipo: v,
+                                      valor_unitario:
+                                        ref && ref.padrao > 0 && !c.valor_unitario
+                                          ? String(ref.padrao)
+                                          : c.valor_unitario,
+                                    });
+                                  }}
+                                >
+                                  <SelectTrigger className="h-8">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {TIPOS_INDIRETO.map((t) => (
+                                      <SelectItem key={t.value} value={t.value}>
+                                        {t.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </td>
+                              <td className="p-2">
+                                <Input
+                                  value={c.descricao}
+                                  onChange={(e) =>
+                                    updateIndireto(idx, { descricao: e.target.value })
+                                  }
+                                  className="h-8"
+                                />
+                              </td>
+                              <td className="p-2">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={c.valor_unitario}
+                                  onChange={(e) =>
+                                    updateIndireto(idx, { valor_unitario: e.target.value })
+                                  }
+                                  className="h-8"
+                                />
+                              </td>
+                              <td className="p-2">
+                                <Input
+                                  type="number"
+                                  value={c.quantidade}
+                                  onChange={(e) =>
+                                    updateIndireto(idx, { quantidade: e.target.value })
+                                  }
+                                  className="h-8"
+                                />
+                              </td>
+                              <td className="p-2 font-medium">{fmtBRL(total)}</td>
+                              <td className="p-2">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() => removeIndireto(idx)}
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </Card>
+
+              {/* Resumo sticky */}
+              <div className="sticky bottom-0 z-10 -mx-4 px-4 py-3 bg-background/95 backdrop-blur border-t border-primary/20">
+                <div className="text-sm flex flex-wrap gap-x-5 gap-y-1">
+                  <span>
+                    MO c/ imposto: <strong>{fmtBRL(valorNfMo)}</strong>
+                  </span>
+                  <span>
+                    Fretes: <strong>{fmtBRL(totalFretes)}</strong>
+                  </span>
+                  <span>
+                    Transporte: <strong>{fmtBRL(totalTransporte)}</strong>
+                  </span>
+                  <span>
+                    Indiretos: <strong>{fmtBRL(totalIndiretos)}</strong>
+                  </span>
+                  <span className="ml-auto">
+                    Total etapa: <strong className="text-primary">{fmtBRL(totalEtapa6)}</strong>
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Etapa 7 (placeholder) */}
+          {etapaAtual === 7 && (
             <Card className="p-6">
               <h2 className="font-display text-xl text-foreground">{ETAPAS[etapaAtual - 1]}</h2>
               <p className="text-sm text-muted-foreground mt-2">Etapa em desenvolvimento.</p>
