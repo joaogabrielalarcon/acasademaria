@@ -154,11 +154,11 @@ export function CotacaoSheet({
   const selecionarMutation = useMutation({
     mutationFn: async (cotacao: OrcamentoCotacao) => {
       if (!item) return;
-      await supabase.from("orcamento_cotacoes").update({ selecionada: false }).eq("item_id", item.id);
-      await supabase.from("orcamento_cotacoes").update({ selecionada: true }).eq("id", cotacao.id);
+      await (supabase as any).from("orcamento_cotacoes").update({ selecionada: false }).eq("item_id", item.id);
+      await (supabase as any).from("orcamento_cotacoes").update({ selecionada: true }).eq("id", cotacao.id);
       const precoCusto = cotacao.preco_unitario;
       const precoVenda = calcularPrecoVenda(precoCusto, item.reserva_valor, item.margem_percentual);
-      await supabase.from("orcamento_itens").update({ preco_custo: precoCusto, preco_venda: precoVenda }).eq("id", item.id);
+      await (supabase as any).from("orcamento_itens").update({ preco_custo: precoCusto, preco_venda: precoVenda }).eq("id", item.id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orcamento-cotacoes"] });
