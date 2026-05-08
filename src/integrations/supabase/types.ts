@@ -406,6 +406,45 @@ export type Database = {
         }
         Relationships: []
       }
+      coeficientes_insumos: {
+        Row: {
+          adubo_kits: number | null
+          ativo: boolean | null
+          corda_metros: number | null
+          created_at: string | null
+          id: string
+          mo_dias: number | null
+          munck_dias: number | null
+          terra_m3: number | null
+          tipo_planta: string
+          versao: number | null
+        }
+        Insert: {
+          adubo_kits?: number | null
+          ativo?: boolean | null
+          corda_metros?: number | null
+          created_at?: string | null
+          id?: string
+          mo_dias?: number | null
+          munck_dias?: number | null
+          terra_m3?: number | null
+          tipo_planta: string
+          versao?: number | null
+        }
+        Update: {
+          adubo_kits?: number | null
+          ativo?: boolean | null
+          corda_metros?: number | null
+          created_at?: string | null
+          id?: string
+          mo_dias?: number | null
+          munck_dias?: number | null
+          terra_m3?: number | null
+          tipo_planta?: string
+          versao?: number | null
+        }
+        Relationships: []
+      }
       colaborador_avaliacoes: {
         Row: {
           autor_id: string | null
@@ -2622,36 +2661,80 @@ export type Database = {
           },
         ]
       }
-      orcamento_cotacoes: {
+      orcamento_comissoes: {
         Row: {
-          created_at: string
-          fornecedor_id: string | null
-          fornecedor_nome: string | null
+          beneficiario: string | null
+          created_at: string | null
           id: string
-          item_id: string
-          observacao: string | null
-          preco_unitario: number
-          selecionada: boolean
+          orcamento_id: string | null
+          percentual: number | null
+          tipo: string | null
+          valor_calculado: number | null
         }
         Insert: {
-          created_at?: string
-          fornecedor_id?: string | null
-          fornecedor_nome?: string | null
+          beneficiario?: string | null
+          created_at?: string | null
           id?: string
-          item_id: string
-          observacao?: string | null
-          preco_unitario?: number
-          selecionada?: boolean
+          orcamento_id?: string | null
+          percentual?: number | null
+          tipo?: string | null
+          valor_calculado?: number | null
         }
         Update: {
-          created_at?: string
-          fornecedor_id?: string | null
-          fornecedor_nome?: string | null
+          beneficiario?: string | null
+          created_at?: string | null
           id?: string
-          item_id?: string
+          orcamento_id?: string | null
+          percentual?: number | null
+          tipo?: string | null
+          valor_calculado?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_comissoes_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamento_cotacoes: {
+        Row: {
+          created_at: string | null
+          disponibilidade: boolean | null
+          fornecedor_id: string | null
+          id: string
+          observacao: string | null
+          orcamento_item_id: string | null
+          porte_ofertado: string | null
+          selecionado: string | null
+          unidade_ofertada: string | null
+          valor_unitario: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          disponibilidade?: boolean | null
+          fornecedor_id?: string | null
+          id?: string
           observacao?: string | null
-          preco_unitario?: number
-          selecionada?: boolean
+          orcamento_item_id?: string | null
+          porte_ofertado?: string | null
+          selecionado?: string | null
+          unidade_ofertada?: string | null
+          valor_unitario?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          disponibilidade?: boolean | null
+          fornecedor_id?: string | null
+          id?: string
+          observacao?: string | null
+          orcamento_item_id?: string | null
+          porte_ofertado?: string | null
+          selecionado?: string | null
+          unidade_ofertada?: string | null
+          valor_unitario?: number | null
         }
         Relationships: [
           {
@@ -2662,81 +2745,262 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "orcamento_cotacoes_item_id_fkey"
-            columns: ["item_id"]
+            foreignKeyName: "orcamento_cotacoes_orcamento_item_id_fkey"
+            columns: ["orcamento_item_id"]
             isOneToOne: false
             referencedRelation: "orcamento_itens"
             referencedColumns: ["id"]
           },
         ]
       }
-      orcamento_itens: {
+      orcamento_custos_indiretos: {
         Row: {
-          created_at: string
-          created_by: string | null
-          descricao: string
+          created_at: string | null
+          descricao: string | null
           id: string
-          insumo_id: string | null
-          margem_percentual: number | null
-          observacao: string | null
-          ordem: number | null
-          planta_id: string | null
-          preco_custo: number | null
-          preco_venda: number | null
-          projeto_id: string
-          quantidade: number
-          reserva_valor: number | null
+          orcamento_id: string | null
           tipo: string
-          unidade: string | null
-          updated_at: string
-          updated_by: string | null
+          valor: number | null
         }
         Insert: {
-          created_at?: string
-          created_by?: string | null
-          descricao: string
+          created_at?: string | null
+          descricao?: string | null
           id?: string
-          insumo_id?: string | null
-          margem_percentual?: number | null
-          observacao?: string | null
-          ordem?: number | null
-          planta_id?: string | null
-          preco_custo?: number | null
-          preco_venda?: number | null
-          projeto_id: string
-          quantidade?: number
-          reserva_valor?: number | null
-          tipo?: string
-          unidade?: string | null
-          updated_at?: string
-          updated_by?: string | null
+          orcamento_id?: string | null
+          tipo: string
+          valor?: number | null
         }
         Update: {
-          created_at?: string
-          created_by?: string | null
-          descricao?: string
+          created_at?: string | null
+          descricao?: string | null
           id?: string
-          insumo_id?: string | null
-          margem_percentual?: number | null
-          observacao?: string | null
-          ordem?: number | null
-          planta_id?: string | null
-          preco_custo?: number | null
-          preco_venda?: number | null
-          projeto_id?: string
-          quantidade?: number
-          reserva_valor?: number | null
+          orcamento_id?: string | null
           tipo?: string
-          unidade?: string | null
-          updated_at?: string
-          updated_by?: string | null
+          valor?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "orcamento_itens_insumo_id_fkey"
+            foreignKeyName: "orcamento_custos_indiretos_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamento_fretes: {
+        Row: {
+          created_at: string | null
+          descricao: string
+          fornecedor: string | null
+          id: string
+          margem_seguranca_pct: number | null
+          orcamento_id: string | null
+          quantidade_esperada: number | null
+          quantidade_orcada: number | null
+          valor_total: number | null
+          valor_unitario: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          descricao: string
+          fornecedor?: string | null
+          id?: string
+          margem_seguranca_pct?: number | null
+          orcamento_id?: string | null
+          quantidade_esperada?: number | null
+          quantidade_orcada?: number | null
+          valor_total?: number | null
+          valor_unitario?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          descricao?: string
+          fornecedor?: string | null
+          id?: string
+          margem_seguranca_pct?: number | null
+          orcamento_id?: string | null
+          quantidade_esperada?: number | null
+          quantidade_orcada?: number | null
+          valor_total?: number | null
+          valor_unitario?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_fretes_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamento_insumos: {
+        Row: {
+          calculado_automaticamente: boolean | null
+          categoria: string | null
+          created_at: string | null
+          id: string
+          insumo_id: string | null
+          margem_seguranca_pct: number | null
+          markup_pct: number | null
+          nome: string
+          orcamento_id: string | null
+          ordem: number | null
+          preco_unitario_compra: number | null
+          preco_unitario_venda: number | null
+          quantidade_esperada: number | null
+          quantidade_orcada: number | null
+          unidade: string | null
+        }
+        Insert: {
+          calculado_automaticamente?: boolean | null
+          categoria?: string | null
+          created_at?: string | null
+          id?: string
+          insumo_id?: string | null
+          margem_seguranca_pct?: number | null
+          markup_pct?: number | null
+          nome: string
+          orcamento_id?: string | null
+          ordem?: number | null
+          preco_unitario_compra?: number | null
+          preco_unitario_venda?: number | null
+          quantidade_esperada?: number | null
+          quantidade_orcada?: number | null
+          unidade?: string | null
+        }
+        Update: {
+          calculado_automaticamente?: boolean | null
+          categoria?: string | null
+          created_at?: string | null
+          id?: string
+          insumo_id?: string | null
+          margem_seguranca_pct?: number | null
+          markup_pct?: number | null
+          nome?: string
+          orcamento_id?: string | null
+          ordem?: number | null
+          preco_unitario_compra?: number | null
+          preco_unitario_venda?: number | null
+          quantidade_esperada?: number | null
+          quantidade_orcada?: number | null
+          unidade?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_insumos_insumo_id_fkey"
             columns: ["insumo_id"]
             isOneToOne: false
             referencedRelation: "insumos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_insumos_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamento_itens: {
+        Row: {
+          categoria: string | null
+          created_at: string | null
+          fornecedor_backup1_id: string | null
+          fornecedor_backup2_id: string | null
+          fornecedor_principal_id: string | null
+          id: string
+          margem_seguranca_pct: number | null
+          markup_pct: number | null
+          nome_cientifico: string | null
+          nome_popular: string
+          observacao: string | null
+          orcamento_id: string | null
+          ordem: number | null
+          planta_id: string | null
+          porte_divergente: boolean | null
+          porte_solicitado: string | null
+          preco_unitario_compra: number | null
+          preco_unitario_venda: number | null
+          quantidade_esperada: number
+          quantidade_orcada: number | null
+          unidade: string | null
+        }
+        Insert: {
+          categoria?: string | null
+          created_at?: string | null
+          fornecedor_backup1_id?: string | null
+          fornecedor_backup2_id?: string | null
+          fornecedor_principal_id?: string | null
+          id?: string
+          margem_seguranca_pct?: number | null
+          markup_pct?: number | null
+          nome_cientifico?: string | null
+          nome_popular: string
+          observacao?: string | null
+          orcamento_id?: string | null
+          ordem?: number | null
+          planta_id?: string | null
+          porte_divergente?: boolean | null
+          porte_solicitado?: string | null
+          preco_unitario_compra?: number | null
+          preco_unitario_venda?: number | null
+          quantidade_esperada: number
+          quantidade_orcada?: number | null
+          unidade?: string | null
+        }
+        Update: {
+          categoria?: string | null
+          created_at?: string | null
+          fornecedor_backup1_id?: string | null
+          fornecedor_backup2_id?: string | null
+          fornecedor_principal_id?: string | null
+          id?: string
+          margem_seguranca_pct?: number | null
+          markup_pct?: number | null
+          nome_cientifico?: string | null
+          nome_popular?: string
+          observacao?: string | null
+          orcamento_id?: string | null
+          ordem?: number | null
+          planta_id?: string | null
+          porte_divergente?: boolean | null
+          porte_solicitado?: string | null
+          preco_unitario_compra?: number | null
+          preco_unitario_venda?: number | null
+          quantidade_esperada?: number
+          quantidade_orcada?: number | null
+          unidade?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_itens_fornecedor_backup1_id_fkey"
+            columns: ["fornecedor_backup1_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_itens_fornecedor_backup2_id_fkey"
+            columns: ["fornecedor_backup2_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_itens_fornecedor_principal_id_fkey"
+            columns: ["fornecedor_principal_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_itens_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
             referencedColumns: ["id"]
           },
           {
@@ -2746,14 +3010,238 @@ export type Database = {
             referencedRelation: "plantas"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      orcamento_versoes: {
+        Row: {
+          alterado_por: string | null
+          campo_alterado: string | null
+          created_at: string | null
+          id: string
+          motivo: string | null
+          orcamento_id: string | null
+          valor_anterior: string | null
+          valor_novo: string | null
+          versao_sufixo: string | null
+        }
+        Insert: {
+          alterado_por?: string | null
+          campo_alterado?: string | null
+          created_at?: string | null
+          id?: string
+          motivo?: string | null
+          orcamento_id?: string | null
+          valor_anterior?: string | null
+          valor_novo?: string | null
+          versao_sufixo?: string | null
+        }
+        Update: {
+          alterado_por?: string | null
+          campo_alterado?: string | null
+          created_at?: string | null
+          id?: string
+          motivo?: string | null
+          orcamento_id?: string | null
+          valor_anterior?: string | null
+          valor_novo?: string | null
+          versao_sufixo?: string | null
+        }
+        Relationships: [
           {
-            foreignKeyName: "orcamento_itens_projeto_id_fkey"
-            columns: ["projeto_id"]
+            foreignKeyName: "orcamento_versoes_alterado_por_fkey"
+            columns: ["alterado_por"]
             isOneToOne: false
-            referencedRelation: "projetos"
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_versoes_alterado_por_fkey"
+            columns: ["alterado_por"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_versoes_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
             referencedColumns: ["id"]
           },
         ]
+      }
+      orcamentos: {
+        Row: {
+          aprovado_por: string | null
+          area_total_m2: number | null
+          cidade: string | null
+          cliente_id: string | null
+          codigo: string
+          created_at: string | null
+          data_aprovacao: string | null
+          data_criacao: string | null
+          estado: string | null
+          id: string
+          local_endereco: string | null
+          margem_negociacao_pct: number | null
+          observacoes: string | null
+          perfil_markup_id: string | null
+          prazo_validade: string | null
+          responsavel_id: string | null
+          status: string
+          tipo_cliente: string | null
+          tipo_proposta_id: string | null
+          updated_at: string | null
+          valor_negociado: number | null
+          versao_sufixo: string | null
+        }
+        Insert: {
+          aprovado_por?: string | null
+          area_total_m2?: number | null
+          cidade?: string | null
+          cliente_id?: string | null
+          codigo: string
+          created_at?: string | null
+          data_aprovacao?: string | null
+          data_criacao?: string | null
+          estado?: string | null
+          id?: string
+          local_endereco?: string | null
+          margem_negociacao_pct?: number | null
+          observacoes?: string | null
+          perfil_markup_id?: string | null
+          prazo_validade?: string | null
+          responsavel_id?: string | null
+          status?: string
+          tipo_cliente?: string | null
+          tipo_proposta_id?: string | null
+          updated_at?: string | null
+          valor_negociado?: number | null
+          versao_sufixo?: string | null
+        }
+        Update: {
+          aprovado_por?: string | null
+          area_total_m2?: number | null
+          cidade?: string | null
+          cliente_id?: string | null
+          codigo?: string
+          created_at?: string | null
+          data_aprovacao?: string | null
+          data_criacao?: string | null
+          estado?: string | null
+          id?: string
+          local_endereco?: string | null
+          margem_negociacao_pct?: number | null
+          observacoes?: string | null
+          perfil_markup_id?: string | null
+          prazo_validade?: string | null
+          responsavel_id?: string | null
+          status?: string
+          tipo_cliente?: string | null
+          tipo_proposta_id?: string | null
+          updated_at?: string | null
+          valor_negociado?: number | null
+          versao_sufixo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamentos_aprovado_por_fkey"
+            columns: ["aprovado_por"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamentos_aprovado_por_fkey"
+            columns: ["aprovado_por"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamentos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamentos_perfil_markup_id_fkey"
+            columns: ["perfil_markup_id"]
+            isOneToOne: false
+            referencedRelation: "perfis_markup"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamentos_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamentos_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamentos_tipo_proposta_id_fkey"
+            columns: ["tipo_proposta_id"]
+            isOneToOne: false
+            referencedRelation: "tipos_proposta"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      perfis_markup: {
+        Row: {
+          arbustos_herbaceas: number | null
+          arvores: number | null
+          ativo: boolean | null
+          created_at: string | null
+          forracoes: number | null
+          gramado: number | null
+          id: string
+          insumos_acabamento: number | null
+          insumos_solo: number | null
+          mao_de_obra: number | null
+          nome: string
+          palmeiras: number | null
+          vasos: number | null
+        }
+        Insert: {
+          arbustos_herbaceas?: number | null
+          arvores?: number | null
+          ativo?: boolean | null
+          created_at?: string | null
+          forracoes?: number | null
+          gramado?: number | null
+          id?: string
+          insumos_acabamento?: number | null
+          insumos_solo?: number | null
+          mao_de_obra?: number | null
+          nome: string
+          palmeiras?: number | null
+          vasos?: number | null
+        }
+        Update: {
+          arbustos_herbaceas?: number | null
+          arvores?: number | null
+          ativo?: boolean | null
+          created_at?: string | null
+          forracoes?: number | null
+          gramado?: number | null
+          id?: string
+          insumos_acabamento?: number | null
+          insumos_solo?: number | null
+          mao_de_obra?: number | null
+          nome?: string
+          palmeiras?: number | null
+          vasos?: number | null
+        }
+        Relationships: []
       }
       plantas: {
         Row: {
@@ -3571,6 +4059,30 @@ export type Database = {
           created_at?: string
           key?: string
           value?: boolean
+        }
+        Relationships: []
+      }
+      tipos_proposta: {
+        Row: {
+          ativo: boolean | null
+          codigo: string
+          created_at: string | null
+          id: string
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          codigo: string
+          created_at?: string | null
+          id?: string
+          nome: string
+        }
+        Update: {
+          ativo?: boolean | null
+          codigo?: string
+          created_at?: string | null
+          id?: string
+          nome?: string
         }
         Relationships: []
       }
