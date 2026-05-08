@@ -311,12 +311,25 @@ export default function NovoOrcamento() {
     },
   });
 
+  const itensBaixaConfianca = useMemo(
+    () => itensMaterial.filter((i) => i.confianca === "baixa").length,
+    [itensMaterial],
+  );
+
+  const podeAvancar = useMemo(() => {
+    if (etapaAtual === 1) return camposObrigatoriosOk;
+    if (etapaAtual === 2) return pdfCarregado && itensMaterial.length > 0;
+    return etapaAtual < ETAPAS.length;
+  }, [etapaAtual, camposObrigatoriosOk, pdfCarregado, itensMaterial.length]);
+
   const handleProxima = async () => {
-    if (!camposObrigatoriosOk) return;
-    try {
-      await saveMutation.mutateAsync();
-    } catch {
-      return;
+    if (!podeAvancar) return;
+    if (etapaAtual === 1) {
+      try {
+        await saveMutation.mutateAsync();
+      } catch {
+        return;
+      }
     }
     setEtapaAtual((e) => Math.min(ETAPAS.length, e + 1));
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -328,6 +341,83 @@ export default function NovoOrcamento() {
       await navigator.clipboard.writeText(form.codigo);
       toast({ title: "Código copiado" });
     } catch {}
+  };
+
+  const handlePdfSelect = (file: File | null) => {
+    if (!file) return;
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+      toast({ title: "Selecione um arquivo PDF", variant: "destructive" });
+      return;
+    }
+    setPdfFile(file);
+    setPdfCarregado(false);
+    setItensMaterial([]);
+  };
+
+  const extrairItens = async () => {
+    if (!pdfFile) return;
+    setProcessandoPdf(true);
+    try {
+      const fd = new FormData();
+      fd.append("pdf", pdfFile);
+      const { data, error } = await (supabase.functions as any).invoke("ler-memorial-pdf", {
+        body: fd,
+      });
+      if (error) throw error;
+      const arr = Array.isArray(data?.itens) ? data.itens : [];
+      const normalizados: ItemMemorial[] = arr.map((it: any) => ({
+        nome_popular: String(it?.nome_popular ?? "").trim(),
+        nome_cientifico: it?.nome_cientifico ?? null,
+        porte: String(it?.porte ?? "").trim(),
+        quantidade: Number(it?.quantidade ?? 0) || 0,
+        unidade: String(it?.unidade ?? "UNID").toUpperCase(),
+        categoria: String(it?.categoria ?? CATEGORIAS_ITEM[0]),
+        confianca:
+          ["alta", "media", "baixa"].includes(String(it?.confianca))
+            ? (it.confianca as ItemMemorial["confianca"])
+            : "media",
+      }));
+      setItensMaterial(normalizados);
+      setPdfCarregado(true);
+      toast({ title: `${normalizados.length} itens extraídos` });
+    } catch (e: any) {
+      toast({
+        title: "Erro ao extrair itens",
+        description: e?.message || "Tente novamente",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessandoPdf(false);
+    }
+  };
+
+  const updateItem = (idx: number, patch: Partial<ItemMemorial>) => {
+    setItensMaterial((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
+  };
+
+  const removeItem = (idx: number) => {
+    setItensMaterial((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const addItem = () => {
+    setItensMaterial((prev) => [
+      ...prev,
+      {
+        nome_popular: "",
+        nome_cientifico: null,
+        porte: "",
+        quantidade: 0,
+        unidade: "UNID",
+        categoria: CATEGORIAS_ITEM[0],
+        confianca: "alta",
+      },
+    ]);
+    setTimeout(() => {
+      const inputs = document.querySelectorAll<HTMLInputElement>(
+        "[data-memorial-row] input[data-field='nome_popular']",
+      );
+      inputs[inputs.length - 1]?.focus();
+    }, 50);
   };
 
   const Req = () => <span className="text-destructive ml-0.5">*</span>;
