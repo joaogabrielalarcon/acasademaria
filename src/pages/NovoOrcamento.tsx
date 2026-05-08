@@ -469,6 +469,7 @@ export default function NovoOrcamento() {
     return row?.fornecedores?.nome || "Fornecedor";
   };
 
+  const toggleFornecedor = (itemIdx: number, fornId: string) => {
     setFornecedoresSelecionados((prev) => {
       const atuais = prev[itemIdx] || [];
       const novo = atuais.includes(fornId)
