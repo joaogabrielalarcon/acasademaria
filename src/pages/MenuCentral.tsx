@@ -1,37 +1,50 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import {
-  Users,
-  UserCircle,
-  Package,
-  Wrench,
-  Settings,
-  BookOpen,
-  CalendarCheck,
-  CalendarDays,
-  DollarSign,
-  GitBranch,
-  Send,
-  Mic,
-  Square,
-} from "lucide-react";
+import { Send, Mic, Square } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth, useProfile, useHighestRole, type AppRole } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import mafeAvatar from "@/assets/flora-avatar.webp";
+import {
+  appNavigationItems,
+  comprasNavigationItems,
+  financeiroNavigationItems,
+  configNavigationItems,
+  type NavigationItem,
+} from "@/components/layout/navigation";
 
-const menuItems = [
-  { title: "Clientes", description: "Gerenciar clientes e perfis", icon: Users, href: "/clientes", roles: ["admin", "administrativo", "gestao_campo", "arquitetura", "responsavel_obra"] as AppRole[] },
-  { title: "Equipe", description: "Colaboradores e equipes", icon: UserCircle, href: "/equipe", roles: ["admin", "administrativo", "gestao_campo"] as AppRole[] },
-  { title: "Calendário", description: "Datas importantes e feriados", icon: CalendarDays, href: "/calendario", roles: ["admin", "administrativo", "gestao_campo", "arquitetura", "responsavel_obra"] as AppRole[] },
-  { title: "Compras", description: "Fornecedores, insumos e plantas", icon: Package, href: "/compras", roles: ["admin", "administrativo", "gestao_campo", "arquitetura"] as AppRole[] },
-  { title: "Máquinas", description: "Equipamentos e manutenção", icon: Wrench, href: "/maquinas", roles: ["admin", "administrativo", "gestao_campo"] as AppRole[] },
-  { title: "Processos Internos", description: "Documentação de processos", icon: BookOpen, href: "/processos", roles: ["admin", "administrativo"] as AppRole[] },
-  { title: "CRM", description: "Pipeline comercial", icon: GitBranch, href: "/crm", roles: ["admin", "administrativo", "gestao_campo", "arquitetura"] as AppRole[] },
-  { title: "Financeiro", description: "A receber e conciliação", icon: DollarSign, href: "/financeiro/a-receber", roles: ["admin", "administrativo"] as AppRole[] },
-  { title: "Minha Agenda", description: "Tarefas pessoais com IA", icon: CalendarCheck, href: "/agenda", roles: ["admin", "administrativo", "gestao_campo", "arquitetura", "responsavel_obra", "operador_campo"] as AppRole[] },
-  { title: "Configurações do Sistema", description: "Áreas, acessos e categorias", icon: Settings, href: "/areas", roles: ["admin"] as AppRole[] },
+type CardItem = NavigationItem & { description?: string };
+
+const DESCRIPTIONS: Record<string, string> = {
+  "/clientes": "Gerenciar clientes e perfis",
+  "/equipe": "Colaboradores e equipes",
+  "/calendario": "Datas importantes e feriados",
+  "/maquinas": "Equipamentos e manutenção",
+  "/processos": "Documentação de processos",
+  "/crm": "Pipeline comercial",
+  "/orcamentos": "Propostas e orçamentos",
+  "/agenda": "Tarefas pessoais com IA",
+  "/compras?tab=fornecedores": "Cadastro de fornecedores",
+  "/compras?tab=insumos": "Produtos e insumos",
+  "/compras?tab=plantas": "Catálogo de plantas",
+  "/compras?tab=estoque": "Controle de estoque",
+  "/financeiro/a-receber": "Parcelas e recebíveis",
+  "/financeiro/movimentacoes": "Entradas e saídas",
+  "/conciliacao": "Conciliação bancária",
+  "/areas": "Áreas internas",
+  "/acessos": "Gestão de usuários",
+  "/categorias-plantas": "Categorias de plantas",
+};
+
+const withDescriptions = (items: NavigationItem[]): CardItem[] =>
+  items.map((it) => ({ ...it, description: DESCRIPTIONS[it.href] }));
+
+const SECTIONS: { title: string; items: CardItem[] }[] = [
+  { title: "Principal", items: withDescriptions(appNavigationItems) },
+  { title: "Compras", items: withDescriptions(comprasNavigationItems) },
+  { title: "Financeiro", items: withDescriptions(financeiroNavigationItems) },
+  { title: "Configurações", items: withDescriptions(configNavigationItems) },
 ];
 
 const MOTIVATIONAL_QUOTES = [
