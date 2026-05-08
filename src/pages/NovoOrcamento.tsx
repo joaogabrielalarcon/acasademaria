@@ -145,6 +145,8 @@ export default function NovoOrcamento() {
   const [form, setForm] = useState({ ...initialForm });
 
   // Etapa 2 — Memorial
+  const [memorialModo, setMemorialModo] = useState<"pdf" | "texto">("pdf");
+  const [memorialTexto, setMemorialTexto] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfCarregado, setPdfCarregado] = useState(false);
   const [processandoPdf, setProcessandoPdf] = useState(false);
@@ -1435,24 +1437,26 @@ export default function NovoOrcamento() {
     [form],
   );
 
-  const podeAvancar = useMemo(() => {
-    if (etapaAtual === 1) return camposObrigatoriosOk;
-    if (etapaAtual === 2) return pdfCarregado && itensMaterial.length > 0;
-    return etapaAtual < ETAPAS.length;
-  }, [etapaAtual, camposObrigatoriosOk, pdfCarregado, itensMaterial.length]);
+  // Navegação livre — usuário pode pular entre etapas a qualquer momento.
+  // Avisos amarelos sinalizam pendências (campos faltando, memorial vazio etc.)
+  // mas não bloqueiam a navegação, pois nem todo tipo de proposta usa todas as etapas.
+  const podeAvancar = etapaAtual < ETAPAS.length;
 
-  const handleProxima = async () => {
-    if (!podeAvancar) return;
-    if (etapaAtual === 1) {
+  const irParaEtapa = async (destino: number) => {
+    if (destino === etapaAtual) return;
+    // Se estamos saindo da etapa 1 e os campos básicos estão ok, salva rascunho.
+    if (etapaAtual === 1 && camposObrigatoriosOk) {
       try {
         await saveMutation.mutateAsync();
       } catch {
-        return;
+        // Não bloqueia navegação por falha de save.
       }
     }
-    setEtapaAtual((e) => Math.min(ETAPAS.length, e + 1));
+    setEtapaAtual(Math.max(1, Math.min(ETAPAS.length, destino)));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  const handleProxima = () => irParaEtapa(etapaAtual + 1);
 
   const copiarCodigo = async () => {
     if (!form.codigo) return;
@@ -1502,6 +1506,44 @@ export default function NovoOrcamento() {
     } catch (e: any) {
       toast({
         title: "Erro ao extrair itens",
+        description: e?.message || "Tente novamente",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessandoPdf(false);
+    }
+  };
+
+  const extrairItensTexto = async () => {
+    if (!memorialTexto.trim()) {
+      toast({ title: "Cole o texto do memorial primeiro", variant: "destructive" });
+      return;
+    }
+    setProcessandoPdf(true);
+    try {
+      const { data, error } = await (supabase.functions as any).invoke("ler-memorial-texto", {
+        body: { texto: memorialTexto },
+      });
+      if (error) throw error;
+      const arr = Array.isArray(data?.itens) ? data.itens : [];
+      const normalizados: ItemMemorial[] = arr.map((it: any) => ({
+        nome_popular: String(it?.nome_popular ?? "").trim(),
+        nome_cientifico: it?.nome_cientifico ?? null,
+        porte: String(it?.porte ?? "").trim(),
+        quantidade: Number(it?.quantidade ?? 0) || 0,
+        unidade: String(it?.unidade ?? "UNID").toUpperCase(),
+        categoria: String(it?.categoria ?? CATEGORIAS_ITEM[0]),
+        confianca:
+          ["alta", "media", "baixa"].includes(String(it?.confianca))
+            ? (it.confianca as ItemMemorial["confianca"])
+            : "media",
+      }));
+      setItensMaterial(normalizados);
+      setPdfCarregado(true);
+      toast({ title: `${normalizados.length} itens extraídos` });
+    } catch (e: any) {
+      toast({
+        title: "Erro ao interpretar texto",
         description: e?.message || "Tente novamente",
         variant: "destructive",
       });
@@ -1561,8 +1603,8 @@ export default function NovoOrcamento() {
             </div>
           </div>
 
-          {/* Barra de progresso */}
-          <Card className="p-4">
+          {/* Barra de etapas (navegação livre) */}
+          <Card className="p-4 sticky top-0 z-20 bg-card/95 backdrop-blur">
             <div className="flex items-center justify-between gap-2 overflow-x-auto">
               {ETAPAS.map((nome, idx) => {
                 const numero = idx + 1;
@@ -1570,24 +1612,32 @@ export default function NovoOrcamento() {
                 const concluida = numero < etapaAtual;
                 return (
                   <div key={nome} className="flex items-center gap-2 flex-shrink-0">
-                    <div
-                      className={cn(
-                        "w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold border-2 transition-colors",
-                        ativa && "bg-primary text-primary-foreground border-primary",
-                        concluida && "bg-primary/20 text-primary border-primary/40",
-                        !ativa && !concluida && "bg-muted text-muted-foreground border-border"
-                      )}
+                    <button
+                      type="button"
+                      onClick={() => irParaEtapa(numero)}
+                      className="flex items-center gap-2 group"
+                      title={`Ir para ${nome}`}
                     >
-                      {concluida ? <Check className="w-4 h-4" /> : numero}
-                    </div>
-                    <span
-                      className={cn(
-                        "text-xs whitespace-nowrap",
-                        ativa ? "text-foreground font-semibold" : "text-muted-foreground"
-                      )}
-                    >
-                      {nome}
-                    </span>
+                      <div
+                        className={cn(
+                          "w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold border-2 transition-colors",
+                          ativa && "bg-primary text-primary-foreground border-primary",
+                          concluida && "bg-primary/20 text-primary border-primary/40",
+                          !ativa && !concluida && "bg-muted text-muted-foreground border-border",
+                          "group-hover:border-primary"
+                        )}
+                      >
+                        {concluida ? <Check className="w-4 h-4" /> : numero}
+                      </div>
+                      <span
+                        className={cn(
+                          "text-xs whitespace-nowrap",
+                          ativa ? "text-foreground font-semibold" : "text-muted-foreground group-hover:text-foreground"
+                        )}
+                      >
+                        {nome}
+                      </span>
+                    </button>
                     {idx < ETAPAS.length - 1 && <div className="w-6 h-px bg-border" />}
                   </div>
                 );
@@ -1859,11 +1909,36 @@ export default function NovoOrcamento() {
               <div>
                 <h2 className="font-display text-xl text-foreground">Memorial Descritivo</h2>
                 <p className="text-sm text-muted-foreground">
-                  Faça upload do PDF e revise os itens extraídos pela IA
+                  Envie o PDF, cole o texto do memorial, ou pule esta etapa se a proposta não tiver memorial (ex.: desenvolvimento de projeto).
                 </p>
               </div>
 
+              {/* Alternador PDF / Texto */}
+              <div className="inline-flex rounded-md border border-border p-1 bg-muted/30 w-fit">
+                <button
+                  type="button"
+                  onClick={() => setMemorialModo("pdf")}
+                  className={cn(
+                    "px-3 py-1.5 text-sm rounded transition-colors",
+                    memorialModo === "pdf" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                  )}
+                >
+                  Upload de PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMemorialModo("texto")}
+                  className={cn(
+                    "px-3 py-1.5 text-sm rounded transition-colors",
+                    memorialModo === "texto" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                  )}
+                >
+                  Colar texto
+                </button>
+              </div>
+
               {/* Upload */}
+              {memorialModo === "pdf" && (
               <div>
                 <label
                   htmlFor="memorial-pdf-input"
@@ -1940,6 +2015,33 @@ export default function NovoOrcamento() {
                   </div>
                 )}
               </div>
+              )}
+
+              {memorialModo === "texto" && (
+                <div className="space-y-3">
+                  <Textarea
+                    placeholder="Cole aqui o texto do memorial descritivo..."
+                    value={memorialTexto}
+                    onChange={(e) => setMemorialTexto(e.target.value)}
+                    rows={12}
+                    className="font-mono text-sm"
+                  />
+                  <div className="flex justify-center">
+                    <Button
+                      variant="terracota"
+                      onClick={extrairItensTexto}
+                      disabled={processandoPdf || !memorialTexto.trim()}
+                    >
+                      {processandoPdf ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-4 h-4" />
+                      )}
+                      Interpretar texto com IA
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {/* Loading */}
               {processandoPdf && (
@@ -3714,8 +3816,14 @@ export default function NovoOrcamento() {
 
           {etapaAtual === 1 && camposFaltando.length > 0 && (
             <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-              <strong>Para avançar, preencha:</strong>{" "}
-              {camposFaltando.join(", ")}
+              <strong>Campos pendentes:</strong> {camposFaltando.join(", ")}
+              <span className="ml-1 text-amber-800/80">— você pode avançar e voltar depois.</span>
+            </div>
+          )}
+
+          {etapaAtual === 2 && itensMaterial.length === 0 && (
+            <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              Nenhum item de memorial cadastrado. Se a proposta não tiver memorial (ex.: desenvolvimento de projeto), você pode pular esta etapa normalmente.
             </div>
           )}
 
@@ -3723,7 +3831,7 @@ export default function NovoOrcamento() {
           <div className="flex items-center justify-between gap-2">
             <Button
               variant="outline"
-              onClick={() => setEtapaAtual((e) => Math.max(1, e - 1))}
+              onClick={() => irParaEtapa(etapaAtual - 1)}
               disabled={etapaAtual === 1 || processandoPdf}
             >
               <ArrowLeft className="w-4 h-4" />
@@ -3744,34 +3852,18 @@ export default function NovoOrcamento() {
                 Salvar rascunho
               </Button>
 
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>
-                    <Button
-                      variant="terracota"
-                      onClick={handleProxima}
-                      disabled={
-                        !podeAvancar ||
-                        etapaAtual === ETAPAS.length ||
-                        saveMutation.isPending ||
-                        processandoPdf
-                      }
-                    >
-                      Próxima etapa
-                      <ArrowRight className="w-4 h-4" />
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                {!podeAvancar && (
-                  <TooltipContent>
-                    {etapaAtual === 1
-                      ? "Preencha todos os campos obrigatórios para continuar"
-                      : etapaAtual === 2
-                        ? "Carregue o PDF e extraia os itens para continuar"
-                        : "Complete a etapa para continuar"}
-                  </TooltipContent>
-                )}
-              </Tooltip>
+              <Button
+                variant="terracota"
+                onClick={handleProxima}
+                disabled={
+                  etapaAtual === ETAPAS.length ||
+                  saveMutation.isPending ||
+                  processandoPdf
+                }
+              >
+                Próxima etapa
+                <ArrowRight className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </div>
