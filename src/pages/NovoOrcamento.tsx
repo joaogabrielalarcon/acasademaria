@@ -1930,7 +1930,7 @@ export default function NovoOrcamento() {
                     memorialModo === "pdf" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
                   )}
                 >
-                  Upload de PDF
+                  Upload de arquivo
                 </button>
                 <button
                   type="button"
