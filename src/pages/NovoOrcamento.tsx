@@ -1744,26 +1744,48 @@ export default function NovoOrcamento() {
                     />
                   </div>
 
-                  {/* Perfil de markup */}
+                  {/* Perfil de markup (opcional) */}
                   <div className="space-y-2">
-                    <Label>Perfil de markup<Req /></Label>
-                    {(perfisMarkup as any[]).length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
-                        Nenhum perfil cadastrado. Crie um em Configurações → Perfis de Markup
-                      </p>
-                    ) : (
+                    <Label>
+                      Perfil de markup{" "}
+                      <span className="text-xs text-muted-foreground font-normal">
+                        (opcional — pode definir depois)
+                      </span>
+                    </Label>
+                    <div className="flex gap-2">
                       <Select
                         value={form.perfil_markup_id}
                         onValueChange={(v) => setForm((c) => ({ ...c, perfil_markup_id: v }))}
                       >
-                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={
+                              (perfisMarkup as any[]).length === 0
+                                ? "Nenhum perfil cadastrado"
+                                : "Selecione..."
+                            }
+                          />
+                        </SelectTrigger>
                         <SelectContent>
                           {(perfisMarkup as any[]).map((p) => (
                             <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                    )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        title="Cadastrar novo perfil de markup"
+                        onClick={() =>
+                          openQuickAdd("perfil_markup", (id) =>
+                            setForm((c) => ({ ...c, perfil_markup_id: id })),
+                          )
+                        }
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
 
                   {/* Prazo validade */}
