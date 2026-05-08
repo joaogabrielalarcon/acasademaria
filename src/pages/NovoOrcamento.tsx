@@ -1970,10 +1970,10 @@ export default function NovoOrcamento() {
                     <div className="flex flex-col items-center gap-2">
                       <Upload className="w-10 h-10 text-muted-foreground" />
                       <p className="text-foreground font-medium">
-                        Arraste o PDF do memorial descritivo aqui
+                        Arraste o memorial aqui (PDF, imagem ou planilha)
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        ou clique para selecionar o arquivo
+                        ou clique para selecionar — aceita PDF, JPG/PNG, XLS, XLSX ou CSV
                       </p>
                     </div>
                   ) : (
