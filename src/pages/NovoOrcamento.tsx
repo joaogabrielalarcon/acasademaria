@@ -475,6 +475,463 @@ export default function NovoOrcamento() {
   const fmtBRL = (n: number) =>
     n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+  // ============ Etapa 7 — Resumo financeiro ============
+  const CATEGORIAS_PLANTAS = [
+    "Árvores",
+    "Arbustos e Herbáceas",
+    "Forrações",
+    "Gramado",
+    "Palmeiras",
+    "Trepadeiras",
+    "Vasos",
+  ];
+  const CATEGORIAS_OUTROS = ["Insumos", "Fretes", "Mão de Obra", "Transporte", "Custos Indiretos"];
+  const CATEGORIAS_RESUMO = [...CATEGORIAS_PLANTAS, ...CATEGORIAS_OUTROS];
+
+  const [markupsCategoria, setMarkupsCategoria] = useState<Record<string, number>>({});
+  const [markupModal, setMarkupModal] = useState<{
+    open: boolean;
+    categoria: string;
+    anterior: number;
+    novo: number;
+    motivo: string;
+  }>({ open: false, categoria: "", anterior: 0, novo: 0, motivo: "" });
+  const [versoesPendentes, setVersoesPendentes] = useState<
+    Array<{ campo_alterado: string; valor_anterior: string; valor_novo: string; motivo: string }>
+  >([]);
+
+  const [comissaoOn, setComissaoOn] = useState(false);
+  const [comissaoTipo, setComissaoTipo] = useState<"vendas" | "indicacao">("vendas");
+  const [comissaoPct, setComissaoPct] = useState<string>("0");
+  const [comissaoBeneficiario, setComissaoBeneficiario] = useState("");
+  const [comissaoAberta, setComissaoAberta] = useState(false);
+
+  const [margemNegPct, setMargemNegPct] = useState<number>(0);
+
+  const [aprovarModal, setAprovarModal] = useState<{ open: boolean; valor: string }>({
+    open: false,
+    valor: "",
+  });
+  const [savingFinal, setSavingFinal] = useState(false);
+
+  useEffect(() => {
+    if (etapaAtual !== 7) return;
+    setMarkupsCategoria((prev) => {
+      const next = { ...prev };
+      CATEGORIAS_RESUMO.forEach((c) => {
+        if (next[c] === undefined) {
+          next[c] = c === "Fretes" ? 0 : 100;
+        }
+      });
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [etapaAtual]);
+
+  const custoPorCategoria = useMemo(() => {
+    const acc: Record<string, number> = {};
+    CATEGORIAS_PLANTAS.forEach((c) => (acc[c] = 0));
+    itensMaterial.forEach((it, idx) => {
+      const cat = CATEGORIAS_PLANTAS.find(
+        (c) => c.toLowerCase() === (it.categoria || "").toLowerCase(),
+      );
+      if (!cat) return;
+      const itemCotacoes = cotacoes[idx] || {};
+      const principal = Object.values(itemCotacoes).find((l) => l.status_selecao === "principal");
+      if (!principal) return;
+      const margem = margensSeg[idx] ?? 0;
+      const qtdOrcar = Math.ceil((Number(it.quantidade) || 0) * (1 + margem / 100));
+      acc[cat] += (Number(principal.valor_unitario) || 0) * qtdOrcar;
+    });
+    return acc;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itensMaterial, cotacoes, margensSeg]);
+
+  const totalCustoPlantas = useMemo(
+    () => Object.values(custoPorCategoria).reduce((s, v) => s + v, 0),
+    [custoPorCategoria],
+  );
+
+  const totalCustoInsumos = useMemo(
+    () =>
+      insumosAdicionais.reduce((s, i) => {
+        const qtdEsp = Number(i.quantidade_esperada) || 0;
+        const margem = Number(i.margem) || 0;
+        const qtd = Math.ceil(qtdEsp * (1 + margem / 100));
+        return s + qtd * (Number(i.valor_unitario) || 0);
+      }, 0),
+    [insumosAdicionais],
+  );
+
+  const impostoProdutos = (totalCustoPlantas + totalCustoInsumos) * 0.135;
+
+  const custoLinha = (cat: string) => {
+    if (cat === "Insumos") return totalCustoInsumos;
+    if (cat === "Fretes") return totalFretes;
+    if (cat === "Mão de Obra") return valorNfMo;
+    if (cat === "Transporte") return totalTransporte;
+    if (cat === "Custos Indiretos") return totalIndiretos;
+    return custoPorCategoria[cat] || 0;
+  };
+
+  const linhasResumo = useMemo(() => {
+    return CATEGORIAS_RESUMO.map((cat) => {
+      const custo = custoLinha(cat);
+      const markup = markupsCategoria[cat] ?? 0;
+      const venda = custo * (1 + markup / 100);
+      const margemBruta = venda > 0 ? ((venda - custo) / venda) * 100 : 0;
+      return { categoria: cat, custo, markup, venda, margemBruta };
+    }).filter((l) => l.custo > 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    markupsCategoria,
+    custoPorCategoria,
+    totalCustoInsumos,
+    totalFretes,
+    valorNfMo,
+    totalTransporte,
+    totalIndiretos,
+  ]);
+
+  const totaisResumo = useMemo(() => {
+    const totalCusto = linhasResumo.reduce((s, l) => s + l.custo, 0);
+    const totalVenda = linhasResumo.reduce((s, l) => s + l.venda, 0) + impostoProdutos;
+    const margemBrutaVal = totalVenda - totalCusto;
+    const markupMedio = totalCusto > 0 ? (totalVenda / totalCusto - 1) * 100 : 0;
+    return { totalCusto, totalVenda, margemBrutaVal, markupMedio };
+  }, [linhasResumo, impostoProdutos]);
+
+  const valorComissao = comissaoOn
+    ? ((Number(comissaoPct) || 0) * totaisResumo.totalVenda) / 100
+    : 0;
+  const totalCliente = totaisResumo.totalVenda - valorComissao;
+  const descontoMaximo = totalCliente * (margemNegPct / 100);
+  const valorMinimo = totalCliente - descontoMaximo;
+  const areaM2 = Number(form.area_m2) || 0;
+  const custoPorM2 = areaM2 > 0 ? totaisResumo.totalCusto / areaM2 : 0;
+  const margemBrutaPctTotal =
+    totaisResumo.totalVenda > 0
+      ? (totaisResumo.margemBrutaVal / totaisResumo.totalVenda) * 100
+      : 0;
+
+  const abrirEdicaoMarkup = (categoria: string) => {
+    setMarkupModal({
+      open: true,
+      categoria,
+      anterior: markupsCategoria[categoria] ?? 0,
+      novo: markupsCategoria[categoria] ?? 0,
+      motivo: "",
+    });
+  };
+
+  const confirmarMarkup = () => {
+    if (!markupModal.motivo.trim()) {
+      toast({ title: "Informe o motivo da alteração", variant: "destructive" });
+      return;
+    }
+    setMarkupsCategoria((p) => ({ ...p, [markupModal.categoria]: markupModal.novo }));
+    setVersoesPendentes((p) => [
+      ...p,
+      {
+        campo_alterado: `markup_${markupModal.categoria}`,
+        valor_anterior: String(markupModal.anterior),
+        valor_novo: String(markupModal.novo),
+        motivo: markupModal.motivo,
+      },
+    ]);
+    setMarkupModal((m) => ({ ...m, open: false }));
+  };
+
+  const persistirOrcamentoCompleto = async (
+    statusFinal: string,
+    extras?: Record<string, any>,
+  ) => {
+    setSavingFinal(true);
+    try {
+      const basePayload: any = {
+        ...buildPayload(),
+        status: statusFinal,
+        aliquota_mes_pct: aliquotaMes,
+        tipo_nf: tipoNf,
+        margem_negociacao_pct: margemNegPct,
+        ...(extras || {}),
+      };
+      if (statusFinal === "aguardando_aprovacao") {
+        basePayload.data_envio = new Date().toISOString().slice(0, 10);
+      }
+
+      let orcId = id as string | undefined;
+      if (isEdit && orcId) {
+        const { error } = await (supabase as any)
+          .from("orcamentos")
+          .update(basePayload)
+          .eq("id", orcId);
+        if (error) throw error;
+      } else {
+        const { data, error } = await (supabase as any)
+          .from("orcamentos")
+          .insert(basePayload)
+          .select("id")
+          .single();
+        if (error) throw error;
+        orcId = data.id;
+      }
+      if (!orcId) throw new Error("Orçamento sem ID");
+
+      const tabelas = [
+        "orcamento_versoes",
+        "orcamento_comissoes",
+        "orcamento_custos_indiretos",
+        "orcamento_transporte",
+        "orcamento_mo",
+        "orcamento_fretes",
+        "orcamento_insumos",
+      ];
+      for (const t of tabelas) {
+        await (supabase as any).from(t).delete().eq("orcamento_id", orcId);
+      }
+      const { data: itensExistentes } = await (supabase as any)
+        .from("orcamento_itens")
+        .select("id")
+        .eq("orcamento_id", orcId);
+      const idsItensExist = (itensExistentes || []).map((r: any) => r.id);
+      if (idsItensExist.length > 0) {
+        await (supabase as any).from("orcamento_cotacoes").delete().in("item_id", idsItensExist);
+        await (supabase as any).from("orcamento_itens").delete().eq("orcamento_id", orcId);
+      }
+
+      for (let idx = 0; idx < itensMaterial.length; idx++) {
+        const it = itensMaterial[idx];
+        const margem = margensSeg[idx] ?? 0;
+        const qtdOrcar = Math.ceil((Number(it.quantidade) || 0) * (1 + margem / 100));
+        const itemCotacoes = cotacoes[idx] || {};
+        const principal = Object.entries(itemCotacoes).find(
+          ([, l]) => l.status_selecao === "principal",
+        );
+        const principalForn = principal ? principal[0] : null;
+        const principalLinha = principal ? principal[1] : null;
+        const custoUnit = principalLinha ? Number(principalLinha.valor_unitario) || 0 : 0;
+        const markupCat = markupsCategoria[it.categoria] ?? 0;
+        const venda = custoUnit * (1 + markupCat / 100);
+
+        const { data: itemRow, error: iErr } = await (supabase as any)
+          .from("orcamento_itens")
+          .insert({
+            orcamento_id: orcId,
+            categoria: it.categoria,
+            nome_popular: it.nome_popular,
+            nome_cientifico: it.nome_cientifico,
+            porte_solicitado: it.porte,
+            quantidade_esperada: it.quantidade,
+            margem_seguranca_pct: margem,
+            quantidade_orcar: qtdOrcar,
+            unidade: it.unidade,
+            fornecedor_escolhido_id: principalForn,
+            custo_unitario: custoUnit,
+            porte_fornecedor: principalLinha?.porte_ofertado || null,
+            porte_divergente: principalLinha?.porte_ofertado
+              ? (principalLinha.porte_ofertado || "").toLowerCase() !==
+                (it.porte || "").toLowerCase()
+              : false,
+            markup_pct: markupCat,
+            preco_venda_unitario: venda,
+            imposto_pct: 13.5,
+            preco_venda_final: venda * 1.135,
+            ordem: idx,
+          })
+          .select("id")
+          .single();
+        if (iErr) throw iErr;
+
+        for (const [fornId, l] of Object.entries(itemCotacoes)) {
+          await (supabase as any).from("orcamento_cotacoes").insert({
+            item_id: itemRow.id,
+            fornecedor_id: fornId,
+            valor_unitario_cotado: Number(l.valor_unitario) || 0,
+            porte_ofertado: l.porte_ofertado || null,
+            disponivel: l.disponivel,
+            status_selecao: l.status_selecao,
+            obs: l.obs || null,
+          });
+        }
+      }
+
+      let ord = 0;
+      for (const c of insumosCalc) {
+        await (supabase as any).from("orcamento_insumos").insert({
+          orcamento_id: orcId,
+          nome: c.nome,
+          quantidade_orcar: c.quantidade,
+          unidade: c.unidade,
+          valor_unitario: 0,
+          valor_total: 0,
+          calculado_automaticamente: true,
+          ordem: ord++,
+        });
+      }
+      for (const i of insumosAdicionais) {
+        if (!i.nome) continue;
+        const qtdEsp = Number(i.quantidade_esperada) || 0;
+        const margem = Number(i.margem) || 0;
+        const qtd = Math.ceil(qtdEsp * (1 + margem / 100));
+        const vt = qtd * (Number(i.valor_unitario) || 0);
+        const markupIns = markupsCategoria["Insumos"] ?? 0;
+        await (supabase as any).from("orcamento_insumos").insert({
+          orcamento_id: orcId,
+          nome: i.nome,
+          fornecedor_id: i.fornecedor_id || null,
+          quantidade_esperada: qtdEsp,
+          margem_seguranca_pct: margem,
+          quantidade_orcar: qtd,
+          unidade: i.unidade,
+          valor_unitario: Number(i.valor_unitario) || 0,
+          valor_total: vt,
+          markup_pct: markupIns,
+          preco_venda_unitario:
+            (Number(i.valor_unitario) || 0) * (1 + markupIns / 100),
+          preco_venda_total: vt * (1 + markupIns / 100),
+          calculado_automaticamente: false,
+          obs_interna: i.obs_interna || null,
+          obs_proposta: i.obs_proposta || null,
+          ordem: ord++,
+        });
+      }
+
+      for (const f of fretes) {
+        const qtd = Math.ceil((Number(f.qtd_esperada) || 0) * (1 + (Number(f.margem) || 0) / 100));
+        await (supabase as any).from("orcamento_fretes").insert({
+          orcamento_id: orcId,
+          transportador: f.transportador_nome || null,
+          descricao_percurso: f.percurso || null,
+          valor_unitario: Number(f.valor_unitario) || 0,
+          qtd_esperada: Number(f.qtd_esperada) || 0,
+          margem_seguranca_pct: Number(f.margem) || 0,
+          qtd_orcar: qtd,
+          valor_total: qtd * (Number(f.valor_unitario) || 0),
+        });
+      }
+
+      for (const m of moLinhas) {
+        const bruto =
+          (Number(m.qtd) || 0) * (Number(m.dias) || 0) * (Number(m.salario_diario) || 0);
+        const aliq = (aliquotaMes || 0) + (tipoNf === "pj" ? 11 : 0);
+        const denom = (100 - aliq) / 100;
+        const valNf = denom > 0 ? bruto / denom : 0;
+        await (supabase as any).from("orcamento_mo").insert({
+          orcamento_id: orcId,
+          cargo_id: m.cargo_id || null,
+          qtd_funcionarios: Number(m.qtd) || 0,
+          qtd_dias: Number(m.dias) || 0,
+          salario_diario: Number(m.salario_diario) || 0,
+          custo_total: bruto,
+          aliquota_mes_pct: aliquotaMes,
+          tipo_nf: tipoNf,
+          valor_com_imposto: valNf,
+        });
+      }
+
+      for (const t of transporte) {
+        const sub =
+          (Number(t.valor_km) || 0) * (Number(t.dias) || 0) * (Number(t.km) || 0);
+        await (supabase as any).from("orcamento_transporte").insert({
+          orcamento_id: orcId,
+          tipo: t.tipo,
+          valor_km: Number(t.valor_km) || 0,
+          qtd_dias: Number(t.dias) || 0,
+          qtd_km: Number(t.km) || 0,
+          subtotal: sub,
+        });
+      }
+
+      for (const c of custosIndiretos) {
+        const total = (Number(c.valor_unitario) || 0) * (Number(c.quantidade) || 0);
+        await (supabase as any).from("orcamento_custos_indiretos").insert({
+          orcamento_id: orcId,
+          tipo: c.tipo,
+          descricao: c.descricao || null,
+          valor_unitario: Number(c.valor_unitario) || 0,
+          quantidade: Number(c.quantidade) || 0,
+          total,
+        });
+      }
+
+      if (comissaoOn && Number(comissaoPct) > 0) {
+        await (supabase as any).from("orcamento_comissoes").insert({
+          orcamento_id: orcId,
+          tipo: comissaoTipo,
+          percentual: Number(comissaoPct) || 0,
+          beneficiario: comissaoBeneficiario || null,
+          valor_calculado: valorComissao,
+        });
+      }
+
+      const { data: userData } = await supabase.auth.getUser();
+      const uid = userData?.user?.id || null;
+      for (const v of versoesPendentes) {
+        await (supabase as any).from("orcamento_versoes").insert({
+          orcamento_id: orcId,
+          campo_alterado: v.campo_alterado,
+          valor_anterior: v.valor_anterior,
+          valor_novo: v.valor_novo,
+          motivo: v.motivo,
+          usuario_id: uid,
+        });
+      }
+      setVersoesPendentes([]);
+
+      queryClient.invalidateQueries({ queryKey: ["orcamentos"] });
+      if (!isEdit) navigate(`/orcamentos/${orcId}`, { replace: true });
+      return orcId;
+    } finally {
+      setSavingFinal(false);
+    }
+  };
+
+  const handleSalvarRascunho = async () => {
+    try {
+      await persistirOrcamentoCompleto("rascunho");
+      toast({ title: "Rascunho salvo com sucesso" });
+    } catch (e: any) {
+      toast({ title: "Erro ao salvar", description: e?.message, variant: "destructive" });
+    }
+  };
+
+  const handleEnviarCliente = async () => {
+    try {
+      await persistirOrcamentoCompleto("aguardando_aprovacao");
+      const validade = form.prazo_validade_dias ? Number(form.prazo_validade_dias) : 30;
+      const dataValid = new Date();
+      dataValid.setDate(dataValid.getDate() + validade);
+      toast({
+        title: "Orçamento enviado ao cliente",
+        description: `Válido até ${dataValid.toLocaleDateString("pt-BR")}`,
+      });
+    } catch (e: any) {
+      toast({ title: "Erro ao enviar", description: e?.message, variant: "destructive" });
+    }
+  };
+
+  const handleAprovar = async () => {
+    try {
+      await persistirOrcamentoCompleto("aprovado", {
+        valor_negociado_final: Number(aprovarModal.valor) || totalCliente,
+        data_aprovacao: new Date().toISOString(),
+        editavel: false,
+      });
+      if (form.cliente_id) {
+        await (supabase as any)
+          .from("crm_cards")
+          .update({ status: "Aprovado" })
+          .eq("cliente_id", form.cliente_id);
+      }
+      setAprovarModal({ open: false, valor: "" });
+      toast({ title: "Orçamento aprovado com sucesso!" });
+      setTimeout(() => navigate("/orcamentos"), 2000);
+    } catch (e: any) {
+      toast({ title: "Erro ao aprovar", description: e?.message, variant: "destructive" });
+    }
+  };
+
   const setCotacao = (itemIdx: number, fornId: string, patch: Partial<CotacaoLinha>) => {
     setCotacoes((prev) => {
       const itemMap = { ...(prev[itemIdx] || {}) };
