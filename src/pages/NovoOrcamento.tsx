@@ -114,7 +114,6 @@ const REQUIRED_FIELDS: Array<keyof typeof initialForm> = [
   "cidade",
   "estado",
   "area_m2",
-  "perfil_markup_id",
 ];
 
 const initialForm = {
