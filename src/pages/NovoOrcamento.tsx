@@ -167,6 +167,147 @@ export default function NovoOrcamento() {
   const [margensSeg, setMargensSeg] = useState<Record<number, number>>({});
   const [cardsColapsados, setCardsColapsados] = useState<Record<number, boolean>>({});
 
+  // Etapa 5 — Insumos
+  type InsumoCalc = { tipo: string; nome: string; quantidade: number; unidade: string };
+  type InsumoAdicional = {
+    nome: string;
+    fornecedor_id: string;
+    quantidade_esperada: string;
+    unidade: string;
+    margem: string;
+    valor_unitario: string;
+    obs_interna: string;
+    obs_proposta: string;
+  };
+  const [insumosCalc, setInsumosCalc] = useState<InsumoCalc[]>([]);
+  const [insumosAdicionais, setInsumosAdicionais] = useState<InsumoAdicional[]>([]);
+  const [insumosCalculados, setInsumosCalculados] = useState(false);
+
+  const { data: coeficientes = [] } = useQuery({
+    queryKey: ["coeficientes-insumos-vigentes"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("coeficientes_insumos")
+        .select("*")
+        .eq("vigente", true);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const { data: fornecedoresLista = [] } = useQuery({
+    queryKey: ["fornecedores-ativos-lista"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("fornecedores")
+        .select("id, nome, mercado")
+        .eq("status", "ativo")
+        .order("nome");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const tipoCoefDoItem = (it: ItemMemorial): string | null => {
+    const cat = (it.categoria || "").toLowerCase();
+    const porte = (it.porte || "").toLowerCase();
+    if (cat.includes("forra")) return "forracao";
+    if (cat.includes("arbusto") || cat.includes("herb")) {
+      const alturaMatch = porte.match(/([\d.,]+)\s*m/);
+      const altura = alturaMatch ? parseFloat(alturaMatch[1].replace(",", ".")) : NaN;
+      if (porte.includes("peq") || (!isNaN(altura) && altura < 0.5)) return "arbusto_pequeno";
+      return "arbusto_medio";
+    }
+    if (cat.includes("árvore") || cat.includes("arvore")) return "arvore_dap15";
+    if (cat.includes("gramado")) return "gramado";
+    if (cat.includes("palmeira")) return "palmeira_grande";
+    return null;
+  };
+
+  // Calcular insumos automaticamente ao entrar na Etapa 5 (uma vez, permitindo edição)
+  useEffect(() => {
+    if (etapaAtual !== 5 || insumosCalculados) return;
+    if (!coeficientes || coeficientes.length === 0) return;
+
+    const acc = { mo: 0, terra: 0, adubo: 0, munck: 0, corda: 0 };
+    itensMaterial.forEach((it, idx) => {
+      const tipo = tipoCoefDoItem(it);
+      if (!tipo) return;
+      const coef = (coeficientes as any[]).find((c) => c.tipo_planta === tipo);
+      if (!coef) return;
+      const margem = margensSeg[idx] ?? 0;
+      const qtdOrcar = Math.ceil((Number(it.quantidade) || 0) * (1 + margem / 100));
+      acc.mo += qtdOrcar * Number(coef.mo_por_unidade || 0);
+      acc.terra += qtdOrcar * Number(coef.terra_por_unidade || 0);
+      acc.adubo += qtdOrcar * Number(coef.adubo_por_unidade || 0);
+      acc.munck += qtdOrcar * Number(coef.munck_por_unidade || 0);
+      acc.corda += qtdOrcar * Number(coef.corda_por_unidade || 0);
+    });
+
+    const linhas: InsumoCalc[] = [
+      { tipo: "mo", nome: "MO (Mão de obra plantio)", quantidade: +acc.mo.toFixed(2), unidade: "dias" },
+      { tipo: "terra", nome: "Terra", quantidade: +acc.terra.toFixed(2), unidade: "m³" },
+      { tipo: "adubo", nome: "Adubo", quantidade: +acc.adubo.toFixed(2), unidade: "kits" },
+      { tipo: "munck", nome: "Munck", quantidade: +acc.munck.toFixed(2), unidade: "dias" },
+      { tipo: "corda", nome: "Corda", quantidade: +acc.corda.toFixed(2), unidade: "m" },
+    ].filter((l) => l.quantidade > 0);
+
+    setInsumosCalc(linhas);
+    setInsumosCalculados(true);
+  }, [etapaAtual, coeficientes, itensMaterial, margensSeg, insumosCalculados]);
+
+  const INSUMOS_SUGERIDOS = [
+    "Torta de mamona", "Yoorin", "K-forte", "Algen (Lithothamnium)",
+    "Bokashi", "Terra preta", "Substrato", "Adubo preparado",
+    "Pedrisco Palha nº3", "Seixo Bege", "Corda (10mm)", "Bidin",
+    "Limitador", "Lona",
+  ];
+  const UNIDADES_INSUMO = ["m³", "saco", "tonelada", "metro", "rolo", "unidade", "kg"];
+
+  const toggleInsumoSugerido = (nome: string) => {
+    setInsumosAdicionais((prev) => {
+      const idx = prev.findIndex((i) => i.nome === nome);
+      if (idx >= 0) return prev.filter((_, i) => i !== idx);
+      return [
+        ...prev,
+        {
+          nome,
+          fornecedor_id: "",
+          quantidade_esperada: "",
+          unidade: "unidade",
+          margem: "0",
+          valor_unitario: "",
+          obs_interna: "",
+          obs_proposta: "",
+        },
+      ];
+    });
+  };
+
+  const updateInsumoAdic = (idx: number, patch: Partial<InsumoAdicional>) => {
+    setInsumosAdicionais((prev) => prev.map((i, j) => (j === idx ? { ...i, ...patch } : i)));
+  };
+
+  const addInsumoCustom = () => {
+    setInsumosAdicionais((prev) => [
+      ...prev,
+      {
+        nome: "",
+        fornecedor_id: "",
+        quantidade_esperada: "",
+        unidade: "unidade",
+        margem: "0",
+        valor_unitario: "",
+        obs_interna: "",
+        obs_proposta: "",
+      },
+    ]);
+  };
+
+  const insumosSemQtd = insumosAdicionais.filter(
+    (i) => i.nome && (!i.quantidade_esperada || Number(i.quantidade_esperada) <= 0),
+  );
+
   const setCotacao = (itemIdx: number, fornId: string, patch: Partial<CotacaoLinha>) => {
     setCotacoes((prev) => {
       const itemMap = { ...(prev[itemIdx] || {}) };
@@ -1511,8 +1652,239 @@ export default function NovoOrcamento() {
             </div>
           )}
 
-          {/* Etapas 5-7 (placeholders) */}
-          {etapaAtual > 4 && (
+          {etapaAtual === 5 && (
+            <div className="space-y-6">
+              {/* Seção A — Insumos calculados */}
+              <Card className="p-4 space-y-3">
+                <div>
+                  <h2 className="font-display text-lg text-foreground">
+                    Insumos de Plantio (calculados automaticamente)
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    Quantidades calculadas a partir dos coeficientes vigentes. Ajuste se necessário.
+                  </p>
+                </div>
+                {insumosCalc.length === 0 ? (
+                  <p className="text-sm text-muted-foreground italic">
+                    Nenhum insumo calculado para os itens selecionados.
+                  </p>
+                ) : (
+                  <div className="border rounded-md overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/50 text-xs">
+                        <tr>
+                          <th className="text-left p-2">Insumo</th>
+                          <th className="text-left p-2 w-40">Quantidade</th>
+                          <th className="text-left p-2 w-24">Unidade</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {insumosCalc.map((linha, idx) => (
+                          <tr key={linha.tipo} className="border-t">
+                            <td className="p-2 font-medium">{linha.nome}</td>
+                            <td className="p-2">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={linha.quantidade}
+                                onChange={(e) =>
+                                  setInsumosCalc((prev) =>
+                                    prev.map((l, i) =>
+                                      i === idx ? { ...l, quantidade: Number(e.target.value) || 0 } : l,
+                                    ),
+                                  )
+                                }
+                                className="h-8"
+                              />
+                            </td>
+                            <td className="p-2 text-muted-foreground">{linha.unidade}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </Card>
+
+              {/* Seção B — Insumos adicionais */}
+              <Card className="p-4 space-y-3">
+                <div>
+                  <h2 className="font-display text-lg text-foreground">Insumos Adicionais</h2>
+                  <p className="text-xs text-muted-foreground">
+                    Selecione os insumos extras necessários para este projeto.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {INSUMOS_SUGERIDOS.map((nome) => {
+                    const sel = insumosAdicionais.some((i) => i.nome === nome);
+                    return (
+                      <label
+                        key={nome}
+                        className={cn(
+                          "flex items-center gap-2 px-3 py-1.5 rounded-md border text-xs cursor-pointer transition-colors",
+                          sel ? "bg-primary/10 border-primary text-primary" : "hover:bg-muted/50",
+                        )}
+                      >
+                        <Checkbox
+                          checked={sel}
+                          onCheckedChange={() => toggleInsumoSugerido(nome)}
+                        />
+                        {nome}
+                      </label>
+                    );
+                  })}
+                </div>
+
+                {insumosAdicionais.length > 0 && (
+                  <div className="space-y-3 pt-2">
+                    {insumosAdicionais.map((ins, idx) => {
+                      const qtdEsp = Number(ins.quantidade_esperada) || 0;
+                      const margem = Number(ins.margem) || 0;
+                      const qtdOrcar = Math.ceil(qtdEsp * (1 + margem / 100));
+                      const valor = (Number(ins.valor_unitario) || 0) * qtdOrcar;
+                      return (
+                        <div key={idx} className="border rounded-md p-3 space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <Input
+                              value={ins.nome}
+                              onChange={(e) => updateInsumoAdic(idx, { nome: e.target.value })}
+                              placeholder="Nome do insumo"
+                              className="font-medium max-w-md"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() =>
+                                setInsumosAdicionais((p) => p.filter((_, i) => i !== idx))
+                              }
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                            <div className="space-y-1">
+                              <Label className="text-xs">Fornecedor</Label>
+                              <Select
+                                value={ins.fornecedor_id}
+                                onValueChange={(v) => updateInsumoAdic(idx, { fornecedor_id: v })}
+                              >
+                                <SelectTrigger className="h-9">
+                                  <SelectValue placeholder="Selecione" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {(fornecedoresLista as any[]).map((f) => (
+                                    <SelectItem key={f.id} value={f.id}>
+                                      {f.nome}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Quantidade esperada</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={ins.quantidade_esperada}
+                                onChange={(e) =>
+                                  updateInsumoAdic(idx, { quantidade_esperada: e.target.value })
+                                }
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Unidade</Label>
+                              <Select
+                                value={ins.unidade}
+                                onValueChange={(v) => updateInsumoAdic(idx, { unidade: v })}
+                              >
+                                <SelectTrigger className="h-9">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {UNIDADES_INSUMO.map((u) => (
+                                    <SelectItem key={u} value={u}>
+                                      {u}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Margem segurança (%)</Label>
+                              <Input
+                                type="number"
+                                step="1"
+                                value={ins.margem}
+                                onChange={(e) => updateInsumoAdic(idx, { margem: e.target.value })}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Quantidade a orçar</Label>
+                              <Input value={qtdOrcar} readOnly className="bg-muted/40" />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Valor unitário (R$)</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={ins.valor_unitario}
+                                onChange={(e) =>
+                                  updateInsumoAdic(idx, { valor_unitario: e.target.value })
+                                }
+                              />
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground pt-1">
+                            <span>
+                              Valor total:{" "}
+                              <strong className="text-foreground">
+                                R$ {valor.toFixed(2).replace(".", ",")}
+                              </strong>
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                              <Label className="text-xs">Observação interna</Label>
+                              <Input
+                                value={ins.obs_interna}
+                                onChange={(e) => updateInsumoAdic(idx, { obs_interna: e.target.value })}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Observação na proposta</Label>
+                              <Input
+                                value={ins.obs_proposta}
+                                onChange={(e) => updateInsumoAdic(idx, { obs_proposta: e.target.value })}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <Button variant="outline" size="sm" onClick={addInsumoCustom}>
+                  <Plus className="w-4 h-4" />
+                  Adicionar insumo personalizado
+                </Button>
+
+                {insumosSemQtd.length > 0 && (
+                  <div className="rounded-md border border-yellow-300 bg-yellow-50 text-yellow-800 p-3 text-sm">
+                    ⚠️ {insumosSemQtd.length} insumo(s) sem quantidade:{" "}
+                    <strong>{insumosSemQtd.map((i) => i.nome).join(", ")}</strong>
+                    <div className="text-xs mt-1">
+                      Você pode avançar, mas eles não entrarão no orçamento.
+                    </div>
+                  </div>
+                )}
+              </Card>
+            </div>
+          )}
+
+          {/* Etapas 6-7 (placeholders) */}
+          {etapaAtual > 5 && (
             <Card className="p-6">
               <h2 className="font-display text-xl text-foreground">{ETAPAS[etapaAtual - 1]}</h2>
               <p className="text-sm text-muted-foreground mt-2">Etapa em desenvolvimento.</p>
