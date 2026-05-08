@@ -167,6 +167,147 @@ export default function NovoOrcamento() {
   const [margensSeg, setMargensSeg] = useState<Record<number, number>>({});
   const [cardsColapsados, setCardsColapsados] = useState<Record<number, boolean>>({});
 
+  // Etapa 5 — Insumos
+  type InsumoCalc = { tipo: string; nome: string; quantidade: number; unidade: string };
+  type InsumoAdicional = {
+    nome: string;
+    fornecedor_id: string;
+    quantidade_esperada: string;
+    unidade: string;
+    margem: string;
+    valor_unitario: string;
+    obs_interna: string;
+    obs_proposta: string;
+  };
+  const [insumosCalc, setInsumosCalc] = useState<InsumoCalc[]>([]);
+  const [insumosAdicionais, setInsumosAdicionais] = useState<InsumoAdicional[]>([]);
+  const [insumosCalculados, setInsumosCalculados] = useState(false);
+
+  const { data: coeficientes = [] } = useQuery({
+    queryKey: ["coeficientes-insumos-vigentes"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("coeficientes_insumos")
+        .select("*")
+        .eq("vigente", true);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const { data: fornecedoresLista = [] } = useQuery({
+    queryKey: ["fornecedores-ativos-lista"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("fornecedores")
+        .select("id, nome, mercado")
+        .eq("status", "ativo")
+        .order("nome");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const tipoCoefDoItem = (it: ItemMemorial): string | null => {
+    const cat = (it.categoria || "").toLowerCase();
+    const porte = (it.porte || "").toLowerCase();
+    if (cat.includes("forra")) return "forracao";
+    if (cat.includes("arbusto") || cat.includes("herb")) {
+      const alturaMatch = porte.match(/([\d.,]+)\s*m/);
+      const altura = alturaMatch ? parseFloat(alturaMatch[1].replace(",", ".")) : NaN;
+      if (porte.includes("peq") || (!isNaN(altura) && altura < 0.5)) return "arbusto_pequeno";
+      return "arbusto_medio";
+    }
+    if (cat.includes("árvore") || cat.includes("arvore")) return "arvore_dap15";
+    if (cat.includes("gramado")) return "gramado";
+    if (cat.includes("palmeira")) return "palmeira_grande";
+    return null;
+  };
+
+  // Calcular insumos automaticamente ao entrar na Etapa 5 (uma vez, permitindo edição)
+  useEffect(() => {
+    if (etapaAtual !== 5 || insumosCalculados) return;
+    if (!coeficientes || coeficientes.length === 0) return;
+
+    const acc = { mo: 0, terra: 0, adubo: 0, munck: 0, corda: 0 };
+    itensMaterial.forEach((it, idx) => {
+      const tipo = tipoCoefDoItem(it);
+      if (!tipo) return;
+      const coef = (coeficientes as any[]).find((c) => c.tipo_planta === tipo);
+      if (!coef) return;
+      const margem = margensSeg[idx] ?? 0;
+      const qtdOrcar = Math.ceil((Number(it.quantidade) || 0) * (1 + margem / 100));
+      acc.mo += qtdOrcar * Number(coef.mo_por_unidade || 0);
+      acc.terra += qtdOrcar * Number(coef.terra_por_unidade || 0);
+      acc.adubo += qtdOrcar * Number(coef.adubo_por_unidade || 0);
+      acc.munck += qtdOrcar * Number(coef.munck_por_unidade || 0);
+      acc.corda += qtdOrcar * Number(coef.corda_por_unidade || 0);
+    });
+
+    const linhas: InsumoCalc[] = [
+      { tipo: "mo", nome: "MO (Mão de obra plantio)", quantidade: +acc.mo.toFixed(2), unidade: "dias" },
+      { tipo: "terra", nome: "Terra", quantidade: +acc.terra.toFixed(2), unidade: "m³" },
+      { tipo: "adubo", nome: "Adubo", quantidade: +acc.adubo.toFixed(2), unidade: "kits" },
+      { tipo: "munck", nome: "Munck", quantidade: +acc.munck.toFixed(2), unidade: "dias" },
+      { tipo: "corda", nome: "Corda", quantidade: +acc.corda.toFixed(2), unidade: "m" },
+    ].filter((l) => l.quantidade > 0);
+
+    setInsumosCalc(linhas);
+    setInsumosCalculados(true);
+  }, [etapaAtual, coeficientes, itensMaterial, margensSeg, insumosCalculados]);
+
+  const INSUMOS_SUGERIDOS = [
+    "Torta de mamona", "Yoorin", "K-forte", "Algen (Lithothamnium)",
+    "Bokashi", "Terra preta", "Substrato", "Adubo preparado",
+    "Pedrisco Palha nº3", "Seixo Bege", "Corda (10mm)", "Bidin",
+    "Limitador", "Lona",
+  ];
+  const UNIDADES_INSUMO = ["m³", "saco", "tonelada", "metro", "rolo", "unidade", "kg"];
+
+  const toggleInsumoSugerido = (nome: string) => {
+    setInsumosAdicionais((prev) => {
+      const idx = prev.findIndex((i) => i.nome === nome);
+      if (idx >= 0) return prev.filter((_, i) => i !== idx);
+      return [
+        ...prev,
+        {
+          nome,
+          fornecedor_id: "",
+          quantidade_esperada: "",
+          unidade: "unidade",
+          margem: "0",
+          valor_unitario: "",
+          obs_interna: "",
+          obs_proposta: "",
+        },
+      ];
+    });
+  };
+
+  const updateInsumoAdic = (idx: number, patch: Partial<InsumoAdicional>) => {
+    setInsumosAdicionais((prev) => prev.map((i, j) => (j === idx ? { ...i, ...patch } : i)));
+  };
+
+  const addInsumoCustom = () => {
+    setInsumosAdicionais((prev) => [
+      ...prev,
+      {
+        nome: "",
+        fornecedor_id: "",
+        quantidade_esperada: "",
+        unidade: "unidade",
+        margem: "0",
+        valor_unitario: "",
+        obs_interna: "",
+        obs_proposta: "",
+      },
+    ]);
+  };
+
+  const insumosSemQtd = insumosAdicionais.filter(
+    (i) => i.nome && (!i.quantidade_esperada || Number(i.quantidade_esperada) <= 0),
+  );
+
   const setCotacao = (itemIdx: number, fornId: string, patch: Partial<CotacaoLinha>) => {
     setCotacoes((prev) => {
       const itemMap = { ...(prev[itemIdx] || {}) };
