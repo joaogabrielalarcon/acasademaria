@@ -3335,7 +3335,9 @@ export default function NovoOrcamento() {
                   <Label>Cidade</Label>
                   <Input
                     value={novoForn.cidade}
-                    onChange={(e) => setNovoForn((c) => ({ ...c, cidade: e.target.value }))}
+                    onChange={(e) =>
+                      setNovoForn((c) => ({ ...c, cidade: capitalizeWords(e.target.value) }))
+                    }
                   />
                 </div>
               </div>
