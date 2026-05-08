@@ -3013,11 +3013,299 @@ export default function NovoOrcamento() {
 
           {/* Etapa 7 (placeholder) */}
           {etapaAtual === 7 && (
-            <Card className="p-6">
-              <h2 className="font-display text-xl text-foreground">{ETAPAS[etapaAtual - 1]}</h2>
-              <p className="text-sm text-muted-foreground mt-2">Etapa em desenvolvimento.</p>
-            </Card>
+            <div className="space-y-6 pb-32">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Coluna esquerda — Tabela por categoria */}
+                <Card className="p-4 lg:col-span-2 space-y-3">
+                  <div>
+                    <h2 className="font-display text-lg text-foreground">Resumo por categoria</h2>
+                    <p className="text-xs text-muted-foreground">
+                      Edite o markup de cada categoria. Alterações exigem motivo.
+                    </p>
+                  </div>
+                  <div className="border rounded-md overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/50 text-xs">
+                        <tr>
+                          <th className="text-left p-2">Categoria</th>
+                          <th className="text-right p-2 w-32">Custo</th>
+                          <th className="text-right p-2 w-28">Markup %</th>
+                          <th className="text-right p-2 w-32">Venda</th>
+                          <th className="text-right p-2 w-28">Margem %</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {linhasResumo.map((l) => (
+                          <tr key={l.categoria} className="border-t">
+                            <td className="p-2 font-medium">{l.categoria}</td>
+                            <td className="p-2 text-right">{fmtBRL(l.custo)}</td>
+                            <td className="p-2 text-right">
+                              <button
+                                className="text-primary underline-offset-2 hover:underline"
+                                onClick={() => abrirEdicaoMarkup(l.categoria)}
+                              >
+                                {l.markup.toFixed(1)}%
+                              </button>
+                            </td>
+                            <td className="p-2 text-right">{fmtBRL(l.venda)}</td>
+                            <td className="p-2 text-right">{l.margemBruta.toFixed(1)}%</td>
+                          </tr>
+                        ))}
+                        <tr className="border-t bg-muted/30 font-semibold">
+                          <td className="p-2">Imposto produtos (13.5%)</td>
+                          <td className="p-2 text-right">—</td>
+                          <td className="p-2 text-right">—</td>
+                          <td className="p-2 text-right">{fmtBRL(impostoProdutos)}</td>
+                          <td className="p-2 text-right">—</td>
+                        </tr>
+                        <tr className="border-t bg-primary/5 font-bold">
+                          <td className="p-2">Totais</td>
+                          <td className="p-2 text-right">{fmtBRL(totaisResumo.totalCusto)}</td>
+                          <td className="p-2 text-right">{totaisResumo.markupMedio.toFixed(1)}%</td>
+                          <td className="p-2 text-right">{fmtBRL(totaisResumo.totalVenda)}</td>
+                          <td className="p-2 text-right">{margemBrutaPctTotal.toFixed(1)}%</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+
+                {/* Coluna direita — Cards de indicadores */}
+                <div className="space-y-3">
+                  <Card className="p-4 bg-primary/10 border-primary/30">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Total ao Cliente
+                    </p>
+                    <p className="font-display text-3xl text-primary mt-1">
+                      {fmtBRL(totalCliente)}
+                    </p>
+                  </Card>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Card className="p-3">
+                      <p className="text-[11px] uppercase text-muted-foreground">Custo Total</p>
+                      <p className="font-medium">{fmtBRL(totaisResumo.totalCusto)}</p>
+                    </Card>
+                    <Card className="p-3">
+                      <p className="text-[11px] uppercase text-muted-foreground">Margem Bruta</p>
+                      <p className="font-medium">{fmtBRL(totaisResumo.margemBrutaVal)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {margemBrutaPctTotal.toFixed(1)}%
+                      </p>
+                    </Card>
+                    <Card className="p-3">
+                      <p className="text-[11px] uppercase text-muted-foreground">Impostos</p>
+                      <p className="font-medium">{fmtBRL(impostoProdutos)}</p>
+                    </Card>
+                    <Card className="p-3">
+                      <p className="text-[11px] uppercase text-muted-foreground">Custo / m²</p>
+                      <p className="font-medium">
+                        {areaM2 > 0 ? fmtBRL(custoPorM2) : "—"}
+                      </p>
+                    </Card>
+                    <Card className="p-3 col-span-2">
+                      <p className="text-[11px] uppercase text-muted-foreground">
+                        Markup médio ponderado
+                      </p>
+                      <p className="font-medium">{totaisResumo.markupMedio.toFixed(1)}%</p>
+                    </Card>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bloco Comissão */}
+              <Card className="p-4">
+                <button
+                  className="w-full flex items-center justify-between"
+                  onClick={() => setComissaoAberta((v) => !v)}
+                >
+                  <div className="flex items-center gap-3">
+                    <h3 className="font-display text-base">Comissão</h3>
+                    <Switch
+                      checked={comissaoOn}
+                      onCheckedChange={(v) => {
+                        setComissaoOn(v);
+                        if (v) setComissaoAberta(true);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                  {comissaoAberta ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </button>
+                {comissaoAberta && comissaoOn && (
+                  <div className="mt-3 grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div className="space-y-1 md:col-span-2">
+                      <Label className="text-xs">Tipo</Label>
+                      <RadioGroup
+                        value={comissaoTipo}
+                        onValueChange={(v: any) => setComissaoTipo(v)}
+                        className="flex gap-4"
+                      >
+                        <label className="flex items-center gap-2 text-sm">
+                          <RadioGroupItem value="vendas" /> Vendas
+                        </label>
+                        <label className="flex items-center gap-2 text-sm">
+                          <RadioGroupItem value="indicacao" /> Indicação
+                        </label>
+                      </RadioGroup>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Percentual (%)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={comissaoPct}
+                        onChange={(e) => setComissaoPct(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Beneficiário</Label>
+                      <Input
+                        value={comissaoBeneficiario}
+                        onChange={(e) => setComissaoBeneficiario(e.target.value)}
+                      />
+                    </div>
+                    <div className="md:col-span-4 text-sm text-muted-foreground">
+                      Valor calculado: <strong className="text-foreground">{fmtBRL(valorComissao)}</strong>
+                    </div>
+                  </div>
+                )}
+              </Card>
+
+              {/* Bloco margem de negociação */}
+              <Card className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-display text-base">Margem de negociação disponível</h3>
+                  <span className="text-sm font-medium">{margemNegPct}%</span>
+                </div>
+                <Slider
+                  value={[margemNegPct]}
+                  min={0}
+                  max={30}
+                  step={1}
+                  onValueChange={(v) => setMargemNegPct(v[0])}
+                />
+                <div className="text-sm text-muted-foreground flex flex-wrap gap-4">
+                  <span>
+                    Desconto máximo: <strong className="text-foreground">{fmtBRL(descontoMaximo)}</strong>
+                  </span>
+                  <span>
+                    Valor mínimo aceitável: <strong className="text-foreground">{fmtBRL(valorMinimo)}</strong>
+                  </span>
+                </div>
+              </Card>
+
+              {/* Botões de ação sticky */}
+              <div className="sticky bottom-0 z-10 -mx-4 px-4 py-3 bg-background/95 backdrop-blur border-t border-primary/20 flex flex-wrap gap-2 justify-end">
+                <Button variant="outline" onClick={handleSalvarRascunho} disabled={savingFinal}>
+                  {savingFinal ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  Salvar rascunho
+                </Button>
+                <Button variant="outline" onClick={handleEnviarCliente} disabled={savingFinal}>
+                  📤 Enviar ao cliente
+                </Button>
+                <Button
+                  variant="terracota"
+                  onClick={() =>
+                    setAprovarModal({ open: true, valor: totalCliente.toFixed(2) })
+                  }
+                  disabled={savingFinal}
+                >
+                  ✅ Marcar como aprovado
+                </Button>
+              </div>
+            </div>
           )}
+
+          {/* Modal: editar markup */}
+          <Dialog
+            open={markupModal.open}
+            onOpenChange={(o) => setMarkupModal((m) => ({ ...m, open: o }))}
+          >
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Alterar markup — {markupModal.categoria}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>Markup anterior</Label>
+                    <Input value={`${markupModal.anterior}%`} readOnly className="bg-muted/40" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Novo markup (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={markupModal.novo}
+                      onChange={(e) =>
+                        setMarkupModal((m) => ({ ...m, novo: Number(e.target.value) || 0 }))
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Motivo da alteração *</Label>
+                  <Textarea
+                    value={markupModal.motivo}
+                    onChange={(e) => setMarkupModal((m) => ({ ...m, motivo: e.target.value }))}
+                    rows={3}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setMarkupModal((m) => ({ ...m, open: false }))}
+                >
+                  Cancelar
+                </Button>
+                <Button variant="terracota" onClick={confirmarMarkup}>
+                  Salvar alteração
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Modal: aprovar */}
+          <Dialog
+            open={aprovarModal.open}
+            onOpenChange={(o) => setAprovarModal((m) => ({ ...m, open: o }))}
+          >
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Aprovar orçamento</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label>Valor negociado final (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={aprovarModal.valor}
+                    onChange={(e) =>
+                      setAprovarModal((m) => ({ ...m, valor: e.target.value }))
+                    }
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Tem certeza? Esta ação não pode ser desfeita.
+                </p>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setAprovarModal({ open: false, valor: "" })}
+                  disabled={savingFinal}
+                >
+                  Cancelar
+                </Button>
+                <Button variant="terracota" onClick={handleAprovar} disabled={savingFinal}>
+                  {savingFinal && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Confirmar aprovação
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           {/* Modal: novo fornecedor */}
           <Dialog open={novoFornModalOpen} onOpenChange={setNovoFornModalOpen}>
