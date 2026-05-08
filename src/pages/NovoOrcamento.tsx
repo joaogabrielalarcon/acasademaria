@@ -1563,7 +1563,9 @@ export default function NovoOrcamento() {
                       <Label>Cidade<Req /></Label>
                       <Input
                         value={form.cidade}
-                        onChange={(e) => setForm((c) => ({ ...c, cidade: e.target.value }))}
+                        onChange={(e) =>
+                          setForm((c) => ({ ...c, cidade: capitalizeWords(e.target.value) }))
+                        }
                       />
                     </div>
                     <div className="space-y-2">
