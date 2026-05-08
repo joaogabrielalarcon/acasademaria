@@ -1999,7 +1999,7 @@ export default function NovoOrcamento() {
                   <input
                     id="memorial-pdf-input"
                     type="file"
-                    accept="application/pdf,.pdf"
+                    accept="application/pdf,.pdf,image/*,.jpg,.jpeg,.png,.webp,.heic,.xls,.xlsx,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
                     className="hidden"
                     onChange={(e) => handlePdfSelect(e.target.files?.[0] ?? null)}
                   />
