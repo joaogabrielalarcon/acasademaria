@@ -5,6 +5,7 @@ import {
   CalendarCheck,
   CalendarDays,
   DollarSign,
+  FileText,
   GitBranch,
   Landmark,
   Leaf,
@@ -36,6 +37,7 @@ export const appNavigationItems: NavigationItem[] = [
   { title: "Máquinas", icon: Wrench, href: "/maquinas", roles: ["admin", "administrativo", "gestao_campo"] },
   { title: "Processos Internos", icon: BookOpen, href: "/processos", roles: ["admin", "administrativo"] },
   { title: "CRM", icon: GitBranch, href: "/crm", roles: ["admin", "administrativo", "gestao_campo", "arquitetura"] },
+  { title: "Orçamentos", icon: FileText, href: "/orcamentos", roles: ["admin", "administrativo"] },
   { title: "Minha Agenda", icon: CalendarCheck, href: "/agenda", roles: ["admin", "administrativo", "gestao_campo", "arquitetura", "responsavel_obra", "operador_campo"] },
 ];
 
