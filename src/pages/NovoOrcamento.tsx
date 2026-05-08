@@ -16,13 +16,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Loader2, Save } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, Save, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface TipoProposta {
   id: string;
   sigla: string;
   nome_completo: string;
 }
+
+const ETAPAS = [
+  "Cabeçalho",
+  "Memorial",
+  "Fornecedores",
+  "Cotação",
+  "Insumos",
+  "MO e Fretes",
+  "Resumo",
+];
 
 export default function NovoOrcamento() {
   const navigate = useNavigate();
@@ -31,6 +42,7 @@ export default function NovoOrcamento() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const [etapaAtual, setEtapaAtual] = useState(1);
   const [form, setForm] = useState({
     codigo: "",
     tipo_proposta_id: "",
@@ -101,6 +113,8 @@ export default function NovoOrcamento() {
     }
   }, [orcamento]);
 
+  const camposObrigatoriosOk = !!form.codigo.trim() && !!form.tipo_proposta_id;
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       const payload: Record<string, any> = {
@@ -118,7 +132,7 @@ export default function NovoOrcamento() {
       if (isEdit) {
         const { error } = await (supabase as any).from("orcamentos").update(payload).eq("id", id);
         if (error) throw error;
-        return id;
+        return id as string;
       } else {
         const { data, error } = await (supabase as any)
           .from("orcamentos")
@@ -132,7 +146,7 @@ export default function NovoOrcamento() {
     onSuccess: (newId) => {
       queryClient.invalidateQueries({ queryKey: ["orcamentos"] });
       toast({ title: isEdit ? "Orçamento atualizado" : "Orçamento criado" });
-      navigate(`/orcamentos/${newId}`);
+      if (!isEdit) navigate(`/orcamentos/${newId}`);
     },
     onError: (e: any) => {
       toast({
@@ -145,146 +159,213 @@ export default function NovoOrcamento() {
 
   return (
     <AppLayout>
-      <div className="max-w-3xl mx-auto p-6 space-y-6">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/orcamentos")}>
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-          <div>
-            <h1 className="font-display text-2xl text-foreground">
-              {isEdit ? "Editar Orçamento" : "Novo Orçamento"}
-            </h1>
-            <p className="text-sm text-muted-foreground">Preencha os dados básicos do orçamento</p>
+      <div className="max-w-4xl mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/orcamentos")}>
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <div>
+              <h1 className="font-display text-2xl text-foreground">
+                {isEdit ? "Editar Orçamento" : "Novo Orçamento"}
+              </h1>
+              <p className="text-sm text-muted-foreground">Etapa {etapaAtual} de {ETAPAS.length}</p>
+            </div>
           </div>
+          <Button variant="ghost" onClick={() => navigate("/orcamentos")}>
+            <ArrowLeft className="w-4 h-4" />
+            Voltar
+          </Button>
         </div>
 
-        <Card className="p-6 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Código *</Label>
-              <Input
-                value={form.codigo}
-                onChange={(e) => setForm((c) => ({ ...c, codigo: e.target.value }))}
-                placeholder="Ex: PI-2026-001"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Tipo de Proposta *</Label>
-              <Select
-                value={form.tipo_proposta_id}
-                onValueChange={(v) => setForm((c) => ({ ...c, tipo_proposta_id: v }))}
-              >
-                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                <SelectContent>
-                  {tipos.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.sigla} — {t.nome_completo}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Cliente</Label>
-              <Select
-                value={form.cliente_id}
-                onValueChange={(v) => setForm((c) => ({ ...c, cliente_id: v }))}
-              >
-                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                <SelectContent>
-                  {clientes.map((cl: any) => (
-                    <SelectItem key={cl.id} value={cl.id}>{cl.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Tipo de Cliente</Label>
-              <Select
-                value={form.tipo_cliente}
-                onValueChange={(v) => setForm((c) => ({ ...c, tipo_cliente: v }))}
-              >
-                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="residencial">Residencial</SelectItem>
-                  <SelectItem value="condominio">Condomínio</SelectItem>
-                  <SelectItem value="resort">Resort</SelectItem>
-                  <SelectItem value="hotel">Hotel</SelectItem>
-                  <SelectItem value="comercial">Comercial</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <Label>Endereço do Local</Label>
-              <Input
-                value={form.local_endereco}
-                onChange={(e) => setForm((c) => ({ ...c, local_endereco: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Cidade</Label>
-              <Input
-                value={form.cidade}
-                onChange={(e) => setForm((c) => ({ ...c, cidade: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Estado (UF)</Label>
-              <Input
-                maxLength={2}
-                value={form.estado}
-                onChange={(e) => setForm((c) => ({ ...c, estado: e.target.value.toUpperCase() }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Área (m²)</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={form.area_m2}
-                onChange={(e) => setForm((c) => ({ ...c, area_m2: e.target.value }))}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Observações Internas</Label>
-            <Textarea
-              rows={3}
-              value={form.obs_interna}
-              onChange={(e) => setForm((c) => ({ ...c, obs_interna: e.target.value }))}
-              placeholder="Notas visíveis apenas para a equipe"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Observações da Proposta</Label>
-            <Textarea
-              rows={3}
-              value={form.obs_proposta}
-              onChange={(e) => setForm((c) => ({ ...c, obs_proposta: e.target.value }))}
-              placeholder="Texto que aparecerá na proposta enviada ao cliente"
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button variant="ghost" onClick={() => navigate("/orcamentos")}>
-              Cancelar
-            </Button>
-            <Button
-              variant="terracota"
-              onClick={() => saveMutation.mutate()}
-              disabled={saveMutation.isPending || !form.codigo.trim() || !form.tipo_proposta_id}
-            >
-              {saveMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Save className="w-4 h-4" />
-              )}
-              {isEdit ? "Salvar" : "Criar Orçamento"}
-            </Button>
+        {/* Barra de progresso */}
+        <Card className="p-4">
+          <div className="flex items-center justify-between gap-2 overflow-x-auto">
+            {ETAPAS.map((nome, idx) => {
+              const numero = idx + 1;
+              const ativa = numero === etapaAtual;
+              const concluida = numero < etapaAtual;
+              return (
+                <div key={nome} className="flex items-center gap-2 flex-shrink-0">
+                  <div
+                    className={cn(
+                      "w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold border-2 transition-colors",
+                      ativa && "bg-primary text-primary-foreground border-primary",
+                      concluida && "bg-primary/20 text-primary border-primary/40",
+                      !ativa && !concluida && "bg-muted text-muted-foreground border-border"
+                    )}
+                  >
+                    {concluida ? <Check className="w-4 h-4" /> : numero}
+                  </div>
+                  <span
+                    className={cn(
+                      "text-xs whitespace-nowrap",
+                      ativa ? "text-foreground font-semibold" : "text-muted-foreground"
+                    )}
+                  >
+                    {nome}
+                  </span>
+                  {idx < ETAPAS.length - 1 && (
+                    <div className="w-6 h-px bg-border" />
+                  )}
+                </div>
+              );
+            })}
           </div>
         </Card>
+
+        {/* Etapa 1 - Cabeçalho */}
+        {etapaAtual === 1 && (
+          <Card className="p-6 space-y-4">
+            <div>
+              <h2 className="font-display text-xl text-foreground">Cabeçalho</h2>
+              <p className="text-sm text-muted-foreground">Dados básicos do orçamento</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Código *</Label>
+                <Input
+                  value={form.codigo}
+                  onChange={(e) => setForm((c) => ({ ...c, codigo: e.target.value }))}
+                  placeholder="Ex: PI-2026-001"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Tipo de Proposta *</Label>
+                <Select
+                  value={form.tipo_proposta_id}
+                  onValueChange={(v) => setForm((c) => ({ ...c, tipo_proposta_id: v }))}
+                >
+                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent>
+                    {tipos.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.sigla} — {t.nome_completo}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Cliente</Label>
+                <Select
+                  value={form.cliente_id}
+                  onValueChange={(v) => setForm((c) => ({ ...c, cliente_id: v }))}
+                >
+                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent>
+                    {clientes.map((cl: any) => (
+                      <SelectItem key={cl.id} value={cl.id}>{cl.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Tipo de Cliente</Label>
+                <Select
+                  value={form.tipo_cliente}
+                  onValueChange={(v) => setForm((c) => ({ ...c, tipo_cliente: v }))}
+                >
+                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="residencial">Residencial</SelectItem>
+                    <SelectItem value="condominio">Condomínio</SelectItem>
+                    <SelectItem value="resort">Resort</SelectItem>
+                    <SelectItem value="hotel">Hotel</SelectItem>
+                    <SelectItem value="comercial">Comercial</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label>Endereço do Local</Label>
+                <Input
+                  value={form.local_endereco}
+                  onChange={(e) => setForm((c) => ({ ...c, local_endereco: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Cidade</Label>
+                <Input
+                  value={form.cidade}
+                  onChange={(e) => setForm((c) => ({ ...c, cidade: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Estado (UF)</Label>
+                <Input
+                  maxLength={2}
+                  value={form.estado}
+                  onChange={(e) => setForm((c) => ({ ...c, estado: e.target.value.toUpperCase() }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Área (m²)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={form.area_m2}
+                  onChange={(e) => setForm((c) => ({ ...c, area_m2: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Observações Internas</Label>
+              <Textarea
+                rows={3}
+                value={form.obs_interna}
+                onChange={(e) => setForm((c) => ({ ...c, obs_interna: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Observações da Proposta</Label>
+              <Textarea
+                rows={3}
+                value={form.obs_proposta}
+                onChange={(e) => setForm((c) => ({ ...c, obs_proposta: e.target.value }))}
+              />
+            </div>
+          </Card>
+        )}
+
+        {/* Navegação */}
+        <div className="flex items-center justify-between gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setEtapaAtual((e) => Math.max(1, e - 1))}
+            disabled={etapaAtual === 1}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Etapa anterior
+          </Button>
+
+          <div className="flex gap-2">
+            {!isEdit && (
+              <Button
+                variant="ghost"
+                onClick={() => saveMutation.mutate()}
+                disabled={saveMutation.isPending || !camposObrigatoriosOk}
+              >
+                {saveMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                Salvar rascunho
+              </Button>
+            )}
+            <Button
+              variant="terracota"
+              onClick={() => setEtapaAtual((e) => Math.min(ETAPAS.length, e + 1))}
+              disabled={!camposObrigatoriosOk || etapaAtual === ETAPAS.length}
+            >
+              Próxima etapa
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
       </div>
     </AppLayout>
   );

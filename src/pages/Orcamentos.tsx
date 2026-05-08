@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ interface OrcamentoRow {
   id: string;
   codigo: string;
   status: string;
+  created_at: string | null;
   data_criacao: string | null;
   local_endereco: string | null;
   cidade: string | null;
@@ -20,15 +22,14 @@ interface OrcamentoRow {
   valor_negociado_final: number | null;
 }
 
-const statusColors: Record<string, string> = {
-  rascunho: "bg-muted text-muted-foreground",
-  em_cotacao: "bg-amber-500/15 text-amber-700 border-amber-500/30",
-  aguardando_aprovacao: "bg-blue-500/15 text-blue-700 border-blue-500/30",
-  aprovado: "bg-primary/15 text-primary border-primary/30",
-  expirado: "bg-muted text-muted-foreground",
-  cancelado: "bg-destructive/15 text-destructive border-destructive/30",
-  revisao: "bg-amber-500/15 text-amber-700 border-amber-500/30",
-};
+const FILTROS: { value: string; label: string }[] = [
+  { value: "todos", label: "Todos" },
+  { value: "rascunho", label: "Rascunho" },
+  { value: "em_cotacao", label: "Em cotação" },
+  { value: "aguardando_aprovacao", label: "Aguardando aprovação" },
+  { value: "aprovado", label: "Aprovado" },
+  { value: "cancelado", label: "Cancelado" },
+];
 
 const statusLabels: Record<string, string> = {
   rascunho: "Rascunho",
@@ -41,17 +42,24 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function Orcamentos() {
+  const navigate = useNavigate();
+  const [filtro, setFiltro] = useState<string>("todos");
+
   const { data: orcamentos = [], isLoading } = useQuery({
     queryKey: ["orcamentos"],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("orcamentos")
-        .select("id, codigo, status, data_criacao, local_endereco, cidade, estado, valor_negociado_final")
+        .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data || []) as OrcamentoRow[];
     },
   });
+
+  const filtrados = filtro === "todos"
+    ? orcamentos
+    : orcamentos.filter((o) => o.status === filtro);
 
   const formatCurrency = (v: number | null) =>
     v == null ? "—" : new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
@@ -66,42 +74,48 @@ export default function Orcamentos() {
               Propostas comerciais e cotações
             </p>
           </div>
-          <Link to="/orcamentos/novo">
-            <Button variant="terracota">
-              <Plus className="w-4 h-4" />
-              Novo Orçamento
+          <Button variant="terracota" onClick={() => navigate("/orcamentos/novo")}>
+            <Plus className="w-4 h-4" />
+            Novo Orçamento
+          </Button>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {FILTROS.map((f) => (
+            <Button
+              key={f.value}
+              variant={filtro === f.value ? "terracota" : "outline"}
+              size="sm"
+              onClick={() => setFiltro(f.value)}
+            >
+              {f.label}
             </Button>
-          </Link>
+          ))}
         </div>
 
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
-        ) : orcamentos.length === 0 ? (
+        ) : filtrados.length === 0 ? (
           <Card className="p-12 text-center">
             <FileText className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" />
-            <h3 className="font-display text-xl text-foreground mb-2">Nenhum orçamento ainda</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Crie o primeiro orçamento para começar.
-            </p>
-            <Link to="/orcamentos/novo">
-              <Button variant="terracota">
-                <Plus className="w-4 h-4" />
-                Criar Orçamento
-              </Button>
-            </Link>
+            <h3 className="font-display text-xl text-foreground mb-2">Nenhum orçamento encontrado</h3>
+            <Button variant="terracota" onClick={() => navigate("/orcamentos/novo")}>
+              <Plus className="w-4 h-4" />
+              Criar primeiro orçamento
+            </Button>
           </Card>
         ) : (
           <div className="grid gap-3">
-            {orcamentos.map((o) => (
+            {filtrados.map((o) => (
               <Link key={o.id} to={`/orcamentos/${o.id}`}>
                 <Card className="p-4 hover:border-primary/40 transition-colors">
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-semibold text-foreground">{o.codigo}</span>
-                        <Badge variant="outline" className={statusColors[o.status] || ""}>
+                        <Badge variant="outline">
                           {statusLabels[o.status] || o.status}
                         </Badge>
                       </div>
@@ -109,9 +123,9 @@ export default function Orcamentos() {
                         {o.local_endereco || "Sem endereço"}
                         {o.cidade && ` · ${o.cidade}${o.estado ? `/${o.estado}` : ""}`}
                       </p>
-                      {o.data_criacao && (
+                      {(o.data_criacao || o.created_at) && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          Criado em {format(new Date(o.data_criacao), "dd/MM/yyyy", { locale: ptBR })}
+                          Criado em {format(new Date(o.data_criacao || o.created_at!), "dd/MM/yyyy", { locale: ptBR })}
                         </p>
                       )}
                     </div>
