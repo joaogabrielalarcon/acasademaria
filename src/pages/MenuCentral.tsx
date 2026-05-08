@@ -99,7 +99,12 @@ export default function MenuCentral() {
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef<any>(null);
   const userRole = useHighestRole(user?.id);
-  const visibleItems = menuItems.filter(item => item.roles.includes(userRole));
+  const visibleSections = SECTIONS
+    .map((sec) => ({
+      ...sec,
+      items: sec.items.filter((it) => it.roles.includes(userRole)),
+    }))
+    .filter((sec) => sec.items.length > 0);
   const firstName = profile?.nome?.split(" ")[0] || user?.email?.split("@")[0] || "Usuário";
 
   const handleInlineSend = (e?: React.FormEvent) => {
