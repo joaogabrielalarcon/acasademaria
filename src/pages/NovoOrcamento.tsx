@@ -1468,8 +1468,15 @@ export default function NovoOrcamento() {
 
   const handlePdfSelect = (file: File | null) => {
     if (!file) return;
-    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
-      toast({ title: "Selecione um arquivo PDF", variant: "destructive" });
+    const name = file.name.toLowerCase();
+    const t = (file.type || "").toLowerCase();
+    const ok =
+      t === "application/pdf" || name.endsWith(".pdf") ||
+      t.startsWith("image/") || /\.(jpe?g|png|webp|gif|bmp|heic)$/i.test(name) ||
+      name.endsWith(".xlsx") || name.endsWith(".xls") || name.endsWith(".csv") ||
+      t.includes("spreadsheet") || t.includes("excel") || t === "text/csv";
+    if (!ok) {
+      toast({ title: "Envie PDF, imagem (JPG/PNG) ou planilha (XLS/XLSX/CSV)", variant: "destructive" });
       return;
     }
     setPdfFile(file);
@@ -1482,7 +1489,7 @@ export default function NovoOrcamento() {
     setProcessandoPdf(true);
     try {
       const fd = new FormData();
-      fd.append("pdf", pdfFile);
+      fd.append("arquivo", pdfFile);
       const { data, error } = await (supabase.functions as any).invoke("ler-memorial-pdf", {
         body: fd,
       });
@@ -1923,7 +1930,7 @@ export default function NovoOrcamento() {
                     memorialModo === "pdf" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
                   )}
                 >
-                  Upload de PDF
+                  Upload de arquivo
                 </button>
                 <button
                   type="button"
@@ -1963,10 +1970,10 @@ export default function NovoOrcamento() {
                     <div className="flex flex-col items-center gap-2">
                       <Upload className="w-10 h-10 text-muted-foreground" />
                       <p className="text-foreground font-medium">
-                        Arraste o PDF do memorial descritivo aqui
+                        Arraste o memorial aqui (PDF, imagem ou planilha)
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        ou clique para selecionar o arquivo
+                        ou clique para selecionar — aceita PDF, JPG/PNG, XLS, XLSX ou CSV
                       </p>
                     </div>
                   ) : (
@@ -1992,7 +1999,7 @@ export default function NovoOrcamento() {
                   <input
                     id="memorial-pdf-input"
                     type="file"
-                    accept="application/pdf,.pdf"
+                    accept="application/pdf,.pdf,image/*,.jpg,.jpeg,.png,.webp,.heic,.xls,.xlsx,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
                     className="hidden"
                     onChange={(e) => handlePdfSelect(e.target.files?.[0] ?? null)}
                   />
