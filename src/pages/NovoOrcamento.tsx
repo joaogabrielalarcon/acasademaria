@@ -1304,6 +1304,25 @@ export default function NovoOrcamento() {
     }
   };
 
+  const REQUIRED_LABELS: Record<string, string> = {
+    tipo_proposta_id: "Tipo de Proposta",
+    cliente_id: "Cliente",
+    local_endereco: "Local / Endereço",
+    tipo_cliente: "Tipo de cliente",
+    cidade: "Cidade",
+    estado: "Estado",
+    area_m2: "Área total (m²)",
+    perfil_markup_id: "Perfil de markup",
+  };
+
+  const camposFaltando = useMemo(
+    () =>
+      REQUIRED_FIELDS.filter(
+        (k) => String((form as any)[k] ?? "").trim() === "",
+      ).map((k) => REQUIRED_LABELS[k] || k),
+    [form],
+  );
+
   const podeAvancar = useMemo(() => {
     if (etapaAtual === 1) return camposObrigatoriosOk;
     if (etapaAtual === 2) return pdfCarregado && itensMaterial.length > 0;
