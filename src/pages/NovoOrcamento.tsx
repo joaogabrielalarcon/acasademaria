@@ -1311,7 +1311,6 @@ export default function NovoOrcamento() {
     cidade: "Cidade",
     estado: "Estado",
     area_m2: "Área total (m²)",
-    perfil_markup_id: "Perfil de markup",
   };
 
   const camposFaltando = useMemo(
