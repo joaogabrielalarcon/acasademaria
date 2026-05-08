@@ -2927,27 +2927,46 @@ export default function NovoOrcamento() {
                             <div className="space-y-1">
                               <Label className="text-xs">Transportador</Label>
                               {f.modo_transp === "cad" ? (
-                                <Select
-                                  value={f.transportador_id}
-                                  onValueChange={(v) => {
-                                    const t = (transportadoras as any[]).find((x) => x.id === v);
-                                    updateFrete(idx, {
-                                      transportador_id: v,
-                                      transportador_nome: t?.nome || "",
-                                    });
-                                  }}
-                                >
-                                  <SelectTrigger className="h-9">
-                                    <SelectValue placeholder="Selecione" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {(transportadoras as any[]).map((t) => (
-                                      <SelectItem key={t.id} value={t.id}>
-                                        {t.nome}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                <div className="flex gap-1">
+                                  <Select
+                                    value={f.transportador_id}
+                                    onValueChange={(v) => {
+                                      const t = (transportadoras as any[]).find((x) => x.id === v);
+                                      updateFrete(idx, {
+                                        transportador_id: v,
+                                        transportador_nome: t?.nome || "",
+                                      });
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-9">
+                                      <SelectValue placeholder="Selecione" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {(transportadoras as any[]).map((t) => (
+                                        <SelectItem key={t.id} value={t.id}>
+                                          {t.nome}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-9 w-9 shrink-0"
+                                    title="Cadastrar nova transportadora"
+                                    onClick={() =>
+                                      openQuickAdd("transportadora", (id, label) =>
+                                        updateFrete(idx, {
+                                          transportador_id: id,
+                                          transportador_nome: label,
+                                        }),
+                                      )
+                                    }
+                                  >
+                                    <Plus className="w-4 h-4" />
+                                  </Button>
+                                </div>
                               ) : (
                                 <Input
                                   value={f.transportador_nome}
