@@ -2015,6 +2015,33 @@ export default function NovoOrcamento() {
                   </div>
                 )}
               </div>
+              )}
+
+              {memorialModo === "texto" && (
+                <div className="space-y-3">
+                  <Textarea
+                    placeholder="Cole aqui o texto do memorial descritivo..."
+                    value={memorialTexto}
+                    onChange={(e) => setMemorialTexto(e.target.value)}
+                    rows={12}
+                    className="font-mono text-sm"
+                  />
+                  <div className="flex justify-center">
+                    <Button
+                      variant="terracota"
+                      onClick={extrairItensTexto}
+                      disabled={processandoPdf || !memorialTexto.trim()}
+                    >
+                      {processandoPdf ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-4 h-4" />
+                      )}
+                      Interpretar texto com IA
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {/* Loading */}
               {processandoPdf && (
