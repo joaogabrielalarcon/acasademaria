@@ -22,8 +22,45 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { ArrowLeft, ArrowRight, Loader2, Save, Check, Copy } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Loader2,
+  Save,
+  Check,
+  Copy,
+  Upload,
+  Sparkles,
+  X,
+  Plus,
+  AlertTriangle,
+  CheckCircle2,
+  Minus,
+  FileText,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const CATEGORIAS_ITEM = [
+  "Árvores",
+  "Arbustos e Herbáceas",
+  "Forrações",
+  "Trepadeiras",
+  "Palmeiras",
+  "Gramado",
+  "Vasos",
+];
+
+const UNIDADES_ITEM = ["UNID", "M²", "CX", "SACO", "POTE", "TOUCEIRA", "BANDEJA", "ROLO", "METRO"];
+
+interface ItemMemorial {
+  nome_popular: string;
+  nome_cientifico: string | null;
+  porte: string;
+  quantidade: number;
+  unidade: string;
+  categoria: string;
+  confianca: "alta" | "media" | "baixa";
+}
 
 interface TipoProposta {
   id: string;
