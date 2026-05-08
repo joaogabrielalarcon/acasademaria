@@ -2563,21 +2563,37 @@ export default function NovoOrcamento() {
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                             <div className="space-y-1">
                               <Label className="text-xs">Fornecedor</Label>
-                              <Select
-                                value={ins.fornecedor_id}
-                                onValueChange={(v) => updateInsumoAdic(idx, { fornecedor_id: v })}
-                              >
-                                <SelectTrigger className="h-9">
-                                  <SelectValue placeholder="Selecione" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {(fornecedoresLista as any[]).map((f) => (
-                                    <SelectItem key={f.id} value={f.id}>
-                                      {f.nome}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              <div className="flex gap-1">
+                                <Select
+                                  value={ins.fornecedor_id}
+                                  onValueChange={(v) => updateInsumoAdic(idx, { fornecedor_id: v })}
+                                >
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue placeholder="Selecione" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {(fornecedoresLista as any[]).map((f) => (
+                                      <SelectItem key={f.id} value={f.id}>
+                                        {f.nome}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-9 w-9 shrink-0"
+                                  title="Cadastrar novo fornecedor"
+                                  onClick={() =>
+                                    openQuickAdd("fornecedor_insumo", (id) =>
+                                      updateInsumoAdic(idx, { fornecedor_id: id }),
+                                    )
+                                  }
+                                >
+                                  <Plus className="w-4 h-4" />
+                                </Button>
+                              </div>
                             </div>
                             <div className="space-y-1">
                               <Label className="text-xs">Quantidade esperada</Label>
