@@ -3371,6 +3371,14 @@ export default function NovoOrcamento() {
             </DialogContent>
           </Dialog>
 
+          {/* Aviso de campos obrigatórios faltando */}
+          {etapaAtual === 1 && camposFaltando.length > 0 && (
+            <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              <strong>Para avançar, preencha:</strong>{" "}
+              {camposFaltando.join(", ")}
+            </div>
+          )}
+
           {/* Navegação */}
           <div className="flex items-center justify-between gap-2">
             <Button
