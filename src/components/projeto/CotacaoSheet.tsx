@@ -76,7 +76,7 @@ export function CotacaoSheet({
       if (!linkedId || !linkedTipo) return [];
       // Get from orcamento_cotacoes joined through orcamento_itens
       const column = linkedTipo === "planta" ? "planta_id" : "insumo_id";
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("orcamento_itens")
         .select(`id, projeto_id, ${column}, orcamento_cotacoes(fornecedor_id, fornecedor_nome, preco_unitario, selecionada, created_at)`)
         .eq(column, linkedId)
