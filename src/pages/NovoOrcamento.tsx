@@ -3239,6 +3239,52 @@ export default function NovoOrcamento() {
           {/* Etapa 7 (placeholder) */}
           {etapaAtual === 7 && (
             <div className="space-y-6 pb-32">
+              {/* Perfil de Markup (opcional) */}
+              <Card className="p-4">
+                <div className="flex flex-col md:flex-row md:items-end gap-3">
+                  <div className="flex-1 space-y-1">
+                    <Label>Perfil de markup</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Selecione um perfil para aplicar markups padrão por categoria, ou edite manualmente abaixo.
+                    </p>
+                  </div>
+                  <div className="flex gap-2 md:w-80">
+                    <Select
+                      value={form.perfil_markup_id}
+                      onValueChange={(v) => setForm((c) => ({ ...c, perfil_markup_id: v }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={
+                            (perfisMarkup as any[]).length === 0
+                              ? "Nenhum perfil cadastrado"
+                              : "Selecione..."
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(perfisMarkup as any[]).map((p) => (
+                          <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      title="Cadastrar novo perfil de markup"
+                      onClick={() =>
+                        openQuickAdd("perfil_markup", (id) =>
+                          setForm((c) => ({ ...c, perfil_markup_id: id })),
+                        )
+                      }
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Coluna esquerda — Tabela por categoria */}
                 <Card className="p-4 lg:col-span-2 space-y-3">
