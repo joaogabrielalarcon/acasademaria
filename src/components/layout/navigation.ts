@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   BellRing,
   BookOpen,
   Building2,
@@ -38,6 +39,7 @@ export const appNavigationItems: NavigationItem[] = [
   { title: "Processos Internos", icon: BookOpen, href: "/processos", roles: ["admin", "administrativo"] },
   { title: "CRM", icon: GitBranch, href: "/crm", roles: ["admin", "administrativo", "gestao_campo", "arquitetura"] },
   { title: "Orçamentos", icon: FileText, href: "/orcamentos", roles: ["admin", "administrativo"] },
+  { title: "Indicadores", icon: BarChart3, href: "/indicadores", roles: ["admin", "administrativo"] },
   { title: "Minha Agenda", icon: CalendarCheck, href: "/agenda", roles: ["admin", "administrativo", "gestao_campo", "arquitetura", "responsavel_obra", "operador_campo"] },
 ];
 
