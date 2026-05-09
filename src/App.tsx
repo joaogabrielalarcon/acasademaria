@@ -48,6 +48,7 @@ const CategoriasPlantas = lazy(() => import("./pages/CategoriasPlantas"));
 const Movimentacoes = lazy(() => import("./pages/Movimentacoes"));
 const Orcamentos = lazy(() => import("./pages/Orcamentos"));
 const NovoOrcamento = lazy(() => import("./pages/NovoOrcamento"));
+const Indicadores = lazy(() => import("./pages/Indicadores"));
 
 const queryClient = new QueryClient();
 
