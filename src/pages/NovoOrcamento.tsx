@@ -3722,6 +3722,51 @@ export default function NovoOrcamento() {
             </DialogContent>
           </Dialog>
 
+          {/* Modal: não aprovar */}
+          <Dialog
+            open={naoAprovarModal.open}
+            onOpenChange={(o) => setNaoAprovarModal((m) => ({ ...m, open: o }))}
+          >
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Marcar orçamento como não aprovado</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label>Motivo da não aprovação *</Label>
+                  <Textarea
+                    value={naoAprovarModal.motivo}
+                    onChange={(e) =>
+                      setNaoAprovarModal((m) => ({ ...m, motivo: e.target.value }))
+                    }
+                    rows={4}
+                    placeholder="Ex.: Cliente optou por outro fornecedor, valor acima do orçado, projeto adiado..."
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Esse registro alimenta a taxa de conversão e o histórico de motivos.
+                  </p>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setNaoAprovarModal({ open: false, motivo: "" })}
+                  disabled={savingFinal}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="terracota"
+                  onClick={handleNaoAprovar}
+                  disabled={savingFinal || !naoAprovarModal.motivo.trim()}
+                >
+                  {savingFinal && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Confirmar
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
           {/* Modal: novo fornecedor */}
           <Dialog open={novoFornModalOpen} onOpenChange={setNovoFornModalOpen}>
             <DialogContent>
