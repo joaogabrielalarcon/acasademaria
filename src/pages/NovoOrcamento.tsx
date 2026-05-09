@@ -3939,11 +3939,7 @@ export default function NovoOrcamento() {
               <Button
                 variant="terracota"
                 onClick={handleProxima}
-                disabled={
-                  etapaAtual === ETAPAS.length ||
-                  saveMutation.isPending ||
-                  processandoPdf
-                }
+                disabled={etapaAtual === ETAPAS.length || processandoPdf}
               >
                 Próxima etapa
                 <ArrowRight className="w-4 h-4" />
