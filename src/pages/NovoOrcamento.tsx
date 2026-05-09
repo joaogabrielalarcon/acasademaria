@@ -1173,42 +1173,59 @@ export default function NovoOrcamento() {
     queryKey: ["historico-fornecedores-orc", nomesItens],
     enabled: etapaAtual === 3 && nomesItens.length > 0,
     queryFn: async () => {
-      // 1) Encontrar plantas pelo nome popular
-      const { data: plantas, error: pErr } = await (supabase as any)
-        .from("plantas")
-        .select("id, nome_popular")
-        .in("nome_popular", nomesItens);
-      if (pErr) throw pErr;
+      // Normalização: lowercase + remove acentos + colapsa espaços
+      const norm = (s: string) =>
+        (s || "")
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
 
-      const plantaIdToNome = new Map<string, string>();
-      const nomeToPlantaId = new Map<string, string>();
+      const nomesNorm = new Set(nomesItens.map(norm).filter(Boolean));
+      if (nomesNorm.size === 0) return {} as Record<string, any[]>;
+
+      // 1) Buscar TODAS as plantas e insumos (id + nome) e cruzar em memória
+      //    (evita falha de match exato por acentos/maiúsculas)
+      const [{ data: plantas, error: pErr }, { data: insumos, error: iErr }] =
+        await Promise.all([
+          (supabase as any).from("plantas").select("id, nome_popular"),
+          (supabase as any).from("insumos").select("id, nome"),
+        ]);
+      if (pErr) throw pErr;
+      if (iErr) throw iErr;
+
+      const itemIdToKey = new Map<string, { tipo: "planta" | "insumo"; key: string }>();
       (plantas || []).forEach((p: any) => {
-        plantaIdToNome.set(p.id, p.nome_popular);
-        nomeToPlantaId.set((p.nome_popular || "").toLowerCase(), p.id);
+        const k = norm(p.nome_popular);
+        if (k && nomesNorm.has(k)) itemIdToKey.set(p.id, { tipo: "planta", key: k });
+      });
+      (insumos || []).forEach((i: any) => {
+        const k = norm(i.nome);
+        if (k && nomesNorm.has(k)) itemIdToKey.set(i.id, { tipo: "insumo", key: k });
       });
 
-      const plantaIds = Array.from(plantaIdToNome.keys());
-      if (plantaIds.length === 0) return {} as Record<string, any[]>;
+      const allIds = Array.from(itemIdToKey.keys());
+      if (allIds.length === 0) return {} as Record<string, any[]>;
 
-      // 2) Buscar histórico de preços (item_tipo = 'planta')
+      // 2) Buscar histórico de preços (planta + insumo) em uma única query
       const { data: hist, error: hErr } = await (supabase as any)
         .from("historico_precos")
         .select(
-          "item_id, preco, data_orcamento, fornecedor_id, fornecedores(id, nome, mercado, cidade)",
+          "item_id, item_tipo, preco, data_orcamento, fornecedor_id, fornecedores(id, nome, mercado, cidade)",
         )
-        .eq("item_tipo", "planta")
-        .in("item_id", plantaIds)
+        .in("item_id", allIds)
         .order("data_orcamento", { ascending: false });
       if (hErr) throw hErr;
 
-      // Agrupa por nome popular (lowercase) -> último preço por fornecedor
+      // Agrupa por nome normalizado -> último preço por fornecedor
       const map: Record<string, any[]> = {};
       for (const row of hist || []) {
-        const nome = plantaIdToNome.get(row.item_id);
-        if (!nome) continue;
-        const key = nome.toLowerCase();
+        const ref = itemIdToKey.get(row.item_id);
+        if (!ref) continue;
+        if (row.item_tipo && row.item_tipo !== ref.tipo) continue;
+        const key = ref.key;
         if (!map[key]) map[key] = [];
-        // Mantém só a entrada mais recente por fornecedor_id (lista já vem ordenada desc)
         if (!map[key].some((r) => r.fornecedor_id === row.fornecedor_id)) {
           map[key].push(row);
         }
