@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -1157,6 +1157,58 @@ export default function NovoOrcamento() {
       });
     },
   });
+
+  // === Auto-save silencioso ===
+  // Salva o orçamento completo (cabeçalho + itens + cotações) automaticamente
+  // sempre que dados-chave mudam, com debounce. Não exibe toast.
+  const persistirRef = useRef(persistirOrcamentoCompleto);
+  useEffect(() => {
+    persistirRef.current = persistirOrcamentoCompleto;
+  });
+  const autoSaveInflightRef = useRef(false);
+  const autoSavePendingRef = useRef(false);
+
+  const triggerAutoSave = async () => {
+    if (autoSaveInflightRef.current) {
+      autoSavePendingRef.current = true;
+      return;
+    }
+    autoSaveInflightRef.current = true;
+    try {
+      await persistirRef.current("rascunho");
+    } catch (e) {
+      console.warn("[autoSave] falhou:", e);
+    } finally {
+      autoSaveInflightRef.current = false;
+      if (autoSavePendingRef.current) {
+        autoSavePendingRef.current = false;
+        triggerAutoSave();
+      }
+    }
+  };
+
+  const firstAutoSaveRef = useRef(true);
+  useEffect(() => {
+    if (firstAutoSaveRef.current) {
+      firstAutoSaveRef.current = false;
+      return;
+    }
+    if (!camposObrigatoriosOk) return;
+    const t = setTimeout(() => {
+      triggerAutoSave();
+    }, 1500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    JSON.stringify(itensMaterial),
+    JSON.stringify(cotacoes),
+    JSON.stringify(fornecedoresSelecionados),
+    JSON.stringify(margensSeg),
+    JSON.stringify(markupsCategoria),
+    aliquotaMes,
+    tipoNf,
+    margemNegPct,
+  ]);
 
   const itensBaixaConfianca = useMemo(
     () => itensMaterial.filter((i) => i.confianca === "baixa").length,
