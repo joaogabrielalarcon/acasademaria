@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   BellRing,
   BookOpen,
   Building2,
