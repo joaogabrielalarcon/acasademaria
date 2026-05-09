@@ -154,13 +154,12 @@ function PlantasSection({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-8">#</TableHead>
-                <TableHead>Categoria</TableHead>
+                <TableHead className="w-40">Item</TableHead>
                 <TableHead>Nome Popular</TableHead>
                 <TableHead>Nome Científico</TableHead>
                 <TableHead>Altura (m)</TableHead>
                 <TableHead className="w-24">DAP</TableHead>
-                <TableHead className="w-20">Qtd</TableHead>
+                <TableHead className="w-28">Qtd</TableHead>
                 <TableHead className="w-20">Unid.</TableHead>
                 {isEditing && <TableHead className="w-10" />}
               </TableRow>
