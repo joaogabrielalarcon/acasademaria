@@ -941,7 +941,26 @@ export default function NovoOrcamento() {
     }
   };
 
-  const setCotacao = (itemIdx: number, fornId: string, patch: Partial<CotacaoLinha>) => {
+  const handleNaoAprovar = async () => {
+    const motivo = naoAprovarModal.motivo.trim();
+    if (!motivo) {
+      toast({ title: "Informe o motivo da não aprovação", variant: "destructive" });
+      return;
+    }
+    try {
+      await persistirOrcamentoCompleto("nao_aprovado", {
+        motivo_nao_aprovacao: motivo,
+        data_nao_aprovacao: new Date().toISOString(),
+        editavel: false,
+      });
+      setNaoAprovarModal({ open: false, motivo: "" });
+      toast({ title: "Orçamento marcado como não aprovado" });
+      setTimeout(() => navigate("/orcamentos"), 1500);
+    } catch (e: any) {
+      toast({ title: "Erro ao salvar", description: e?.message, variant: "destructive" });
+    }
+  };
+
     setCotacoes((prev) => {
       const itemMap = { ...(prev[itemIdx] || {}) };
       const atual: CotacaoLinha = itemMap[fornId] || {
