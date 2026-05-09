@@ -111,7 +111,9 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
-        <MafeChat />
+        <Suspense fallback={null}>
+          <MafeChat />
+        </Suspense>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
