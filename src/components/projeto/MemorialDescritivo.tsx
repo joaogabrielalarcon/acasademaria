@@ -154,7 +154,7 @@ function PlantasSection({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-40">Item</TableHead>
+                <TableHead className="w-40">Categoria</TableHead>
                 <TableHead>Nome Popular</TableHead>
                 <TableHead>Nome Científico</TableHead>
                 <TableHead>Altura (m)</TableHead>
