@@ -517,6 +517,10 @@ export default function NovoOrcamento() {
     open: false,
     valor: "",
   });
+  const [naoAprovarModal, setNaoAprovarModal] = useState<{ open: boolean; motivo: string }>({
+    open: false,
+    motivo: "",
+  });
   const [savingFinal, setSavingFinal] = useState(false);
 
   useEffect(() => {
