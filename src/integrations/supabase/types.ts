@@ -4418,6 +4418,66 @@ export type Database = {
         }
         Relationships: []
       }
+      solicitacoes_compras: {
+        Row: {
+          condicao_pagamento: string | null
+          created_at: string
+          data_solicitacao: string
+          decidido_em: string | null
+          decidido_por: string | null
+          decidido_por_nome: string | null
+          id: string
+          link_ou_contato: string | null
+          motivo: string
+          motivo_recusa: string | null
+          observacoes: string | null
+          solicitante_id: string | null
+          solicitante_nome: string
+          status: string
+          updated_at: string
+          urgencia: string
+          valor_estimado: number | null
+        }
+        Insert: {
+          condicao_pagamento?: string | null
+          created_at?: string
+          data_solicitacao?: string
+          decidido_em?: string | null
+          decidido_por?: string | null
+          decidido_por_nome?: string | null
+          id?: string
+          link_ou_contato?: string | null
+          motivo: string
+          motivo_recusa?: string | null
+          observacoes?: string | null
+          solicitante_id?: string | null
+          solicitante_nome: string
+          status?: string
+          updated_at?: string
+          urgencia?: string
+          valor_estimado?: number | null
+        }
+        Update: {
+          condicao_pagamento?: string | null
+          created_at?: string
+          data_solicitacao?: string
+          decidido_em?: string | null
+          decidido_por?: string | null
+          decidido_por_nome?: string | null
+          id?: string
+          link_ou_contato?: string | null
+          motivo?: string
+          motivo_recusa?: string | null
+          observacoes?: string | null
+          solicitante_id?: string | null
+          solicitante_nome?: string
+          status?: string
+          updated_at?: string
+          urgencia?: string
+          valor_estimado?: number | null
+        }
+        Relationships: []
+      }
       system_state: {
         Row: {
           created_at: string
