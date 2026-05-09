@@ -1632,7 +1632,7 @@ export default function NovoOrcamento() {
           </div>
 
           {/* Barra de etapas (navegação livre) */}
-          <Card className="p-4 sticky top-0 z-20 bg-card/95 backdrop-blur">
+          <Card className="p-4 sticky top-0 z-20 bg-card border-border/50">
             <div className="flex items-center justify-between gap-2 overflow-x-auto">
               {ETAPAS.map((nome, idx) => {
                 const numero = idx + 1;
