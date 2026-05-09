@@ -67,7 +67,24 @@ export default function Orcamentos() {
         ? orcamentos.filter((o) => isNaoAprovado(o.status))
         : orcamentos.filter((o) => o.status === filtro);
 
-        <div className="flex flex-wrap gap-2">
+  const formatCurrency = (v: number | null) =>
+    v == null ? "—" : new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+
+  return (
+    <AppLayout>
+      <div className="max-w-6xl mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="font-display text-3xl text-foreground">Orçamentos</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Propostas comerciais e cotações
+            </p>
+          </div>
+          <Button variant="terracota" onClick={() => navigate("/orcamentos/novo")}>
+            <Plus className="w-4 h-4" />
+            Novo Orçamento
+          </Button>
+        </div>
 
         <div className="flex flex-wrap gap-2">
           {FILTROS.map((f) => (
