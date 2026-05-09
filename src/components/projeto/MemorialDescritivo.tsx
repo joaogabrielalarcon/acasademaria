@@ -3,6 +3,18 @@ import { Plus, Trash2, Save, Loader2, FileText, Search, Leaf, Package } from "lu
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const CATEGORIA_OPTIONS = [
+  "Árvore",
+  "Arbusto",
+  "Herbácea",
+  "Forração",
+  "Palmeira",
+  "Trepadeira",
+  "Insumos",
+  "Vasos",
+];
 
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
