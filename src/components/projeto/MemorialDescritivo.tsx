@@ -369,12 +369,19 @@ function InsumosSection({
                 <TableRow key={item.id}>
                   <TableCell>
                     {isEditing ? (
-                      <Input
-                        value={item.categoria}
-                        onChange={(e) => onUpdate(idx, "categoria", e.target.value)}
-                        className="h-8 text-sm"
-                        placeholder="Insumo, vaso..."
-                      />
+                      <Select
+                        value={item.categoria || undefined}
+                        onValueChange={(v) => onUpdate(idx, "categoria", v)}
+                      >
+                        <SelectTrigger className="h-8 text-sm">
+                          <SelectValue placeholder="Categoria" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CATEGORIA_OPTIONS.map((c) => (
+                            <SelectItem key={c} value={c}>{c}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     ) : (
                       <span className="text-sm font-medium">{item.categoria || "—"}</span>
                     )}
