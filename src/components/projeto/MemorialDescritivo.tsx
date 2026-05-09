@@ -338,10 +338,9 @@ function InsumosSection({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-8">#</TableHead>
-                <TableHead>Categoria</TableHead>
+                <TableHead className="w-40">Item</TableHead>
                 <TableHead>Nome</TableHead>
-                <TableHead className="w-20">Qtd</TableHead>
+                <TableHead className="w-28">Qtd</TableHead>
                 <TableHead className="w-20">Unid.</TableHead>
                 {isEditing && <TableHead className="w-10" />}
               </TableRow>
@@ -349,17 +348,16 @@ function InsumosSection({
             <TableBody>
               {items.map((item, idx) => (
                 <TableRow key={item.id}>
-                  <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
                   <TableCell>
                     {isEditing ? (
                       <Input
                         value={item.categoria}
                         onChange={(e) => onUpdate(idx, "categoria", e.target.value)}
                         className="h-8 text-sm"
-                        placeholder="Categoria"
+                        placeholder="Insumo, vaso..."
                       />
                     ) : (
-                      <span>{item.categoria || "—"}</span>
+                      <span className="text-sm font-medium">{item.categoria || "—"}</span>
                     )}
                   </TableCell>
                   <TableCell>
