@@ -30,6 +30,7 @@ const DESCRIPTIONS: Record<string, string> = {
   "/compras?tab=insumos": "Produtos e insumos",
   "/compras?tab=plantas": "Catálogo de plantas",
   "/compras?tab=estoque": "Controle de estoque",
+  "/solicitacoes-compras": "Pedidos de compra para aprovação",
   "/financeiro/a-receber": "Parcelas e recebíveis",
   "/financeiro/movimentacoes": "Entradas e saídas",
   "/conciliacao": "Conciliação bancária",
