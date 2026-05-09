@@ -24,6 +24,7 @@ const DESCRIPTIONS: Record<string, string> = {
   "/processos": "Documentação de processos",
   "/crm": "Pipeline comercial",
   "/orcamentos": "Propostas e orçamentos",
+  "/indicadores": "Painel executivo de KPIs",
   "/agenda": "Tarefas pessoais com IA",
   "/compras?tab=fornecedores": "Cadastro de fornecedores",
   "/compras?tab=insumos": "Produtos e insumos",
