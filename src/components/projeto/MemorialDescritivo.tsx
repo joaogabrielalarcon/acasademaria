@@ -258,7 +258,7 @@ function PlantasSection({
                           type="number"
                           value={item.quantidade}
                           onChange={(e) => onUpdate(idx, "quantidade", Number(e.target.value) || 0)}
-                          className="h-8 text-sm w-20"
+                          className="h-8 text-sm w-28"
                           min={0}
                         />
                       ) : (
