@@ -48,6 +48,7 @@ export const comprasNavigationItems: NavigationItem[] = [
   { title: "Produtos e Insumos", icon: Package, href: "/compras?tab=insumos", roles: ["admin", "administrativo", "gestao_campo"] },
   { title: "Plantas", icon: Leaf, href: "/compras?tab=plantas", roles: ["admin", "administrativo", "arquitetura"] },
   { title: "Estoque", icon: Package, href: "/compras?tab=estoque", roles: ["admin", "administrativo", "gestao_campo"] },
+  { title: "Solicitações de Compras", icon: Receipt, href: "/solicitacoes-compras", roles: ["admin", "administrativo", "gestao_campo", "arquitetura", "responsavel_obra"] },
 ];
 
 export const comprasIcon = ShoppingCart;

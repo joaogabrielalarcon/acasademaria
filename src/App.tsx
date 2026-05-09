@@ -49,6 +49,7 @@ const Movimentacoes = lazy(() => import("./pages/Movimentacoes"));
 const Orcamentos = lazy(() => import("./pages/Orcamentos"));
 const NovoOrcamento = lazy(() => import("./pages/NovoOrcamento"));
 const Indicadores = lazy(() => import("./pages/Indicadores"));
+const SolicitacoesCompras = lazy(() => import("./pages/SolicitacoesCompras"));
 
 const queryClient = new QueryClient();
 
@@ -104,6 +105,7 @@ const App = () => (
             <Route path="/orcamentos/novo" element={<ProtectedRoute><NovoOrcamento /></ProtectedRoute>} />
             <Route path="/orcamentos/:id" element={<ProtectedRoute><NovoOrcamento /></ProtectedRoute>} />
             <Route path="/indicadores" element={<ProtectedRoute><Indicadores /></ProtectedRoute>} />
+            <Route path="/solicitacoes-compras" element={<ProtectedRoute><SolicitacoesCompras /></ProtectedRoute>} />
             <Route path="/agenda" element={<ProtectedRoute><MinhaAgenda /></ProtectedRoute>} />
             <Route path="/conciliacao" element={<ProtectedRoute><Conciliacao /></ProtectedRoute>} />
             <Route path="/financeiro/a-receber" element={<ProtectedRoute><AReceber /></ProtectedRoute>} />
