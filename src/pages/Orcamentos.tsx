@@ -28,7 +28,7 @@ const FILTROS: { value: string; label: string }[] = [
   { value: "em_cotacao", label: "Em cotação" },
   { value: "aguardando_aprovacao", label: "Aguardando aprovação" },
   { value: "aprovado", label: "Aprovado" },
-  { value: "cancelado", label: "Cancelado" },
+  { value: "nao_aprovado", label: "Não aprovado" },
 ];
 
 const statusLabels: Record<string, string> = {
@@ -37,7 +37,8 @@ const statusLabels: Record<string, string> = {
   aguardando_aprovacao: "Aguardando Aprovação",
   aprovado: "Aprovado",
   expirado: "Expirado",
-  cancelado: "Cancelado",
+  cancelado: "Não Aprovado",
+  nao_aprovado: "Não Aprovado",
   revisao: "Em Revisão",
 };
 
