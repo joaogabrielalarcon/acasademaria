@@ -96,6 +96,31 @@ export default function Orcamentos() {
           </Button>
         </div>
 
+        {/* KPIs */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <Card className="p-3">
+            <p className="text-xs text-muted-foreground">Total</p>
+            <p className="font-display text-2xl text-foreground">{totalGeral}</p>
+          </Card>
+          <Card className="p-3">
+            <p className="text-xs text-muted-foreground">Enviados</p>
+            <p className="font-display text-2xl text-foreground">{enviados}</p>
+          </Card>
+          <Card className="p-3">
+            <p className="text-xs text-muted-foreground">Aprovados</p>
+            <p className="font-display text-2xl text-foreground">{aprovados}</p>
+          </Card>
+          <Card className="p-3">
+            <p className="text-xs text-muted-foreground">Não aprovados</p>
+            <p className="font-display text-2xl text-foreground">{naoAprovados}</p>
+          </Card>
+          <Card className="p-3 col-span-2 md:col-span-1 bg-primary/5 border-primary/30">
+            <p className="text-xs text-muted-foreground">Taxa de conversão</p>
+            <p className="font-display text-2xl text-primary">{taxaConversao.toFixed(1)}%</p>
+            <p className="text-[10px] text-muted-foreground">{aprovados} de {decididos} decididos</p>
+          </Card>
+        </div>
+
         <div className="flex flex-wrap gap-2">
           {FILTROS.map((f) => (
             <Button
