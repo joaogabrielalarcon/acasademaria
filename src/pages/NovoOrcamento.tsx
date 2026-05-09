@@ -1210,7 +1210,7 @@ export default function NovoOrcamento() {
     margemNegPct,
   ]);
 
-
+  const itensBaixaConfianca = useMemo(
     () => itensMaterial.filter((i) => i.confianca === "baixa").length,
     [itensMaterial],
   );
