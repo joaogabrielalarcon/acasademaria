@@ -1234,8 +1234,16 @@ export default function NovoOrcamento() {
     },
   });
 
+  const normNome = (s: string) =>
+    (s || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
   const fornecedoresDoItem = (item: ItemMemorial) =>
-    (historicoPorItem as Record<string, any[]>)[item.nome_popular.trim().toLowerCase()] || [];
+    (historicoPorItem as Record<string, any[]>)[normNome(item.nome_popular)] || [];
 
   const resumoFornecedores = useMemo(() => {
     let semForn = 0;
