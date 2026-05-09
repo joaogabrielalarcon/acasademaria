@@ -1466,15 +1466,12 @@ export default function NovoOrcamento() {
   // mas não bloqueiam a navegação, pois nem todo tipo de proposta usa todas as etapas.
   const podeAvancar = etapaAtual < ETAPAS.length;
 
-  const irParaEtapa = async (destino: number) => {
+  const irParaEtapa = (destino: number) => {
     if (destino === etapaAtual) return;
-    // Se estamos saindo da etapa 1 e os campos básicos estão ok, salva rascunho.
+    // Se estamos saindo da etapa 1 e os campos básicos estão ok, salva rascunho em background
+    // (não bloqueia a navegação para o clique parecer instantâneo).
     if (etapaAtual === 1 && camposObrigatoriosOk) {
-      try {
-        await saveMutation.mutateAsync();
-      } catch {
-        // Não bloqueia navegação por falha de save.
-      }
+      saveMutation.mutate();
     }
     setEtapaAtual(Math.max(1, Math.min(ETAPAS.length, destino)));
     window.scrollTo({ top: 0, behavior: "smooth" });
