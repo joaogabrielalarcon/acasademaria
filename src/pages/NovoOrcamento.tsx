@@ -517,6 +517,10 @@ export default function NovoOrcamento() {
     open: false,
     valor: "",
   });
+  const [naoAprovarModal, setNaoAprovarModal] = useState<{ open: boolean; motivo: string }>({
+    open: false,
+    motivo: "",
+  });
   const [savingFinal, setSavingFinal] = useState(false);
 
   useEffect(() => {
@@ -934,6 +938,26 @@ export default function NovoOrcamento() {
       setTimeout(() => navigate("/orcamentos"), 2000);
     } catch (e: any) {
       toast({ title: "Erro ao aprovar", description: e?.message, variant: "destructive" });
+    }
+  };
+
+  const handleNaoAprovar = async () => {
+    const motivo = naoAprovarModal.motivo.trim();
+    if (!motivo) {
+      toast({ title: "Informe o motivo da não aprovação", variant: "destructive" });
+      return;
+    }
+    try {
+      await persistirOrcamentoCompleto("nao_aprovado", {
+        motivo_nao_aprovacao: motivo,
+        data_nao_aprovacao: new Date().toISOString(),
+        editavel: false,
+      });
+      setNaoAprovarModal({ open: false, motivo: "" });
+      toast({ title: "Orçamento marcado como não aprovado" });
+      setTimeout(() => navigate("/orcamentos"), 1500);
+    } catch (e: any) {
+      toast({ title: "Erro ao salvar", description: e?.message, variant: "destructive" });
     }
   };
 
@@ -3595,6 +3619,14 @@ export default function NovoOrcamento() {
                 >
                   ✅ Marcar como aprovado
                 </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setNaoAprovarModal({ open: true, motivo: "" })}
+                  disabled={savingFinal}
+                  className="border-destructive/40 text-destructive hover:bg-destructive/10"
+                >
+                  ✖ Marcar como não aprovado
+                </Button>
               </div>
             </div>
           )}
@@ -3685,6 +3717,51 @@ export default function NovoOrcamento() {
                 <Button variant="terracota" onClick={handleAprovar} disabled={savingFinal}>
                   {savingFinal && <Loader2 className="w-4 h-4 animate-spin" />}
                   Confirmar aprovação
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Modal: não aprovar */}
+          <Dialog
+            open={naoAprovarModal.open}
+            onOpenChange={(o) => setNaoAprovarModal((m) => ({ ...m, open: o }))}
+          >
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Marcar orçamento como não aprovado</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label>Motivo da não aprovação *</Label>
+                  <Textarea
+                    value={naoAprovarModal.motivo}
+                    onChange={(e) =>
+                      setNaoAprovarModal((m) => ({ ...m, motivo: e.target.value }))
+                    }
+                    rows={4}
+                    placeholder="Ex.: Cliente optou por outro fornecedor, valor acima do orçado, projeto adiado..."
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Esse registro alimenta a taxa de conversão e o histórico de motivos.
+                  </p>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setNaoAprovarModal({ open: false, motivo: "" })}
+                  disabled={savingFinal}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="terracota"
+                  onClick={handleNaoAprovar}
+                  disabled={savingFinal || !naoAprovarModal.motivo.trim()}
+                >
+                  {savingFinal && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Confirmar
                 </Button>
               </DialogFooter>
             </DialogContent>
