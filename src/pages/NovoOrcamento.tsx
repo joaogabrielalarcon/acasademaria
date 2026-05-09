@@ -3619,6 +3619,14 @@ export default function NovoOrcamento() {
                 >
                   ✅ Marcar como aprovado
                 </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setNaoAprovarModal({ open: true, motivo: "" })}
+                  disabled={savingFinal}
+                  className="border-destructive/40 text-destructive hover:bg-destructive/10"
+                >
+                  ✖ Marcar como não aprovado
+                </Button>
               </div>
             </div>
           )}
