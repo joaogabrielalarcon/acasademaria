@@ -2073,19 +2073,22 @@ export default function NovoOrcamento() {
                     </div>
                   )}
 
-                  <div className="border rounded-lg overflow-x-auto">
-                    <table className="w-full text-sm">
+                  <p className="text-xs text-muted-foreground">
+                    Role horizontalmente para ver todas as colunas. As colunas têm largura mínima para legibilidade.
+                  </p>
+                  <div className="border rounded-lg overflow-x-auto max-w-full">
+                    <table className="text-sm" style={{ minWidth: 1280 }}>
                       <thead className="bg-muted/50 text-muted-foreground">
                         <tr>
-                          <th className="px-2 py-2 text-left w-10">#</th>
-                          <th className="px-2 py-2 text-left">Nome Popular</th>
-                          <th className="px-2 py-2 text-left">Nome Científico</th>
-                          <th className="px-2 py-2 text-left">Porte</th>
-                          <th className="px-2 py-2 text-left w-20">Qtd</th>
-                          <th className="px-2 py-2 text-left w-28">Unidade</th>
-                          <th className="px-2 py-2 text-left w-44">Categoria</th>
-                          <th className="px-2 py-2 text-center w-20">Confiança</th>
-                          <th className="px-2 py-2 text-center w-16">Ações</th>
+                          <th className="px-2 py-2 text-left" style={{ width: 40 }}>#</th>
+                          <th className="px-2 py-2 text-left" style={{ minWidth: 240 }}>Nome Popular</th>
+                          <th className="px-2 py-2 text-left" style={{ minWidth: 260 }}>Nome Científico</th>
+                          <th className="px-2 py-2 text-left" style={{ minWidth: 200 }}>Porte</th>
+                          <th className="px-2 py-2 text-left" style={{ width: 100 }}>Qtd</th>
+                          <th className="px-2 py-2 text-left" style={{ width: 130 }}>Unidade</th>
+                          <th className="px-2 py-2 text-left" style={{ minWidth: 200 }}>Categoria</th>
+                          <th className="px-2 py-2 text-center" style={{ width: 90 }}>Confiança</th>
+                          <th className="px-2 py-2 text-center" style={{ width: 70 }}>Ações</th>
                         </tr>
                       </thead>
                       <tbody>
