@@ -154,13 +154,12 @@ function PlantasSection({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-8">#</TableHead>
-                <TableHead>Categoria</TableHead>
+                <TableHead className="w-40">Item</TableHead>
                 <TableHead>Nome Popular</TableHead>
                 <TableHead>Nome Científico</TableHead>
                 <TableHead>Altura (m)</TableHead>
                 <TableHead className="w-24">DAP</TableHead>
-                <TableHead className="w-20">Qtd</TableHead>
+                <TableHead className="w-28">Qtd</TableHead>
                 <TableHead className="w-20">Unid.</TableHead>
                 {isEditing && <TableHead className="w-10" />}
               </TableRow>
@@ -179,17 +178,16 @@ function PlantasSection({
 
                 return (
                   <TableRow key={item.id}>
-                    <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
                     <TableCell>
                       {isEditing ? (
                         <Input
                           value={item.categoria}
                           onChange={(e) => onUpdate(idx, "categoria", e.target.value)}
                           className="h-8 text-sm"
-                          placeholder="Categoria"
+                          placeholder="Árvore, arbusto..."
                         />
                       ) : (
-                        <span>{item.categoria || "—"}</span>
+                        <span className="text-sm font-medium">{item.categoria || "—"}</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -260,7 +258,7 @@ function PlantasSection({
                           type="number"
                           value={item.quantidade}
                           onChange={(e) => onUpdate(idx, "quantidade", Number(e.target.value) || 0)}
-                          className="h-8 text-sm w-20"
+                          className="h-8 text-sm w-28"
                           min={0}
                         />
                       ) : (
@@ -340,10 +338,9 @@ function InsumosSection({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-8">#</TableHead>
-                <TableHead>Categoria</TableHead>
+                <TableHead className="w-40">Item</TableHead>
                 <TableHead>Nome</TableHead>
-                <TableHead className="w-20">Qtd</TableHead>
+                <TableHead className="w-28">Qtd</TableHead>
                 <TableHead className="w-20">Unid.</TableHead>
                 {isEditing && <TableHead className="w-10" />}
               </TableRow>
@@ -351,17 +348,16 @@ function InsumosSection({
             <TableBody>
               {items.map((item, idx) => (
                 <TableRow key={item.id}>
-                  <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
                   <TableCell>
                     {isEditing ? (
                       <Input
                         value={item.categoria}
                         onChange={(e) => onUpdate(idx, "categoria", e.target.value)}
                         className="h-8 text-sm"
-                        placeholder="Categoria"
+                        placeholder="Insumo, vaso..."
                       />
                     ) : (
-                      <span>{item.categoria || "—"}</span>
+                      <span className="text-sm font-medium">{item.categoria || "—"}</span>
                     )}
                   </TableCell>
                   <TableCell>
@@ -393,7 +389,7 @@ function InsumosSection({
                         type="number"
                         value={item.quantidade}
                         onChange={(e) => onUpdate(idx, "quantidade", Number(e.target.value) || 0)}
-                        className="h-8 text-sm w-20"
+                        className="h-8 text-sm w-28"
                         min={0}
                       />
                     ) : (
