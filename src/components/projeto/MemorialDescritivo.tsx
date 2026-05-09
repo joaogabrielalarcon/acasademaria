@@ -178,17 +178,16 @@ function PlantasSection({
 
                 return (
                   <TableRow key={item.id}>
-                    <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
                     <TableCell>
                       {isEditing ? (
                         <Input
                           value={item.categoria}
                           onChange={(e) => onUpdate(idx, "categoria", e.target.value)}
                           className="h-8 text-sm"
-                          placeholder="Categoria"
+                          placeholder="Árvore, arbusto..."
                         />
                       ) : (
-                        <span>{item.categoria || "—"}</span>
+                        <span className="text-sm font-medium">{item.categoria || "—"}</span>
                       )}
                     </TableCell>
                     <TableCell>
