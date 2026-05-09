@@ -58,9 +58,24 @@ export default function Orcamentos() {
     },
   });
 
-  const filtrados = filtro === "todos"
-    ? orcamentos
-    : orcamentos.filter((o) => o.status === filtro);
+  const isNaoAprovado = (s: string) => s === "nao_aprovado" || s === "cancelado";
+
+  const filtrados =
+    filtro === "todos"
+      ? orcamentos
+      : filtro === "nao_aprovado"
+        ? orcamentos.filter((o) => isNaoAprovado(o.status))
+        : orcamentos.filter((o) => o.status === filtro);
+
+  // KPIs / taxa de conversão
+  const totalGeral = orcamentos.length;
+  const enviados = orcamentos.filter((o) =>
+    ["aguardando_aprovacao", "aprovado", "nao_aprovado", "cancelado", "expirado"].includes(o.status),
+  ).length;
+  const aprovados = orcamentos.filter((o) => o.status === "aprovado").length;
+  const naoAprovados = orcamentos.filter((o) => isNaoAprovado(o.status)).length;
+  const decididos = aprovados + naoAprovados;
+  const taxaConversao = decididos > 0 ? (aprovados / decididos) * 100 : 0;
 
   const formatCurrency = (v: number | null) =>
     v == null ? "—" : new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
