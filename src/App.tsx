@@ -5,9 +5,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { MafeChat } from "@/components/FloraChat";
 import Login from "./pages/Login";
 import MenuCentral from "./pages/MenuCentral";
+
+const MafeChat = lazy(() =>
+  import("@/components/FloraChat").then((m) => ({ default: m.MafeChat }))
+);
 
 // Lazy-loaded routes for better initial load performance
 const Clientes = lazy(() => import("./pages/Clientes"));
@@ -108,7 +111,9 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
-        <MafeChat />
+        <Suspense fallback={null}>
+          <MafeChat />
+        </Suspense>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

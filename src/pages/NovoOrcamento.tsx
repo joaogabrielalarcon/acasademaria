@@ -1466,15 +1466,12 @@ export default function NovoOrcamento() {
   // mas não bloqueiam a navegação, pois nem todo tipo de proposta usa todas as etapas.
   const podeAvancar = etapaAtual < ETAPAS.length;
 
-  const irParaEtapa = async (destino: number) => {
+  const irParaEtapa = (destino: number) => {
     if (destino === etapaAtual) return;
-    // Se estamos saindo da etapa 1 e os campos básicos estão ok, salva rascunho.
+    // Se estamos saindo da etapa 1 e os campos básicos estão ok, salva rascunho em background
+    // (não bloqueia a navegação para o clique parecer instantâneo).
     if (etapaAtual === 1 && camposObrigatoriosOk) {
-      try {
-        await saveMutation.mutateAsync();
-      } catch {
-        // Não bloqueia navegação por falha de save.
-      }
+      saveMutation.mutate();
     }
     setEtapaAtual(Math.max(1, Math.min(ETAPAS.length, destino)));
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1635,7 +1632,7 @@ export default function NovoOrcamento() {
           </div>
 
           {/* Barra de etapas (navegação livre) */}
-          <Card className="p-4 sticky top-0 z-20 bg-card/95 backdrop-blur">
+          <Card className="p-4 sticky top-0 z-20 bg-card border-border/50">
             <div className="flex items-center justify-between gap-2 overflow-x-auto">
               {ETAPAS.map((nome, idx) => {
                 const numero = idx + 1;
@@ -3942,11 +3939,7 @@ export default function NovoOrcamento() {
               <Button
                 variant="terracota"
                 onClick={handleProxima}
-                disabled={
-                  etapaAtual === ETAPAS.length ||
-                  saveMutation.isPending ||
-                  processandoPdf
-                }
+                disabled={etapaAtual === ETAPAS.length || processandoPdf}
               >
                 Próxima etapa
                 <ArrowRight className="w-4 h-4" />
