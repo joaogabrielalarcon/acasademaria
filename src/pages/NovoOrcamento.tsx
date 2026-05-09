@@ -961,6 +961,7 @@ export default function NovoOrcamento() {
     }
   };
 
+  const setCotacao = (itemIdx: number, fornId: string, patch: Partial<CotacaoLinha>) => {
     setCotacoes((prev) => {
       const itemMap = { ...(prev[itemIdx] || {}) };
       const atual: CotacaoLinha = itemMap[fornId] || {
