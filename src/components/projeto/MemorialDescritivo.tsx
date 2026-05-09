@@ -338,7 +338,7 @@ function InsumosSection({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-40">Item</TableHead>
+                <TableHead className="w-40">Categoria</TableHead>
                 <TableHead>Nome</TableHead>
                 <TableHead className="w-28">Qtd</TableHead>
                 <TableHead className="w-20">Unid.</TableHead>
