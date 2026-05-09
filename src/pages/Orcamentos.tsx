@@ -67,59 +67,7 @@ export default function Orcamentos() {
         ? orcamentos.filter((o) => isNaoAprovado(o.status))
         : orcamentos.filter((o) => o.status === filtro);
 
-  // KPIs / taxa de conversão
-  const totalGeral = orcamentos.length;
-  const enviados = orcamentos.filter((o) =>
-    ["aguardando_aprovacao", "aprovado", "nao_aprovado", "cancelado", "expirado"].includes(o.status),
-  ).length;
-  const aprovados = orcamentos.filter((o) => o.status === "aprovado").length;
-  const naoAprovados = orcamentos.filter((o) => isNaoAprovado(o.status)).length;
-  const decididos = aprovados + naoAprovados;
-  const taxaConversao = decididos > 0 ? (aprovados / decididos) * 100 : 0;
-
-  const formatCurrency = (v: number | null) =>
-    v == null ? "—" : new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
-
-  return (
-    <AppLayout>
-      <div className="max-w-6xl mx-auto p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="font-display text-3xl text-foreground">Orçamentos</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Propostas comerciais e cotações
-            </p>
-          </div>
-          <Button variant="terracota" onClick={() => navigate("/orcamentos/novo")}>
-            <Plus className="w-4 h-4" />
-            Novo Orçamento
-          </Button>
-        </div>
-
-        {/* KPIs */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <Card className="p-3">
-            <p className="text-xs text-muted-foreground">Total</p>
-            <p className="font-display text-2xl text-foreground">{totalGeral}</p>
-          </Card>
-          <Card className="p-3">
-            <p className="text-xs text-muted-foreground">Enviados</p>
-            <p className="font-display text-2xl text-foreground">{enviados}</p>
-          </Card>
-          <Card className="p-3">
-            <p className="text-xs text-muted-foreground">Aprovados</p>
-            <p className="font-display text-2xl text-foreground">{aprovados}</p>
-          </Card>
-          <Card className="p-3">
-            <p className="text-xs text-muted-foreground">Não aprovados</p>
-            <p className="font-display text-2xl text-foreground">{naoAprovados}</p>
-          </Card>
-          <Card className="p-3 col-span-2 md:col-span-1 bg-primary/5 border-primary/30">
-            <p className="text-xs text-muted-foreground">Taxa de conversão</p>
-            <p className="font-display text-2xl text-primary">{taxaConversao.toFixed(1)}%</p>
-            <p className="text-[10px] text-muted-foreground">{aprovados} de {decididos} decididos</p>
-          </Card>
-        </div>
+        <div className="flex flex-wrap gap-2">
 
         <div className="flex flex-wrap gap-2">
           {FILTROS.map((f) => (
