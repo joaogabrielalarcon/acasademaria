@@ -3404,11 +3404,13 @@ export type Database = {
           data_criacao: string | null
           data_envio: string | null
           data_expiracao: string | null
+          data_nao_aprovacao: string | null
           editavel: boolean | null
           estado: string | null
           id: string
           local_endereco: string | null
           margem_negociacao_pct: number | null
+          motivo_nao_aprovacao: string | null
           obs_interna: string | null
           obs_proposta: string | null
           perfil_markup_id: string | null
@@ -3434,11 +3436,13 @@ export type Database = {
           data_criacao?: string | null
           data_envio?: string | null
           data_expiracao?: string | null
+          data_nao_aprovacao?: string | null
           editavel?: boolean | null
           estado?: string | null
           id?: string
           local_endereco?: string | null
           margem_negociacao_pct?: number | null
+          motivo_nao_aprovacao?: string | null
           obs_interna?: string | null
           obs_proposta?: string | null
           perfil_markup_id?: string | null
@@ -3464,11 +3468,13 @@ export type Database = {
           data_criacao?: string | null
           data_envio?: string | null
           data_expiracao?: string | null
+          data_nao_aprovacao?: string | null
           editavel?: boolean | null
           estado?: string | null
           id?: string
           local_endereco?: string | null
           margem_negociacao_pct?: number | null
+          motivo_nao_aprovacao?: string | null
           obs_interna?: string | null
           obs_proposta?: string | null
           perfil_markup_id?: string | null
