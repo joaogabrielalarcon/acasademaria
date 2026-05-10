@@ -2929,6 +2929,23 @@ export default function NovoOrcamento() {
                           >
                             <td className="px-2 py-1 text-muted-foreground">{idx + 1}</td>
                             <td className="px-2 py-1">
+                              <Select
+                                value={it.categoria}
+                                onValueChange={(v) => updateItem(idx, { categoria: v })}
+                              >
+                                <SelectTrigger className="h-8">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {CATEGORIAS_ITEM.map((c) => (
+                                    <SelectItem key={c} value={c}>
+                                      {c}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </td>
+                            <td className="px-2 py-1">
                               <Input
                                 data-field="nome_popular"
                                 value={it.nome_popular}
@@ -2960,13 +2977,14 @@ export default function NovoOrcamento() {
                               <Input
                                 type="number"
                                 step="0.01"
+                                inputMode="decimal"
                                 value={it.quantidade}
                                 onChange={(e) =>
                                   updateItem(idx, {
                                     quantidade: parseFloat(e.target.value) || 0,
                                   })
                                 }
-                                className="h-8"
+                                className="h-8 pr-7 w-full min-w-[120px] tabular-nums"
                               />
                             </td>
                             <td className="px-2 py-1">
@@ -2981,23 +2999,6 @@ export default function NovoOrcamento() {
                                   {UNIDADES_ITEM.map((u) => (
                                     <SelectItem key={u} value={u}>
                                       {u}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </td>
-                            <td className="px-2 py-1">
-                              <Select
-                                value={it.categoria}
-                                onValueChange={(v) => updateItem(idx, { categoria: v })}
-                              >
-                                <SelectTrigger className="h-8">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {CATEGORIAS_ITEM.map((c) => (
-                                    <SelectItem key={c} value={c}>
-                                      {c}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
