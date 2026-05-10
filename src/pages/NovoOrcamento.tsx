@@ -2573,7 +2573,13 @@ export default function NovoOrcamento() {
                                       {row.nota_media.toFixed(1)} ({row.nota_qtd})
                                     </span>
                                   )}
-                                  <FornecedorPopover fornecedorId={row.fornecedor_id} nome={f.nome} />
+                                  <FornecedorPopover
+                                    fornecedorId={row.fornecedor_id}
+                                    nome={f.nome}
+                                    itemId={row.item_id}
+                                    itemTipo={row.item_tipo}
+                                    onAvaliacaoSalva={() => refetchHistorico?.()}
+                                  />
                                 </div>
                                 <div className="flex flex-wrap gap-3 mt-0.5 text-xs text-muted-foreground">
                                   {row.porte && (
