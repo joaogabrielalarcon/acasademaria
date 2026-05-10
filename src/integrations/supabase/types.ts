@@ -3229,6 +3229,7 @@ export type Database = {
           fornecedor_escolhido_id: string | null
           id: string
           imposto_pct: number | null
+          insumo_id: string | null
           margem_bruta_pct: number | null
           margem_seguranca_pct: number | null
           markup_motivo: string | null
@@ -3240,6 +3241,7 @@ export type Database = {
           orcamento_id: string | null
           ordem: number | null
           origem: string | null
+          planta_id: string | null
           porte_divergente: boolean | null
           porte_fornecedor: string | null
           porte_solicitado: string | null
@@ -3256,6 +3258,7 @@ export type Database = {
           fornecedor_escolhido_id?: string | null
           id?: string
           imposto_pct?: number | null
+          insumo_id?: string | null
           margem_bruta_pct?: number | null
           margem_seguranca_pct?: number | null
           markup_motivo?: string | null
@@ -3267,6 +3270,7 @@ export type Database = {
           orcamento_id?: string | null
           ordem?: number | null
           origem?: string | null
+          planta_id?: string | null
           porte_divergente?: boolean | null
           porte_fornecedor?: string | null
           porte_solicitado?: string | null
@@ -3283,6 +3287,7 @@ export type Database = {
           fornecedor_escolhido_id?: string | null
           id?: string
           imposto_pct?: number | null
+          insumo_id?: string | null
           margem_bruta_pct?: number | null
           margem_seguranca_pct?: number | null
           markup_motivo?: string | null
@@ -3294,6 +3299,7 @@ export type Database = {
           orcamento_id?: string | null
           ordem?: number | null
           origem?: string | null
+          planta_id?: string | null
           porte_divergente?: boolean | null
           porte_fornecedor?: string | null
           porte_solicitado?: string | null
@@ -3312,10 +3318,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "orcamento_itens_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "insumos"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "orcamento_itens_orcamento_id_fkey"
             columns: ["orcamento_id"]
             isOneToOne: false
             referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_itens_planta_id_fkey"
+            columns: ["planta_id"]
+            isOneToOne: false
+            referencedRelation: "plantas"
             referencedColumns: ["id"]
           },
         ]
