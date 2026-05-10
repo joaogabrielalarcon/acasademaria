@@ -5234,6 +5234,6 @@ export default function NovoOrcamento() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </AppLayout>)
+    </AppLayout>
   );
 }
