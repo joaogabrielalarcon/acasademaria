@@ -1143,8 +1143,187 @@ export default function NovoOrcamento() {
         data_envio: orcamento.data_envio || "",
         responsavel_id: orcamento.responsavel_id || "",
       });
+      if (orcamento.aliquota_mes_pct != null) setAliquotaMes(Number(orcamento.aliquota_mes_pct));
+      if (orcamento.tipo_nf) setTipoNf(orcamento.tipo_nf);
+      if (orcamento.margem_negociacao_pct != null) setMargemNegPct(Number(orcamento.margem_negociacao_pct));
     }
   }, [orcamento, tipos]);
+
+  // === Hidratação dos dados do orçamento (itens, cotações, insumos, MO, fretes, etc.) ===
+  const hidratadoRef = useRef(false);
+  useQuery({
+    queryKey: ["orcamento-hidratacao", id],
+    enabled: isEdit && !!id && !hidratadoRef.current,
+    queryFn: async () => {
+      const [
+        { data: itens },
+        { data: insumosDb },
+        { data: moDb },
+        { data: fretesDb },
+        { data: transpDb },
+        { data: indirDb },
+        { data: comDb },
+      ] = await Promise.all([
+        (supabase as any).from("orcamento_itens").select("*").eq("orcamento_id", id).order("ordem"),
+        (supabase as any).from("orcamento_insumos").select("*").eq("orcamento_id", id).order("ordem"),
+        (supabase as any).from("orcamento_mo").select("*").eq("orcamento_id", id),
+        (supabase as any).from("orcamento_fretes").select("*").eq("orcamento_id", id),
+        (supabase as any).from("orcamento_transporte").select("*").eq("orcamento_id", id),
+        (supabase as any).from("orcamento_custos_indiretos").select("*").eq("orcamento_id", id),
+        (supabase as any).from("orcamento_comissoes").select("*").eq("orcamento_id", id).maybeSingle(),
+      ]);
+
+      const itensList = itens || [];
+      const itemIds = itensList.map((i: any) => i.id);
+      let cotacoesDb: any[] = [];
+      if (itemIds.length > 0) {
+        const { data: cot } = await (supabase as any)
+          .from("orcamento_cotacoes")
+          .select("*")
+          .in("item_id", itemIds);
+        cotacoesDb = cot || [];
+      }
+
+      // itensMaterial + margensSeg + markupsCategoria
+      const novosItens: ItemMemorial[] = itensList.map((i: any) => ({
+        nome_popular: i.nome_popular || "",
+        nome_cientifico: i.nome_cientifico || null,
+        porte: i.porte_solicitado || "",
+        quantidade: Number(i.quantidade_esperada) || 0,
+        unidade: i.unidade || "UNID",
+        categoria: i.categoria || "",
+        confianca: "alta",
+      }));
+      const novasMargens: Record<number, number> = {};
+      const novosMarkups: Record<string, number> = {};
+      itensList.forEach((i: any, idx: number) => {
+        novasMargens[idx] = Number(i.margem_seguranca_pct) || 0;
+        if (i.categoria && i.markup_pct != null) {
+          novosMarkups[i.categoria] = Number(i.markup_pct);
+        }
+      });
+      setItensMaterial(novosItens);
+      setMargensSeg(novasMargens);
+      if (Object.keys(novosMarkups).length > 0) {
+        setMarkupsCategoria((p) => ({ ...novosMarkups, ...p }));
+      }
+      if (novosItens.length > 0) setPdfCarregado(true);
+
+      // cotacoes + fornecedoresSelecionados (por idx)
+      const novasCot: Record<number, Record<string, CotacaoLinha>> = {};
+      const novosForn: Record<number, string[]> = {};
+      itensList.forEach((it: any, idx: number) => {
+        const linhas = cotacoesDb.filter((c) => c.item_id === it.id);
+        if (linhas.length === 0) return;
+        novasCot[idx] = {};
+        novosForn[idx] = [];
+        linhas.forEach((l: any) => {
+          if (!l.fornecedor_id) return;
+          novasCot[idx][l.fornecedor_id] = {
+            valor_unitario: l.valor_unitario_cotado != null ? String(l.valor_unitario_cotado) : "",
+            porte_ofertado: l.porte_ofertado || "",
+            disponivel: (l.disponivel as any) || "nc",
+            status_selecao: (l.status_selecao as any) || "descartado",
+            obs: l.obs || "",
+          };
+          if (l.status_selecao && l.status_selecao !== "descartado") {
+            novosForn[idx].push(l.fornecedor_id);
+          }
+        });
+      });
+      setCotacoes(novasCot);
+      setFornecedoresSelecionados(novosForn);
+
+      // insumos
+      const insAuto: InsumoCalc[] = [];
+      const insAdic: InsumoAdicional[] = [];
+      (insumosDb || []).forEach((i: any) => {
+        if (i.calculado_automaticamente) {
+          insAuto.push({
+            tipo: i.nome,
+            nome: i.nome,
+            quantidade: Number(i.quantidade_orcar) || 0,
+            unidade: i.unidade || "",
+          });
+        } else {
+          insAdic.push({
+            nome: i.nome || "",
+            fornecedor_id: i.fornecedor_id || "",
+            quantidade_esperada: i.quantidade_esperada != null ? String(i.quantidade_esperada) : "",
+            unidade: i.unidade || "unidade",
+            margem: i.margem_seguranca_pct != null ? String(i.margem_seguranca_pct) : "0",
+            valor_unitario: i.valor_unitario != null ? String(i.valor_unitario) : "",
+            obs_interna: i.obs_interna || "",
+            obs_proposta: i.obs_proposta || "",
+          });
+        }
+      });
+      if (insAuto.length > 0) {
+        setInsumosCalc(insAuto);
+        setInsumosCalculados(true);
+      }
+      setInsumosAdicionais(insAdic);
+
+      // MO
+      setMoLinhas(
+        (moDb || []).map((m: any) => ({
+          cargo_id: m.cargo_id || "",
+          cargo_nome: "",
+          qtd: m.qtd_funcionarios != null ? String(m.qtd_funcionarios) : "1",
+          dias: m.qtd_dias != null ? String(m.qtd_dias) : "",
+          salario_diario: m.salario_diario != null ? String(m.salario_diario) : "0",
+        })),
+      );
+
+      // Fretes
+      setFretes(
+        (fretesDb || []).map((f: any) => ({
+          transportador_id: "",
+          transportador_nome: f.transportador || "",
+          modo_transp: "livre",
+          percurso: f.descricao_percurso || "",
+          valor_unitario: f.valor_unitario != null ? String(f.valor_unitario) : "",
+          qtd_esperada: f.qtd_esperada != null ? String(f.qtd_esperada) : "",
+          margem: f.margem_seguranca_pct != null ? String(f.margem_seguranca_pct) : "0",
+        })),
+      );
+
+      // Transporte equipe
+      if ((transpDb || []).length > 0) {
+        setTransporte(
+          (transpDb as any[]).map((t: any) => ({
+            tipo: (t.tipo as any) || "MFM",
+            valor_km: t.valor_km != null ? String(t.valor_km) : "0",
+            dias: t.qtd_dias != null ? String(t.qtd_dias) : "",
+            km: t.qtd_km != null ? String(t.qtd_km) : "",
+          })),
+        );
+      }
+
+      // Custos indiretos
+      setCustosIndiretos(
+        (indirDb || []).map((c: any) => ({
+          tipo: c.tipo || "outros",
+          descricao: c.descricao || "",
+          valor_unitario: c.valor_unitario != null ? String(c.valor_unitario) : "0",
+          quantidade: c.quantidade != null ? String(c.quantidade) : "1",
+        })),
+      );
+
+      // Comissão
+      if (comDb) {
+        setComissaoOn(true);
+        setComissaoTipo((comDb.tipo as any) || "vendas");
+        setComissaoPct(comDb.percentual != null ? String(comDb.percentual) : "0");
+        setComissaoBeneficiario(comDb.beneficiario || "");
+      }
+
+      hidratadoRef.current = true;
+      // Bloqueia o autosave inicial pra não sobrescrever durante o load
+      firstAutoSaveRef.current = true;
+      return true;
+    },
+  });
 
   // Geração automática do código
   const handleTipoPropostaChange = async (tipoId: string) => {
@@ -1257,7 +1436,9 @@ export default function NovoOrcamento() {
       firstAutoSaveRef.current = false;
       return;
     }
-    if (!camposObrigatoriosOk) return;
+    // No modo edição, sempre auto-salva (o orçamento já existe).
+    // No modo criação, espera os campos obrigatórios pra criar o cabeçalho.
+    if (!isEdit && !camposObrigatoriosOk) return;
     const t = setTimeout(() => {
       triggerAutoSave();
     }, 1500);
