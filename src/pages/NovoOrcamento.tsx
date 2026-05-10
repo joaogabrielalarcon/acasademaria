@@ -72,9 +72,19 @@ const CATEGORIAS_ITEM = [
 
 const UNIDADES_ITEM = ["UNID", "M²", "CX", "SACO", "POTE", "TOUCEIRA", "BANDEJA", "ROLO", "METRO"];
 
+const normalizarNomeCatalogo = (s: string) =>
+  (s || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
 interface ItemMemorial {
   nome_popular: string;
   nome_cientifico: string | null;
+  planta_id?: string | null;
+  insumo_id?: string | null;
   porte: string;
   quantidade: number;
   unidade: string;
