@@ -1444,7 +1444,7 @@ export default function NovoOrcamento() {
     }
   };
 
-  const firstAutoSaveRef = useRef(true);
+  const firstAutoSaveRef = useRef(false);
   useEffect(() => {
     if (firstAutoSaveRef.current) {
       firstAutoSaveRef.current = false;
@@ -2087,7 +2087,6 @@ export default function NovoOrcamento() {
       }));
       setItensMaterial(normalizados);
       setPdfCarregado(true);
-      if (isEdit || camposObrigatoriosOk) setTimeout(() => triggerAutoSave(), 0);
       toast({ title: `${normalizados.length} itens extraídos` });
     } catch (e: any) {
       toast({
@@ -2126,7 +2125,6 @@ export default function NovoOrcamento() {
       }));
       setItensMaterial(normalizados);
       setPdfCarregado(true);
-      if (isEdit || camposObrigatoriosOk) setTimeout(() => triggerAutoSave(), 0);
       toast({ title: `${normalizados.length} itens extraídos` });
     } catch (e: any) {
       toast({
