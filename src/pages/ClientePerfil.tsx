@@ -244,33 +244,27 @@ function LocalFormDialog({
 
           {/* Common fields */}
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-foreground">Endereço Completo</Label>
-              <Input
-                value={form.endereco_completo}
-                onChange={(e) => set("endereco_completo", e.target.value)}
-                placeholder="Rua, número, bairro, cidade - UF"
-              />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="space-y-2 sm:col-span-2">
-                <Label className="text-foreground">Cidade</Label>
-                <Input
-                  value={form.cidade}
-                  onChange={(e) => set("cidade", e.target.value)}
-                  placeholder="Cidade"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">UF</Label>
-                <Input
-                  value={form.estado}
-                  onChange={(e) => set("estado", e.target.value.toUpperCase().slice(0, 2))}
-                  placeholder="SP"
-                  maxLength={2}
-                />
-              </div>
-            </div>
+            <EnderecoFields
+              value={{
+                cep: form.cep,
+                rua: form.rua,
+                numero: form.numero,
+                bairro: form.bairro,
+                cidade: form.cidade,
+                estado: form.estado,
+              }}
+              onChange={(v) =>
+                setForm((f) => ({
+                  ...f,
+                  cep: v.cep || "",
+                  rua: v.rua || "",
+                  numero: v.numero || "",
+                  bairro: v.bairro || "",
+                  cidade: v.cidade || "",
+                  estado: v.estado || "",
+                }))
+              }
+            />
             <div className="space-y-2">
               <Label className="text-foreground">Tipo de uso</Label>
               <select
