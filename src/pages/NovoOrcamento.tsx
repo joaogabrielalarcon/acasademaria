@@ -1075,7 +1075,7 @@ export default function NovoOrcamento() {
   });
 
   const { data: colaboradores = [] } = useQuery({
-    queryKey: ["colaboradores-ativos-orc"],
+    queryKey: ["colaboradores-ativos-orc-orcamento"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("colaboradores")
@@ -1083,7 +1083,16 @@ export default function NovoOrcamento() {
         .eq("ativo", true)
         .order("nome");
       if (error) throw error;
-      return data || [];
+      const list = data || [];
+      const userIds = list.map((c) => c.user_id).filter(Boolean) as string[];
+      if (userIds.length === 0) return [];
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("user_id", userIds);
+      const allowed = new Set(["admin", "administrativo", "gestao_campo"]);
+      const okUsers = new Set((roles || []).filter((r: any) => allowed.has(r.role)).map((r: any) => r.user_id));
+      return list.filter((c: any) => c.user_id && okUsers.has(c.user_id));
     },
   });
 
