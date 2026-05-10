@@ -72,9 +72,19 @@ const CATEGORIAS_ITEM = [
 
 const UNIDADES_ITEM = ["UNID", "M²", "CX", "SACO", "POTE", "TOUCEIRA", "BANDEJA", "ROLO", "METRO"];
 
+const normalizarNomeCatalogo = (s: string) =>
+  (s || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
 interface ItemMemorial {
   nome_popular: string;
   nome_cientifico: string | null;
+  planta_id?: string | null;
+  insumo_id?: string | null;
   porte: string;
   quantidade: number;
   unidade: string;
@@ -741,6 +751,8 @@ export default function NovoOrcamento() {
           .from("orcamento_itens")
           .insert({
             orcamento_id: orcId,
+            planta_id: itemDbInfoByIdx[idx]?.item_tipo === "planta" ? itemDbInfoByIdx[idx].item_id : null,
+            insumo_id: itemDbInfoByIdx[idx]?.item_tipo === "insumo" ? itemDbInfoByIdx[idx].item_id : null,
             categoria: it.categoria,
             nome_popular: it.nome_popular,
             nome_cientifico: it.nome_cientifico,
@@ -1188,6 +1200,8 @@ export default function NovoOrcamento() {
       const novosItens: ItemMemorial[] = itensList.map((i: any) => ({
         nome_popular: i.nome_popular || "",
         nome_cientifico: i.nome_cientifico || null,
+        planta_id: i.planta_id || null,
+        insumo_id: i.insumo_id || null,
         porte: i.porte_solicitado || "",
         quantidade: Number(i.quantidade_esperada) || 0,
         unidade: i.unidade || "UNID",
@@ -1466,60 +1480,137 @@ export default function NovoOrcamento() {
     [itensMaterial],
   );
 
+  const fetchCatalogoPaginado = async (table: "plantas" | "insumos") => {
+    const pageSize = 1000;
+    let from = 0;
+    const all: any[] = [];
+    while (true) {
+      const query = table === "plantas"
+        ? (supabase as any)
+            .from("plantas")
+            .select("id, nome_popular, nome_cientifico, fornecedor_id, preco_unitario, porte, altura_m, altura_min_m, altura_max_m, unidade, ativo")
+            .eq("ativo", true)
+        : (supabase as any)
+            .from("insumos")
+            .select("id, nome, fornecedor_id, preco_unitario, unidade, categoria, ativo")
+            .eq("ativo", true);
+
+      const { data, error } = await query.range(from, from + pageSize - 1);
+      if (error) throw error;
+      const batch = data || [];
+      all.push(...batch);
+      if (batch.length < pageSize) break;
+      from += pageSize;
+    }
+    return all;
+  };
+
   const { data: historicoPorItem = {}, refetch: refetchHistorico } = useQuery({
     queryKey: ["historico-fornecedores-orc", nomesItens],
     enabled: etapaAtual === 3 && nomesItens.length > 0,
     queryFn: async () => {
-      // Normalização: lowercase + remove acentos + colapsa espaços
-      const norm = (s: string) =>
-        (s || "")
-          .toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/\s+/g, " ")
-          .trim();
-
+      const norm = normalizarNomeCatalogo;
       const nomesNorm = new Set(nomesItens.map(norm).filter(Boolean));
       if (nomesNorm.size === 0) return {} as Record<string, any[]>;
 
-      // 1) Buscar TODAS as plantas e insumos (id + nome) e cruzar em memória
-      //    (evita falha de match exato por acentos/maiúsculas)
-      const [{ data: plantas, error: pErr }, { data: insumos, error: iErr }] =
-        await Promise.all([
-          (supabase as any).from("plantas").select("id, nome_popular"),
-          (supabase as any).from("insumos").select("id, nome"),
-        ]);
-      if (pErr) throw pErr;
-      if (iErr) throw iErr;
-
+      const [plantas, insumos] = await Promise.all([
+        fetchCatalogoPaginado("plantas"),
+        fetchCatalogoPaginado("insumos"),
+      ]);
       const itemIdToKey = new Map<string, { tipo: "planta" | "insumo"; key: string }>();
-      (plantas || []).forEach((p: any) => {
-        const k = norm(p.nome_popular);
-        if (k && nomesNorm.has(k)) itemIdToKey.set(p.id, { tipo: "planta", key: k });
-      });
-      (insumos || []).forEach((i: any) => {
-        const k = norm(i.nome);
-        if (k && nomesNorm.has(k)) itemIdToKey.set(i.id, { tipo: "insumo", key: k });
+      const catalogRows: any[] = [];
+
+      const matchesNome = (requested: string, ...candidates: Array<string | null | undefined>) => {
+        const exact = candidates.some((c) => norm(c || "") === requested);
+        if (exact) return true;
+        return candidates.some((c) => {
+          const n = norm(c || "");
+          return requested.length >= 4 && n.length >= 4 && (n.includes(requested) || requested.includes(n));
+        });
+      };
+
+      nomesNorm.forEach((requested) => {
+        const plantasExatas = (plantas || []).filter((p: any) =>
+          norm(p.nome_popular) === requested || norm(p.nome_cientifico || "") === requested,
+        );
+        const plantasMatch = plantasExatas.length > 0
+          ? plantasExatas
+          : (plantas || []).filter((p: any) => matchesNome(requested, p.nome_popular, p.nome_cientifico));
+
+        plantasMatch.forEach((p: any) => {
+          itemIdToKey.set(p.id, { tipo: "planta", key: requested });
+          if (p.fornecedor_id) {
+            const altura = [p.altura_min_m || p.altura_m, p.altura_max_m].filter(Boolean).join("–");
+            catalogRows.push({
+              id: `catalogo-${p.id}-${p.fornecedor_id}`,
+              item_id: p.id,
+              item_tipo: "planta",
+              preco: p.preco_unitario,
+              porte: p.porte || (altura ? `${altura} m` : null),
+              unidade: p.unidade,
+              data_orcamento: null,
+              fornecedor_id: p.fornecedor_id,
+              key: requested,
+              fonte_catalogo: true,
+            });
+          }
+        });
+
+        const insumosExatos = (insumos || []).filter((i: any) => norm(i.nome) === requested);
+        const insumosMatch = insumosExatos.length > 0
+          ? insumosExatos
+          : (insumos || []).filter((i: any) => matchesNome(requested, i.nome));
+
+        insumosMatch.forEach((i: any) => {
+          itemIdToKey.set(i.id, { tipo: "insumo", key: requested });
+          if (i.fornecedor_id) {
+            catalogRows.push({
+              id: `catalogo-${i.id}-${i.fornecedor_id}`,
+              item_id: i.id,
+              item_tipo: "insumo",
+              preco: i.preco_unitario,
+              porte: null,
+              unidade: i.unidade,
+              data_orcamento: null,
+              fornecedor_id: i.fornecedor_id,
+              key: requested,
+              fonte_catalogo: true,
+            });
+          }
+        });
       });
 
       const allIds = Array.from(itemIdToKey.keys());
-      if (allIds.length === 0) return {} as Record<string, any[]>;
+      if (allIds.length === 0 && catalogRows.length === 0) return {} as Record<string, any[]>;
 
-      // 2) Buscar histórico de preços (planta + insumo) em uma única query
-      const { data: hist, error: hErr } = await (supabase as any)
-        .from("historico_precos")
-        .select(
-          "id, item_id, item_tipo, preco, porte, unidade, data_orcamento, fornecedor_id, fornecedores(id, nome, mercado, cidade, telefone, whatsapp)",
-        )
-        .in("item_id", allIds)
-        .order("data_orcamento", { ascending: false });
-      if (hErr) throw hErr;
+      let hist: any[] = [];
+      if (allIds.length > 0) {
+        const { data, error: hErr } = await (supabase as any)
+          .from("historico_precos")
+          .select(
+            "id, item_id, item_tipo, preco, porte, unidade, data_orcamento, fornecedor_id, fornecedores(id, nome, mercado, cidade, telefone, whatsapp)",
+          )
+          .in("item_id", allIds)
+          .order("data_orcamento", { ascending: false });
+        if (hErr) throw hErr;
+        hist = data || [];
+      }
 
       // 3) Buscar avaliações dos fornecedores para os mesmos itens
-      const { data: avals } = await (supabase as any)
-        .from("fornecedor_avaliacoes")
-        .select("fornecedor_id, item_id, item_tipo, nota")
-        .in("item_id", allIds);
+      const { data: avals } = allIds.length > 0
+        ? await (supabase as any)
+            .from("fornecedor_avaliacoes")
+            .select("fornecedor_id, item_id, item_tipo, nota")
+            .in("item_id", allIds)
+        : { data: [] };
+      const fornecedorIds = Array.from(new Set([...catalogRows, ...hist].map((r: any) => r.fornecedor_id).filter(Boolean)));
+      const { data: fornecedoresCatalogo } = fornecedorIds.length > 0
+        ? await (supabase as any)
+            .from("fornecedores")
+            .select("id, nome, mercado, cidade, telefone, whatsapp")
+            .in("id", fornecedorIds)
+        : { data: [] };
+      const fornecedoresMap = new Map((fornecedoresCatalogo || []).map((f: any) => [f.id, f]));
       const avalKey = (fid: string, iid: string) => `${fid}::${iid}`;
       const avalMap: Record<string, { soma: number; n: number }> = {};
       (avals || []).forEach((a: any) => {
@@ -1532,14 +1623,14 @@ export default function NovoOrcamento() {
       // como principal; expõe portes alternativos no campo "outros_portes".
       const map: Record<string, any[]> = {};
       const seen: Record<string, Record<string, any>> = {}; // key -> fornId -> row
-      for (const row of hist || []) {
+      for (const row of [...catalogRows, ...hist]) {
         const ref = itemIdToKey.get(row.item_id);
         if (!ref) continue;
         if (row.item_tipo && row.item_tipo !== ref.tipo) continue;
         const key = ref.key;
         if (!map[key]) { map[key] = []; seen[key] = {}; }
         const av = avalMap[avalKey(row.fornecedor_id, row.item_id)];
-        const enriched = { ...row, nota_media: av ? av.soma / av.n : null, nota_qtd: av?.n || 0 };
+        const enriched = { ...row, fornecedores: row.fornecedores || fornecedoresMap.get(row.fornecedor_id), nota_media: av ? av.soma / av.n : null, nota_qtd: av?.n || 0 };
         if (!seen[key][row.fornecedor_id]) {
           seen[key][row.fornecedor_id] = { ...enriched, outros_portes: [] };
           map[key].push(seen[key][row.fornecedor_id]);
@@ -1994,6 +2085,7 @@ export default function NovoOrcamento() {
             ? (it.confianca as ItemMemorial["confianca"])
             : "media",
       }));
+      firstAutoSaveRef.current = false;
       setItensMaterial(normalizados);
       setPdfCarregado(true);
       toast({ title: `${normalizados.length} itens extraídos` });
@@ -2032,6 +2124,7 @@ export default function NovoOrcamento() {
             ? (it.confianca as ItemMemorial["confianca"])
             : "media",
       }));
+      firstAutoSaveRef.current = false;
       setItensMaterial(normalizados);
       setPdfCarregado(true);
       toast({ title: `${normalizados.length} itens extraídos` });

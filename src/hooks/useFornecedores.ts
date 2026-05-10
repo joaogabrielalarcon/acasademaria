@@ -27,19 +27,29 @@ export function useFornecedores() {
         console.warn("[useFornecedores] Sem sessão ativa");
       }
 
-      const { data, error } = await supabase
-        .from("fornecedores")
-        .select("*")
-        .eq("status", "ativo")
-        .order("nome", { ascending: true });
+      const pageSize = 1000;
+      let from = 0;
+      const all: Fornecedor[] = [];
+      while (true) {
+        const { data, error } = await supabase
+          .from("fornecedores")
+          .select("*")
+          .eq("status", "ativo")
+          .order("nome", { ascending: true })
+          .range(from, from + pageSize - 1);
 
-      if (error) {
-        console.error("[useFornecedores] Erro na query:", error);
-        throw error;
+        if (error) {
+          console.error("[useFornecedores] Erro na query:", error);
+          throw error;
+        }
+        const batch = (data ?? []) as Fornecedor[];
+        all.push(...batch);
+        if (batch.length < pageSize) break;
+        from += pageSize;
       }
 
-      console.log(`[useFornecedores] ${data?.length ?? 0} fornecedores retornados`);
-      return data as Fornecedor[];
+      console.log(`[useFornecedores] ${all.length} fornecedores retornados`);
+      return all;
     },
     staleTime: 0,
     refetchOnMount: "always",
@@ -51,13 +61,23 @@ export function useFornecedoresTodos() {
   return useQuery({
     queryKey: ["fornecedores-todos"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("fornecedores")
-        .select("*")
-        .order("nome", { ascending: true });
+      const pageSize = 1000;
+      let from = 0;
+      const all: Fornecedor[] = [];
+      while (true) {
+        const { data, error } = await supabase
+          .from("fornecedores")
+          .select("*")
+          .order("nome", { ascending: true })
+          .range(from, from + pageSize - 1);
 
-      if (error) throw error;
-      return data as Fornecedor[];
+        if (error) throw error;
+        const batch = (data ?? []) as Fornecedor[];
+        all.push(...batch);
+        if (batch.length < pageSize) break;
+        from += pageSize;
+      }
+      return all;
     },
     staleTime: 0,
     refetchOnMount: "always",

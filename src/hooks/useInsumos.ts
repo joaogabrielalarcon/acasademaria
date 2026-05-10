@@ -24,19 +24,29 @@ export function useInsumos() {
         console.warn("[useInsumos] Sem sessão ativa");
       }
 
-      const { data, error } = await supabase
-        .from("insumos")
-        .select("*")
-        .eq("ativo", true)
-        .order("nome", { ascending: true });
+      const pageSize = 1000;
+      let from = 0;
+      const all: Insumo[] = [];
+      while (true) {
+        const { data, error } = await supabase
+          .from("insumos")
+          .select("*")
+          .eq("ativo", true)
+          .order("nome", { ascending: true })
+          .range(from, from + pageSize - 1);
 
-      if (error) {
-        console.error("[useInsumos] Erro na query:", error);
-        throw error;
+        if (error) {
+          console.error("[useInsumos] Erro na query:", error);
+          throw error;
+        }
+        const batch = (data ?? []) as Insumo[];
+        all.push(...batch);
+        if (batch.length < pageSize) break;
+        from += pageSize;
       }
 
-      console.log(`[useInsumos] ${data?.length ?? 0} insumos retornados`);
-      return data as Insumo[];
+      console.log(`[useInsumos] ${all.length} insumos retornados`);
+      return all;
     },
     staleTime: 0,
     refetchOnMount: "always",
