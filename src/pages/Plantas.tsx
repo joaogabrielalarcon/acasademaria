@@ -109,10 +109,23 @@ export function PlantasContent() {
       },
     },
     {
-      key: "alerta_validacao", header: "Alerta", width: 140,
+      key: "alerta_validacao", header: "Alerta", width: 70,
       accessor: (p) => p.alerta_validacao ?? "",
       render: (p) => p.alerta_validacao
-        ? <span className="text-xs px-2 py-0.5 rounded bg-amber-500/10 text-amber-700">{p.alerta_validacao}</span>
+        ? (
+          <TooltipProvider delayDuration={150}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500/10 text-amber-700 cursor-help">
+                  <AlertTriangle className="w-4 h-4" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="left" className="max-w-xs text-xs">
+                {p.alerta_validacao}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )
         : <span className="text-muted-foreground">—</span>,
     },
   ];
