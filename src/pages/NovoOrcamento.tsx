@@ -162,7 +162,7 @@ export default function NovoOrcamento() {
   >({});
   const [novoFornModalOpen, setNovoFornModalOpen] = useState(false);
   const [novoFornItemIdx, setNovoFornItemIdx] = useState<number | null>(null);
-  const [novoForn, setNovoForn] = useState({ nome: "", contato: "", cidade: "" });
+  const [novoForn, setNovoForn] = useState({ nome: "", contato: "", cidade: "", cadastrarItem: true });
 
   // Etapa 4 — Cotação
   type CotacaoLinha = {
@@ -1445,7 +1445,8 @@ export default function NovoOrcamento() {
 
   const abrirNovoFornecedor = (itemIdx: number) => {
     setNovoFornItemIdx(itemIdx);
-    setNovoForn({ nome: "", contato: "", cidade: "" });
+    const itemJaNoCatalogo = !!itemDbInfoByIdx[itemIdx];
+    setNovoForn({ nome: "", contato: "", cidade: "", cadastrarItem: !itemJaNoCatalogo });
     setNovoFornModalOpen(true);
   };
 
@@ -1468,8 +1469,36 @@ export default function NovoOrcamento() {
         .single();
       if (error) throw error;
 
-      // Inserir entrada placeholder no estado local para aparecer na lista
       const item = novoFornItemIdx !== null ? itensMaterial[novoFornItemIdx] : null;
+
+      // Cadastrar a planta no catálogo, se solicitado e ainda não existir
+      let plantaCriadaId: string | null = null;
+      if (item && novoForn.cadastrarItem && !itemDbInfoByIdx[novoFornItemIdx!]) {
+        try {
+          const { data: pData, error: pErr } = await (supabase as any)
+            .from("plantas")
+            .insert({
+              nome_popular: item.nome_popular.trim(),
+              nome_cientifico: item.nome_cientifico || null,
+              unidade: item.unidade || null,
+              fornecedor_id: data.id,
+              ativo: true,
+            })
+            .select("id")
+            .single();
+          if (pErr) throw pErr;
+          plantaCriadaId = pData.id;
+        } catch (pe: any) {
+          console.warn("[novoForn] falha ao cadastrar planta", pe);
+          toast({
+            title: "Fornecedor cadastrado, mas planta não foi criada",
+            description: pe?.message,
+            variant: "destructive",
+          });
+        }
+      }
+
+      // Inserir entrada placeholder no estado local para aparecer na lista
       if (item) {
         const key = item.nome_popular.trim().toLowerCase();
         const map = { ...(historicoPorItem as Record<string, any[]>) };
@@ -1477,6 +1506,8 @@ export default function NovoOrcamento() {
           ...(map[key] || []),
           {
             fornecedor_id: data.id,
+            item_id: plantaCriadaId || itemDbInfoByIdx[novoFornItemIdx!]?.item_id,
+            item_tipo: plantaCriadaId ? "planta" : itemDbInfoByIdx[novoFornItemIdx!]?.item_tipo,
             preco: null,
             data_orcamento: null,
             fornecedores: { id: data.id, nome: novoForn.nome.trim(), mercado: null, cidade: novoForn.cidade || null },
@@ -1489,7 +1520,9 @@ export default function NovoOrcamento() {
           [novoFornItemIdx!]: [...(prev[novoFornItemIdx!] || []), data.id],
         }));
       }
-      toast({ title: "Fornecedor cadastrado" });
+      toast({
+        title: plantaCriadaId ? "Fornecedor e planta cadastrados" : "Fornecedor cadastrado",
+      });
       setNovoFornModalOpen(false);
       refetchHistorico();
     } catch (e: any) {
@@ -4071,6 +4104,19 @@ export default function NovoOrcamento() {
                 <DialogTitle>Novo fornecedor</DialogTitle>
               </DialogHeader>
               <div className="space-y-3">
+                {novoFornItemIdx !== null && itensMaterial[novoFornItemIdx] && (
+                  <div className="rounded-md border bg-muted/40 p-2.5 text-xs">
+                    <p className="text-muted-foreground">Cadastrando fornecedor para:</p>
+                    <p className="font-semibold text-foreground">
+                      {itensMaterial[novoFornItemIdx].nome_popular || "(sem nome)"}
+                    </p>
+                    {itensMaterial[novoFornItemIdx].nome_cientifico && (
+                      <p className="italic text-muted-foreground">
+                        {itensMaterial[novoFornItemIdx].nome_cientifico}
+                      </p>
+                    )}
+                  </div>
+                )}
                 <div className="space-y-1.5">
                   <Label>Nome *</Label>
                   <Input
@@ -4094,6 +4140,24 @@ export default function NovoOrcamento() {
                     }
                   />
                 </div>
+                {novoFornItemIdx !== null && !itemDbInfoByIdx[novoFornItemIdx] && (
+                  <label className="flex items-start gap-2 text-xs cursor-pointer pt-1 border-t">
+                    <Checkbox
+                      checked={novoForn.cadastrarItem}
+                      onCheckedChange={(v) =>
+                        setNovoForn((c) => ({ ...c, cadastrarItem: !!v }))
+                      }
+                      className="mt-0.5"
+                    />
+                    <span className="text-muted-foreground">
+                      Cadastrar também esta planta no catálogo, vinculada a este fornecedor.
+                      <br />
+                      <span className="text-[10px]">
+                        Habilita histórico de preços e busca futura.
+                      </span>
+                    </span>
+                  </label>
+                )}
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setNovoFornModalOpen(false)}>
