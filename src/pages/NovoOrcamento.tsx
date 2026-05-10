@@ -113,7 +113,7 @@ const UFS = [
 const REQUIRED_FIELDS: Array<keyof typeof initialForm> = [
   "tipo_proposta_id",
   "cliente_id",
-  "local_endereco",
+  "local_id",
   "tipo_cliente",
   "cidade",
   "estado",
