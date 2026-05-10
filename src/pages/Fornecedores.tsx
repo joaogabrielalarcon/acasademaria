@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Plus, Pencil, Trash2, GitMerge } from "lucide-react";
 import { DataTableExcel, DataTableColumn } from "@/components/ui/data-table-excel";
-import { useFornecedoresTodos, Fornecedor } from "@/hooks/useFornecedores";
+import { useFornecedores, Fornecedor } from "@/hooks/useFornecedores";
 import { useAuth, useIsAdmin, useIsAdminOrAdministrativo } from "@/hooks/useAuth";
 import { MesclarManualDialog } from "@/components/fornecedores/MesclarManualDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,7 +50,7 @@ export function FornecedoresContent() {
   const isAdmin = useIsAdmin(user?.id);
   const podeMesclar = useIsAdminOrAdministrativo(user?.id);
 
-  const { data: fornecedores = [], isLoading } = useFornecedoresTodos();
+  const { data: fornecedores = [], isLoading } = useFornecedores();
   const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
