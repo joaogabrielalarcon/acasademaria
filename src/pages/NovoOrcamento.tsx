@@ -1571,7 +1571,7 @@ export default function NovoOrcamento() {
               preco: i.preco_unitario,
               porte: null,
               unidade: i.unidade,
-              data_orcamento: i.updated_at || null,
+              data_orcamento: i.ultima_compra || null,
               fornecedor_id: i.fornecedor_id,
               key: requested,
               fonte_catalogo: true,
