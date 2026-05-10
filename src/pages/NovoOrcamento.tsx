@@ -1710,7 +1710,7 @@ export default function NovoOrcamento() {
   const REQUIRED_LABELS: Record<string, string> = {
     tipo_proposta_id: "Tipo de Proposta",
     cliente_id: "Cliente",
-    local_endereco: "Local / Endereço",
+    local_id: "Local do cliente",
     tipo_cliente: "Tipo de cliente",
     cidade: "Cidade",
     estado: "Estado",
