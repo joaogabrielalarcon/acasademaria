@@ -4104,6 +4104,19 @@ export default function NovoOrcamento() {
                 <DialogTitle>Novo fornecedor</DialogTitle>
               </DialogHeader>
               <div className="space-y-3">
+                {novoFornItemIdx !== null && itensMaterial[novoFornItemIdx] && (
+                  <div className="rounded-md border bg-muted/40 p-2.5 text-xs">
+                    <p className="text-muted-foreground">Cadastrando fornecedor para:</p>
+                    <p className="font-semibold text-foreground">
+                      {itensMaterial[novoFornItemIdx].nome_popular || "(sem nome)"}
+                    </p>
+                    {itensMaterial[novoFornItemIdx].nome_cientifico && (
+                      <p className="italic text-muted-foreground">
+                        {itensMaterial[novoFornItemIdx].nome_cientifico}
+                      </p>
+                    )}
+                  </div>
+                )}
                 <div className="space-y-1.5">
                   <Label>Nome *</Label>
                   <Input
@@ -4127,6 +4140,24 @@ export default function NovoOrcamento() {
                     }
                   />
                 </div>
+                {novoFornItemIdx !== null && !itemDbInfoByIdx[novoFornItemIdx] && (
+                  <label className="flex items-start gap-2 text-xs cursor-pointer pt-1 border-t">
+                    <Checkbox
+                      checked={novoForn.cadastrarItem}
+                      onCheckedChange={(v) =>
+                        setNovoForn((c) => ({ ...c, cadastrarItem: !!v }))
+                      }
+                      className="mt-0.5"
+                    />
+                    <span className="text-muted-foreground">
+                      Cadastrar também esta planta no catálogo, vinculada a este fornecedor.
+                      <br />
+                      <span className="text-[10px]">
+                        Habilita histórico de preços e busca futura.
+                      </span>
+                    </span>
+                  </label>
+                )}
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setNovoFornModalOpen(false)}>
