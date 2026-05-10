@@ -41,7 +41,9 @@ export function useFornecedores() {
       console.log(`[useFornecedores] ${data?.length ?? 0} fornecedores retornados`);
       return data as Fornecedor[];
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -57,6 +59,8 @@ export function useFornecedoresTodos() {
       if (error) throw error;
       return data as Fornecedor[];
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 }
