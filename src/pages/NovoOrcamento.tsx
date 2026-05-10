@@ -1476,44 +1476,109 @@ export default function NovoOrcamento() {
     [itensMaterial],
   );
 
+  const fetchCatalogoPaginado = async (table: "plantas" | "insumos") => {
+    const pageSize = 1000;
+    let from = 0;
+    const all: any[] = [];
+    while (true) {
+      const query = table === "plantas"
+        ? (supabase as any)
+            .from("plantas")
+            .select("id, nome_popular, nome_cientifico, fornecedor_id, preco_unitario, porte, altura_m, altura_min_m, altura_max_m, unidade, ativo")
+            .eq("ativo", true)
+        : (supabase as any)
+            .from("insumos")
+            .select("id, nome, fornecedor_id, preco_unitario, unidade, categoria, ativo")
+            .eq("ativo", true);
+
+      const { data, error } = await query.range(from, from + pageSize - 1);
+      if (error) throw error;
+      const batch = data || [];
+      all.push(...batch);
+      if (batch.length < pageSize) break;
+      from += pageSize;
+    }
+    return all;
+  };
+
   const { data: historicoPorItem = {}, refetch: refetchHistorico } = useQuery({
     queryKey: ["historico-fornecedores-orc", nomesItens],
     enabled: etapaAtual === 3 && nomesItens.length > 0,
     queryFn: async () => {
-      // Normalização: lowercase + remove acentos + colapsa espaços
-      const norm = (s: string) =>
-        (s || "")
-          .toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/\s+/g, " ")
-          .trim();
-
+      const norm = normalizarNomeCatalogo;
       const nomesNorm = new Set(nomesItens.map(norm).filter(Boolean));
       if (nomesNorm.size === 0) return {} as Record<string, any[]>;
 
-      // 1) Buscar TODAS as plantas e insumos (id + nome) e cruzar em memória
-      //    (evita falha de match exato por acentos/maiúsculas)
-      const [{ data: plantas, error: pErr }, { data: insumos, error: iErr }] =
-        await Promise.all([
-          (supabase as any).from("plantas").select("id, nome_popular"),
-          (supabase as any).from("insumos").select("id, nome"),
-        ]);
-      if (pErr) throw pErr;
-      if (iErr) throw iErr;
-
+      const [plantas, insumos] = await Promise.all([
+        fetchCatalogoPaginado("plantas"),
+        fetchCatalogoPaginado("insumos"),
+      ]);
       const itemIdToKey = new Map<string, { tipo: "planta" | "insumo"; key: string }>();
-      (plantas || []).forEach((p: any) => {
-        const k = norm(p.nome_popular);
-        if (k && nomesNorm.has(k)) itemIdToKey.set(p.id, { tipo: "planta", key: k });
-      });
-      (insumos || []).forEach((i: any) => {
-        const k = norm(i.nome);
-        if (k && nomesNorm.has(k)) itemIdToKey.set(i.id, { tipo: "insumo", key: k });
+      const catalogRows: any[] = [];
+
+      const matchesNome = (requested: string, ...candidates: Array<string | null | undefined>) => {
+        const exact = candidates.some((c) => norm(c || "") === requested);
+        if (exact) return true;
+        return candidates.some((c) => {
+          const n = norm(c || "");
+          return requested.length >= 4 && n.length >= 4 && (n.includes(requested) || requested.includes(n));
+        });
+      };
+
+      nomesNorm.forEach((requested) => {
+        const plantasExatas = (plantas || []).filter((p: any) =>
+          norm(p.nome_popular) === requested || norm(p.nome_cientifico || "") === requested,
+        );
+        const plantasMatch = plantasExatas.length > 0
+          ? plantasExatas
+          : (plantas || []).filter((p: any) => matchesNome(requested, p.nome_popular, p.nome_cientifico));
+
+        plantasMatch.forEach((p: any) => {
+          itemIdToKey.set(p.id, { tipo: "planta", key: requested });
+          if (p.fornecedor_id) {
+            catalogRows.push({
+              id: `catalogo-${p.id}-${p.fornecedor_id}`,
+              item_id: p.id,
+              item_tipo: "planta",
+              preco: p.preco_unitario,
+              porte: p.porte || p.altura_max_m || p.altura_min_m || p.altura_m
+                ? `${[p.altura_min_m || p.altura_m, p.altura_max_m].filter(Boolean).join("–")} m`
+                : null,
+              unidade: p.unidade,
+              data_orcamento: null,
+              fornecedor_id: p.fornecedor_id,
+              key: requested,
+              fonte_catalogo: true,
+            });
+          }
+        });
+
+        const insumosExatos = (insumos || []).filter((i: any) => norm(i.nome) === requested);
+        const insumosMatch = insumosExatos.length > 0
+          ? insumosExatos
+          : (insumos || []).filter((i: any) => matchesNome(requested, i.nome));
+
+        insumosMatch.forEach((i: any) => {
+          itemIdToKey.set(i.id, { tipo: "insumo", key: requested });
+          if (i.fornecedor_id) {
+            catalogRows.push({
+              id: `catalogo-${i.id}-${i.fornecedor_id}`,
+              item_id: i.id,
+              item_tipo: "insumo",
+              preco: i.preco_unitario,
+              porte: null,
+              unidade: i.unidade,
+              data_orcamento: null,
+              fornecedor_id: i.fornecedor_id,
+              key: requested,
+              fonte_catalogo: true,
+            });
+          }
+        });
       });
 
       const allIds = Array.from(itemIdToKey.keys());
-      if (allIds.length === 0) return {} as Record<string, any[]>;
+      if (allIds.length === 0 && catalogRows.length === 0) return {} as Record<string, any[]>;
 
       // 2) Buscar histórico de preços (planta + insumo) em uma única query
       const { data: hist, error: hErr } = await (supabase as any)
