@@ -113,7 +113,7 @@ const UFS = [
 const REQUIRED_FIELDS: Array<keyof typeof initialForm> = [
   "tipo_proposta_id",
   "cliente_id",
-  "local_endereco",
+  "local_id",
   "tipo_cliente",
   "cidade",
   "estado",
@@ -125,6 +125,7 @@ const initialForm = {
   tipo_proposta_sigla: "",
   codigo: "",
   cliente_id: "",
+  local_id: "",
   local_endereco: "",
   tipo_cliente: "",
   cidade: "",
@@ -1020,6 +1021,44 @@ export default function NovoOrcamento() {
     },
   });
 
+  const { data: locaisCliente = [] } = useQuery({
+    queryKey: ["orc-locais-cliente", form.cliente_id],
+    queryFn: async () => {
+      if (!form.cliente_id) return [];
+      const { data, error } = await (supabase as any)
+        .from("locais_cliente")
+        .select("id, nome, endereco_completo, tipo_pessoa, cidade, estado")
+        .eq("cliente_id", form.cliente_id)
+        .order("nome");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!form.cliente_id,
+  });
+
+  // Sincroniza endereço/cidade/estado a partir do local selecionado
+  useEffect(() => {
+    if (!form.local_id) return;
+    const local = (locaisCliente as any[]).find((l) => l.id === form.local_id);
+    if (!local) return;
+    setForm((p) => ({
+      ...p,
+      local_endereco: local.endereco_completo || p.local_endereco,
+      cidade: local.cidade ? capitalizeWords(local.cidade) : p.cidade,
+      estado: local.estado || p.estado,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.local_id, locaisCliente]);
+
+  // Limpa local_id se ele não pertence ao cliente atualmente selecionado
+  useEffect(() => {
+    if (!form.local_id) return;
+    if (!(locaisCliente as any[]).some((l) => l.id === form.local_id)) {
+      setForm((p) => ({ ...p, local_id: "" }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locaisCliente]);
+
   const { data: perfisMarkup = [] } = useQuery({
     queryKey: ["perfis-markup-ativos"],
     queryFn: async () => {
@@ -1080,6 +1119,7 @@ export default function NovoOrcamento() {
         tipo_proposta_sigla: sigla,
         codigo: orcamento.codigo || "",
         cliente_id: orcamento.cliente_id || "",
+        local_id: orcamento.local_id || "",
         local_endereco: orcamento.local_endereco || "",
         tipo_cliente: orcamento.tipo_cliente || "",
         cidade: orcamento.cidade ? capitalizeWords(orcamento.cidade) : "",
@@ -1125,6 +1165,7 @@ export default function NovoOrcamento() {
     codigo: form.codigo.trim() || null,
     tipo_proposta_id: form.tipo_proposta_id || null,
     cliente_id: form.cliente_id || null,
+    local_id: form.local_id || null,
     local_endereco: form.local_endereco || null,
     tipo_cliente: form.tipo_cliente || null,
     cidade: form.cidade || null,
@@ -1531,7 +1572,7 @@ export default function NovoOrcamento() {
   };
 
   // ===== QuickAdd: cadastro rápido inline para correlações =====
-  type QuickKind = "cliente" | "fornecedor_insumo" | "cargo" | "transportadora" | "perfil_markup";
+  type QuickKind = "cliente" | "fornecedor_insumo" | "cargo" | "transportadora" | "perfil_markup" | "local_cliente";
   const [quickAdd, setQuickAdd] = useState<{
     open: boolean;
     kind: QuickKind | null;
@@ -1552,6 +1593,7 @@ export default function NovoOrcamento() {
     cargo: "Novo cargo",
     transportadora: "Nova transportadora",
     perfil_markup: "Novo perfil de markup",
+    local_cliente: "Novo local do cliente",
   };
 
   const salvarQuickAdd = async () => {
@@ -1627,6 +1669,27 @@ export default function NovoOrcamento() {
         if (error) throw error;
         inserted = { id: data.id, label: data.nome };
         queryClient.invalidateQueries({ queryKey: ["perfis-markup-ativos"] });
+      } else if (quickAdd.kind === "local_cliente") {
+        if (!form.cliente_id) {
+          toast({ title: "Selecione um cliente primeiro", variant: "destructive" });
+          setQuickSaving(false);
+          return;
+        }
+        const tipo = (f.tipo_pessoa === "juridica" ? "juridica" : "fisica");
+        const { data, error } = await (supabase as any)
+          .from("locais_cliente")
+          .insert({
+            cliente_id: form.cliente_id,
+            nome: f.nome.trim(),
+            tipo_pessoa: tipo,
+            endereco_completo: f.endereco_completo || null,
+          })
+          .select("id, nome")
+          .single();
+        if (error) throw error;
+        inserted = { id: data.id, label: data.nome };
+        queryClient.invalidateQueries({ queryKey: ["orc-locais-cliente", form.cliente_id] });
+        queryClient.invalidateQueries({ queryKey: ["locais", form.cliente_id] });
       }
       if (inserted) {
         toast({ title: "Cadastrado com sucesso" });
@@ -1647,7 +1710,7 @@ export default function NovoOrcamento() {
   const REQUIRED_LABELS: Record<string, string> = {
     tipo_proposta_id: "Tipo de Proposta",
     cliente_id: "Cliente",
-    local_endereco: "Local / Endereço",
+    local_id: "Local do cliente",
     tipo_cliente: "Tipo de cliente",
     cidade: "Cidade",
     estado: "Estado",
@@ -1946,14 +2009,56 @@ export default function NovoOrcamento() {
                     </div>
                   </div>
 
-                  {/* Local / Endereço */}
+                  {/* Local do cliente */}
                   <div className="space-y-2">
-                    <Label>Local / Endereço<Req /></Label>
+                    <Label>Local do cliente<Req /></Label>
+                    <div className="flex gap-2">
+                      <Select
+                        value={form.local_id}
+                        onValueChange={(v) => setForm((c) => ({ ...c, local_id: v }))}
+                        disabled={!form.cliente_id}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={form.cliente_id ? "Selecione o local..." : "Escolha um cliente primeiro"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(locaisCliente as any[]).length === 0 ? (
+                            <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                              Nenhum local cadastrado para este cliente.
+                            </div>
+                          ) : (
+                            (locaisCliente as any[]).map((l) => (
+                              <SelectItem key={l.id} value={l.id}>
+                                {l.nome}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        title="Cadastrar novo local para este cliente"
+                        disabled={!form.cliente_id}
+                        onClick={() =>
+                          openQuickAdd("local_cliente", (id) =>
+                            setForm((c) => ({ ...c, local_id: id })),
+                          )
+                        }
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
                     <Textarea
-                      rows={3}
+                      rows={2}
                       value={form.local_endereco}
                       onChange={(e) => setForm((c) => ({ ...c, local_endereco: e.target.value }))}
+                      placeholder="Endereço completo (preenchido a partir do local; pode ajustar)"
                     />
+                    <p className="text-[11px] text-muted-foreground">
+                      O local fica vinculado ao cliente — alterações refletem em ambos os lados.
+                    </p>
                   </div>
 
                   {/* Tipo de cliente - toggles */}
@@ -4239,6 +4344,33 @@ export default function NovoOrcamento() {
                       onChange={(e) => updateQuickField("descricao", e.target.value)}
                     />
                   </div>
+                )}
+
+                {quickAdd.kind === "local_cliente" && (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label>Tipo</Label>
+                      <Select
+                        value={quickAdd.fields.tipo_pessoa || "fisica"}
+                        onValueChange={(v) => updateQuickField("tipo_pessoa", v)}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="fisica">Pessoa Física (Residência)</SelectItem>
+                          <SelectItem value="juridica">Pessoa Jurídica (Empresa)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Endereço completo</Label>
+                      <Textarea
+                        rows={2}
+                        value={quickAdd.fields.endereco_completo || ""}
+                        onChange={(e) => updateQuickField("endereco_completo", e.target.value)}
+                        placeholder="Rua, número, bairro, cidade — UF"
+                      />
+                    </div>
+                  </>
                 )}
 
                 <p className="text-xs text-muted-foreground">

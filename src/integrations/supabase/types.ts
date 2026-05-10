@@ -3473,6 +3473,7 @@ export type Database = {
           estado: string | null
           id: string
           local_endereco: string | null
+          local_id: string | null
           margem_negociacao_pct: number | null
           motivo_nao_aprovacao: string | null
           obs_interna: string | null
@@ -3505,6 +3506,7 @@ export type Database = {
           estado?: string | null
           id?: string
           local_endereco?: string | null
+          local_id?: string | null
           margem_negociacao_pct?: number | null
           motivo_nao_aprovacao?: string | null
           obs_interna?: string | null
@@ -3537,6 +3539,7 @@ export type Database = {
           estado?: string | null
           id?: string
           local_endereco?: string | null
+          local_id?: string | null
           margem_negociacao_pct?: number | null
           motivo_nao_aprovacao?: string | null
           obs_interna?: string | null
@@ -3572,6 +3575,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamentos_local_id_fkey"
+            columns: ["local_id"]
+            isOneToOne: false
+            referencedRelation: "locais_cliente"
             referencedColumns: ["id"]
           },
           {
