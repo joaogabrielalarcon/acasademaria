@@ -2550,67 +2550,31 @@ export default function NovoOrcamento() {
                         <Plus className="w-4 h-4" />
                       </Button>
                     </div>
-                    <Textarea
-                      rows={2}
-                      value={form.local_endereco}
-                      onChange={(e) => setForm((c) => ({ ...c, local_endereco: e.target.value }))}
-                      placeholder="Endereço completo (preenchido a partir do local; pode ajustar)"
-                    />
+                    {(form.local_endereco || form.cidade || form.estado || form.tipo_cliente) ? (
+                      <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs space-y-0.5">
+                        {form.local_endereco && (
+                          <div className="text-foreground">{form.local_endereco}</div>
+                        )}
+                        <div className="text-muted-foreground flex flex-wrap gap-x-2">
+                          {(form.cidade || form.estado) && (
+                            <span>{[form.cidade, form.estado].filter(Boolean).join(" / ")}</span>
+                          )}
+                          {form.tipo_cliente && (
+                            <>
+                              {(form.cidade || form.estado) && <span>·</span>}
+                              <span>{TIPOS_CLIENTE.find((tc) => tc.value === form.tipo_cliente)?.label || form.tipo_cliente}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-muted-foreground">
+                        Selecione o local para puxar endereço, cidade, estado e tipo de cliente.
+                      </p>
+                    )}
                     <p className="text-[11px] text-muted-foreground">
                       O local fica vinculado ao cliente — alterações refletem em ambos os lados.
                     </p>
-                  </div>
-
-                  {/* Tipo de cliente - toggles */}
-                  <div className="space-y-2">
-                    <Label>Tipo de cliente<Req /></Label>
-                    <div className="flex flex-wrap gap-2">
-                      {TIPOS_CLIENTE.map((tc) => {
-                        const ativo = form.tipo_cliente === tc.value;
-                        return (
-                          <button
-                            key={tc.value}
-                            type="button"
-                            onClick={() => setForm((c) => ({ ...c, tipo_cliente: tc.value }))}
-                            className={cn(
-                              "px-3 py-1.5 rounded-md border text-sm transition-colors",
-                              ativo
-                                ? "bg-primary text-primary-foreground border-primary"
-                                : "bg-background text-foreground border-border hover:bg-muted"
-                            )}
-                          >
-                            {tc.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Cidade / Estado */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label>Cidade<Req /></Label>
-                      <Input
-                        value={form.cidade}
-                        onChange={(e) =>
-                          setForm((c) => ({ ...c, cidade: capitalizeWords(e.target.value) }))
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Estado<Req /></Label>
-                      <Select
-                        value={form.estado}
-                        onValueChange={(v) => setForm((c) => ({ ...c, estado: v }))}
-                      >
-                        <SelectTrigger><SelectValue placeholder="UF" /></SelectTrigger>
-                        <SelectContent>
-                          {UFS.map((uf) => (
-                            <SelectItem key={uf} value={uf}>{uf}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
                   </div>
                 </div>
 
@@ -2900,21 +2864,21 @@ export default function NovoOrcamento() {
                   )}
 
                   <p className="text-xs text-muted-foreground">
-                    Role horizontalmente para ver todas as colunas. As colunas têm largura mínima para legibilidade.
+                    As colunas se ajustam automaticamente ao maior conteúdo. Role horizontalmente se necessário.
                   </p>
                   <div className="border rounded-lg overflow-x-auto max-w-full">
-                    <table className="text-sm" style={{ minWidth: 1280 }}>
+                    <table className="text-sm w-auto" style={{ tableLayout: "auto" }}>
                       <thead className="bg-muted/50 text-muted-foreground">
                         <tr>
-                          <th className="px-2 py-2 text-left" style={{ width: 40 }} title="Número da linha no memorial.">#</th>
-                          <th className="px-2 py-2 text-left" style={{ minWidth: 200 }} title="Categoria do item — agrupa plantas por tipo (Árvores, Arbustos, Forrações, etc.) ou define se é insumo/serviço.">Categoria</th>
-                          <th className="px-2 py-2 text-left" style={{ minWidth: 240 }} title="Nome popular da planta, como conhecida no dia a dia (ex.: Manacá de Cheiro).">Nome Popular</th>
-                          <th className="px-2 py-2 text-left" style={{ minWidth: 260 }} title="Nome científico (botânico) — usado para identificação precisa no catálogo.">Nome Científico</th>
-                          <th className="px-2 py-2 text-left" style={{ minWidth: 200 }} title="Porte / tamanho do item (ex.: 0,40 m, 1,80 m a 2,00 m). Define qual variante será cotada.">Porte</th>
-                          <th className="px-2 py-2 text-left" style={{ width: 140, minWidth: 140 }} title="Quantidade do item neste projeto. Aceita decimais (ex.: 12,5).">Qtd</th>
-                          <th className="px-2 py-2 text-left" style={{ width: 130 }} title="Unidade de medida (UNID, CX, M², L etc.).">Unidade</th>
-                          <th className="px-2 py-2 text-center" style={{ width: 90 }} title="Confiança do casamento com o catálogo: ✓ alta = bateu no catálogo, − média = bateu parcial, ⚠ baixa = não encontrou ou ambíguo (precisa revisar antes de cotar).">Confiança</th>
-                          <th className="px-2 py-2 text-center" style={{ width: 70 }} title="Remover esta linha do memorial.">Excluir</th>
+                          <th className="px-2 py-2 text-left whitespace-nowrap" title="Número da linha no memorial.">#</th>
+                          <th className="px-2 py-2 text-left whitespace-nowrap" title="Categoria do item — agrupa plantas por tipo (Árvores, Arbustos, Forrações, etc.) ou define se é insumo/serviço.">Categoria</th>
+                          <th className="px-2 py-2 text-left whitespace-nowrap" title="Nome popular da planta, como conhecida no dia a dia (ex.: Manacá de Cheiro).">Nome Popular</th>
+                          <th className="px-2 py-2 text-left whitespace-nowrap" title="Nome científico (botânico) — usado para identificação precisa no catálogo.">Nome Científico</th>
+                          <th className="px-2 py-2 text-left whitespace-nowrap" title="Porte / tamanho do item (ex.: 0,40 m, 1,80 m a 2,00 m). Define qual variante será cotada.">Porte</th>
+                          <th className="px-2 py-2 text-left whitespace-nowrap" title="Quantidade do item neste projeto. Aceita decimais (ex.: 12,5).">Qtd</th>
+                          <th className="px-2 py-2 text-left whitespace-nowrap" title="Unidade de medida (UNID, CX, M², L etc.).">Unidade</th>
+                          <th className="px-2 py-2 text-center whitespace-nowrap" title="Confiança do casamento com o catálogo: ✓ alta = bateu no catálogo, − média = bateu parcial, ⚠ baixa = não encontrou ou ambíguo (precisa revisar antes de cotar).">Confiança</th>
+                          <th className="px-2 py-2 text-center whitespace-nowrap" title="Remover esta linha do memorial.">Excluir</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2933,7 +2897,7 @@ export default function NovoOrcamento() {
                                 value={it.categoria}
                                 onValueChange={(v) => updateItem(idx, { categoria: v })}
                               >
-                                <SelectTrigger className="h-8">
+                                <SelectTrigger className="h-8 w-auto min-w-[10ch] gap-2">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -2952,7 +2916,7 @@ export default function NovoOrcamento() {
                                 onChange={(e) =>
                                   updateItem(idx, { nome_popular: e.target.value })
                                 }
-                                className="h-8"
+                                className="h-8 min-w-[14ch] [field-sizing:content]"
                               />
                             </td>
                             <td className="px-2 py-1">
@@ -2963,14 +2927,14 @@ export default function NovoOrcamento() {
                                     nome_cientifico: e.target.value || null,
                                   })
                                 }
-                                className="h-8 italic"
+                                className="h-8 italic min-w-[14ch] [field-sizing:content]"
                               />
                             </td>
                             <td className="px-2 py-1">
                               <Input
                                 value={it.porte}
                                 onChange={(e) => updateItem(idx, { porte: e.target.value })}
-                                className="h-8"
+                                className="h-8 min-w-[8ch] [field-sizing:content]"
                               />
                             </td>
                             <td className="px-2 py-1">
@@ -2984,7 +2948,7 @@ export default function NovoOrcamento() {
                                     quantidade: parseFloat(e.target.value) || 0,
                                   })
                                 }
-                                className="h-8 pr-7 w-full min-w-[120px] tabular-nums"
+                                className="h-8 pr-6 min-w-[7ch] tabular-nums [field-sizing:content]"
                               />
                             </td>
                             <td className="px-2 py-1">
@@ -2992,7 +2956,7 @@ export default function NovoOrcamento() {
                                 value={it.unidade}
                                 onValueChange={(v) => updateItem(idx, { unidade: v })}
                               >
-                                <SelectTrigger className="h-8">
+                                <SelectTrigger className="h-8 w-auto min-w-[7ch] gap-2">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
