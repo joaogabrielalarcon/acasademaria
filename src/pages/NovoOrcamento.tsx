@@ -2445,9 +2445,10 @@ export default function NovoOrcamento() {
                 <p className="text-sm text-muted-foreground">Dados básicos do orçamento</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* COLUNA ESQUERDA */}
-                <div className="space-y-4">
+              {/* SEÇÃO: Identificação */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Identificação</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Tipo de Proposta */}
                   <div className="space-y-2">
                     <Label>Tipo de Proposta<Req /></Label>
@@ -2465,12 +2466,12 @@ export default function NovoOrcamento() {
 
                   {/* Código gerado */}
                   <div className="space-y-2">
-                    <Label>Código gerado</Label>
+                    <Label>Código</Label>
                     <div className="flex gap-2">
                       <Input
                         value={form.codigo}
                         onChange={(e) => setForm((c) => ({ ...c, codigo: e.target.value }))}
-                        placeholder="Será gerado ao escolher o tipo (editável)"
+                        placeholder="Será gerado ao escolher o tipo"
                       />
                       <Button type="button" variant="outline" size="icon" onClick={copiarCodigo} disabled={!form.codigo}>
                         <Copy className="w-4 h-4" />
@@ -2478,6 +2479,28 @@ export default function NovoOrcamento() {
                     </div>
                   </div>
 
+                  {/* Responsável */}
+                  <div className="space-y-2">
+                    <Label>Responsável</Label>
+                    <Select
+                      value={form.responsavel_id}
+                      onValueChange={(v) => setForm((c) => ({ ...c, responsavel_id: v }))}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectContent>
+                        {(colaboradores as any[]).map((co) => (
+                          <SelectItem key={co.id} value={co.id}>{co.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {/* SEÇÃO: Cliente & Local */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Cliente & Local</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Cliente */}
                   <div className="space-y-2">
                     <Label>Cliente<Req /></Label>
@@ -2550,54 +2573,43 @@ export default function NovoOrcamento() {
                         <Plus className="w-4 h-4" />
                       </Button>
                     </div>
-                    {(form.local_endereco || form.cidade || form.estado || form.tipo_cliente) ? (
-                      <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs space-y-0.5">
-                        {form.local_endereco && (
-                          <div className="text-foreground">{form.local_endereco}</div>
-                        )}
-                        <div className="text-muted-foreground flex flex-wrap gap-x-2">
-                          {(form.cidade || form.estado) && (
-                            <span>{[form.cidade, form.estado].filter(Boolean).join(" / ")}</span>
-                          )}
-                          {form.tipo_cliente && (
-                            <>
-                              {(form.cidade || form.estado) && <span>·</span>}
-                              <span>{TIPOS_CLIENTE.find((tc) => tc.value === form.tipo_cliente)?.label || form.tipo_cliente}</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-[11px] text-muted-foreground">
-                        Selecione o local para puxar endereço, cidade, estado e tipo de cliente.
-                      </p>
-                    )}
-                    <p className="text-[11px] text-muted-foreground">
-                      O local fica vinculado ao cliente — alterações refletem em ambos os lados.
-                    </p>
                   </div>
                 </div>
 
-                {/* COLUNA DIREITA */}
-                <div className="space-y-4">
-                  {/* Área */}
-                  <div className="space-y-2">
-                    <Label>Área total (m²)<Req /></Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={form.area_m2}
-                      onChange={(e) => setForm((c) => ({ ...c, area_m2: e.target.value }))}
-                    />
+                {/* Resumo do local — full width */}
+                {(form.local_endereco || form.cidade || form.estado || form.tipo_cliente) ? (
+                  <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs space-y-0.5">
+                    {form.local_endereco && (
+                      <div className="text-foreground">{form.local_endereco}</div>
+                    )}
+                    <div className="text-muted-foreground flex flex-wrap gap-x-2">
+                      {(form.cidade || form.estado) && (
+                        <span>{[form.cidade, form.estado].filter(Boolean).join(" / ")}</span>
+                      )}
+                      {form.tipo_cliente && (
+                        <>
+                          {(form.cidade || form.estado) && <span>·</span>}
+                          <span>{TIPOS_CLIENTE.find((tc) => tc.value === form.tipo_cliente)?.label || form.tipo_cliente}</span>
+                        </>
+                      )}
+                    </div>
                   </div>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground">
+                    Selecione o local para puxar endereço, cidade, estado e tipo de cliente. O local fica vinculado ao cliente — alterações refletem em ambos os lados.
+                  </p>
+                )}
+              </div>
 
-                  {/* Perfil de markup (opcional) */}
+              {/* SEÇÃO: Parâmetros do projeto */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Parâmetros do projeto</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Perfil de markup */}
                   <div className="space-y-2">
                     <Label>
                       Perfil de markup{" "}
-                      <span className="text-xs text-muted-foreground font-normal">
-                        (opcional — pode definir depois)
-                      </span>
+                      <span className="text-xs text-muted-foreground font-normal">(opcional)</span>
                     </Label>
                     <div className="flex gap-2">
                       <Select
@@ -2645,30 +2657,12 @@ export default function NovoOrcamento() {
                         setForm((c) => ({ ...c, prazo_validade_dias: e.target.value }))
                       }
                     />
-                    <p className="text-xs text-muted-foreground">
-                      O prazo conta a partir da data de envio
-                    </p>
-                  </div>
-
-                  {/* Responsável */}
-                  <div className="space-y-2">
-                    <Label>Responsável</Label>
-                    <Select
-                      value={form.responsavel_id}
-                      onValueChange={(v) => setForm((c) => ({ ...c, responsavel_id: v }))}
-                    >
-                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                      <SelectContent>
-                        {(colaboradores as any[]).map((co) => (
-                          <SelectItem key={co.id} value={co.id}>{co.nome}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <p className="text-[11px] text-muted-foreground">A partir da data de envio</p>
                   </div>
 
                   {/* Data envio */}
                   <div className="space-y-2">
-                    <Label>Data de envio ao cliente</Label>
+                    <Label>Data de envio</Label>
                     <Input
                       type="date"
                       value={form.data_envio}
@@ -2676,21 +2670,35 @@ export default function NovoOrcamento() {
                     />
                   </div>
 
-                  {/* Obs interna */}
+                  {/* Área */}
                   <div className="space-y-2">
-                    <Label>Observação interna (não aparece na proposta)</Label>
+                    <Label>Área total (m²)<Req /></Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={form.area_m2}
+                      onChange={(e) => setForm((c) => ({ ...c, area_m2: e.target.value }))}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SEÇÃO: Observações */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Observações</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Observação interna <span className="text-xs text-muted-foreground font-normal">(não aparece na proposta)</span></Label>
                     <Textarea
-                      rows={3}
+                      rows={4}
                       value={form.obs_interna}
                       onChange={(e) => setForm((c) => ({ ...c, obs_interna: e.target.value }))}
                     />
                   </div>
-
-                  {/* Obs proposta */}
                   <div className="space-y-2">
-                    <Label>Observação para o cliente (aparece na proposta)</Label>
+                    <Label>Observação para o cliente <span className="text-xs text-muted-foreground font-normal">(aparece na proposta)</span></Label>
                     <Textarea
-                      rows={3}
+                      rows={4}
                       value={form.obs_proposta}
                       onChange={(e) => setForm((c) => ({ ...c, obs_proposta: e.target.value }))}
                     />
