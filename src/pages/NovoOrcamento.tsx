@@ -1536,14 +1536,13 @@ export default function NovoOrcamento() {
         plantasMatch.forEach((p: any) => {
           itemIdToKey.set(p.id, { tipo: "planta", key: requested });
           if (p.fornecedor_id) {
+            const altura = [p.altura_min_m || p.altura_m, p.altura_max_m].filter(Boolean).join("–");
             catalogRows.push({
               id: `catalogo-${p.id}-${p.fornecedor_id}`,
               item_id: p.id,
               item_tipo: "planta",
               preco: p.preco_unitario,
-              porte: p.porte || p.altura_max_m || p.altura_min_m || p.altura_m
-                ? `${[p.altura_min_m || p.altura_m, p.altura_max_m].filter(Boolean).join("–")} m`
-                : null,
+              porte: p.porte || (altura ? `${altura} m` : null),
               unidade: p.unidade,
               data_orcamento: null,
               fornecedor_id: p.fornecedor_id,
@@ -1580,21 +1579,34 @@ export default function NovoOrcamento() {
       const allIds = Array.from(itemIdToKey.keys());
       if (allIds.length === 0 && catalogRows.length === 0) return {} as Record<string, any[]>;
 
-      // 2) Buscar histórico de preços (planta + insumo) em uma única query
-      const { data: hist, error: hErr } = await (supabase as any)
-        .from("historico_precos")
-        .select(
-          "id, item_id, item_tipo, preco, porte, unidade, data_orcamento, fornecedor_id, fornecedores(id, nome, mercado, cidade, telefone, whatsapp)",
-        )
-        .in("item_id", allIds)
-        .order("data_orcamento", { ascending: false });
-      if (hErr) throw hErr;
+      let hist: any[] = [];
+      if (allIds.length > 0) {
+        const { data, error: hErr } = await (supabase as any)
+          .from("historico_precos")
+          .select(
+            "id, item_id, item_tipo, preco, porte, unidade, data_orcamento, fornecedor_id, fornecedores(id, nome, mercado, cidade, telefone, whatsapp)",
+          )
+          .in("item_id", allIds)
+          .order("data_orcamento", { ascending: false });
+        if (hErr) throw hErr;
+        hist = data || [];
+      }
 
       // 3) Buscar avaliações dos fornecedores para os mesmos itens
-      const { data: avals } = await (supabase as any)
-        .from("fornecedor_avaliacoes")
-        .select("fornecedor_id, item_id, item_tipo, nota")
-        .in("item_id", allIds);
+      const { data: avals } = allIds.length > 0
+        ? await (supabase as any)
+            .from("fornecedor_avaliacoes")
+            .select("fornecedor_id, item_id, item_tipo, nota")
+            .in("item_id", allIds)
+        : { data: [] };
+      const fornecedorIds = Array.from(new Set([...catalogRows, ...hist].map((r: any) => r.fornecedor_id).filter(Boolean)));
+      const { data: fornecedoresCatalogo } = fornecedorIds.length > 0
+        ? await (supabase as any)
+            .from("fornecedores")
+            .select("id, nome, mercado, cidade, telefone, whatsapp")
+            .in("id", fornecedorIds)
+        : { data: [] };
+      const fornecedoresMap = new Map((fornecedoresCatalogo || []).map((f: any) => [f.id, f]));
       const avalKey = (fid: string, iid: string) => `${fid}::${iid}`;
       const avalMap: Record<string, { soma: number; n: number }> = {};
       (avals || []).forEach((a: any) => {
@@ -1607,14 +1619,14 @@ export default function NovoOrcamento() {
       // como principal; expõe portes alternativos no campo "outros_portes".
       const map: Record<string, any[]> = {};
       const seen: Record<string, Record<string, any>> = {}; // key -> fornId -> row
-      for (const row of hist || []) {
+      for (const row of [...catalogRows, ...hist]) {
         const ref = itemIdToKey.get(row.item_id);
         if (!ref) continue;
         if (row.item_tipo && row.item_tipo !== ref.tipo) continue;
         const key = ref.key;
         if (!map[key]) { map[key] = []; seen[key] = {}; }
         const av = avalMap[avalKey(row.fornecedor_id, row.item_id)];
-        const enriched = { ...row, nota_media: av ? av.soma / av.n : null, nota_qtd: av?.n || 0 };
+        const enriched = { ...row, fornecedores: row.fornecedores || fornecedoresMap.get(row.fornecedor_id), nota_media: av ? av.soma / av.n : null, nota_qtd: av?.n || 0 };
         if (!seen[key][row.fornecedor_id]) {
           seen[key][row.fornecedor_id] = { ...enriched, outros_portes: [] };
           map[key].push(seen[key][row.fornecedor_id]);
