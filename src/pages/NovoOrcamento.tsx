@@ -1046,6 +1046,7 @@ export default function NovoOrcamento() {
       local_endereco: local.endereco_completo || p.local_endereco,
       cidade: local.cidade ? capitalizeWords(local.cidade) : p.cidade,
       estado: local.estado || p.estado,
+      tipo_cliente: local.tipo_cliente || p.tipo_cliente,
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.local_id, locaisCliente]);
