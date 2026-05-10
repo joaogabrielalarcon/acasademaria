@@ -2795,9 +2795,9 @@ export default function NovoOrcamento() {
                                         }
                                       />
                                       {porteDivergente && (
-                                        <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] bg-yellow-100 text-yellow-800">
-                                          ⚠️ Porte divergente
-                                        </span>
+                                        <div className="mt-1 px-2 py-1 rounded text-[10px] bg-yellow-50 border border-yellow-300 text-yellow-800 leading-tight">
+                                          ⚠️ Porte divergente — solicitado: <strong>{item.porte}</strong> · ofertado: <strong>{linha.porte_ofertado}</strong>
+                                        </div>
                                       )}
                                     </div>
                                     <div className="space-y-1">
