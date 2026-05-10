@@ -162,7 +162,7 @@ export default function NovoOrcamento() {
   >({});
   const [novoFornModalOpen, setNovoFornModalOpen] = useState(false);
   const [novoFornItemIdx, setNovoFornItemIdx] = useState<number | null>(null);
-  const [novoForn, setNovoForn] = useState({ nome: "", contato: "", cidade: "" });
+  const [novoForn, setNovoForn] = useState({ nome: "", contato: "", cidade: "", cadastrarItem: true });
 
   // Etapa 4 — Cotação
   type CotacaoLinha = {
