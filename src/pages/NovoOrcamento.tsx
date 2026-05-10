@@ -1583,33 +1583,58 @@ export default function NovoOrcamento() {
       const allIds = Array.from(itemIdToKey.keys());
       if (allIds.length === 0 && catalogRows.length === 0) return {} as Record<string, any[]>;
 
+      const chunk = <T,>(arr: T[], size = 80): T[][] => {
+        const chunks: T[][] = [];
+        for (let i = 0; i < arr.length; i += size) chunks.push(arr.slice(i, i + size));
+        return chunks;
+      };
+
       let hist: any[] = [];
       if (allIds.length > 0) {
-        const { data, error: hErr } = await (supabase as any)
-          .from("historico_precos")
-          .select(
-            "id, item_id, item_tipo, preco, porte, unidade, data_orcamento, fornecedor_id, fornecedores(id, nome, mercado, cidade, telefone, whatsapp)",
-          )
-          .in("item_id", allIds)
-          .order("data_orcamento", { ascending: false });
-        if (hErr) throw hErr;
-        hist = data || [];
+        const histChunks = await Promise.all(
+          chunk(allIds).map(async (ids) => {
+            const { data, error: hErr } = await (supabase as any)
+              .from("historico_precos")
+              .select(
+                "id, item_id, item_tipo, preco, porte, unidade, data_orcamento, fornecedor_id, fornecedores(id, nome, mercado, cidade, telefone, whatsapp)",
+              )
+              .in("item_id", ids)
+              .order("data_orcamento", { ascending: false });
+            if (hErr) throw hErr;
+            return data || [];
+          }),
+        );
+        hist = histChunks.flat();
       }
 
-      // 3) Buscar avaliações dos fornecedores para os mesmos itens
-      const { data: avals } = allIds.length > 0
-        ? await (supabase as any)
-            .from("fornecedor_avaliacoes")
-            .select("fornecedor_id, item_id, item_tipo, nota")
-            .in("item_id", allIds)
-        : { data: [] };
+      // 3) Buscar avaliações dos fornecedores para os mesmos itens, em lotes para não estourar a URL da API
+      const avalChunks = allIds.length > 0
+        ? await Promise.all(
+            chunk(allIds).map(async (ids) => {
+              const { data, error: aErr } = await (supabase as any)
+                .from("fornecedor_avaliacoes")
+                .select("fornecedor_id, item_id, item_tipo, nota")
+                .in("item_id", ids);
+              if (aErr) throw aErr;
+              return data || [];
+            }),
+          )
+        : [];
+      const avals = avalChunks.flat();
       const fornecedorIds = Array.from(new Set([...catalogRows, ...hist].map((r: any) => r.fornecedor_id).filter(Boolean)));
-      const { data: fornecedoresCatalogo } = fornecedorIds.length > 0
-        ? await (supabase as any)
-            .from("fornecedores")
-            .select("id, nome, mercado, cidade, telefone, whatsapp")
-            .in("id", fornecedorIds)
-        : { data: [] };
+      const fornecedoresChunks = fornecedorIds.length > 0
+        ? await Promise.all(
+            chunk(fornecedorIds).map(async (ids) => {
+              const { data, error: fErr } = await (supabase as any)
+                .from("fornecedores")
+                .select("id, nome, mercado, cidade, telefone, whatsapp")
+                .in("id", ids);
+              if (fErr) throw fErr;
+              return data || [];
+            }),
+          )
+        : [];
+      const fornecedoresCatalogo = fornecedoresChunks.flat();
       const fornecedoresMap = new Map((fornecedoresCatalogo || []).map((f: any) => [f.id, f]));
       const avalKey = (fid: string, iid: string) => `${fid}::${iid}`;
       const avalMap: Record<string, { soma: number; n: number }> = {};
@@ -4744,10 +4769,10 @@ export default function NovoOrcamento() {
             <div className="flex gap-2">
               <Button
                 variant="ghost"
-                onClick={() => saveMutation.mutate()}
-                disabled={saveMutation.isPending || processandoPdf}
+                onClick={handleSalvarRascunho}
+                disabled={savingFinal || processandoPdf}
               >
-                {saveMutation.isPending ? (
+                {savingFinal ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <Save className="w-4 h-4" />
