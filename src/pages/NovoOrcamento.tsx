@@ -3095,10 +3095,13 @@ export default function NovoOrcamento() {
                 const filtros = filtrosTab3[idx] || filtroPadraoTab3;
                 const mercadosUnicos = Array.from(
                   new Set(
-                    fornsBruto
-                      .map((r: any) => (r.fornecedores?.mercado || "").trim())
-                      .filter((m: string) => !!m)
-                  )
+                    fornsBruto.flatMap((r: any) =>
+                      String(r.fornecedores?.mercado || "")
+                        .split(/[,;|]/)
+                        .map((s: string) => s.trim())
+                        .filter((s: string) => !!s),
+                    ),
+                  ),
                 ).sort((a, b) => a.localeCompare(b, "pt-BR"));
 
                 // Classifica por porte (exato/maior/menor) e considera outros_portes embutidos
