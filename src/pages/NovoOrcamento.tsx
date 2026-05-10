@@ -172,6 +172,14 @@ export default function NovoOrcamento() {
   const [margensSeg, setMargensSeg] = useState<Record<number, number>>({});
   const [cardsColapsados, setCardsColapsados] = useState<Record<number, boolean>>({});
 
+  // Filtros e ações da Etapa 3 / 4
+  type OrdemForn = "preco" | "data" | "porte" | "nota";
+  const [ordemFornec, setOrdemFornec] = useState<Record<number, OrdemForn>>({});
+  const [filtroMercado, setFiltroMercado] = useState<Record<number, string>>({});
+  const [filtroPorte, setFiltroPorte] = useState<Record<number, string>>({});
+  const [resumoOpen, setResumoOpen] = useState(false);
+  const [importarFornId, setImportarFornId] = useState<string | null>(null);
+
   // Etapa 5 — Insumos
   type InsumoCalc = { tipo: string; nome: string; quantidade: number; unidade: string };
   type InsumoAdicional = {
