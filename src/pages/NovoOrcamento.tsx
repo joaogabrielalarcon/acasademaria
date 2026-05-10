@@ -2864,21 +2864,21 @@ export default function NovoOrcamento() {
                   )}
 
                   <p className="text-xs text-muted-foreground">
-                    Role horizontalmente para ver todas as colunas. As colunas têm largura mínima para legibilidade.
+                    As colunas se ajustam automaticamente ao maior conteúdo. Role horizontalmente se necessário.
                   </p>
                   <div className="border rounded-lg overflow-x-auto max-w-full">
-                    <table className="text-sm" style={{ minWidth: 1280 }}>
+                    <table className="text-sm w-auto" style={{ tableLayout: "auto" }}>
                       <thead className="bg-muted/50 text-muted-foreground">
                         <tr>
-                          <th className="px-2 py-2 text-left" style={{ width: 40 }} title="Número da linha no memorial.">#</th>
-                          <th className="px-2 py-2 text-left" style={{ minWidth: 200 }} title="Categoria do item — agrupa plantas por tipo (Árvores, Arbustos, Forrações, etc.) ou define se é insumo/serviço.">Categoria</th>
-                          <th className="px-2 py-2 text-left" style={{ minWidth: 240 }} title="Nome popular da planta, como conhecida no dia a dia (ex.: Manacá de Cheiro).">Nome Popular</th>
-                          <th className="px-2 py-2 text-left" style={{ minWidth: 260 }} title="Nome científico (botânico) — usado para identificação precisa no catálogo.">Nome Científico</th>
-                          <th className="px-2 py-2 text-left" style={{ minWidth: 200 }} title="Porte / tamanho do item (ex.: 0,40 m, 1,80 m a 2,00 m). Define qual variante será cotada.">Porte</th>
-                          <th className="px-2 py-2 text-left" style={{ width: 140, minWidth: 140 }} title="Quantidade do item neste projeto. Aceita decimais (ex.: 12,5).">Qtd</th>
-                          <th className="px-2 py-2 text-left" style={{ width: 130 }} title="Unidade de medida (UNID, CX, M², L etc.).">Unidade</th>
-                          <th className="px-2 py-2 text-center" style={{ width: 90 }} title="Confiança do casamento com o catálogo: ✓ alta = bateu no catálogo, − média = bateu parcial, ⚠ baixa = não encontrou ou ambíguo (precisa revisar antes de cotar).">Confiança</th>
-                          <th className="px-2 py-2 text-center" style={{ width: 70 }} title="Remover esta linha do memorial.">Excluir</th>
+                          <th className="px-2 py-2 text-left whitespace-nowrap" title="Número da linha no memorial.">#</th>
+                          <th className="px-2 py-2 text-left whitespace-nowrap" title="Categoria do item — agrupa plantas por tipo (Árvores, Arbustos, Forrações, etc.) ou define se é insumo/serviço.">Categoria</th>
+                          <th className="px-2 py-2 text-left whitespace-nowrap" title="Nome popular da planta, como conhecida no dia a dia (ex.: Manacá de Cheiro).">Nome Popular</th>
+                          <th className="px-2 py-2 text-left whitespace-nowrap" title="Nome científico (botânico) — usado para identificação precisa no catálogo.">Nome Científico</th>
+                          <th className="px-2 py-2 text-left whitespace-nowrap" title="Porte / tamanho do item (ex.: 0,40 m, 1,80 m a 2,00 m). Define qual variante será cotada.">Porte</th>
+                          <th className="px-2 py-2 text-left whitespace-nowrap" title="Quantidade do item neste projeto. Aceita decimais (ex.: 12,5).">Qtd</th>
+                          <th className="px-2 py-2 text-left whitespace-nowrap" title="Unidade de medida (UNID, CX, M², L etc.).">Unidade</th>
+                          <th className="px-2 py-2 text-center whitespace-nowrap" title="Confiança do casamento com o catálogo: ✓ alta = bateu no catálogo, − média = bateu parcial, ⚠ baixa = não encontrou ou ambíguo (precisa revisar antes de cotar).">Confiança</th>
+                          <th className="px-2 py-2 text-center whitespace-nowrap" title="Remover esta linha do memorial.">Excluir</th>
                         </tr>
                       </thead>
                       <tbody>
