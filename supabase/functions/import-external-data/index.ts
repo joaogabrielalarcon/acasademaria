@@ -61,6 +61,14 @@ serve(async (req) => {
 
       // Per-table row transform (for tables whose schemas diverge between source and dest)
       const transformRow = (row: any): any => {
+        if (table === "plantas") {
+          const alturaCm = Number(row.altura_cm);
+          return {
+            ...row,
+            altura_m: Number.isFinite(alturaCm) && alturaCm > 0 ? alturaCm / 100 : row.altura_m ?? null,
+          };
+        }
+
         if (table === "historico_precos") {
           return {
             id: row.id,
@@ -76,6 +84,20 @@ serve(async (req) => {
         }
         return row;
       };
+
+      if (table === "fornecedores") {
+        const { count, error } = await dest.from(table).update({ status: "inativo" }, { count: "exact" }).neq("status", "inativo");
+        if (error) throw error;
+        r.inactivated_before_import = count ?? 0;
+      } else if (table === "plantas" || table === "insumos") {
+        const { count, error } = await dest.from(table).update({ ativo: false }, { count: "exact" }).eq("ativo", true);
+        if (error) throw error;
+        r.inactivated_before_import = count ?? 0;
+      } else if (table === "historico_precos") {
+        const { count, error } = await dest.from(table).delete({ count: "exact" }).not("id", "is", null);
+        if (error) throw error;
+        r.removed_before_import = count ?? 0;
+      }
 
       let inserted = 0;
       let from = 0;

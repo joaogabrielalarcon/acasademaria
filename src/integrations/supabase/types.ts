@@ -3714,6 +3714,7 @@ export type Database = {
       }
       plantas: {
         Row: {
+          alerta_validacao: string | null
           altura_m: number | null
           altura_max_m: number | null
           altura_min_m: number | null
@@ -3722,6 +3723,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           dap_cm: number | null
+          embalagem: string | null
           fornecedor_id: string | null
           id: string
           midia: Json | null
@@ -3729,6 +3731,7 @@ export type Database = {
           nome_popular: string
           nota_qualidade: number | null
           observacoes: string | null
+          porte: string | null
           preco_unitario: number | null
           ultima_compra: string | null
           unidade: string | null
@@ -3736,6 +3739,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          alerta_validacao?: string | null
           altura_m?: number | null
           altura_max_m?: number | null
           altura_min_m?: number | null
@@ -3744,6 +3748,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           dap_cm?: number | null
+          embalagem?: string | null
           fornecedor_id?: string | null
           id?: string
           midia?: Json | null
@@ -3751,6 +3756,7 @@ export type Database = {
           nome_popular: string
           nota_qualidade?: number | null
           observacoes?: string | null
+          porte?: string | null
           preco_unitario?: number | null
           ultima_compra?: string | null
           unidade?: string | null
@@ -3758,6 +3764,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          alerta_validacao?: string | null
           altura_m?: number | null
           altura_max_m?: number | null
           altura_min_m?: number | null
@@ -3766,6 +3773,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           dap_cm?: number | null
+          embalagem?: string | null
           fornecedor_id?: string | null
           id?: string
           midia?: Json | null
@@ -3773,6 +3781,7 @@ export type Database = {
           nome_popular?: string
           nota_qualidade?: number | null
           observacoes?: string | null
+          porte?: string | null
           preco_unitario?: number | null
           ultima_compra?: string | null
           unidade?: string | null
