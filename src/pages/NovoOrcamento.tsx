@@ -5200,6 +5200,40 @@ export default function NovoOrcamento() {
           onAplicado={() => refetchHistorico()}
         />
       )}
-    </AppLayout>
+
+      {/* Modal: cadastro obrigatório de mercado */}
+      <Dialog
+        open={mercadoModal.open}
+        onOpenChange={(v) => { if (!v) setMercadoModal({ open: false, fornecedorId: null, nome: "", valor: "", pendente: null }); }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mercado/central obrigatório</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Para adicionar <strong className="text-foreground">{mercadoModal.nome}</strong> ao orçamento, informe a qual mercado ou central ele pertence. O cadastro do fornecedor será atualizado.
+          </p>
+          <div className="space-y-2">
+            <Label htmlFor="mercado-modal-input">Mercado / central</Label>
+            <Input
+              id="mercado-modal-input"
+              autoFocus
+              value={mercadoModal.valor}
+              onChange={(e) => setMercadoModal((p) => ({ ...p, valor: e.target.value }))}
+              placeholder="Ex: Jarinu, Ceagesp, CEASA..."
+              onKeyDown={(e) => { if (e.key === "Enter") confirmarMercadoModal(); }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setMercadoModal({ open: false, fornecedorId: null, nome: "", valor: "", pendente: null })}>
+              Cancelar
+            </Button>
+            <Button variant="terracota" onClick={confirmarMercadoModal}>
+              Salvar e adicionar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </AppLayout>)
   );
 }
