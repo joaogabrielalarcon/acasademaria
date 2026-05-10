@@ -240,6 +240,40 @@ function LocalFormDialog({
                 placeholder="Rua, número, bairro, cidade - UF"
               />
             </div>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="space-y-2 sm:col-span-2">
+                <Label className="text-foreground">Cidade</Label>
+                <Input
+                  value={form.cidade}
+                  onChange={(e) => set("cidade", e.target.value)}
+                  placeholder="Cidade"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">UF</Label>
+                <Input
+                  value={form.estado}
+                  onChange={(e) => set("estado", e.target.value.toUpperCase().slice(0, 2))}
+                  placeholder="SP"
+                  maxLength={2}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-foreground">Tipo de uso</Label>
+              <select
+                value={form.tipo_cliente}
+                onChange={(e) => set("tipo_cliente", e.target.value)}
+                className="flex h-10 w-full rounded-md border border-primary bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <option value="">Selecione...</option>
+                <option value="residencial">Residencial</option>
+                <option value="condominio">Condomínio</option>
+                <option value="resort">Resort</option>
+                <option value="hotel">Hotel</option>
+                <option value="comercial">Comercial</option>
+              </select>
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label className="text-foreground">Contato Principal / WhatsApp</Label>
