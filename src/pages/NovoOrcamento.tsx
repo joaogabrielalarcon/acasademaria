@@ -2378,7 +2378,7 @@ export default function NovoOrcamento() {
   return (
     <AppLayout>
       <TooltipProvider>
-        <div className="max-w-5xl mx-auto p-6 space-y-6">
+        <div className="w-full px-2 py-4 space-y-6">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="icon" onClick={() => navigate("/orcamentos")}>
@@ -3095,10 +3095,13 @@ export default function NovoOrcamento() {
                 const filtros = filtrosTab3[idx] || filtroPadraoTab3;
                 const mercadosUnicos = Array.from(
                   new Set(
-                    fornsBruto
-                      .map((r: any) => (r.fornecedores?.mercado || "").trim())
-                      .filter((m: string) => !!m)
-                  )
+                    fornsBruto.flatMap((r: any) =>
+                      String(r.fornecedores?.mercado || "")
+                        .split(/[,;|]/)
+                        .map((s: string) => s.trim())
+                        .filter((s: string) => !!s),
+                    ),
+                  ),
                 ).sort((a, b) => a.localeCompare(b, "pt-BR"));
 
                 // Classifica por porte (exato/maior/menor) e considera outros_portes embutidos
@@ -3151,7 +3154,13 @@ export default function NovoOrcamento() {
                 const aplicaFiltros = (arr: typeof todasLinhas) => {
                   let out = arr;
                   if (filtros.mercados.length > 0) {
-                    out = out.filter((l) => filtros.mercados.includes((l.row.fornecedores?.mercado || "").trim()));
+                    out = out.filter((l) => {
+                      const ms = String(l.row.fornecedores?.mercado || "")
+                        .split(/[,;|]/)
+                        .map((s: string) => s.trim())
+                        .filter((s: string) => !!s);
+                      return ms.some((m) => filtros.mercados.includes(m));
+                    });
                   }
                   if (filtros.somenteRecentes) {
                     out = out.filter((l) => {
