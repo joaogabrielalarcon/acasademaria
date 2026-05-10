@@ -101,9 +101,9 @@ const App = () => (
             <Route path="/processos" element={<ProtectedRoute><ProcessosInternos /></ProtectedRoute>} />
             <Route path="/calendario" element={<ProtectedRoute><Calendario /></ProtectedRoute>} />
             <Route path="/crm" element={<ProtectedRoute><CRM /></ProtectedRoute>} />
-            <Route path="/orcamentos" element={<ProtectedRoute><Orcamentos /></ProtectedRoute>} />
-            <Route path="/orcamentos/novo" element={<ProtectedRoute><NovoOrcamento /></ProtectedRoute>} />
-            <Route path="/orcamentos/:id" element={<ProtectedRoute><NovoOrcamento /></ProtectedRoute>} />
+            <Route path="/orcamentos" element={<ProtectedRoute allowedRoles={["admin","administrativo","gestao_campo"]}><Orcamentos /></ProtectedRoute>} />
+            <Route path="/orcamentos/novo" element={<ProtectedRoute allowedRoles={["admin","administrativo","gestao_campo"]}><NovoOrcamento /></ProtectedRoute>} />
+            <Route path="/orcamentos/:id" element={<ProtectedRoute allowedRoles={["admin","administrativo","gestao_campo"]}><NovoOrcamento /></ProtectedRoute>} />
             <Route path="/indicadores" element={<ProtectedRoute><Indicadores /></ProtectedRoute>} />
             <Route path="/solicitacoes-compras" element={<ProtectedRoute><SolicitacoesCompras /></ProtectedRoute>} />
             <Route path="/agenda" element={<ProtectedRoute><MinhaAgenda /></ProtectedRoute>} />
