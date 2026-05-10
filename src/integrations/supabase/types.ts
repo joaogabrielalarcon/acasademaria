@@ -2367,6 +2367,7 @@ export type Database = {
       locais_cliente: {
         Row: {
           assessores: string | null
+          cidade: string | null
           cliente_id: string
           cnpj: string | null
           contato_principal: string | null
@@ -2375,16 +2376,19 @@ export type Database = {
           data_aniversario: string | null
           email: string | null
           endereco_completo: string | null
+          estado: string | null
           funcionarios_casa: string | null
           id: string
           inscricao_estadual: string | null
           nome: string
           observacoes: string | null
           razao_social: string | null
+          tipo_cliente: string | null
           tipo_pessoa: string
         }
         Insert: {
           assessores?: string | null
+          cidade?: string | null
           cliente_id: string
           cnpj?: string | null
           contato_principal?: string | null
@@ -2393,16 +2397,19 @@ export type Database = {
           data_aniversario?: string | null
           email?: string | null
           endereco_completo?: string | null
+          estado?: string | null
           funcionarios_casa?: string | null
           id?: string
           inscricao_estadual?: string | null
           nome: string
           observacoes?: string | null
           razao_social?: string | null
+          tipo_cliente?: string | null
           tipo_pessoa?: string
         }
         Update: {
           assessores?: string | null
+          cidade?: string | null
           cliente_id?: string
           cnpj?: string | null
           contato_principal?: string | null
@@ -2411,12 +2418,14 @@ export type Database = {
           data_aniversario?: string | null
           email?: string | null
           endereco_completo?: string | null
+          estado?: string | null
           funcionarios_casa?: string | null
           id?: string
           inscricao_estadual?: string | null
           nome?: string
           observacoes?: string | null
           razao_social?: string | null
+          tipo_cliente?: string | null
           tipo_pessoa?: string
         }
         Relationships: [
