@@ -4810,6 +4810,10 @@ export type Database = {
       }
       normalize_cnpj: { Args: { _cnpj: string }; Returns: string }
       normalize_fornecedor_nome: { Args: { _nome: string }; Returns: string }
+      set_fornecedor_mercado: {
+        Args: { p_fornecedor_id: string; p_mercado: string }
+        Returns: undefined
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
     }
