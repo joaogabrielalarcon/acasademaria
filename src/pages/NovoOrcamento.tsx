@@ -2694,6 +2694,8 @@ export default function NovoOrcamento() {
                   </div>
                 </div>
               </div>
+            </Card>
+          )}
 
           {/* Etapa 2 — Memorial Descritivo */}
           {etapaAtual === 2 && (
