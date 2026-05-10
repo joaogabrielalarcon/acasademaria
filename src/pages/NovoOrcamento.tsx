@@ -3154,7 +3154,13 @@ export default function NovoOrcamento() {
                 const aplicaFiltros = (arr: typeof todasLinhas) => {
                   let out = arr;
                   if (filtros.mercados.length > 0) {
-                    out = out.filter((l) => filtros.mercados.includes((l.row.fornecedores?.mercado || "").trim()));
+                    out = out.filter((l) => {
+                      const ms = String(l.row.fornecedores?.mercado || "")
+                        .split(/[,;|]/)
+                        .map((s: string) => s.trim())
+                        .filter((s: string) => !!s);
+                      return ms.some((m) => filtros.mercados.includes(m));
+                    });
                   }
                   if (filtros.somenteRecentes) {
                     out = out.filter((l) => {
