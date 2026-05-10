@@ -1488,11 +1488,11 @@ export default function NovoOrcamento() {
       const query = table === "plantas"
         ? (supabase as any)
             .from("plantas")
-            .select("id, nome_popular, nome_cientifico, fornecedor_id, preco_unitario, porte, altura_m, altura_min_m, altura_max_m, unidade, ativo, updated_at")
+            .select("id, nome_popular, nome_cientifico, fornecedor_id, preco_unitario, porte, altura_m, altura_min_m, altura_max_m, unidade, ativo, ultima_compra")
             .eq("ativo", true)
         : (supabase as any)
             .from("insumos")
-            .select("id, nome, fornecedor_id, preco_unitario, unidade, categoria, ativo, updated_at")
+            .select("id, nome, fornecedor_id, preco_unitario, unidade, categoria, ativo, ultima_compra")
             .eq("ativo", true);
 
       const { data, error } = await query.range(from, from + pageSize - 1);
@@ -1548,7 +1548,7 @@ export default function NovoOrcamento() {
               preco: p.preco_unitario,
               porte: p.porte || (altura ? `${altura} m` : null),
               unidade: p.unidade,
-              data_orcamento: p.updated_at || null,
+              data_orcamento: p.ultima_compra || null,
               fornecedor_id: p.fornecedor_id,
               key: requested,
               fonte_catalogo: true,
@@ -1571,7 +1571,7 @@ export default function NovoOrcamento() {
               preco: i.preco_unitario,
               porte: null,
               unidade: i.unidade,
-              data_orcamento: i.updated_at || null,
+              data_orcamento: i.ultima_compra || null,
               fornecedor_id: i.fornecedor_id,
               key: requested,
               fonte_catalogo: true,
