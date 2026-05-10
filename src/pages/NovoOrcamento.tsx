@@ -1987,14 +1987,56 @@ export default function NovoOrcamento() {
                     </div>
                   </div>
 
-                  {/* Local / Endereço */}
+                  {/* Local do cliente */}
                   <div className="space-y-2">
-                    <Label>Local / Endereço<Req /></Label>
+                    <Label>Local do cliente<Req /></Label>
+                    <div className="flex gap-2">
+                      <Select
+                        value={form.local_id}
+                        onValueChange={(v) => setForm((c) => ({ ...c, local_id: v }))}
+                        disabled={!form.cliente_id}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={form.cliente_id ? "Selecione o local..." : "Escolha um cliente primeiro"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(locaisCliente as any[]).length === 0 ? (
+                            <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                              Nenhum local cadastrado para este cliente.
+                            </div>
+                          ) : (
+                            (locaisCliente as any[]).map((l) => (
+                              <SelectItem key={l.id} value={l.id}>
+                                {l.nome}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        title="Cadastrar novo local para este cliente"
+                        disabled={!form.cliente_id}
+                        onClick={() =>
+                          openQuickAdd("local_cliente", (id) =>
+                            setForm((c) => ({ ...c, local_id: id })),
+                          )
+                        }
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
                     <Textarea
-                      rows={3}
+                      rows={2}
                       value={form.local_endereco}
                       onChange={(e) => setForm((c) => ({ ...c, local_endereco: e.target.value }))}
+                      placeholder="Endereço completo (preenchido a partir do local; pode ajustar)"
                     />
+                    <p className="text-[11px] text-muted-foreground">
+                      O local fica vinculado ao cliente — alterações refletem em ambos os lados.
+                    </p>
                   </div>
 
                   {/* Tipo de cliente - toggles */}
