@@ -58,7 +58,8 @@ import { FornecedorPopover } from "@/components/orcamento/FornecedorPopover";
 import { ResumoFornecedoresDialog, type ResumoItem } from "@/components/orcamento/ResumoFornecedoresDialog";
 import { ImportarRespostaFornecedorDialog } from "@/components/orcamento/ImportarRespostaFornecedorDialog";
 import { EnderecoFields, composeEndereco } from "@/components/EnderecoFields";
-import { Star, Filter, MessageCircle, Download } from "lucide-react";
+import { Star, Filter, MessageCircle, Download, Lock, Crown, ChevronsUp, ChevronsDown, Zap, Store, AlertCircle } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const CATEGORIAS_ITEM = [
   "Árvores",
