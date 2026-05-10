@@ -1127,6 +1127,7 @@ export default function NovoOrcamento() {
     codigo: form.codigo.trim() || null,
     tipo_proposta_id: form.tipo_proposta_id || null,
     cliente_id: form.cliente_id || null,
+    local_id: form.local_id || null,
     local_endereco: form.local_endereco || null,
     tipo_cliente: form.tipo_cliente || null,
     cidade: form.cidade || null,
