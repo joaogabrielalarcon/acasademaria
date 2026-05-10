@@ -2897,7 +2897,7 @@ export default function NovoOrcamento() {
                                 value={it.categoria}
                                 onValueChange={(v) => updateItem(idx, { categoria: v })}
                               >
-                                <SelectTrigger className="h-8">
+                                <SelectTrigger className="h-8 w-auto min-w-[10ch] gap-2">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -2916,7 +2916,7 @@ export default function NovoOrcamento() {
                                 onChange={(e) =>
                                   updateItem(idx, { nome_popular: e.target.value })
                                 }
-                                className="h-8"
+                                className="h-8 min-w-[14ch] [field-sizing:content]"
                               />
                             </td>
                             <td className="px-2 py-1">
@@ -2927,14 +2927,14 @@ export default function NovoOrcamento() {
                                     nome_cientifico: e.target.value || null,
                                   })
                                 }
-                                className="h-8 italic"
+                                className="h-8 italic min-w-[14ch] [field-sizing:content]"
                               />
                             </td>
                             <td className="px-2 py-1">
                               <Input
                                 value={it.porte}
                                 onChange={(e) => updateItem(idx, { porte: e.target.value })}
-                                className="h-8"
+                                className="h-8 min-w-[8ch] [field-sizing:content]"
                               />
                             </td>
                             <td className="px-2 py-1">
@@ -2948,7 +2948,7 @@ export default function NovoOrcamento() {
                                     quantidade: parseFloat(e.target.value) || 0,
                                   })
                                 }
-                                className="h-8 pr-7 w-full min-w-[120px] tabular-nums"
+                                className="h-8 pr-6 min-w-[7ch] tabular-nums [field-sizing:content]"
                               />
                             </td>
                             <td className="px-2 py-1">
@@ -2956,7 +2956,7 @@ export default function NovoOrcamento() {
                                 value={it.unidade}
                                 onValueChange={(v) => updateItem(idx, { unidade: v })}
                               >
-                                <SelectTrigger className="h-8">
+                                <SelectTrigger className="h-8 w-auto min-w-[7ch] gap-2">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
