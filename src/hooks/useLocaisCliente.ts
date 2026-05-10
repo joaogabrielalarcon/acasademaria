@@ -17,6 +17,9 @@ export interface LocalCliente {
   assessores: string | null;
   funcionarios_casa: string | null;
   observacoes: string | null;
+  cidade: string | null;
+  estado: string | null;
+  tipo_cliente: string | null;
   created_at: string;
 }
 

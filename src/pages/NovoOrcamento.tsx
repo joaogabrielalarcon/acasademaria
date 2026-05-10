@@ -1027,7 +1027,7 @@ export default function NovoOrcamento() {
       if (!form.cliente_id) return [];
       const { data, error } = await (supabase as any)
         .from("locais_cliente")
-        .select("id, nome, endereco_completo, tipo_pessoa, cidade, estado")
+        .select("id, nome, endereco_completo, tipo_pessoa, cidade, estado, tipo_cliente")
         .eq("cliente_id", form.cliente_id)
         .order("nome");
       if (error) throw error;
@@ -1046,6 +1046,7 @@ export default function NovoOrcamento() {
       local_endereco: local.endereco_completo || p.local_endereco,
       cidade: local.cidade ? capitalizeWords(local.cidade) : p.cidade,
       estado: local.estado || p.estado,
+      tipo_cliente: local.tipo_cliente || p.tipo_cliente,
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.local_id, locaisCliente]);
@@ -1683,6 +1684,9 @@ export default function NovoOrcamento() {
             nome: f.nome.trim(),
             tipo_pessoa: tipo,
             endereco_completo: f.endereco_completo || null,
+            cidade: f.cidade ? capitalizeWords(f.cidade) : null,
+            estado: f.estado ? f.estado.toUpperCase().slice(0, 2) : null,
+            tipo_cliente: f.tipo_cliente || null,
           })
           .select("id, nome")
           .single();
@@ -4362,13 +4366,50 @@ export default function NovoOrcamento() {
                       </Select>
                     </div>
                     <div className="space-y-1.5">
+                      <Label>Tipo de uso</Label>
+                      <Select
+                        value={quickAdd.fields.tipo_cliente || ""}
+                        onValueChange={(v) => updateQuickField("tipo_cliente", v)}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                        <SelectContent>
+                          {TIPOS_CLIENTE.map((tc) => (
+                            <SelectItem key={tc.value} value={tc.value}>{tc.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
                       <Label>Endereço completo</Label>
                       <Textarea
                         rows={2}
                         value={quickAdd.fields.endereco_completo || ""}
                         onChange={(e) => updateQuickField("endereco_completo", e.target.value)}
-                        placeholder="Rua, número, bairro, cidade — UF"
+                        placeholder="Rua, número, bairro"
                       />
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="space-y-1.5 col-span-2">
+                        <Label>Cidade</Label>
+                        <Input
+                          value={quickAdd.fields.cidade || ""}
+                          onChange={(e) => updateQuickField("cidade", capitalizeWords(e.target.value))}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>UF</Label>
+                        <Select
+                          value={quickAdd.fields.estado || ""}
+                          onValueChange={(v) => updateQuickField("estado", v)}
+                        >
+                          <SelectTrigger><SelectValue placeholder="UF" /></SelectTrigger>
+                          <SelectContent>
+                            {UFS.map((uf) => (
+                              <SelectItem key={uf} value={uf}>{uf}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </>
                 )}
