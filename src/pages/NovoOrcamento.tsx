@@ -1806,6 +1806,164 @@ export default function NovoOrcamento() {
     });
   };
 
+  // ===== Helpers Etapa 3 (refactor) =====
+  const porteToNum = (s: string | null | undefined): number => {
+    if (!s) return NaN;
+    const m = String(s).replace(",", ".").match(/([\d.]+)/);
+    return m ? parseFloat(m[1]) : NaN;
+  };
+  const compararPorte = (
+    porteForn: string | null | undefined,
+    porteSolicitado: string | null | undefined,
+  ): "exato" | "maior" | "menor" | "indef" => {
+    if (!porteSolicitado) return "exato";
+    if (!porteForn) return "indef";
+    const a = porteToNum(porteForn);
+    const b = porteToNum(porteSolicitado);
+    if (isNaN(a) || isNaN(b)) {
+      return porteForn.trim().toLowerCase() === porteSolicitado.trim().toLowerCase() ? "exato" : "indef";
+    }
+    if (Math.abs(a - b) < 0.001) return "exato";
+    return a > b ? "maior" : "menor";
+  };
+  const mesesDesde = (iso: string | null | undefined): number => {
+    if (!iso) return Infinity;
+    const t = new Date(iso).getTime();
+    if (isNaN(t)) return Infinity;
+    return (Date.now() - t) / (1000 * 60 * 60 * 24 * 30.44);
+  };
+  const papelAtual = (itemIdx: number, fornId: string): "principal" | "backup1" | "backup2" | null => {
+    const linha = cotacoes[itemIdx]?.[fornId];
+    if (!linha) return null;
+    const s = linha.status_selecao;
+    if (s === "principal" || s === "backup1" || s === "backup2") return s;
+    return null;
+  };
+  const papelLabel: Record<string, string> = {
+    principal: "Principal",
+    backup1: "Reserva 1",
+    backup2: "Reserva 2",
+  };
+  const proximoPapelLivre = (itemIdx: number): "principal" | "backup1" | "backup2" | null => {
+    const linhas = cotacoes[itemIdx] || {};
+    const ocupados = new Set(Object.values(linhas).map((l) => l.status_selecao));
+    if (!ocupados.has("principal")) return "principal";
+    if (!ocupados.has("backup1")) return "backup1";
+    if (!ocupados.has("backup2")) return "backup2";
+    return null;
+  };
+  const definirPapel = (
+    itemIdx: number,
+    fornId: string,
+    papel: "principal" | "backup1" | "backup2" | "remover",
+    fornecedorObj: any,
+  ) => {
+    // Mercado obrigatório se for adicionar/alterar para um papel ativo
+    if (papel !== "remover") {
+      const mercadoOk = !!(fornecedorObj?.mercado && String(fornecedorObj.mercado).trim());
+      if (!mercadoOk) {
+        setMercadoModal({
+          open: true,
+          fornecedorId: fornId,
+          nome: fornecedorObj?.nome || "Fornecedor",
+          valor: "",
+          pendente: { itemIdx, papel },
+        });
+        return;
+      }
+    }
+    if (papel === "remover") {
+      setCotacoes((prev) => {
+        const itemMap = { ...(prev[itemIdx] || {}) };
+        if (itemMap[fornId]) itemMap[fornId] = { ...itemMap[fornId], status_selecao: "descartado" };
+        return { ...prev, [itemIdx]: itemMap };
+      });
+      setFornecedoresSelecionados((prev) => ({
+        ...prev,
+        [itemIdx]: (prev[itemIdx] || []).filter((id) => id !== fornId),
+      }));
+      return;
+    }
+    setCotacoes((prev) => {
+      const itemMap = { ...(prev[itemIdx] || {}) };
+      // Demove quem ocupa o mesmo papel
+      Object.keys(itemMap).forEach((k) => {
+        if (k !== fornId && itemMap[k].status_selecao === papel) {
+          itemMap[k] = { ...itemMap[k], status_selecao: "descartado" };
+        }
+      });
+      const atual = itemMap[fornId] || {
+        valor_unitario: "",
+        porte_ofertado: "",
+        disponivel: "sim" as const,
+        status_selecao: "descartado" as const,
+        obs: "",
+      };
+      itemMap[fornId] = { ...atual, status_selecao: papel };
+      return { ...prev, [itemIdx]: itemMap };
+    });
+    setFornecedoresSelecionados((prev) => {
+      const atuais = prev[itemIdx] || [];
+      // Remove qualquer outro forn que perdeu o mesmo papel (limpamos apenas se ele não tem mais nenhum papel)
+      const limpos = atuais.filter((id) => {
+        if (id === fornId) return true;
+        const linha = cotacoes[itemIdx]?.[id];
+        return linha && linha.status_selecao !== papel;
+      });
+      return {
+        ...prev,
+        [itemIdx]: limpos.includes(fornId) ? limpos : [...limpos, fornId],
+      };
+    });
+  };
+
+  const confirmarMercadoModal = async () => {
+    if (!mercadoModal.fornecedorId || !mercadoModal.valor.trim() || !mercadoModal.pendente) {
+      toast({ title: "Informe o mercado/central", variant: "destructive" });
+      return;
+    }
+    try {
+      const { error } = await (supabase as any)
+        .from("fornecedores")
+        .update({ mercado: mercadoModal.valor.trim() })
+        .eq("id", mercadoModal.fornecedorId);
+      if (error) throw error;
+      // Atualiza queries relacionadas
+      queryClient.invalidateQueries({ queryKey: ["fornecedores"] });
+      queryClient.invalidateQueries({ queryKey: ["fornecedores-todos"] });
+      queryClient.invalidateQueries({ queryKey: ["fornecedores-ativos-lista"] });
+      queryClient.invalidateQueries({ queryKey: ["historico-precos-orcamento"] });
+      const { itemIdx, papel } = mercadoModal.pendente;
+      const fornId = mercadoModal.fornecedorId;
+      // Aplica o papel agora que mercado está ok
+      setCotacoes((prev) => {
+        const itemMap = { ...(prev[itemIdx] || {}) };
+        Object.keys(itemMap).forEach((k) => {
+          if (k !== fornId && itemMap[k].status_selecao === papel) {
+            itemMap[k] = { ...itemMap[k], status_selecao: "descartado" };
+          }
+        });
+        const atual = itemMap[fornId] || {
+          valor_unitario: "",
+          porte_ofertado: "",
+          disponivel: "sim" as const,
+          status_selecao: "descartado" as const,
+          obs: "",
+        };
+        itemMap[fornId] = { ...atual, status_selecao: papel };
+        return { ...prev, [itemIdx]: itemMap };
+      });
+      setFornecedoresSelecionados((prev) => {
+        const atuais = prev[itemIdx] || [];
+        return { ...prev, [itemIdx]: atuais.includes(fornId) ? atuais : [...atuais, fornId] };
+      });
+      setMercadoModal({ open: false, fornecedorId: null, nome: "", valor: "", pendente: null });
+      toast({ title: "Mercado cadastrado e fornecedor adicionado" });
+    } catch (e: any) {
+      toast({ title: "Erro ao salvar mercado", description: e?.message, variant: "destructive" });
+    }
+  };
+
   const abrirNovoFornecedor = (itemIdx: number) => {
     setNovoFornItemIdx(itemIdx);
     const itemJaNoCatalogo = !!itemDbInfoByIdx[itemIdx];
