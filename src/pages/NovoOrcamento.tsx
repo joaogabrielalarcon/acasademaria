@@ -1593,6 +1593,7 @@ export default function NovoOrcamento() {
     cargo: "Novo cargo",
     transportadora: "Nova transportadora",
     perfil_markup: "Novo perfil de markup",
+    local_cliente: "Novo local do cliente",
   };
 
   const salvarQuickAdd = async () => {
