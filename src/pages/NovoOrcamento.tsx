@@ -751,6 +751,8 @@ export default function NovoOrcamento() {
           .from("orcamento_itens")
           .insert({
             orcamento_id: orcId,
+            planta_id: itemDbInfoByIdx[idx]?.item_tipo === "planta" ? itemDbInfoByIdx[idx].item_id : null,
+            insumo_id: itemDbInfoByIdx[idx]?.item_tipo === "insumo" ? itemDbInfoByIdx[idx].item_id : null,
             categoria: it.categoria,
             nome_popular: it.nome_popular,
             nome_cientifico: it.nome_cientifico,
@@ -1198,6 +1200,8 @@ export default function NovoOrcamento() {
       const novosItens: ItemMemorial[] = itensList.map((i: any) => ({
         nome_popular: i.nome_popular || "",
         nome_cientifico: i.nome_cientifico || null,
+        planta_id: i.planta_id || null,
+        insumo_id: i.insumo_id || null,
         porte: i.porte_solicitado || "",
         quantidade: Number(i.quantidade_esperada) || 0,
         unidade: i.unidade || "UNID",
