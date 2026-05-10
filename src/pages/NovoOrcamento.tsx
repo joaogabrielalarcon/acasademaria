@@ -3092,7 +3092,14 @@ export default function NovoOrcamento() {
 
               {itensMaterial.map((item, idx) => {
                 const fornsBruto = fornecedoresDoItem(item) as any[];
-                const ord = ordemTab3[idx] || "preco";
+                const filtros = filtrosTab3[idx] || filtroPadraoTab3;
+                const mercadosUnicos = Array.from(
+                  new Set(
+                    fornsBruto
+                      .map((r: any) => (r.fornecedores?.mercado || "").trim())
+                      .filter((m: string) => !!m)
+                  )
+                ).sort((a, b) => a.localeCompare(b, "pt-BR"));
 
                 // Classifica por porte (exato/maior/menor) e considera outros_portes embutidos
                 const expandeRowsPorPorte = (r: any): { row: any; portClass: "exato" | "maior" | "menor" | "indef"; portUsado: string | null; precoUsado: number | null; dataUsada: string | null }[] => {
