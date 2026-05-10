@@ -71,10 +71,10 @@ export function MercadoInlineEditor({
     }
     setSalvando(true);
     try {
-      const { error } = await (supabase as any)
-        .from("fornecedores")
-        .update({ mercado: finalValor })
-        .eq("id", fornecedorId);
+      const { error } = await (supabase as any).rpc("set_fornecedor_mercado", {
+        p_fornecedor_id: fornecedorId,
+        p_mercado: finalValor,
+      });
       if (error) throw error;
       toast({ title: "Mercado atualizado", description: `${fornecedorNome}: ${finalValor}` });
       onSaved?.(finalValor);
