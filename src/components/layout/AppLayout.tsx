@@ -27,7 +27,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         "pt-14 lg:pt-0",
         "lg:pl-60"
       )}>
-        <div className="container max-w-6xl mx-auto px-4 py-6 lg:py-8">
+        <div className="w-full px-3 py-4 lg:px-5 lg:py-5">
           {children}
         </div>
       </main>
