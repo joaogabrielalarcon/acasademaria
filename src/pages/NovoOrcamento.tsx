@@ -3024,11 +3024,16 @@ export default function NovoOrcamento() {
                                   {f.mercado && (
                                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{f.mercado}</span>
                                   )}
-                                  {row.nota_media != null && (
-                                    <span className="text-[10px] flex items-center gap-0.5 text-amber-600">
+                                  {row.nota_media != null ? (
+                                    <span
+                                      className="text-[11px] flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 font-medium"
+                                      title={`Nota média ${row.nota_media.toFixed(1)} de 5 — ${row.nota_qtd} avaliação(ões)`}
+                                    >
                                       <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                                      {row.nota_media.toFixed(1)} ({row.nota_qtd})
+                                      {row.nota_media.toFixed(1)} <span className="opacity-70">({row.nota_qtd})</span>
                                     </span>
+                                  ) : (
+                                    <span className="text-[10px] text-muted-foreground/70 italic">sem avaliação</span>
                                   )}
                                   <FornecedorPopover
                                     fornecedorId={row.fornecedor_id}
@@ -3038,21 +3043,25 @@ export default function NovoOrcamento() {
                                     onAvaliacaoSalva={() => refetchHistorico?.()}
                                   />
                                 </div>
-                                <div className="flex flex-wrap gap-3 mt-0.5 text-xs text-muted-foreground">
+                                <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-xs text-muted-foreground">
                                   {row.porte && (
                                     <span className={cn(porteDiv && "text-yellow-700 font-medium")}>
                                       Porte: <strong>{row.porte}</strong>{porteDiv ? " ⚠" : ""}
                                     </span>
                                   )}
                                   {row.preco != null && (
-                                    <span>R$ <strong className="text-foreground">{Number(row.preco).toFixed(2)}</strong></span>
+                                    <span>R$ <strong className="text-foreground">{Number(row.preco).toFixed(2)}</strong>{row.unidade ? ` / ${row.unidade}` : ""}</span>
                                   )}
-                                  {row.data_orcamento && (
-                                    <span>
-                                      {new Date(row.data_orcamento).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" })}
+                                  {row.data_orcamento ? (
+                                    <span title={row.fonte_catalogo ? "Preço do catálogo (última atualização)" : "Data registrada no histórico de cotações"}>
+                                      {row.fonte_catalogo ? "Atualizado em " : "Cotado em "}
+                                      <strong className="text-foreground">
+                                        {new Date(row.data_orcamento).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" })}
+                                      </strong>
                                     </span>
+                                  ) : (
+                                    <span className="italic">sem data</span>
                                   )}
-                                  {row.unidade && <span>/ {row.unidade}</span>}
                                 </div>
                                 {row.outros_portes?.length > 0 && (
                                   <div className="mt-1 flex flex-wrap gap-1">
