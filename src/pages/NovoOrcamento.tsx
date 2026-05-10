@@ -1021,6 +1021,44 @@ export default function NovoOrcamento() {
     },
   });
 
+  const { data: locaisCliente = [] } = useQuery({
+    queryKey: ["orc-locais-cliente", form.cliente_id],
+    queryFn: async () => {
+      if (!form.cliente_id) return [];
+      const { data, error } = await (supabase as any)
+        .from("locais_cliente")
+        .select("id, nome, endereco_completo, tipo_pessoa, cidade, estado")
+        .eq("cliente_id", form.cliente_id)
+        .order("nome");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!form.cliente_id,
+  });
+
+  // Sincroniza endereço/cidade/estado a partir do local selecionado
+  useEffect(() => {
+    if (!form.local_id) return;
+    const local = (locaisCliente as any[]).find((l) => l.id === form.local_id);
+    if (!local) return;
+    setForm((p) => ({
+      ...p,
+      local_endereco: local.endereco_completo || p.local_endereco,
+      cidade: local.cidade ? capitalizeWords(local.cidade) : p.cidade,
+      estado: local.estado || p.estado,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.local_id, locaisCliente]);
+
+  // Limpa local_id se ele não pertence ao cliente atualmente selecionado
+  useEffect(() => {
+    if (!form.local_id) return;
+    if (!(locaisCliente as any[]).some((l) => l.id === form.local_id)) {
+      setForm((p) => ({ ...p, local_id: "" }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locaisCliente]);
+
   const { data: perfisMarkup = [] } = useQuery({
     queryKey: ["perfis-markup-ativos"],
     queryFn: async () => {
