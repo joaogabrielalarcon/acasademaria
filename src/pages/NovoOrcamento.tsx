@@ -2373,9 +2373,47 @@ export default function NovoOrcamento() {
               )}
 
               {itensMaterial.map((item, idx) => {
-                const fornsDisp = fornecedoresDoItem(item);
+                const fornsBruto = fornecedoresDoItem(item);
                 const selecionados = fornecedoresSelecionados[idx] || [];
-                const total = Math.max(selecionados.length, fornsDisp.length);
+
+                // Filtros do item
+                const fMerc = filtroMercado[idx] || "todos";
+                const fPorte = filtroPorte[idx] || "todos";
+                const ord = ordemFornec[idx] || "preco";
+
+                const mercadosDisp: string[] = Array.from(
+                  new Set(
+                    fornsBruto.flatMap((r: any) => [r.fornecedores?.mercado].filter(Boolean)),
+                  ),
+                );
+                const portesDisp: string[] = Array.from(
+                  new Set(
+                    fornsBruto.flatMap((r: any) => [r.porte, ...(r.outros_portes || []).map((o: any) => o.porte)].filter(Boolean)),
+                  ),
+                );
+
+                const fornsFiltrados = fornsBruto
+                  .filter((r: any) => fMerc === "todos" || (r.fornecedores?.mercado || "—sem—") === fMerc || !r.fornecedores?.mercado)
+                  .filter((r: any) => {
+                    if (fPorte === "todos") return true;
+                    if (r.porte === fPorte) return true;
+                    return (r.outros_portes || []).some((o: any) => o.porte === fPorte);
+                  })
+                  .slice()
+                  .sort((a: any, b: any) => {
+                    if (ord === "preco") return (Number(a.preco) || Infinity) - (Number(b.preco) || Infinity);
+                    if (ord === "data") return new Date(b.data_orcamento || 0).getTime() - new Date(a.data_orcamento || 0).getTime();
+                    if (ord === "nota") return (b.nota_media || 0) - (a.nota_media || 0);
+                    if (ord === "porte" && item.porte) {
+                      // mais próximo do porte solicitado (numérico simples)
+                      const num = (s: string) => parseFloat((s || "").replace(",", ".").replace(/[^0-9.]/g, "")) || 0;
+                      const tgt = num(item.porte);
+                      return Math.abs(num(a.porte || "") - tgt) - Math.abs(num(b.porte || "") - tgt);
+                    }
+                    return 0;
+                  });
+
+                const total = Math.max(selecionados.length, fornsBruto.length);
                 let badge = { cls: "bg-primary/15 text-primary", label: "OK" };
                 if (total === 0) badge = { cls: "bg-destructive/15 text-destructive", label: "⚠️ Sem fornecedor" };
                 else if (total === 1) badge = { cls: "bg-orange-100 text-orange-700", label: "⚠️ Risco alto" };
@@ -2394,7 +2432,7 @@ export default function NovoOrcamento() {
                           )}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {item.porte && <>Porte: {item.porte} · </>}
+                          {item.porte && <>Porte solicitado: <strong>{item.porte}</strong> · </>}
                           {item.quantidade} {item.unidade}
                         </p>
                       </div>
@@ -2403,45 +2441,121 @@ export default function NovoOrcamento() {
                       </span>
                     </div>
 
-                    {fornsDisp.length === 0 ? (
+                    {/* Filtros */}
+                    {fornsBruto.length > 0 && (
+                      <div className="flex flex-wrap gap-2 items-center text-xs border-t border-b py-2">
+                        <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+                        <Select value={ord} onValueChange={(v) => setOrdemFornec((p) => ({ ...p, [idx]: v as OrdemForn }))}>
+                          <SelectTrigger className="h-7 text-xs w-32"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="preco">Menor preço</SelectItem>
+                            <SelectItem value="data">Cotação recente</SelectItem>
+                            <SelectItem value="porte">Porte mais próximo</SelectItem>
+                            <SelectItem value="nota">Melhor nota</SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        {mercadosDisp.length > 0 && (
+                          <Select value={fMerc} onValueChange={(v) => setFiltroMercado((p) => ({ ...p, [idx]: v }))}>
+                            <SelectTrigger className="h-7 text-xs w-36"><SelectValue placeholder="Mercado" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="todos">Todos mercados</SelectItem>
+                              {mercadosDisp.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        )}
+
+                        {portesDisp.length > 0 && (
+                          <Select value={fPorte} onValueChange={(v) => setFiltroPorte((p) => ({ ...p, [idx]: v }))}>
+                            <SelectTrigger className="h-7 text-xs w-32"><SelectValue placeholder="Porte" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="todos">Todos portes</SelectItem>
+                              {portesDisp.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        )}
+
+                        <span className="text-muted-foreground ml-auto">
+                          {fornsFiltrados.length}/{fornsBruto.length}
+                        </span>
+                      </div>
+                    )}
+
+                    {fornsFiltrados.length === 0 ? (
                       <p className="text-sm text-muted-foreground italic">
-                        Nenhum fornecedor cadastrado para este item.
+                        {fornsBruto.length === 0
+                          ? "Nenhum fornecedor cadastrado para este item."
+                          : "Nenhum fornecedor com os filtros aplicados."}
                       </p>
                     ) : (
                       <div className="space-y-1.5">
-                        {fornsDisp.map((row: any) => {
+                        {fornsFiltrados.map((row: any) => {
                           const f = row.fornecedores || {};
                           const checked = selecionados.includes(row.fornecedor_id);
+                          const porteDiv = item.porte && row.porte && row.porte.trim().toLowerCase() !== item.porte.trim().toLowerCase();
                           return (
-                            <label
+                            <div
                               key={row.fornecedor_id}
                               className={cn(
-                                "flex items-start gap-3 p-2 border rounded-md cursor-pointer transition-colors",
+                                "flex items-start gap-3 p-2 border rounded-md transition-colors",
                                 checked ? "border-primary bg-primary/5" : "hover:bg-muted/30",
                               )}
                             >
                               <Checkbox
                                 checked={checked}
                                 onCheckedChange={() => toggleFornecedor(idx, row.fornecedor_id)}
+                                className="mt-1 cursor-pointer"
                               />
                               <div className="flex-1 text-sm">
-                                <p className="font-medium text-foreground">
-                                  {f.nome || "Fornecedor"}
-                                </p>
-                                {(f.mercado || f.cidade) && (
-                                  <p className="text-xs text-muted-foreground">
-                                    {[f.mercado, f.cidade].filter(Boolean).join(" · ")}
-                                  </p>
-                                )}
-                                {row.preco != null && (
-                                  <p className="text-xs text-muted-foreground mt-0.5">
-                                    Último preço: R$ {Number(row.preco).toFixed(2)}
-                                    {row.data_orcamento &&
-                                      ` em ${new Date(row.data_orcamento).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" })}`}
-                                  </p>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <p className="font-medium text-foreground">{f.nome || "Fornecedor"}</p>
+                                  {f.mercado && (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{f.mercado}</span>
+                                  )}
+                                  {row.nota_media != null && (
+                                    <span className="text-[10px] flex items-center gap-0.5 text-amber-600">
+                                      <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                                      {row.nota_media.toFixed(1)} ({row.nota_qtd})
+                                    </span>
+                                  )}
+                                  <FornecedorPopover fornecedorId={row.fornecedor_id} nome={f.nome} />
+                                </div>
+                                <div className="flex flex-wrap gap-3 mt-0.5 text-xs text-muted-foreground">
+                                  {row.porte && (
+                                    <span className={cn(porteDiv && "text-yellow-700 font-medium")}>
+                                      Porte: <strong>{row.porte}</strong>{porteDiv ? " ⚠" : ""}
+                                    </span>
+                                  )}
+                                  {row.preco != null && (
+                                    <span>R$ <strong className="text-foreground">{Number(row.preco).toFixed(2)}</strong></span>
+                                  )}
+                                  {row.data_orcamento && (
+                                    <span>
+                                      {new Date(row.data_orcamento).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" })}
+                                    </span>
+                                  )}
+                                  {row.unidade && <span>/ {row.unidade}</span>}
+                                </div>
+                                {row.outros_portes?.length > 0 && (
+                                  <div className="mt-1 flex flex-wrap gap-1">
+                                    {row.outros_portes.map((o: any, i: number) => (
+                                      <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-muted/60 border">
+                                        {o.porte} · R$ {Number(o.preco).toFixed(2)}
+                                      </span>
+                                    ))}
+                                  </div>
                                 )}
                               </div>
-                            </label>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-[11px]"
+                                onClick={() => setImportarFornId(row.fornecedor_id)}
+                                title="Importar resposta deste fornecedor"
+                              >
+                                <Download className="w-3 h-3" /> Resposta
+                              </Button>
+                            </div>
                           );
                         })}
                       </div>
@@ -2458,6 +2572,18 @@ export default function NovoOrcamento() {
                   </Card>
                 );
               })}
+
+              {/* Ação global: gerar resumo agrupado por fornecedor */}
+              <div className="sticky bottom-0 bg-background/95 backdrop-blur border rounded-lg p-3 flex justify-end">
+                <Button
+                  variant="terracota"
+                  onClick={() => setResumoOpen(true)}
+                  disabled={Object.values(fornecedoresSelecionados).every((arr) => !arr || arr.length === 0)}
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Resumo para fornecedores (WhatsApp)
+                </Button>
+              </div>
             </div>
           )}
 
