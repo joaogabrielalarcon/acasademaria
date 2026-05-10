@@ -58,7 +58,8 @@ import { FornecedorPopover } from "@/components/orcamento/FornecedorPopover";
 import { ResumoFornecedoresDialog, type ResumoItem } from "@/components/orcamento/ResumoFornecedoresDialog";
 import { ImportarRespostaFornecedorDialog } from "@/components/orcamento/ImportarRespostaFornecedorDialog";
 import { EnderecoFields, composeEndereco } from "@/components/EnderecoFields";
-import { Star, Filter, MessageCircle, Download } from "lucide-react";
+import { Star, Filter, MessageCircle, Download, Lock, Crown, ChevronsUp, ChevronsDown, Zap, Store, AlertCircle } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const CATEGORIAS_ITEM = [
   "Árvores",
@@ -195,6 +196,19 @@ export default function NovoOrcamento() {
   const [filtroPorte, setFiltroPorte] = useState<Record<number, string>>({});
   const [resumoOpen, setResumoOpen] = useState(false);
   const [importarFornId, setImportarFornId] = useState<string | null>(null);
+
+  // Etapa 3 — refactor: expansão por item, ordenação por preço/data/mercado, modal mercado obrigatório
+  const [expandirMaiores, setExpandirMaiores] = useState<Record<number, boolean>>({});
+  const [expandirMenores, setExpandirMenores] = useState<Record<number, boolean>>({});
+  type OrdemTab3 = "preco" | "data" | "mercado";
+  const [ordemTab3, setOrdemTab3] = useState<Record<number, OrdemTab3>>({});
+  const [mercadoModal, setMercadoModal] = useState<{
+    open: boolean;
+    fornecedorId: string | null;
+    nome: string;
+    valor: string;
+    pendente: { itemIdx: number; papel: "principal" | "backup1" | "backup2" } | null;
+  }>({ open: false, fornecedorId: null, nome: "", valor: "", pendente: null });
 
   // Etapa 5 — Insumos
   type InsumoCalc = { tipo: string; nome: string; quantidade: number; unidade: string };
@@ -1792,6 +1806,164 @@ export default function NovoOrcamento() {
     });
   };
 
+  // ===== Helpers Etapa 3 (refactor) =====
+  const porteToNum = (s: string | null | undefined): number => {
+    if (!s) return NaN;
+    const m = String(s).replace(",", ".").match(/([\d.]+)/);
+    return m ? parseFloat(m[1]) : NaN;
+  };
+  const compararPorte = (
+    porteForn: string | null | undefined,
+    porteSolicitado: string | null | undefined,
+  ): "exato" | "maior" | "menor" | "indef" => {
+    if (!porteSolicitado) return "exato";
+    if (!porteForn) return "indef";
+    const a = porteToNum(porteForn);
+    const b = porteToNum(porteSolicitado);
+    if (isNaN(a) || isNaN(b)) {
+      return porteForn.trim().toLowerCase() === porteSolicitado.trim().toLowerCase() ? "exato" : "indef";
+    }
+    if (Math.abs(a - b) < 0.001) return "exato";
+    return a > b ? "maior" : "menor";
+  };
+  const mesesDesde = (iso: string | null | undefined): number => {
+    if (!iso) return Infinity;
+    const t = new Date(iso).getTime();
+    if (isNaN(t)) return Infinity;
+    return (Date.now() - t) / (1000 * 60 * 60 * 24 * 30.44);
+  };
+  const papelAtual = (itemIdx: number, fornId: string): "principal" | "backup1" | "backup2" | null => {
+    const linha = cotacoes[itemIdx]?.[fornId];
+    if (!linha) return null;
+    const s = linha.status_selecao;
+    if (s === "principal" || s === "backup1" || s === "backup2") return s;
+    return null;
+  };
+  const papelLabel: Record<string, string> = {
+    principal: "Principal",
+    backup1: "Reserva 1",
+    backup2: "Reserva 2",
+  };
+  const proximoPapelLivre = (itemIdx: number): "principal" | "backup1" | "backup2" | null => {
+    const linhas = cotacoes[itemIdx] || {};
+    const ocupados = new Set(Object.values(linhas).map((l) => l.status_selecao));
+    if (!ocupados.has("principal")) return "principal";
+    if (!ocupados.has("backup1")) return "backup1";
+    if (!ocupados.has("backup2")) return "backup2";
+    return null;
+  };
+  const definirPapel = (
+    itemIdx: number,
+    fornId: string,
+    papel: "principal" | "backup1" | "backup2" | "remover",
+    fornecedorObj: any,
+  ) => {
+    // Mercado obrigatório se for adicionar/alterar para um papel ativo
+    if (papel !== "remover") {
+      const mercadoOk = !!(fornecedorObj?.mercado && String(fornecedorObj.mercado).trim());
+      if (!mercadoOk) {
+        setMercadoModal({
+          open: true,
+          fornecedorId: fornId,
+          nome: fornecedorObj?.nome || "Fornecedor",
+          valor: "",
+          pendente: { itemIdx, papel },
+        });
+        return;
+      }
+    }
+    if (papel === "remover") {
+      setCotacoes((prev) => {
+        const itemMap = { ...(prev[itemIdx] || {}) };
+        if (itemMap[fornId]) itemMap[fornId] = { ...itemMap[fornId], status_selecao: "descartado" };
+        return { ...prev, [itemIdx]: itemMap };
+      });
+      setFornecedoresSelecionados((prev) => ({
+        ...prev,
+        [itemIdx]: (prev[itemIdx] || []).filter((id) => id !== fornId),
+      }));
+      return;
+    }
+    setCotacoes((prev) => {
+      const itemMap = { ...(prev[itemIdx] || {}) };
+      // Demove quem ocupa o mesmo papel
+      Object.keys(itemMap).forEach((k) => {
+        if (k !== fornId && itemMap[k].status_selecao === papel) {
+          itemMap[k] = { ...itemMap[k], status_selecao: "descartado" };
+        }
+      });
+      const atual = itemMap[fornId] || {
+        valor_unitario: "",
+        porte_ofertado: "",
+        disponivel: "sim" as const,
+        status_selecao: "descartado" as const,
+        obs: "",
+      };
+      itemMap[fornId] = { ...atual, status_selecao: papel };
+      return { ...prev, [itemIdx]: itemMap };
+    });
+    setFornecedoresSelecionados((prev) => {
+      const atuais = prev[itemIdx] || [];
+      // Remove qualquer outro forn que perdeu o mesmo papel (limpamos apenas se ele não tem mais nenhum papel)
+      const limpos = atuais.filter((id) => {
+        if (id === fornId) return true;
+        const linha = cotacoes[itemIdx]?.[id];
+        return linha && linha.status_selecao !== papel;
+      });
+      return {
+        ...prev,
+        [itemIdx]: limpos.includes(fornId) ? limpos : [...limpos, fornId],
+      };
+    });
+  };
+
+  const confirmarMercadoModal = async () => {
+    if (!mercadoModal.fornecedorId || !mercadoModal.valor.trim() || !mercadoModal.pendente) {
+      toast({ title: "Informe o mercado/central", variant: "destructive" });
+      return;
+    }
+    try {
+      const { error } = await (supabase as any)
+        .from("fornecedores")
+        .update({ mercado: mercadoModal.valor.trim() })
+        .eq("id", mercadoModal.fornecedorId);
+      if (error) throw error;
+      // Atualiza queries relacionadas
+      queryClient.invalidateQueries({ queryKey: ["fornecedores"] });
+      queryClient.invalidateQueries({ queryKey: ["fornecedores-todos"] });
+      queryClient.invalidateQueries({ queryKey: ["fornecedores-ativos-lista"] });
+      queryClient.invalidateQueries({ queryKey: ["historico-precos-orcamento"] });
+      const { itemIdx, papel } = mercadoModal.pendente;
+      const fornId = mercadoModal.fornecedorId;
+      // Aplica o papel agora que mercado está ok
+      setCotacoes((prev) => {
+        const itemMap = { ...(prev[itemIdx] || {}) };
+        Object.keys(itemMap).forEach((k) => {
+          if (k !== fornId && itemMap[k].status_selecao === papel) {
+            itemMap[k] = { ...itemMap[k], status_selecao: "descartado" };
+          }
+        });
+        const atual = itemMap[fornId] || {
+          valor_unitario: "",
+          porte_ofertado: "",
+          disponivel: "sim" as const,
+          status_selecao: "descartado" as const,
+          obs: "",
+        };
+        itemMap[fornId] = { ...atual, status_selecao: papel };
+        return { ...prev, [itemIdx]: itemMap };
+      });
+      setFornecedoresSelecionados((prev) => {
+        const atuais = prev[itemIdx] || [];
+        return { ...prev, [itemIdx]: atuais.includes(fornId) ? atuais : [...atuais, fornId] };
+      });
+      setMercadoModal({ open: false, fornecedorId: null, nome: "", valor: "", pendente: null });
+      toast({ title: "Mercado cadastrado e fornecedor adicionado" });
+    } catch (e: any) {
+      toast({ title: "Erro ao salvar mercado", description: e?.message, variant: "destructive" });
+    }
+  };
+
   const abrirNovoFornecedor = (itemIdx: number) => {
     setNovoFornItemIdx(itemIdx);
     const itemJaNoCatalogo = !!itemDbInfoByIdx[itemIdx];
@@ -2859,21 +3031,47 @@ export default function NovoOrcamento() {
             </Card>
           )}
 
-          {/* Etapa 3 — Seleção de Fornecedores */}
+          {/* Etapa 3 — Seleção de Fornecedores (refatorada) */}
           {etapaAtual === 3 && (
             <div className="space-y-4">
-              <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border rounded-lg p-3 flex flex-wrap gap-3 text-sm">
-                <span className="text-destructive font-medium">
-                  {resumoFornecedores.semForn} sem fornecedor
-                </span>
+              <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border rounded-lg p-3 flex flex-wrap gap-3 items-center text-sm">
+                <span className="text-destructive font-medium">{resumoFornecedores.semForn} sem fornecedor</span>
                 <span className="text-muted-foreground">|</span>
-                <span className="text-orange-600 font-medium">
-                  {resumoFornecedores.risco} com risco alto
-                </span>
+                <span className="text-amber-700 font-medium">{resumoFornecedores.risco} com risco alto</span>
                 <span className="text-muted-foreground">|</span>
-                <span className="text-primary font-medium">
-                  {resumoFornecedores.ok} OK
-                </span>
+                <span className="text-primary font-medium">{resumoFornecedores.ok} OK</span>
+                <div className="ml-auto flex gap-2">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span tabIndex={0}>
+                          <Button variant="outline" size="sm" disabled className="opacity-70 cursor-not-allowed">
+                            <Store className="w-4 h-4" /> Seleção rápida por mercado
+                            <Lock className="w-3 h-3 ml-1" />
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">
+                        Disponível em breve — será liberado quando a base de fornecedores estiver completa com mercados cadastrados.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span tabIndex={0}>
+                          <Button variant="outline" size="sm" disabled className="opacity-70 cursor-not-allowed">
+                            <Zap className="w-4 h-4" /> Escolha rápida
+                            <Lock className="w-3 h-3 ml-1" />
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">
+                        Disponível em breve — será liberado quando os fornecedores tiverem avaliações suficientes para uma escolha confiável.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
               </div>
 
               {itensMaterial.length === 0 && (
@@ -2885,51 +3083,256 @@ export default function NovoOrcamento() {
               )}
 
               {itensMaterial.map((item, idx) => {
-                const fornsBruto = fornecedoresDoItem(item);
-                const selecionados = fornecedoresSelecionados[idx] || [];
+                const fornsBruto = fornecedoresDoItem(item) as any[];
+                const ord = ordemTab3[idx] || "preco";
 
-                // Filtros do item
-                const fMerc = filtroMercado[idx] || "todos";
-                const fPorte = filtroPorte[idx] || "todos";
-                const ord = ordemFornec[idx] || "preco";
-
-                const mercadosDisp: string[] = Array.from(
-                  new Set(
-                    fornsBruto.flatMap((r: any) => [r.fornecedores?.mercado].filter(Boolean)),
-                  ),
-                );
-                const portesDisp: string[] = Array.from(
-                  new Set(
-                    fornsBruto.flatMap((r: any) => [r.porte, ...(r.outros_portes || []).map((o: any) => o.porte)].filter(Boolean)),
-                  ),
-                );
-
-                const fornsFiltrados = fornsBruto
-                  .filter((r: any) => fMerc === "todos" || (r.fornecedores?.mercado || "—sem—") === fMerc || !r.fornecedores?.mercado)
-                  .filter((r: any) => {
-                    if (fPorte === "todos") return true;
-                    if (r.porte === fPorte) return true;
-                    return (r.outros_portes || []).some((o: any) => o.porte === fPorte);
-                  })
-                  .slice()
-                  .sort((a: any, b: any) => {
-                    if (ord === "preco") return (Number(a.preco) || Infinity) - (Number(b.preco) || Infinity);
-                    if (ord === "data") return new Date(b.data_orcamento || 0).getTime() - new Date(a.data_orcamento || 0).getTime();
-                    if (ord === "nota") return (b.nota_media || 0) - (a.nota_media || 0);
-                    if (ord === "porte" && item.porte) {
-                      // mais próximo do porte solicitado (numérico simples)
-                      const num = (s: string) => parseFloat((s || "").replace(",", ".").replace(/[^0-9.]/g, "")) || 0;
-                      const tgt = num(item.porte);
-                      return Math.abs(num(a.porte || "") - tgt) - Math.abs(num(b.porte || "") - tgt);
+                // Classifica por porte (exato/maior/menor) e considera outros_portes embutidos
+                const expandeRowsPorPorte = (r: any): { row: any; portClass: "exato" | "maior" | "menor" | "indef"; portUsado: string | null; precoUsado: number | null; dataUsada: string | null }[] => {
+                  // se item.porte vazio, tudo conta como exato
+                  if (!item.porte) {
+                    return [{ row: r, portClass: "exato", portUsado: r.porte, precoUsado: r.preco != null ? Number(r.preco) : null, dataUsada: r.data_orcamento }];
+                  }
+                  const variantes = [{ porte: r.porte, preco: r.preco, data: r.data_orcamento }, ...((r.outros_portes || []) as any[]).map((o) => ({ porte: o.porte, preco: o.preco, data: o.data_orcamento }))];
+                  // Mantém apenas a melhor variante por classe (usa a de menor preço)
+                  const porClasse: Record<string, any> = {};
+                  variantes.forEach((v) => {
+                    const c = compararPorte(v.porte, item.porte);
+                    if (!porClasse[c] || (v.preco != null && porClasse[c].preco != null && Number(v.preco) < Number(porClasse[c].preco))) {
+                      porClasse[c] = v;
+                    } else if (!porClasse[c]) {
+                      porClasse[c] = v;
                     }
-                    return 0;
                   });
+                  return (Object.entries(porClasse) as [any, any][]).map(([cls, v]) => ({
+                    row: r,
+                    portClass: cls,
+                    portUsado: v.porte,
+                    precoUsado: v.preco != null ? Number(v.preco) : null,
+                    dataUsada: v.data,
+                  }));
+                };
 
-                const total = Math.max(selecionados.length, fornsBruto.length);
+                const todasLinhas = fornsBruto.flatMap(expandeRowsPorPorte);
+                const exatas = todasLinhas.filter((l) => l.portClass === "exato");
+                const indefinidas = todasLinhas.filter((l) => l.portClass === "indef");
+                const maiores = todasLinhas.filter((l) => l.portClass === "maior");
+                const menores = todasLinhas.filter((l) => l.portClass === "menor");
+
+                const ordenar = (arr: typeof todasLinhas) => arr.slice().sort((a, b) => {
+                  if (ord === "preco") return (a.precoUsado ?? Infinity) - (b.precoUsado ?? Infinity);
+                  if (ord === "data") return new Date(b.dataUsada || 0).getTime() - new Date(a.dataUsada || 0).getTime();
+                  if (ord === "mercado") {
+                    const ma = (a.row.fornecedores?.mercado || "zzz").toLowerCase();
+                    const mb = (b.row.fornecedores?.mercado || "zzz").toLowerCase();
+                    return ma.localeCompare(mb);
+                  }
+                  return 0;
+                });
+
+                const exatasOrd = ordenar(exatas);
+                const semExato = exatasOrd.length === 0;
+                const expMaior = !!expandirMaiores[idx] || semExato;
+                const expMenor = !!expandirMenores[idx] || semExato;
+                const maioresOrd = expMaior ? ordenar(maiores) : [];
+                const menoresOrd = expMenor ? ordenar(menores) : [];
+                const indefOrd = ordenar(indefinidas);
+
+                const exibidasCount = exatasOrd.length + maioresOrd.length + menoresOrd.length + indefOrd.length;
+                const totalCount = todasLinhas.length;
+
+                // Faixas de preço (top5, intermediário, mais caro) — calculadas só sobre o grupo "exato"
+                const precosOrdenados = exatas
+                  .map((l) => l.precoUsado)
+                  .filter((p): p is number => p != null && !isNaN(p))
+                  .sort((a, b) => a - b);
+                const limiteBest = precosOrdenados[Math.min(4, precosOrdenados.length - 1)];
+                const limiteIntermed = precosOrdenados[Math.max(0, Math.floor(precosOrdenados.length * 0.66) - 1)];
+                const classificarPreco = (p: number | null): "best" | "mid" | "high" => {
+                  if (p == null || isNaN(p)) return "mid";
+                  if (limiteBest != null && p <= limiteBest) return "best";
+                  if (limiteIntermed != null && p <= limiteIntermed) return "mid";
+                  return "high";
+                };
+
+                // Header status badge
+                const selecionadosCount = (fornecedoresSelecionados[idx] || []).length;
                 let badge = { cls: "bg-primary/15 text-primary", label: "OK" };
-                if (total === 0) badge = { cls: "bg-destructive/15 text-destructive", label: "⚠️ Sem fornecedor" };
-                else if (total === 1) badge = { cls: "bg-orange-100 text-orange-700", label: "⚠️ Risco alto" };
-                else if (total === 2) badge = { cls: "bg-yellow-100 text-yellow-700", label: "Atenção" };
+                if (selecionadosCount === 0) badge = { cls: "bg-destructive/15 text-destructive", label: "⚠ Sem fornecedor" };
+                else if (selecionadosCount === 1) badge = { cls: "bg-amber-500/15 text-amber-700", label: "Risco alto" };
+                else if (selecionadosCount === 2) badge = { cls: "bg-amber-500/10 text-amber-700", label: "Atenção" };
+
+                const renderTableRow = (l: typeof todasLinhas[number], grupo: "exato" | "maior" | "menor" | "indef") => {
+                  const r = l.row;
+                  const f = r.fornecedores || {};
+                  const papel = papelAtual(idx, r.fornecedor_id);
+                  const checked = !!papel;
+                  const tier = grupo === "exato" ? classificarPreco(l.precoUsado) : "mid";
+                  const precoCls =
+                    tier === "best"
+                      ? "text-primary font-semibold"
+                      : tier === "high"
+                        ? "text-destructive"
+                        : "text-foreground";
+                  const meses = mesesDesde(l.dataUsada);
+                  const dataBadge =
+                    meses === Infinity
+                      ? null
+                      : meses < 6
+                        ? null
+                        : meses < 12
+                          ? { cls: "bg-amber-500/15 text-amber-700 border-amber-500/30", label: "desatualizado" }
+                          : { cls: "bg-destructive/15 text-destructive border-destructive/30", label: "+1 ano" };
+                  const mercadoOk = !!(f.mercado && String(f.mercado).trim());
+
+                  return (
+                    <TableRow
+                      key={`${r.fornecedor_id}-${grupo}-${l.portUsado || "x"}`}
+                      className={cn(checked && "bg-primary/5")}
+                    >
+                      <TableCell className="p-2 w-8">
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(v) => {
+                            if (!v) {
+                              definirPapel(idx, r.fornecedor_id, "remover", f);
+                            } else {
+                              const livre = proximoPapelLivre(idx);
+                              if (!livre) {
+                                toast({ title: "Limite de 3 fornecedores por item (1 principal + 2 reservas)", variant: "destructive" });
+                                return;
+                              }
+                              definirPapel(idx, r.fornecedor_id, livre, f);
+                            }
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell className="p-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-foreground">{f.nome || "Fornecedor"}</span>
+                          {papel && (
+                            <span className={cn(
+                              "text-[10px] px-1.5 py-0.5 rounded-full border font-medium",
+                              papel === "principal" ? "bg-primary text-primary-foreground border-primary" : "bg-secondary text-secondary-foreground border-secondary",
+                            )}>
+                              {papel === "principal" && <Crown className="w-3 h-3 inline -mt-0.5 mr-0.5" />}
+                              {papelLabel[papel]}
+                            </span>
+                          )}
+                          <FornecedorPopover
+                            fornecedorId={r.fornecedor_id}
+                            nome={f.nome}
+                            itemId={r.item_id}
+                            itemTipo={r.item_tipo}
+                            onAvaliacaoSalva={() => refetchHistorico?.()}
+                          />
+                        </div>
+                      </TableCell>
+                      <TableCell className="p-2">
+                        {mercadoOk ? (
+                          <span className="inline-flex items-center text-[11px] px-2 py-0.5 rounded-md bg-secondary text-secondary-foreground">
+                            {f.mercado}
+                          </span>
+                        ) : (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-700 border border-amber-500/30">
+                                  <AlertCircle className="w-3 h-3" /> sem mercado
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>Será solicitado ao selecionar este fornecedor.</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </TableCell>
+                      <TableCell className="p-2">
+                        {l.portUsado ? (
+                          <span className={cn(
+                            "text-xs",
+                            grupo === "maior" && "text-amber-700",
+                            grupo === "menor" && "text-amber-700",
+                            grupo === "indef" && "text-muted-foreground italic",
+                          )}>
+                            {l.portUsado}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground italic">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className={cn("p-2 text-sm whitespace-nowrap", precoCls)}>
+                        {l.precoUsado != null ? `R$ ${l.precoUsado.toFixed(2)}` : <span className="text-muted-foreground italic">—</span>}
+                      </TableCell>
+                      <TableCell className="p-2 text-xs text-muted-foreground">{r.unidade || "—"}</TableCell>
+                      <TableCell className="p-2 whitespace-nowrap">
+                        {l.dataUsada ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs text-foreground">
+                              {new Date(l.dataUsada).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" })}
+                            </span>
+                            {dataBadge && (
+                              <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full border", dataBadge.cls)}>
+                                {dataBadge.label}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground italic">sem data</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="p-2">
+                        {r.nota_media != null ? (
+                          <span className="text-[11px] inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 font-medium" title={`Nota ${r.nota_media.toFixed(1)} de 5 — ${r.nota_qtd} avaliação(ões)`}>
+                            <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                            {r.nota_media.toFixed(1)}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground/70 italic">sem avaliação</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="p-2">
+                        <div className="flex items-center gap-1">
+                          {checked ? (
+                            <Select
+                              value={papel || ""}
+                              onValueChange={(v) => definirPapel(idx, r.fornecedor_id, v as any, f)}
+                            >
+                              <SelectTrigger className="h-7 text-xs w-28"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="principal">Principal</SelectItem>
+                                <SelectItem value="backup1">Reserva 1</SelectItem>
+                                <SelectItem value="backup2">Reserva 2</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={() => {
+                                const livre = proximoPapelLivre(idx);
+                                if (!livre) {
+                                  toast({ title: "Limite de 3 fornecedores por item", variant: "destructive" });
+                                  return;
+                                }
+                                definirPapel(idx, r.fornecedor_id, livre, f);
+                              }}
+                            >
+                              Selecionar
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => setImportarFornId(r.fornecedor_id)}
+                            title="Importar resposta deste fornecedor"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                };
 
                 return (
                   <Card key={idx} className="p-4 space-y-3">
@@ -2938,9 +3341,7 @@ export default function NovoOrcamento() {
                         <p className="font-semibold text-foreground">
                           {item.nome_popular || "(sem nome)"}
                           {item.nome_cientifico && (
-                            <span className="ml-2 italic font-normal text-muted-foreground">
-                              {item.nome_cientifico}
-                            </span>
+                            <span className="ml-2 italic font-normal text-muted-foreground">{item.nome_cientifico}</span>
                           )}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
@@ -2948,151 +3349,103 @@ export default function NovoOrcamento() {
                           {item.quantidade} {item.unidade}
                         </p>
                       </div>
-                      <span className={cn("px-2 py-1 rounded-md text-xs font-medium", badge.cls)}>
-                        {badge.label}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">{exibidasCount} de {totalCount} fornecedores</span>
+                        <span className={cn("px-2 py-1 rounded-md text-xs font-medium", badge.cls)}>{badge.label}</span>
+                      </div>
                     </div>
 
-                    {/* Filtros */}
+                    {/* Ordenação rápida */}
                     {fornsBruto.length > 0 && (
-                      <div className="flex flex-wrap gap-2 items-center text-xs border-t border-b py-2">
-                        <Filter className="w-3.5 h-3.5 text-muted-foreground" />
-                        <Select value={ord} onValueChange={(v) => setOrdemFornec((p) => ({ ...p, [idx]: v as OrdemForn }))}>
-                          <SelectTrigger className="h-7 text-xs w-32"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="preco">Menor preço</SelectItem>
-                            <SelectItem value="data">Cotação recente</SelectItem>
-                            <SelectItem value="porte">Porte mais próximo</SelectItem>
-                            <SelectItem value="nota">Melhor nota</SelectItem>
-                          </SelectContent>
-                        </Select>
-
-                        {mercadosDisp.length > 0 && (
-                          <Select value={fMerc} onValueChange={(v) => setFiltroMercado((p) => ({ ...p, [idx]: v }))}>
-                            <SelectTrigger className="h-7 text-xs w-36"><SelectValue placeholder="Mercado" /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="todos">Todos mercados</SelectItem>
-                              {mercadosDisp.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        )}
-
-                        {portesDisp.length > 0 && (
-                          <Select value={fPorte} onValueChange={(v) => setFiltroPorte((p) => ({ ...p, [idx]: v }))}>
-                            <SelectTrigger className="h-7 text-xs w-32"><SelectValue placeholder="Porte" /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="todos">Todos portes</SelectItem>
-                              {portesDisp.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        )}
-
-                        <span className="text-muted-foreground ml-auto">
-                          {fornsFiltrados.length}/{fornsBruto.length}
-                        </span>
+                      <div className="flex items-center gap-1 text-xs">
+                        <Filter className="w-3.5 h-3.5 text-muted-foreground mr-1" />
+                        {[
+                          { v: "preco", l: "Menor preço" },
+                          { v: "data", l: "Mais recente" },
+                          { v: "mercado", l: "Mercado" },
+                        ].map((opt) => (
+                          <Button
+                            key={opt.v}
+                            variant={ord === opt.v ? "default" : "ghost"}
+                            size="sm"
+                            className="h-7 px-2 text-xs"
+                            onClick={() => setOrdemTab3((p) => ({ ...p, [idx]: opt.v as OrdemTab3 }))}
+                          >
+                            {opt.l}
+                          </Button>
+                        ))}
                       </div>
                     )}
 
-                    {fornsFiltrados.length === 0 ? (
-                      <p className="text-sm text-muted-foreground italic">
-                        {fornsBruto.length === 0
-                          ? "Nenhum fornecedor cadastrado para este item."
-                          : "Nenhum fornecedor com os filtros aplicados."}
-                      </p>
+                    {fornsBruto.length === 0 ? (
+                      <p className="text-sm text-muted-foreground italic">Nenhum fornecedor cadastrado para este item.</p>
                     ) : (
-                      <div className="space-y-1.5">
-                        {fornsFiltrados.map((row: any) => {
-                          const f = row.fornecedores || {};
-                          const checked = selecionados.includes(row.fornecedor_id);
-                          const porteDiv = item.porte && row.porte && row.porte.trim().toLowerCase() !== item.porte.trim().toLowerCase();
-                          return (
-                            <div
-                              key={row.fornecedor_id}
-                              className={cn(
-                                "flex items-start gap-3 p-2 border rounded-md transition-colors",
-                                checked ? "border-primary bg-primary/5" : "hover:bg-muted/30",
-                              )}
-                            >
-                              <Checkbox
-                                checked={checked}
-                                onCheckedChange={() => toggleFornecedor(idx, row.fornecedor_id)}
-                                className="mt-1 cursor-pointer"
-                              />
-                              <div className="flex-1 text-sm">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <p className="font-medium text-foreground">{f.nome || "Fornecedor"}</p>
-                                  {f.mercado && (
-                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{f.mercado}</span>
-                                  )}
-                                  {row.nota_media != null ? (
-                                    <span
-                                      className="text-[11px] flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 font-medium"
-                                      title={`Nota média ${row.nota_media.toFixed(1)} de 5 — ${row.nota_qtd} avaliação(ões)`}
+                      <>
+                        {semExato && item.porte && (
+                          <div className="text-xs px-3 py-2 rounded-md bg-amber-500/10 text-amber-800 border border-amber-500/30">
+                            Nenhum fornecedor encontrado para o porte <strong>{item.porte}</strong>. Exibindo portes disponíveis abaixo.
+                          </div>
+                        )}
+
+                        <div className="border rounded-md overflow-hidden">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="w-8 px-2"></TableHead>
+                                <TableHead className="px-2">Fornecedor</TableHead>
+                                <TableHead className="px-2">Mercado</TableHead>
+                                <TableHead className="px-2">Porte</TableHead>
+                                <TableHead className="px-2">Preço</TableHead>
+                                <TableHead className="px-2">Un.</TableHead>
+                                <TableHead className="px-2">Última cotação</TableHead>
+                                <TableHead className="px-2">Nota</TableHead>
+                                <TableHead className="px-2"></TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {exatasOrd.map((l) => renderTableRow(l, "exato"))}
+                              {exatasOrd.length === 0 && indefOrd.length > 0 && indefOrd.map((l) => renderTableRow(l, "indef"))}
+
+                              {/* Botão expandir maiores */}
+                              {maiores.length > 0 && (
+                                <TableRow>
+                                  <TableCell colSpan={9} className="p-2 bg-muted/30">
+                                    <button
+                                      type="button"
+                                      onClick={() => setExpandirMaiores((p) => ({ ...p, [idx]: !p[idx] }))}
+                                      className="text-xs text-primary hover:underline inline-flex items-center gap-1"
                                     >
-                                      <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                                      {row.nota_media.toFixed(1)} <span className="opacity-70">({row.nota_qtd})</span>
-                                    </span>
-                                  ) : (
-                                    <span className="text-[10px] text-muted-foreground/70 italic">sem avaliação</span>
-                                  )}
-                                  <FornecedorPopover
-                                    fornecedorId={row.fornecedor_id}
-                                    nome={f.nome}
-                                    itemId={row.item_id}
-                                    itemTipo={row.item_tipo}
-                                    onAvaliacaoSalva={() => refetchHistorico?.()}
-                                  />
-                                </div>
-                                <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-xs text-muted-foreground">
-                                  {row.porte && (
-                                    <span className={cn(porteDiv && "text-yellow-700 font-medium")}>
-                                      Porte: <strong>{row.porte}</strong>{porteDiv ? " ⚠" : ""}
-                                    </span>
-                                  )}
-                                  {row.preco != null && (
-                                    <span>R$ <strong className="text-foreground">{Number(row.preco).toFixed(2)}</strong>{row.unidade ? ` / ${row.unidade}` : ""}</span>
-                                  )}
-                                  {row.data_orcamento ? (
-                                    <span title={row.fonte_catalogo ? "Preço do catálogo (última atualização)" : "Data registrada no histórico de cotações"}>
-                                      {row.fonte_catalogo ? "Atualizado em " : "Cotado em "}
-                                      <strong className="text-foreground">
-                                        {new Date(row.data_orcamento).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" })}
-                                      </strong>
-                                    </span>
-                                  ) : (
-                                    <span className="italic">sem data</span>
-                                  )}
-                                </div>
-                                {row.outros_portes?.length > 0 && (
-                                  <div className="mt-1 flex flex-wrap gap-1">
-                                    {row.outros_portes.map((o: any, i: number) => (
-                                      <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-muted/60 border">
-                                        {o.porte} · R$ {Number(o.preco).toFixed(2)}
-                                      </span>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 px-2 text-[11px]"
-                                onClick={() => setImportarFornId(row.fornecedor_id)}
-                                title="Importar resposta deste fornecedor"
-                              >
-                                <Download className="w-3 h-3" /> Resposta
-                              </Button>
-                            </div>
-                          );
-                        })}
-                      </div>
+                                      <ChevronsUp className="w-3.5 h-3.5" />
+                                      {expMaior ? "Ocultar" : "+ Ver"} portes maiores ({maiores.length})
+                                    </button>
+                                  </TableCell>
+                                </TableRow>
+                              )}
+                              {expMaior && maioresOrd.map((l) => renderTableRow(l, "maior"))}
+
+                              {/* Botão expandir menores */}
+                              {menores.length > 0 && (
+                                <TableRow>
+                                  <TableCell colSpan={9} className="p-2 bg-muted/30">
+                                    <button
+                                      type="button"
+                                      onClick={() => setExpandirMenores((p) => ({ ...p, [idx]: !p[idx] }))}
+                                      className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+                                    >
+                                      <ChevronsDown className="w-3.5 h-3.5" />
+                                      {expMenor ? "Ocultar" : "+ Ver"} portes menores ({menores.length})
+                                    </button>
+                                  </TableCell>
+                                </TableRow>
+                              )}
+                              {expMenor && menoresOrd.map((l) => renderTableRow(l, "menor"))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </>
                     )}
 
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => abrirNovoFornecedor(idx)}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => abrirNovoFornecedor(idx)}>
                       <UserPlus className="w-4 h-4" />
                       Adicionar fornecedor não cadastrado
                     </Button>
@@ -3100,7 +3453,6 @@ export default function NovoOrcamento() {
                 );
               })}
 
-              {/* Ação global: gerar resumo agrupado por fornecedor */}
               <div className="sticky bottom-0 bg-background/95 backdrop-blur border rounded-lg p-3 flex justify-end">
                 <Button
                   variant="terracota"
@@ -4848,6 +5200,40 @@ export default function NovoOrcamento() {
           onAplicado={() => refetchHistorico()}
         />
       )}
+
+      {/* Modal: cadastro obrigatório de mercado */}
+      <Dialog
+        open={mercadoModal.open}
+        onOpenChange={(v) => { if (!v) setMercadoModal({ open: false, fornecedorId: null, nome: "", valor: "", pendente: null }); }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mercado/central obrigatório</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Para adicionar <strong className="text-foreground">{mercadoModal.nome}</strong> ao orçamento, informe a qual mercado ou central ele pertence. O cadastro do fornecedor será atualizado.
+          </p>
+          <div className="space-y-2">
+            <Label htmlFor="mercado-modal-input">Mercado / central</Label>
+            <Input
+              id="mercado-modal-input"
+              autoFocus
+              value={mercadoModal.valor}
+              onChange={(e) => setMercadoModal((p) => ({ ...p, valor: e.target.value }))}
+              placeholder="Ex: Jarinu, Ceagesp, CEASA..."
+              onKeyDown={(e) => { if (e.key === "Enter") confirmarMercadoModal(); }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setMercadoModal({ open: false, fornecedorId: null, nome: "", valor: "", pendente: null })}>
+              Cancelar
+            </Button>
+            <Button variant="terracota" onClick={confirmarMercadoModal}>
+              Salvar e adicionar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
