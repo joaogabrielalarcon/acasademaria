@@ -2087,6 +2087,7 @@ export default function NovoOrcamento() {
       }));
       setItensMaterial(normalizados);
       setPdfCarregado(true);
+      if (isEdit || camposObrigatoriosOk) setTimeout(() => triggerAutoSave(), 0);
       toast({ title: `${normalizados.length} itens extraídos` });
     } catch (e: any) {
       toast({
@@ -2125,6 +2126,7 @@ export default function NovoOrcamento() {
       }));
       setItensMaterial(normalizados);
       setPdfCarregado(true);
+      if (isEdit || camposObrigatoriosOk) setTimeout(() => triggerAutoSave(), 0);
       toast({ title: `${normalizados.length} itens extraídos` });
     } catch (e: any) {
       toast({
