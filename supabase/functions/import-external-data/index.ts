@@ -78,12 +78,14 @@ serve(async (req) => {
       };
 
       let inserted = 0;
+      const sourceIds: string[] = [];
       let from = 0;
       while (from < (srcCount ?? 0)) {
         const { data: rows, error } = await source
           .from(table).select("*").range(from, from + PAGE - 1);
         if (error) throw error;
         if (!rows || rows.length === 0) break;
+        sourceIds.push(...rows.map((row: any) => row.id).filter(Boolean));
 
         let payload = rows.map(transformRow);
         if (destCols) {
@@ -106,6 +108,33 @@ serve(async (req) => {
         }
         inserted += rows.length;
         from += rows.length;
+      }
+
+      if (sourceIds.length > 0) {
+        if (table === "fornecedores") {
+          const { count, error } = await dest
+            .from(table)
+            .update({ status: "inativo" }, { count: "exact" })
+            .not("id", "in", `(${sourceIds.join(",")})`)
+            .neq("status", "inativo");
+          if (error) throw error;
+          r.inactivated_old = count ?? 0;
+        } else if (table === "plantas" || table === "insumos") {
+          const { count, error } = await dest
+            .from(table)
+            .update({ ativo: false }, { count: "exact" })
+            .not("id", "in", `(${sourceIds.join(",")})`)
+            .eq("ativo", true);
+          if (error) throw error;
+          r.inactivated_old = count ?? 0;
+        } else if (table === "historico_precos") {
+          const { count, error } = await dest
+            .from(table)
+            .delete({ count: "exact" })
+            .not("id", "in", `(${sourceIds.join(",")})`);
+          if (error) throw error;
+          r.removed_old = count ?? 0;
+        }
       }
 
       const { count: destCount } = await dest.from(table).select("*", { count: "exact", head: true });
