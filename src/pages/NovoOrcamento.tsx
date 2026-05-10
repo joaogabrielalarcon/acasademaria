@@ -1333,6 +1333,61 @@ export default function NovoOrcamento() {
   const fornecedoresDoItem = (item: ItemMemorial) =>
     (historicoPorItem as Record<string, any[]>)[normNome(item.nome_popular)] || [];
 
+  // Mapeia ItemMemorial (por idx) -> { item_id, item_tipo } usando histórico carregado
+  const itemDbInfoByIdx = useMemo(() => {
+    const map: Record<number, { item_id: string; item_tipo: "planta" | "insumo" }> = {};
+    itensMaterial.forEach((it, idx) => {
+      const rows = (historicoPorItem as Record<string, any[]>)[normNome(it.nome_popular)] || [];
+      const r = rows[0];
+      if (r?.item_id && r?.item_tipo) {
+        map[idx] = { item_id: r.item_id, item_tipo: r.item_tipo };
+      }
+    });
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itensMaterial, JSON.stringify(historicoPorItem)]);
+
+  // Auto-grava histórico de preços quando o usuário ajusta o valor cotado na Etapa 4
+  const lastSavedPrecoRef = useRef<Record<string, number>>({});
+  useEffect(() => {
+    if (etapaAtual !== 4) return;
+    const t = setTimeout(async () => {
+      const inserts: any[] = [];
+      Object.entries(cotacoes).forEach(([idxStr, linhas]) => {
+        const idx = Number(idxStr);
+        const info = itemDbInfoByIdx[idx];
+        if (!info) return;
+        const item = itensMaterial[idx];
+        Object.entries(linhas).forEach(([fid, l]) => {
+          const v = Number(l.valor_unitario);
+          if (!v || v <= 0) return;
+          const key = `${info.item_id}::${fid}::${l.porte_ofertado || ""}`;
+          if (lastSavedPrecoRef.current[key] === v) return;
+          lastSavedPrecoRef.current[key] = v;
+          inserts.push({
+            item_id: info.item_id,
+            item_tipo: info.item_tipo,
+            fornecedor_id: fid,
+            preco: v,
+            porte: l.porte_ofertado || item?.porte || null,
+            unidade: item?.unidade || null,
+            data_orcamento: new Date().toISOString().slice(0, 10),
+          });
+        });
+      });
+      if (inserts.length === 0) return;
+      try {
+        const { error } = await (supabase as any).from("historico_precos").insert(inserts);
+        if (error) console.warn("[hist preco autosave]", error);
+        else refetchHistorico?.();
+      } catch (e) {
+        console.warn("[hist preco autosave] falhou", e);
+      }
+    }, 2500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(cotacoes), etapaAtual, itemDbInfoByIdx]);
+
   const resumoFornecedores = useMemo(() => {
     let semForn = 0;
     let risco = 0;
