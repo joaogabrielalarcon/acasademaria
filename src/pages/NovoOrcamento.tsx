@@ -1283,16 +1283,28 @@ export default function NovoOrcamento() {
         avalMap[k].soma += a.nota; avalMap[k].n += 1;
       });
 
-      // Agrupa por nome normalizado: mantém TODAS as linhas (porte/data/fornecedor)
+      // Agrupa por nome normalizado e por fornecedor: mantém a linha mais recente
+      // como principal; expõe portes alternativos no campo "outros_portes".
       const map: Record<string, any[]> = {};
+      const seen: Record<string, Record<string, any>> = {}; // key -> fornId -> row
       for (const row of hist || []) {
         const ref = itemIdToKey.get(row.item_id);
         if (!ref) continue;
         if (row.item_tipo && row.item_tipo !== ref.tipo) continue;
         const key = ref.key;
-        if (!map[key]) map[key] = [];
+        if (!map[key]) { map[key] = []; seen[key] = {}; }
         const av = avalMap[avalKey(row.fornecedor_id, row.item_id)];
-        map[key].push({ ...row, nota_media: av ? av.soma / av.n : null, nota_qtd: av?.n || 0 });
+        const enriched = { ...row, nota_media: av ? av.soma / av.n : null, nota_qtd: av?.n || 0 };
+        if (!seen[key][row.fornecedor_id]) {
+          seen[key][row.fornecedor_id] = { ...enriched, outros_portes: [] };
+          map[key].push(seen[key][row.fornecedor_id]);
+        } else if (row.porte) {
+          // Adiciona porte alternativo se diferente
+          const principal = seen[key][row.fornecedor_id];
+          if (row.porte !== principal.porte && !principal.outros_portes.some((o: any) => o.porte === row.porte)) {
+            principal.outros_portes.push({ porte: row.porte, preco: row.preco, data_orcamento: row.data_orcamento });
+          }
+        }
       }
       return map;
     },
