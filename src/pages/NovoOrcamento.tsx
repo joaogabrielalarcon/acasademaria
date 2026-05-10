@@ -3133,16 +3133,43 @@ export default function NovoOrcamento() {
                 const maiores = todasLinhas.filter((l) => l.portClass === "maior");
                 const menores = todasLinhas.filter((l) => l.portClass === "menor");
 
-                const ordenar = (arr: typeof todasLinhas) => arr.slice().sort((a, b) => {
-                  if (ord === "preco") return (a.precoUsado ?? Infinity) - (b.precoUsado ?? Infinity);
-                  if (ord === "data") return new Date(b.dataUsada || 0).getTime() - new Date(a.dataUsada || 0).getTime();
-                  if (ord === "mercado") {
+                const cmpPor = (chave: OrdemTab3Chave, a: typeof todasLinhas[number], b: typeof todasLinhas[number]) => {
+                  if (chave === "preco") return (a.precoUsado ?? Infinity) - (b.precoUsado ?? Infinity);
+                  if (chave === "data") return new Date(b.dataUsada || 0).getTime() - new Date(a.dataUsada || 0).getTime();
+                  if (chave === "mercado") {
                     const ma = (a.row.fornecedores?.mercado || "zzz").toLowerCase();
                     const mb = (b.row.fornecedores?.mercado || "zzz").toLowerCase();
                     return ma.localeCompare(mb);
                   }
+                  if (chave === "nota") {
+                    const na = Number(a.row.fornecedores?.nota_media ?? 0);
+                    const nb = Number(b.row.fornecedores?.nota_media ?? 0);
+                    return nb - na;
+                  }
                   return 0;
-                });
+                };
+                const aplicaFiltros = (arr: typeof todasLinhas) => {
+                  let out = arr;
+                  if (filtros.mercados.length > 0) {
+                    out = out.filter((l) => filtros.mercados.includes((l.row.fornecedores?.mercado || "").trim()));
+                  }
+                  if (filtros.somenteRecentes) {
+                    out = out.filter((l) => {
+                      const m = mesesDesde(l.dataUsada);
+                      return m !== Infinity && m < 6;
+                    });
+                  }
+                  return out;
+                };
+                const ordenar = (arr: typeof todasLinhas) =>
+                  aplicaFiltros(arr).slice().sort((a, b) => {
+                    const p = cmpPor(filtros.primaria, a, b);
+                    if (p !== 0) return p;
+                    if (filtros.secundaria !== "nenhuma" && filtros.secundaria !== filtros.primaria) {
+                      return cmpPor(filtros.secundaria, a, b);
+                    }
+                    return 0;
+                  });
 
                 const exatasOrd = ordenar(exatas);
                 const semExato = exatasOrd.length === 0;
