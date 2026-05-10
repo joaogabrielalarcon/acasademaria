@@ -113,6 +113,9 @@ function LocalFormDialog({
         assessores: form.assessores || null,
         funcionarios_casa: form.funcionarios_casa || null,
         observacoes: form.observacoes || null,
+        cidade: form.cidade || null,
+        estado: form.estado || null,
+        tipo_cliente: form.tipo_cliente || null,
       } as any,
       {
         onSuccess: () => {
