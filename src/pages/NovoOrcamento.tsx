@@ -125,6 +125,7 @@ const initialForm = {
   tipo_proposta_sigla: "",
   codigo: "",
   cliente_id: "",
+  local_id: "",
   local_endereco: "",
   tipo_cliente: "",
   cidade: "",
