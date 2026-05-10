@@ -56,7 +56,7 @@ export function FornecedorPopover({ fornecedorId, nome, itemId, itemTipo, onAval
         item_tipo: itemTipo,
         nota,
         comentario: comentario || null,
-        created_by: auth?.user?.id || null,
+        criado_por: auth?.user?.id || null,
       });
       if (error) throw error;
       toast({ title: "Avaliação registrada" });
