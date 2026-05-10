@@ -1548,7 +1548,7 @@ export default function NovoOrcamento() {
               preco: p.preco_unitario,
               porte: p.porte || (altura ? `${altura} m` : null),
               unidade: p.unidade,
-              data_orcamento: null,
+              data_orcamento: p.updated_at || null,
               fornecedor_id: p.fornecedor_id,
               key: requested,
               fonte_catalogo: true,
