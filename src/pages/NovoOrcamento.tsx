@@ -1027,7 +1027,7 @@ export default function NovoOrcamento() {
       if (!form.cliente_id) return [];
       const { data, error } = await (supabase as any)
         .from("locais_cliente")
-        .select("id, nome, endereco_completo, tipo_pessoa, cidade, estado")
+        .select("id, nome, endereco_completo, tipo_pessoa, cidade, estado, tipo_cliente")
         .eq("cliente_id", form.cliente_id)
         .order("nome");
       if (error) throw error;
