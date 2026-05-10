@@ -3229,22 +3229,14 @@ export default function NovoOrcamento() {
                         </div>
                       </TableCell>
                       <TableCell className="p-2">
-                        {mercadoOk ? (
-                          <span className="inline-flex items-center text-[11px] px-2 py-0.5 rounded-md bg-secondary text-secondary-foreground">
-                            {f.mercado}
-                          </span>
-                        ) : (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-700 border border-amber-500/30">
-                                  <AlertCircle className="w-3 h-3" /> sem mercado
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent>Será solicitado ao selecionar este fornecedor.</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
+                        <MercadoInlineEditor
+                          fornecedorId={f.id}
+                          fornecedorNome={f.nome}
+                          valorAtual={f.mercado}
+                          sugestoes={(fornecedoresLista || [])
+                            .map((x: any) => x.mercado)
+                            .filter((m: any) => m && String(m).trim())}
+                        />
                       </TableCell>
                       <TableCell className="p-2">
                         {l.portUsado ? (
