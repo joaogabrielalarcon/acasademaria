@@ -3389,25 +3389,120 @@ export default function NovoOrcamento() {
                       </div>
                     </div>
 
-                    {/* Ordenação rápida */}
+                    {/* Ordenação e filtragem múltipla */}
                     {fornsBruto.length > 0 && (
-                      <div className="flex items-center gap-1 text-xs">
-                        <Filter className="w-3.5 h-3.5 text-muted-foreground mr-1" />
-                        {[
-                          { v: "preco", l: "Menor preço" },
-                          { v: "data", l: "Mais recente" },
-                          { v: "mercado", l: "Mercado" },
-                        ].map((opt) => (
-                          <Button
-                            key={opt.v}
-                            variant={ord === opt.v ? "default" : "ghost"}
-                            size="sm"
-                            className="h-7 px-2 text-xs"
-                            onClick={() => setOrdemTab3((p) => ({ ...p, [idx]: opt.v as OrdemTab3 }))}
+                      <div className="flex flex-col gap-2 text-xs">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <div className="flex items-center gap-1">
+                            <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+                            <span className="text-muted-foreground">Ordenar:</span>
+                          </div>
+                          {([
+                            { v: "data", l: "Mais recentes" },
+                            { v: "preco", l: "Menor preço" },
+                            { v: "nota", l: "Melhor nota" },
+                            { v: "mercado", l: "Mercado" },
+                          ] as { v: OrdemTab3Chave; l: string }[]).map((opt) => (
+                            <Button
+                              key={opt.v}
+                              variant={filtros.primaria === opt.v ? "default" : "ghost"}
+                              size="sm"
+                              className="h-7 px-2 text-xs"
+                              onClick={() =>
+                                setFiltrosTab3((p) => ({
+                                  ...p,
+                                  [idx]: { ...(p[idx] || filtroPadraoTab3), primaria: opt.v },
+                                }))
+                              }
+                            >
+                              {opt.l}
+                            </Button>
+                          ))}
+                          <span className="text-muted-foreground ml-2">·</span>
+                          <span className="text-muted-foreground">depois:</span>
+                          <Select
+                            value={filtros.secundaria}
+                            onValueChange={(v) =>
+                              setFiltrosTab3((p) => ({
+                                ...p,
+                                [idx]: { ...(p[idx] || filtroPadraoTab3), secundaria: v as any },
+                              }))
+                            }
                           >
-                            {opt.l}
+                            <SelectTrigger className="h-7 w-[150px] text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="nenhuma">— nenhum —</SelectItem>
+                              <SelectItem value="preco">Menor preço</SelectItem>
+                              <SelectItem value="data">Mais recentes</SelectItem>
+                              <SelectItem value="nota">Melhor nota</SelectItem>
+                              <SelectItem value="mercado">Mercado</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            variant={filtros.somenteRecentes ? "default" : "ghost"}
+                            size="sm"
+                            className="h-7 px-2 text-xs ml-auto"
+                            onClick={() =>
+                              setFiltrosTab3((p) => ({
+                                ...p,
+                                [idx]: {
+                                  ...(p[idx] || filtroPadraoTab3),
+                                  somenteRecentes: !(p[idx]?.somenteRecentes ?? false),
+                                },
+                              }))
+                            }
+                          >
+                            Só últimos 6 meses
                           </Button>
-                        ))}
+                          {(filtros.mercados.length > 0 ||
+                            filtros.somenteRecentes ||
+                            filtros.secundaria !== "nenhuma" ||
+                            filtros.primaria !== "data") && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs text-muted-foreground"
+                              onClick={() =>
+                                setFiltrosTab3((p) => ({ ...p, [idx]: filtroPadraoTab3 }))
+                              }
+                            >
+                              Limpar
+                            </Button>
+                          )}
+                        </div>
+                        {mercadosUnicos.length > 0 && (
+                          <div className="flex flex-wrap items-center gap-1">
+                            <span className="text-muted-foreground mr-1">Mercados:</span>
+                            {mercadosUnicos.map((m) => {
+                              const ativo = filtros.mercados.includes(m);
+                              return (
+                                <button
+                                  key={m}
+                                  type="button"
+                                  onClick={() =>
+                                    setFiltrosTab3((p) => {
+                                      const cur = p[idx] || filtroPadraoTab3;
+                                      const novos = ativo
+                                        ? cur.mercados.filter((x) => x !== m)
+                                        : [...cur.mercados, m];
+                                      return { ...p, [idx]: { ...cur, mercados: novos } };
+                                    })
+                                  }
+                                  className={cn(
+                                    "text-[11px] px-2 py-0.5 rounded-md border transition-colors",
+                                    ativo
+                                      ? "bg-primary text-primary-foreground border-primary"
+                                      : "bg-secondary text-secondary-foreground border-transparent hover:border-primary/40"
+                                  )}
+                                >
+                                  {m}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     )}
 
