@@ -1669,6 +1669,27 @@ export default function NovoOrcamento() {
         if (error) throw error;
         inserted = { id: data.id, label: data.nome };
         queryClient.invalidateQueries({ queryKey: ["perfis-markup-ativos"] });
+      } else if (quickAdd.kind === "local_cliente") {
+        if (!form.cliente_id) {
+          toast({ title: "Selecione um cliente primeiro", variant: "destructive" });
+          setQuickSaving(false);
+          return;
+        }
+        const tipo = (f.tipo_pessoa === "juridica" ? "juridica" : "fisica");
+        const { data, error } = await (supabase as any)
+          .from("locais_cliente")
+          .insert({
+            cliente_id: form.cliente_id,
+            nome: f.nome.trim(),
+            tipo_pessoa: tipo,
+            endereco_completo: f.endereco_completo || null,
+          })
+          .select("id, nome")
+          .single();
+        if (error) throw error;
+        inserted = { id: data.id, label: data.nome };
+        queryClient.invalidateQueries({ queryKey: ["orc-locais-cliente", form.cliente_id] });
+        queryClient.invalidateQueries({ queryKey: ["locais", form.cliente_id] });
       }
       if (inserted) {
         toast({ title: "Cadastrado com sucesso" });
