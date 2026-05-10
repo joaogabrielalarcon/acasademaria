@@ -2574,77 +2574,89 @@ export default function NovoOrcamento() {
                     )}
                   </div>
 
-                  {/* Área */}
-                  <div className="space-y-2">
-                    <Label>Área total (m²)<Req /></Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={form.area_m2}
-                      onChange={(e) => setForm((c) => ({ ...c, area_m2: e.target.value }))}
-                    />
-                  </div>
+                  {/* Área + Perfil de markup (lado a lado) */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Área total (m²)<Req /></Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={form.area_m2}
+                        onChange={(e) => setForm((c) => ({ ...c, area_m2: e.target.value }))}
+                      />
+                    </div>
 
-                  {/* Perfil de markup */}
-                  <div className="space-y-2">
-                    <Label>
-                      Perfil de markup{" "}
-                      <span className="text-xs text-muted-foreground font-normal">
-                        (opcional — pode definir depois)
-                      </span>
-                    </Label>
-                    <div className="flex gap-2">
-                      <Select
-                        value={form.perfil_markup_id}
-                        onValueChange={(v) => setForm((c) => ({ ...c, perfil_markup_id: v }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue
-                            placeholder={
-                              (perfisMarkup as any[]).length === 0
-                                ? "Nenhum perfil cadastrado"
-                                : "Selecione..."
-                            }
-                          />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(perfisMarkup as any[]).map((p) => (
-                            <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        title="Cadastrar novo perfil de markup"
-                        onClick={() =>
-                          openQuickAdd("perfil_markup", (id) =>
-                            setForm((c) => ({ ...c, perfil_markup_id: id })),
-                          )
-                        }
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
+                    <div className="space-y-2">
+                      <Label>
+                        Perfil de markup{" "}
+                        <span className="text-xs text-muted-foreground font-normal">
+                          (opcional)
+                        </span>
+                      </Label>
+                      <div className="flex gap-2">
+                        <Select
+                          value={form.perfil_markup_id}
+                          onValueChange={(v) => setForm((c) => ({ ...c, perfil_markup_id: v }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue
+                              placeholder={
+                                (perfisMarkup as any[]).length === 0
+                                  ? "Nenhum perfil cadastrado"
+                                  : "Selecione..."
+                              }
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(perfisMarkup as any[]).map((p) => (
+                              <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          title="Cadastrar novo perfil de markup"
+                          onClick={() =>
+                            openQuickAdd("perfil_markup", (id) =>
+                              setForm((c) => ({ ...c, perfil_markup_id: id })),
+                            )
+                          }
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* COLUNA DIREITA */}
                 <div className="space-y-4">
-                  {/* Prazo validade */}
-                  <div className="space-y-2">
-                    <Label>Prazo de validade (dias)</Label>
-                    <Input
-                      type="number"
-                      value={form.prazo_validade_dias}
-                      onChange={(e) =>
-                        setForm((c) => ({ ...c, prazo_validade_dias: e.target.value }))
-                      }
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      O prazo conta a partir da data de envio
-                    </p>
+                  {/* Prazo + Data envio (lado a lado) */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Prazo de validade (dias)</Label>
+                      <Input
+                        type="number"
+                        value={form.prazo_validade_dias}
+                        onChange={(e) =>
+                          setForm((c) => ({ ...c, prazo_validade_dias: e.target.value }))
+                        }
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Conta a partir da data de envio
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Data de envio ao cliente</Label>
+                      <Input
+                        type="date"
+                        value={form.data_envio}
+                        onChange={(e) => setForm((c) => ({ ...c, data_envio: e.target.value }))}
+                      />
+                    </div>
                   </div>
 
                   {/* Responsável */}
@@ -2663,21 +2675,11 @@ export default function NovoOrcamento() {
                     </Select>
                   </div>
 
-                  {/* Data envio */}
-                  <div className="space-y-2">
-                    <Label>Data de envio ao cliente</Label>
-                    <Input
-                      type="date"
-                      value={form.data_envio}
-                      onChange={(e) => setForm((c) => ({ ...c, data_envio: e.target.value }))}
-                    />
-                  </div>
-
                   {/* Obs interna */}
                   <div className="space-y-2">
                     <Label>Observação interna <span className="text-xs text-muted-foreground font-normal">(não aparece na proposta)</span></Label>
                     <Textarea
-                      rows={3}
+                      rows={4}
                       value={form.obs_interna}
                       onChange={(e) => setForm((c) => ({ ...c, obs_interna: e.target.value }))}
                     />
@@ -2687,7 +2689,7 @@ export default function NovoOrcamento() {
                   <div className="space-y-2">
                     <Label>Observação para o cliente <span className="text-xs text-muted-foreground font-normal">(aparece na proposta)</span></Label>
                     <Textarea
-                      rows={3}
+                      rows={4}
                       value={form.obs_proposta}
                       onChange={(e) => setForm((c) => ({ ...c, obs_proposta: e.target.value }))}
                     />
