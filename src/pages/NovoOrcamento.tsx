@@ -197,6 +197,19 @@ export default function NovoOrcamento() {
   const [resumoOpen, setResumoOpen] = useState(false);
   const [importarFornId, setImportarFornId] = useState<string | null>(null);
 
+  // Etapa 3 — refactor: expansão por item, ordenação por preço/data/mercado, modal mercado obrigatório
+  const [expandirMaiores, setExpandirMaiores] = useState<Record<number, boolean>>({});
+  const [expandirMenores, setExpandirMenores] = useState<Record<number, boolean>>({});
+  type OrdemTab3 = "preco" | "data" | "mercado";
+  const [ordemTab3, setOrdemTab3] = useState<Record<number, OrdemTab3>>({});
+  const [mercadoModal, setMercadoModal] = useState<{
+    open: boolean;
+    fornecedorId: string | null;
+    nome: string;
+    valor: string;
+    pendente: { itemIdx: number; papel: "principal" | "backup1" | "backup2" } | null;
+  }>({ open: false, fornecedorId: null, nome: "", valor: "", pendente: null });
+
   // Etapa 5 — Insumos
   type InsumoCalc = { tipo: string; nome: string; quantidade: number; unidade: string };
   type InsumoAdicional = {
