@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FeedCliente } from "@/components/FeedCliente";
+import { EnderecoFields, composeEndereco } from "@/components/EnderecoFields";
 import { useToast } from "@/hooks/use-toast";
 import { useCliente } from "@/hooks/useCliente";
 import { useAuth, useIsAdmin } from "@/hooks/useAuth";
@@ -73,6 +74,10 @@ function LocalFormDialog({
     nome: existingLocal?.nome || "",
     tipo_pessoa: (existingLocal?.tipo_pessoa || "fisica") as "fisica" | "juridica",
     endereco_completo: existingLocal?.endereco_completo || "",
+    cep: (existingLocal as any)?.cep || "",
+    rua: (existingLocal as any)?.rua || "",
+    numero: (existingLocal as any)?.numero || "",
+    bairro: (existingLocal as any)?.bairro || "",
     cpf: existingLocal?.cpf || "",
     data_aniversario: existingLocal?.data_aniversario || "",
     razao_social: existingLocal?.razao_social || "",
@@ -102,7 +107,14 @@ function LocalFormDialog({
         cliente_id: clienteId,
         nome: form.nome.trim(),
         tipo_pessoa: form.tipo_pessoa,
-        endereco_completo: form.endereco_completo || null,
+        endereco_completo: composeEndereco({
+          rua: form.rua, numero: form.numero, bairro: form.bairro,
+          cidade: form.cidade, estado: form.estado, cep: form.cep,
+        }) || form.endereco_completo || null,
+        cep: form.cep || null,
+        rua: form.rua || null,
+        numero: form.numero || null,
+        bairro: form.bairro || null,
         cpf: form.tipo_pessoa === "fisica" ? form.cpf || null : null,
         data_aniversario: form.tipo_pessoa === "fisica" && form.data_aniversario ? form.data_aniversario : null,
         razao_social: form.tipo_pessoa === "juridica" ? form.razao_social || null : null,
@@ -232,33 +244,27 @@ function LocalFormDialog({
 
           {/* Common fields */}
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-foreground">Endereço Completo</Label>
-              <Input
-                value={form.endereco_completo}
-                onChange={(e) => set("endereco_completo", e.target.value)}
-                placeholder="Rua, número, bairro, cidade - UF"
-              />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="space-y-2 sm:col-span-2">
-                <Label className="text-foreground">Cidade</Label>
-                <Input
-                  value={form.cidade}
-                  onChange={(e) => set("cidade", e.target.value)}
-                  placeholder="Cidade"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">UF</Label>
-                <Input
-                  value={form.estado}
-                  onChange={(e) => set("estado", e.target.value.toUpperCase().slice(0, 2))}
-                  placeholder="SP"
-                  maxLength={2}
-                />
-              </div>
-            </div>
+            <EnderecoFields
+              value={{
+                cep: form.cep,
+                rua: form.rua,
+                numero: form.numero,
+                bairro: form.bairro,
+                cidade: form.cidade,
+                estado: form.estado,
+              }}
+              onChange={(v) =>
+                setForm((f) => ({
+                  ...f,
+                  cep: v.cep || "",
+                  rua: v.rua || "",
+                  numero: v.numero || "",
+                  bairro: v.bairro || "",
+                  cidade: v.cidade || "",
+                  estado: v.estado || "",
+                }))
+              }
+            />
             <div className="space-y-2">
               <Label className="text-foreground">Tipo de uso</Label>
               <select

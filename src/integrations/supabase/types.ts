@@ -2367,6 +2367,8 @@ export type Database = {
       locais_cliente: {
         Row: {
           assessores: string | null
+          bairro: string | null
+          cep: string | null
           cidade: string | null
           cliente_id: string
           cnpj: string | null
@@ -2381,13 +2383,17 @@ export type Database = {
           id: string
           inscricao_estadual: string | null
           nome: string
+          numero: string | null
           observacoes: string | null
           razao_social: string | null
+          rua: string | null
           tipo_cliente: string | null
           tipo_pessoa: string
         }
         Insert: {
           assessores?: string | null
+          bairro?: string | null
+          cep?: string | null
           cidade?: string | null
           cliente_id: string
           cnpj?: string | null
@@ -2402,13 +2408,17 @@ export type Database = {
           id?: string
           inscricao_estadual?: string | null
           nome: string
+          numero?: string | null
           observacoes?: string | null
           razao_social?: string | null
+          rua?: string | null
           tipo_cliente?: string | null
           tipo_pessoa?: string
         }
         Update: {
           assessores?: string | null
+          bairro?: string | null
+          cep?: string | null
           cidade?: string | null
           cliente_id?: string
           cnpj?: string | null
@@ -2423,8 +2433,10 @@ export type Database = {
           id?: string
           inscricao_estadual?: string | null
           nome?: string
+          numero?: string | null
           observacoes?: string | null
           razao_social?: string | null
+          rua?: string | null
           tipo_cliente?: string | null
           tipo_pessoa?: string
         }

@@ -57,6 +57,7 @@ import { cn } from "@/lib/utils";
 import { FornecedorPopover } from "@/components/orcamento/FornecedorPopover";
 import { ResumoFornecedoresDialog, type ResumoItem } from "@/components/orcamento/ResumoFornecedoresDialog";
 import { ImportarRespostaFornecedorDialog } from "@/components/orcamento/ImportarRespostaFornecedorDialog";
+import { EnderecoFields, composeEndereco } from "@/components/EnderecoFields";
 import { Star, Filter, MessageCircle, Download } from "lucide-react";
 
 const CATEGORIAS_ITEM = [
@@ -1683,7 +1684,14 @@ export default function NovoOrcamento() {
             cliente_id: form.cliente_id,
             nome: f.nome.trim(),
             tipo_pessoa: tipo,
-            endereco_completo: f.endereco_completo || null,
+            endereco_completo: composeEndereco({
+              rua: f.rua, numero: f.numero, bairro: f.bairro,
+              cidade: f.cidade, estado: f.estado, cep: f.cep,
+            }) || f.endereco_completo || null,
+            cep: f.cep || null,
+            rua: f.rua || null,
+            numero: f.numero || null,
+            bairro: f.bairro || null,
             cidade: f.cidade ? capitalizeWords(f.cidade) : null,
             estado: f.estado ? f.estado.toUpperCase().slice(0, 2) : null,
             tipo_cliente: f.tipo_cliente || null,
@@ -4379,38 +4387,30 @@ export default function NovoOrcamento() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-1.5">
-                      <Label>Endereço completo</Label>
-                      <Textarea
-                        rows={2}
-                        value={quickAdd.fields.endereco_completo || ""}
-                        onChange={(e) => updateQuickField("endereco_completo", e.target.value)}
-                        placeholder="Rua, número, bairro"
-                      />
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="space-y-1.5 col-span-2">
-                        <Label>Cidade</Label>
-                        <Input
-                          value={quickAdd.fields.cidade || ""}
-                          onChange={(e) => updateQuickField("cidade", capitalizeWords(e.target.value))}
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>UF</Label>
-                        <Select
-                          value={quickAdd.fields.estado || ""}
-                          onValueChange={(v) => updateQuickField("estado", v)}
-                        >
-                          <SelectTrigger><SelectValue placeholder="UF" /></SelectTrigger>
-                          <SelectContent>
-                            {UFS.map((uf) => (
-                              <SelectItem key={uf} value={uf}>{uf}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
+                    <EnderecoFields
+                      value={{
+                        cep: quickAdd.fields.cep || "",
+                        rua: quickAdd.fields.rua || "",
+                        numero: quickAdd.fields.numero || "",
+                        bairro: quickAdd.fields.bairro || "",
+                        cidade: quickAdd.fields.cidade || "",
+                        estado: quickAdd.fields.estado || "",
+                      }}
+                      onChange={(v) =>
+                        setQuickAdd((s) => ({
+                          ...s,
+                          fields: {
+                            ...s.fields,
+                            cep: v.cep || "",
+                            rua: v.rua || "",
+                            numero: v.numero || "",
+                            bairro: v.bairro || "",
+                            cidade: v.cidade || "",
+                            estado: v.estado || "",
+                          },
+                        }))
+                      }
+                    />
                   </>
                 )}
 
