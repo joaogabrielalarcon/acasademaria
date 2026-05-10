@@ -4346,6 +4346,33 @@ export default function NovoOrcamento() {
                   </div>
                 )}
 
+                {quickAdd.kind === "local_cliente" && (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label>Tipo</Label>
+                      <Select
+                        value={quickAdd.fields.tipo_pessoa || "fisica"}
+                        onValueChange={(v) => updateQuickField("tipo_pessoa", v)}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="fisica">Pessoa Física (Residência)</SelectItem>
+                          <SelectItem value="juridica">Pessoa Jurídica (Empresa)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Endereço completo</Label>
+                      <Textarea
+                        rows={2}
+                        value={quickAdd.fields.endereco_completo || ""}
+                        onChange={(e) => updateQuickField("endereco_completo", e.target.value)}
+                        placeholder="Rua, número, bairro, cidade — UF"
+                      />
+                    </div>
+                  </>
+                )}
+
                 <p className="text-xs text-muted-foreground">
                   Cadastro rápido — você pode completar os demais campos depois na tela específica.
                 </p>
