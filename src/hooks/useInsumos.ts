@@ -38,6 +38,8 @@ export function useInsumos() {
       console.log(`[useInsumos] ${data?.length ?? 0} insumos retornados`);
       return data as Insumo[];
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 }
