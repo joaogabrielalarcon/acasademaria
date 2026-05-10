@@ -61,6 +61,14 @@ serve(async (req) => {
 
       // Per-table row transform (for tables whose schemas diverge between source and dest)
       const transformRow = (row: any): any => {
+        if (table === "plantas") {
+          const alturaCm = Number(row.altura_cm);
+          return {
+            ...row,
+            altura_m: Number.isFinite(alturaCm) && alturaCm > 0 ? alturaCm / 100 : row.altura_m ?? null,
+          };
+        }
+
         if (table === "historico_precos") {
           return {
             id: row.id,
