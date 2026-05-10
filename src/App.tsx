@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { RealtimeInvalidationBridge } from "@/hooks/useRealtimeInvalidation";
 import Login from "./pages/Login";
 import MenuCentral from "./pages/MenuCentral";
 
@@ -62,6 +63,7 @@ const PageLoader = () => (
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
+      <RealtimeInvalidationBridge />
       <Toaster />
       <Sonner />
       <BrowserRouter>
