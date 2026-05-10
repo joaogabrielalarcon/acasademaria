@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FeedCliente } from "@/components/FeedCliente";
+import { EnderecoFields, composeEndereco } from "@/components/EnderecoFields";
 import { useToast } from "@/hooks/use-toast";
 import { useCliente } from "@/hooks/useCliente";
 import { useAuth, useIsAdmin } from "@/hooks/useAuth";
