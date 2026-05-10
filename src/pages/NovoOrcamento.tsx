@@ -4187,6 +4187,53 @@ export default function NovoOrcamento() {
           </div>
         </div>
       </TooltipProvider>
+
+      {/* Resumo agrupado para WhatsApp */}
+      <ResumoFornecedoresDialog
+        open={resumoOpen}
+        onOpenChange={setResumoOpen}
+        itens={(() => {
+          const list: ResumoItem[] = [];
+          itensMaterial.forEach((it, idx) => {
+            const sel = fornecedoresSelecionados[idx] || [];
+            sel.forEach((fid) => {
+              list.push({
+                fornecedor_id: fid,
+                nome_popular: it.nome_popular,
+                nome_cientifico: it.nome_cientifico,
+                porte: it.porte,
+                unidade: it.unidade,
+                quantidade: it.quantidade,
+              });
+            });
+          });
+          return list;
+        })()}
+      />
+
+      {/* Importar resposta do fornecedor via IA */}
+      {importarFornId && (
+        <ImportarRespostaFornecedorDialog
+          open={!!importarFornId}
+          onOpenChange={(v) => { if (!v) setImportarFornId(null); }}
+          fornecedorId={importarFornId}
+          fornecedorNome={(fornecedoresLista as any[]).find((f) => f.id === importarFornId)?.nome}
+          itens={(() => {
+            const arr: { item_id: string; item_tipo: "planta" | "insumo"; nome_popular: string; nome_cientifico?: string | null }[] = [];
+            const seen = new Set<string>();
+            itensMaterial.forEach((it) => {
+              const linhas = (historicoPorItem as Record<string, any[]>)[normNome(it.nome_popular)] || [];
+              const r = linhas.find((x: any) => x.fornecedor_id === importarFornId) || linhas[0];
+              if (r && !seen.has(r.item_id)) {
+                seen.add(r.item_id);
+                arr.push({ item_id: r.item_id, item_tipo: r.item_tipo, nome_popular: it.nome_popular, nome_cientifico: it.nome_cientifico });
+              }
+            });
+            return arr;
+          })()}
+          onAplicado={() => refetchHistorico()}
+        />
+      )}
     </AppLayout>
   );
 }
