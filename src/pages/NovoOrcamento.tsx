@@ -1905,10 +1905,9 @@ export default function NovoOrcamento() {
                     <Label>Código gerado</Label>
                     <div className="flex gap-2">
                       <Input
-                        readOnly
                         value={form.codigo}
-                        placeholder="Será gerado ao escolher o tipo"
-                        className="bg-muted"
+                        onChange={(e) => setForm((c) => ({ ...c, codigo: e.target.value }))}
+                        placeholder="Será gerado ao escolher o tipo (editável)"
                       />
                       <Button type="button" variant="outline" size="icon" onClick={copiarCodigo} disabled={!form.codigo}>
                         <Copy className="w-4 h-4" />
