@@ -83,6 +83,9 @@ function LocalFormDialog({
     assessores: existingLocal?.assessores || "",
     funcionarios_casa: existingLocal?.funcionarios_casa || "",
     observacoes: existingLocal?.observacoes || "",
+    cidade: existingLocal?.cidade || "",
+    estado: existingLocal?.estado || "",
+    tipo_cliente: existingLocal?.tipo_cliente || "",
   });
   const saveLocal = useSaveLocal();
   const { toast } = useToast();
