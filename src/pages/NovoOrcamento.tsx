@@ -2378,7 +2378,7 @@ export default function NovoOrcamento() {
   return (
     <AppLayout>
       <TooltipProvider>
-        <div className="max-w-5xl mx-auto p-6 space-y-6">
+        <div className="w-full px-2 py-4 space-y-6">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="icon" onClick={() => navigate("/orcamentos")}>
