@@ -1081,6 +1081,7 @@ export default function NovoOrcamento() {
         tipo_proposta_sigla: sigla,
         codigo: orcamento.codigo || "",
         cliente_id: orcamento.cliente_id || "",
+        local_id: orcamento.local_id || "",
         local_endereco: orcamento.local_endereco || "",
         tipo_cliente: orcamento.tipo_cliente || "",
         cidade: orcamento.cidade ? capitalizeWords(orcamento.cidade) : "",
