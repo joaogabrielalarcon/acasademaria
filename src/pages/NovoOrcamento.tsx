@@ -1264,13 +1264,26 @@ export default function NovoOrcamento() {
       const { data: hist, error: hErr } = await (supabase as any)
         .from("historico_precos")
         .select(
-          "item_id, item_tipo, preco, data_orcamento, fornecedor_id, fornecedores(id, nome, mercado, cidade)",
+          "id, item_id, item_tipo, preco, porte, unidade, data_orcamento, fornecedor_id, fornecedores(id, nome, mercado, cidade, telefone, whatsapp)",
         )
         .in("item_id", allIds)
         .order("data_orcamento", { ascending: false });
       if (hErr) throw hErr;
 
-      // Agrupa por nome normalizado -> último preço por fornecedor
+      // 3) Buscar avaliações dos fornecedores para os mesmos itens
+      const { data: avals } = await (supabase as any)
+        .from("fornecedor_avaliacoes")
+        .select("fornecedor_id, item_id, item_tipo, nota")
+        .in("item_id", allIds);
+      const avalKey = (fid: string, iid: string) => `${fid}::${iid}`;
+      const avalMap: Record<string, { soma: number; n: number }> = {};
+      (avals || []).forEach((a: any) => {
+        const k = avalKey(a.fornecedor_id, a.item_id);
+        if (!avalMap[k]) avalMap[k] = { soma: 0, n: 0 };
+        avalMap[k].soma += a.nota; avalMap[k].n += 1;
+      });
+
+      // Agrupa por nome normalizado: mantém TODAS as linhas (porte/data/fornecedor)
       const map: Record<string, any[]> = {};
       for (const row of hist || []) {
         const ref = itemIdToKey.get(row.item_id);
@@ -1278,9 +1291,8 @@ export default function NovoOrcamento() {
         if (row.item_tipo && row.item_tipo !== ref.tipo) continue;
         const key = ref.key;
         if (!map[key]) map[key] = [];
-        if (!map[key].some((r) => r.fornecedor_id === row.fornecedor_id)) {
-          map[key].push(row);
-        }
+        const av = avalMap[avalKey(row.fornecedor_id, row.item_id)];
+        map[key].push({ ...row, nota_media: av ? av.soma / av.n : null, nota_qtd: av?.n || 0 });
       }
       return map;
     },
