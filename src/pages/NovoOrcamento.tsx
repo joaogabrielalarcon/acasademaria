@@ -54,6 +54,10 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FornecedorPopover } from "@/components/orcamento/FornecedorPopover";
+import { ResumoFornecedoresDialog, type ResumoItem } from "@/components/orcamento/ResumoFornecedoresDialog";
+import { ImportarRespostaFornecedorDialog } from "@/components/orcamento/ImportarRespostaFornecedorDialog";
+import { Star, Filter, MessageCircle, Download } from "lucide-react";
 
 const CATEGORIAS_ITEM = [
   "Árvores",
@@ -171,6 +175,14 @@ export default function NovoOrcamento() {
   const [cotacoes, setCotacoes] = useState<Record<number, Record<string, CotacaoLinha>>>({});
   const [margensSeg, setMargensSeg] = useState<Record<number, number>>({});
   const [cardsColapsados, setCardsColapsados] = useState<Record<number, boolean>>({});
+
+  // Filtros e ações da Etapa 3 / 4
+  type OrdemForn = "preco" | "data" | "porte" | "nota";
+  const [ordemFornec, setOrdemFornec] = useState<Record<number, OrdemForn>>({});
+  const [filtroMercado, setFiltroMercado] = useState<Record<number, string>>({});
+  const [filtroPorte, setFiltroPorte] = useState<Record<number, string>>({});
+  const [resumoOpen, setResumoOpen] = useState(false);
+  const [importarFornId, setImportarFornId] = useState<string | null>(null);
 
   // Etapa 5 — Insumos
   type InsumoCalc = { tipo: string; nome: string; quantidade: number; unidade: string };
@@ -1264,22 +1276,46 @@ export default function NovoOrcamento() {
       const { data: hist, error: hErr } = await (supabase as any)
         .from("historico_precos")
         .select(
-          "item_id, item_tipo, preco, data_orcamento, fornecedor_id, fornecedores(id, nome, mercado, cidade)",
+          "id, item_id, item_tipo, preco, porte, unidade, data_orcamento, fornecedor_id, fornecedores(id, nome, mercado, cidade, telefone, whatsapp)",
         )
         .in("item_id", allIds)
         .order("data_orcamento", { ascending: false });
       if (hErr) throw hErr;
 
-      // Agrupa por nome normalizado -> último preço por fornecedor
+      // 3) Buscar avaliações dos fornecedores para os mesmos itens
+      const { data: avals } = await (supabase as any)
+        .from("fornecedor_avaliacoes")
+        .select("fornecedor_id, item_id, item_tipo, nota")
+        .in("item_id", allIds);
+      const avalKey = (fid: string, iid: string) => `${fid}::${iid}`;
+      const avalMap: Record<string, { soma: number; n: number }> = {};
+      (avals || []).forEach((a: any) => {
+        const k = avalKey(a.fornecedor_id, a.item_id);
+        if (!avalMap[k]) avalMap[k] = { soma: 0, n: 0 };
+        avalMap[k].soma += a.nota; avalMap[k].n += 1;
+      });
+
+      // Agrupa por nome normalizado e por fornecedor: mantém a linha mais recente
+      // como principal; expõe portes alternativos no campo "outros_portes".
       const map: Record<string, any[]> = {};
+      const seen: Record<string, Record<string, any>> = {}; // key -> fornId -> row
       for (const row of hist || []) {
         const ref = itemIdToKey.get(row.item_id);
         if (!ref) continue;
         if (row.item_tipo && row.item_tipo !== ref.tipo) continue;
         const key = ref.key;
-        if (!map[key]) map[key] = [];
-        if (!map[key].some((r) => r.fornecedor_id === row.fornecedor_id)) {
-          map[key].push(row);
+        if (!map[key]) { map[key] = []; seen[key] = {}; }
+        const av = avalMap[avalKey(row.fornecedor_id, row.item_id)];
+        const enriched = { ...row, nota_media: av ? av.soma / av.n : null, nota_qtd: av?.n || 0 };
+        if (!seen[key][row.fornecedor_id]) {
+          seen[key][row.fornecedor_id] = { ...enriched, outros_portes: [] };
+          map[key].push(seen[key][row.fornecedor_id]);
+        } else if (row.porte) {
+          // Adiciona porte alternativo se diferente
+          const principal = seen[key][row.fornecedor_id];
+          if (row.porte !== principal.porte && !principal.outros_portes.some((o: any) => o.porte === row.porte)) {
+            principal.outros_portes.push({ porte: row.porte, preco: row.preco, data_orcamento: row.data_orcamento });
+          }
         }
       }
       return map;
@@ -2337,9 +2373,47 @@ export default function NovoOrcamento() {
               )}
 
               {itensMaterial.map((item, idx) => {
-                const fornsDisp = fornecedoresDoItem(item);
+                const fornsBruto = fornecedoresDoItem(item);
                 const selecionados = fornecedoresSelecionados[idx] || [];
-                const total = Math.max(selecionados.length, fornsDisp.length);
+
+                // Filtros do item
+                const fMerc = filtroMercado[idx] || "todos";
+                const fPorte = filtroPorte[idx] || "todos";
+                const ord = ordemFornec[idx] || "preco";
+
+                const mercadosDisp: string[] = Array.from(
+                  new Set(
+                    fornsBruto.flatMap((r: any) => [r.fornecedores?.mercado].filter(Boolean)),
+                  ),
+                );
+                const portesDisp: string[] = Array.from(
+                  new Set(
+                    fornsBruto.flatMap((r: any) => [r.porte, ...(r.outros_portes || []).map((o: any) => o.porte)].filter(Boolean)),
+                  ),
+                );
+
+                const fornsFiltrados = fornsBruto
+                  .filter((r: any) => fMerc === "todos" || (r.fornecedores?.mercado || "—sem—") === fMerc || !r.fornecedores?.mercado)
+                  .filter((r: any) => {
+                    if (fPorte === "todos") return true;
+                    if (r.porte === fPorte) return true;
+                    return (r.outros_portes || []).some((o: any) => o.porte === fPorte);
+                  })
+                  .slice()
+                  .sort((a: any, b: any) => {
+                    if (ord === "preco") return (Number(a.preco) || Infinity) - (Number(b.preco) || Infinity);
+                    if (ord === "data") return new Date(b.data_orcamento || 0).getTime() - new Date(a.data_orcamento || 0).getTime();
+                    if (ord === "nota") return (b.nota_media || 0) - (a.nota_media || 0);
+                    if (ord === "porte" && item.porte) {
+                      // mais próximo do porte solicitado (numérico simples)
+                      const num = (s: string) => parseFloat((s || "").replace(",", ".").replace(/[^0-9.]/g, "")) || 0;
+                      const tgt = num(item.porte);
+                      return Math.abs(num(a.porte || "") - tgt) - Math.abs(num(b.porte || "") - tgt);
+                    }
+                    return 0;
+                  });
+
+                const total = Math.max(selecionados.length, fornsBruto.length);
                 let badge = { cls: "bg-primary/15 text-primary", label: "OK" };
                 if (total === 0) badge = { cls: "bg-destructive/15 text-destructive", label: "⚠️ Sem fornecedor" };
                 else if (total === 1) badge = { cls: "bg-orange-100 text-orange-700", label: "⚠️ Risco alto" };
@@ -2358,7 +2432,7 @@ export default function NovoOrcamento() {
                           )}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {item.porte && <>Porte: {item.porte} · </>}
+                          {item.porte && <>Porte solicitado: <strong>{item.porte}</strong> · </>}
                           {item.quantidade} {item.unidade}
                         </p>
                       </div>
@@ -2367,45 +2441,121 @@ export default function NovoOrcamento() {
                       </span>
                     </div>
 
-                    {fornsDisp.length === 0 ? (
+                    {/* Filtros */}
+                    {fornsBruto.length > 0 && (
+                      <div className="flex flex-wrap gap-2 items-center text-xs border-t border-b py-2">
+                        <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+                        <Select value={ord} onValueChange={(v) => setOrdemFornec((p) => ({ ...p, [idx]: v as OrdemForn }))}>
+                          <SelectTrigger className="h-7 text-xs w-32"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="preco">Menor preço</SelectItem>
+                            <SelectItem value="data">Cotação recente</SelectItem>
+                            <SelectItem value="porte">Porte mais próximo</SelectItem>
+                            <SelectItem value="nota">Melhor nota</SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        {mercadosDisp.length > 0 && (
+                          <Select value={fMerc} onValueChange={(v) => setFiltroMercado((p) => ({ ...p, [idx]: v }))}>
+                            <SelectTrigger className="h-7 text-xs w-36"><SelectValue placeholder="Mercado" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="todos">Todos mercados</SelectItem>
+                              {mercadosDisp.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        )}
+
+                        {portesDisp.length > 0 && (
+                          <Select value={fPorte} onValueChange={(v) => setFiltroPorte((p) => ({ ...p, [idx]: v }))}>
+                            <SelectTrigger className="h-7 text-xs w-32"><SelectValue placeholder="Porte" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="todos">Todos portes</SelectItem>
+                              {portesDisp.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        )}
+
+                        <span className="text-muted-foreground ml-auto">
+                          {fornsFiltrados.length}/{fornsBruto.length}
+                        </span>
+                      </div>
+                    )}
+
+                    {fornsFiltrados.length === 0 ? (
                       <p className="text-sm text-muted-foreground italic">
-                        Nenhum fornecedor cadastrado para este item.
+                        {fornsBruto.length === 0
+                          ? "Nenhum fornecedor cadastrado para este item."
+                          : "Nenhum fornecedor com os filtros aplicados."}
                       </p>
                     ) : (
                       <div className="space-y-1.5">
-                        {fornsDisp.map((row: any) => {
+                        {fornsFiltrados.map((row: any) => {
                           const f = row.fornecedores || {};
                           const checked = selecionados.includes(row.fornecedor_id);
+                          const porteDiv = item.porte && row.porte && row.porte.trim().toLowerCase() !== item.porte.trim().toLowerCase();
                           return (
-                            <label
+                            <div
                               key={row.fornecedor_id}
                               className={cn(
-                                "flex items-start gap-3 p-2 border rounded-md cursor-pointer transition-colors",
+                                "flex items-start gap-3 p-2 border rounded-md transition-colors",
                                 checked ? "border-primary bg-primary/5" : "hover:bg-muted/30",
                               )}
                             >
                               <Checkbox
                                 checked={checked}
                                 onCheckedChange={() => toggleFornecedor(idx, row.fornecedor_id)}
+                                className="mt-1 cursor-pointer"
                               />
                               <div className="flex-1 text-sm">
-                                <p className="font-medium text-foreground">
-                                  {f.nome || "Fornecedor"}
-                                </p>
-                                {(f.mercado || f.cidade) && (
-                                  <p className="text-xs text-muted-foreground">
-                                    {[f.mercado, f.cidade].filter(Boolean).join(" · ")}
-                                  </p>
-                                )}
-                                {row.preco != null && (
-                                  <p className="text-xs text-muted-foreground mt-0.5">
-                                    Último preço: R$ {Number(row.preco).toFixed(2)}
-                                    {row.data_orcamento &&
-                                      ` em ${new Date(row.data_orcamento).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" })}`}
-                                  </p>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <p className="font-medium text-foreground">{f.nome || "Fornecedor"}</p>
+                                  {f.mercado && (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{f.mercado}</span>
+                                  )}
+                                  {row.nota_media != null && (
+                                    <span className="text-[10px] flex items-center gap-0.5 text-amber-600">
+                                      <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                                      {row.nota_media.toFixed(1)} ({row.nota_qtd})
+                                    </span>
+                                  )}
+                                  <FornecedorPopover fornecedorId={row.fornecedor_id} nome={f.nome} />
+                                </div>
+                                <div className="flex flex-wrap gap-3 mt-0.5 text-xs text-muted-foreground">
+                                  {row.porte && (
+                                    <span className={cn(porteDiv && "text-yellow-700 font-medium")}>
+                                      Porte: <strong>{row.porte}</strong>{porteDiv ? " ⚠" : ""}
+                                    </span>
+                                  )}
+                                  {row.preco != null && (
+                                    <span>R$ <strong className="text-foreground">{Number(row.preco).toFixed(2)}</strong></span>
+                                  )}
+                                  {row.data_orcamento && (
+                                    <span>
+                                      {new Date(row.data_orcamento).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" })}
+                                    </span>
+                                  )}
+                                  {row.unidade && <span>/ {row.unidade}</span>}
+                                </div>
+                                {row.outros_portes?.length > 0 && (
+                                  <div className="mt-1 flex flex-wrap gap-1">
+                                    {row.outros_portes.map((o: any, i: number) => (
+                                      <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-muted/60 border">
+                                        {o.porte} · R$ {Number(o.preco).toFixed(2)}
+                                      </span>
+                                    ))}
+                                  </div>
                                 )}
                               </div>
-                            </label>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-[11px]"
+                                onClick={() => setImportarFornId(row.fornecedor_id)}
+                                title="Importar resposta deste fornecedor"
+                              >
+                                <Download className="w-3 h-3" /> Resposta
+                              </Button>
+                            </div>
                           );
                         })}
                       </div>
@@ -2422,6 +2572,18 @@ export default function NovoOrcamento() {
                   </Card>
                 );
               })}
+
+              {/* Ação global: gerar resumo agrupado por fornecedor */}
+              <div className="sticky bottom-0 bg-background/95 backdrop-blur border rounded-lg p-3 flex justify-end">
+                <Button
+                  variant="terracota"
+                  onClick={() => setResumoOpen(true)}
+                  disabled={Object.values(fornecedoresSelecionados).every((arr) => !arr || arr.length === 0)}
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Resumo para fornecedores (WhatsApp)
+                </Button>
+              </div>
             </div>
           )}
 
@@ -4025,6 +4187,53 @@ export default function NovoOrcamento() {
           </div>
         </div>
       </TooltipProvider>
+
+      {/* Resumo agrupado para WhatsApp */}
+      <ResumoFornecedoresDialog
+        open={resumoOpen}
+        onOpenChange={setResumoOpen}
+        itens={(() => {
+          const list: ResumoItem[] = [];
+          itensMaterial.forEach((it, idx) => {
+            const sel = fornecedoresSelecionados[idx] || [];
+            sel.forEach((fid) => {
+              list.push({
+                fornecedor_id: fid,
+                nome_popular: it.nome_popular,
+                nome_cientifico: it.nome_cientifico,
+                porte: it.porte,
+                unidade: it.unidade,
+                quantidade: it.quantidade,
+              });
+            });
+          });
+          return list;
+        })()}
+      />
+
+      {/* Importar resposta do fornecedor via IA */}
+      {importarFornId && (
+        <ImportarRespostaFornecedorDialog
+          open={!!importarFornId}
+          onOpenChange={(v) => { if (!v) setImportarFornId(null); }}
+          fornecedorId={importarFornId}
+          fornecedorNome={(fornecedoresLista as any[]).find((f) => f.id === importarFornId)?.nome}
+          itens={(() => {
+            const arr: { item_id: string; item_tipo: "planta" | "insumo"; nome_popular: string; nome_cientifico?: string | null }[] = [];
+            const seen = new Set<string>();
+            itensMaterial.forEach((it) => {
+              const linhas = (historicoPorItem as Record<string, any[]>)[normNome(it.nome_popular)] || [];
+              const r = linhas.find((x: any) => x.fornecedor_id === importarFornId) || linhas[0];
+              if (r && !seen.has(r.item_id)) {
+                seen.add(r.item_id);
+                arr.push({ item_id: r.item_id, item_tipo: r.item_tipo, nome_popular: it.nome_popular, nome_cientifico: it.nome_cientifico });
+              }
+            });
+            return arr;
+          })()}
+          onAplicado={() => refetchHistorico()}
+        />
+      )}
     </AppLayout>
   );
 }

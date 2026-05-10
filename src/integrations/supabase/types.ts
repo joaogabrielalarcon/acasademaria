@@ -1872,6 +1872,64 @@ export type Database = {
           },
         ]
       }
+      fornecedor_avaliacoes: {
+        Row: {
+          comentario: string | null
+          created_at: string
+          criado_por: string | null
+          fornecedor_id: string
+          id: string
+          item_id: string
+          item_tipo: string
+          nota: number
+          updated_at: string
+        }
+        Insert: {
+          comentario?: string | null
+          created_at?: string
+          criado_por?: string | null
+          fornecedor_id: string
+          id?: string
+          item_id: string
+          item_tipo: string
+          nota: number
+          updated_at?: string
+        }
+        Update: {
+          comentario?: string | null
+          created_at?: string
+          criado_por?: string | null
+          fornecedor_id?: string
+          id?: string
+          item_id?: string
+          item_tipo?: string
+          nota?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fornecedor_avaliacoes_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fornecedor_avaliacoes_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fornecedor_avaliacoes_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fornecedores: {
         Row: {
           categoria_fornecedor: string | null
@@ -1980,8 +2038,10 @@ export type Database = {
           item_id: string
           item_tipo: string
           observacoes: string | null
+          porte: string | null
           preco: number
           registrado_por: string | null
+          unidade: string | null
         }
         Insert: {
           criado_em?: string | null
@@ -1991,8 +2051,10 @@ export type Database = {
           item_id: string
           item_tipo: string
           observacoes?: string | null
+          porte?: string | null
           preco: number
           registrado_por?: string | null
+          unidade?: string | null
         }
         Update: {
           criado_em?: string | null
@@ -2002,8 +2064,10 @@ export type Database = {
           item_id?: string
           item_tipo?: string
           observacoes?: string | null
+          porte?: string | null
           preco?: number
           registrado_por?: string | null
+          unidade?: string | null
         }
         Relationships: [
           {
