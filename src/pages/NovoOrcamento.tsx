@@ -1444,7 +1444,7 @@ export default function NovoOrcamento() {
     }
   };
 
-  const firstAutoSaveRef = useRef(false);
+  const firstAutoSaveRef = useRef(true);
   useEffect(() => {
     if (firstAutoSaveRef.current) {
       firstAutoSaveRef.current = false;
@@ -2085,6 +2085,7 @@ export default function NovoOrcamento() {
             ? (it.confianca as ItemMemorial["confianca"])
             : "media",
       }));
+      firstAutoSaveRef.current = false;
       setItensMaterial(normalizados);
       setPdfCarregado(true);
       toast({ title: `${normalizados.length} itens extraídos` });
@@ -2123,6 +2124,7 @@ export default function NovoOrcamento() {
             ? (it.confianca as ItemMemorial["confianca"])
             : "media",
       }));
+      firstAutoSaveRef.current = false;
       setItensMaterial(normalizados);
       setPdfCarregado(true);
       toast({ title: `${normalizados.length} itens extraídos` });
