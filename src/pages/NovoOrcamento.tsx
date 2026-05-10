@@ -4366,13 +4366,50 @@ export default function NovoOrcamento() {
                       </Select>
                     </div>
                     <div className="space-y-1.5">
+                      <Label>Tipo de uso</Label>
+                      <Select
+                        value={quickAdd.fields.tipo_cliente || ""}
+                        onValueChange={(v) => updateQuickField("tipo_cliente", v)}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                        <SelectContent>
+                          {TIPOS_CLIENTE.map((tc) => (
+                            <SelectItem key={tc.value} value={tc.value}>{tc.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
                       <Label>Endereço completo</Label>
                       <Textarea
                         rows={2}
                         value={quickAdd.fields.endereco_completo || ""}
                         onChange={(e) => updateQuickField("endereco_completo", e.target.value)}
-                        placeholder="Rua, número, bairro, cidade — UF"
+                        placeholder="Rua, número, bairro"
                       />
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="space-y-1.5 col-span-2">
+                        <Label>Cidade</Label>
+                        <Input
+                          value={quickAdd.fields.cidade || ""}
+                          onChange={(e) => updateQuickField("cidade", capitalizeWords(e.target.value))}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>UF</Label>
+                        <Select
+                          value={quickAdd.fields.estado || ""}
+                          onValueChange={(v) => updateQuickField("estado", v)}
+                        >
+                          <SelectTrigger><SelectValue placeholder="UF" /></SelectTrigger>
+                          <SelectContent>
+                            {UFS.map((uf) => (
+                              <SelectItem key={uf} value={uf}>{uf}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </>
                 )}
