@@ -1684,6 +1684,9 @@ export default function NovoOrcamento() {
             nome: f.nome.trim(),
             tipo_pessoa: tipo,
             endereco_completo: f.endereco_completo || null,
+            cidade: f.cidade ? capitalizeWords(f.cidade) : null,
+            estado: f.estado ? f.estado.toUpperCase().slice(0, 2) : null,
+            tipo_cliente: f.tipo_cliente || null,
           })
           .select("id, nome")
           .single();
