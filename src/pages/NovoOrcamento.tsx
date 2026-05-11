@@ -3854,7 +3854,8 @@ export default function NovoOrcamento() {
             </div>
           )}
 
-          {etapaAtual === 5 && (
+          {/* Insumos (fundidos na etapa Fornecedores no novo fluxo de 6 etapas) */}
+          {etapaAtual === 3 && (
             <div className="space-y-6">
               {/* Seção A — Insumos calculados */}
               <Card className="p-4 space-y-3">
