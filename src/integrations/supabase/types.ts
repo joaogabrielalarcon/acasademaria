@@ -956,6 +956,50 @@ export type Database = {
           },
         ]
       }
+      cotacao_indisponibilidades: {
+        Row: {
+          created_at: string
+          data_marcacao: string
+          fornecedor_id: string
+          id: string
+          item_id: string
+          item_tipo: string
+          observacao: string | null
+          registrado_por: string | null
+          registrado_por_nome: string | null
+        }
+        Insert: {
+          created_at?: string
+          data_marcacao?: string
+          fornecedor_id: string
+          id?: string
+          item_id: string
+          item_tipo: string
+          observacao?: string | null
+          registrado_por?: string | null
+          registrado_por_nome?: string | null
+        }
+        Update: {
+          created_at?: string
+          data_marcacao?: string
+          fornecedor_id?: string
+          id?: string
+          item_id?: string
+          item_tipo?: string
+          observacao?: string | null
+          registrado_por?: string | null
+          registrado_por_nome?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cotacao_indisponibilidades_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_cards: {
         Row: {
           cliente_id: string | null
