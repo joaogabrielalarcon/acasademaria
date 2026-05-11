@@ -68,6 +68,8 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { EmptyState, ErrorState } from "@/components/ui/list-states";
 import { MobileCardList } from "@/components/ui/mobile-card-list";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AtualizarCotacoesPanel, type FornecedorAtualizacaoItem } from "@/components/orcamento/AtualizarCotacoesPanel";
 import {
   AlertDialog,
   AlertDialogAction,
