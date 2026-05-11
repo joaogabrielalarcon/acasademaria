@@ -256,7 +256,7 @@ function PlantasSection({
                           placeholder="Altura"
                         />
                       ) : (
-                        <span>{item.altura_m != null ? `${Number(item.altura_m).toFixed(2)} m` : "—"}</span>
+                        <span>{formatPorteMetros(item.altura_m)}</span>
                       )}
                     </TableCell>
                     <TableCell>
