@@ -332,14 +332,15 @@ export function InsumosContent() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         <DataTableExcel
-          data={insumos}
+          data={insumosFiltrados}
           columns={columns}
           rowKey={(i) => i.id}
           loading={isLoading}
-          searchPlaceholder="Buscar insumos..."
+          searchPlaceholder={tipoAba === "condicionador_solo" ? "Buscar condicionadores de solo..." : "Buscar insumos..."}
           globalSearchKeys={["nome", "categoria", "fornecedor", "descricao_produto", "observacoes"]}
           rowActions={(insumo) => (
             <div className="flex items-center gap-1">
