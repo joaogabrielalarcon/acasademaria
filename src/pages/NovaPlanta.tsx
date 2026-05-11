@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { capitalizeWords } from "@/hooks/useInputMasks";
 import { MidiaUpload } from "@/components/MidiaUpload";
+import { parsePorteMetros } from "@/lib/porte";
 
 const UNIDADES_PLANTAS = [
   '1/2 Cuia','Bag','Bdj','Cuia','Cx','Cx com 15','Muda',
@@ -99,18 +100,16 @@ export default function NovaPlanta() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const minM = parsePorteMetros(formData.altura_min_m).value;
+      const maxM = parsePorteMetros(formData.altura_max_m).value;
       const payload = {
         nome_popular: formData.nome_popular,
         nome_cientifico: formData.nome_cientifico || null,
         categoria_id: formData.categoria_id || null,
         fornecedor_id: formData.fornecedor_id || null,
-        altura_min_m: formData.altura_min_m ? parseFloat(formData.altura_min_m) : null,
-        altura_max_m: formData.altura_max_m ? parseFloat(formData.altura_max_m) : null,
-        altura_m: formData.altura_min_m && formData.altura_max_m
-          ? (parseFloat(formData.altura_min_m) + parseFloat(formData.altura_max_m)) / 2
-          : formData.altura_min_m
-            ? parseFloat(formData.altura_min_m)
-            : null,
+        altura_min_m: minM,
+        altura_max_m: maxM,
+        altura_m: minM != null && maxM != null ? (minM + maxM) / 2 : (minM ?? maxM ?? 0),
         dap_cm: isArvore && formData.dap_cm ? parseFloat(formData.dap_cm) : null,
         unidade: formData.unidade || null,
         embalagem: formData.embalagem || null,
@@ -145,6 +144,10 @@ export default function NovaPlanta() {
       toast.error("Nome popular é obrigatório");
       return;
     }
+    const minR = parsePorteMetros(formData.altura_min_m);
+    const maxR = parsePorteMetros(formData.altura_max_m);
+    if (!minR.ok) { toast.error("Altura mínima: " + minR.error); return; }
+    if (!maxR.ok) { toast.error("Altura máxima: " + maxR.error); return; }
     saveMutation.mutate();
   };
 
@@ -244,25 +247,22 @@ export default function NovaPlanta() {
               <Label htmlFor="altura_min_m">Altura mínima (m)</Label>
               <Input
                 id="altura_min_m"
-                type="number"
+                inputMode="decimal"
                 value={formData.altura_min_m}
                 onChange={(e) => setFormData({ ...formData, altura_min_m: e.target.value })}
-                placeholder="Ex: 1,50"
-                min={0}
-                step="0.01"
+                placeholder="Ex: 0,40 — 1,20 — 5,00"
               />
+              <p className="text-xs text-muted-foreground">Use vírgula. Sem unidade. "P14", "Pt 24", "DAP" não são aceitos.</p>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="altura_max_m">Altura máxima (m)</Label>
               <Input
                 id="altura_max_m"
-                type="number"
+                inputMode="decimal"
                 value={formData.altura_max_m}
                 onChange={(e) => setFormData({ ...formData, altura_max_m: e.target.value })}
-                placeholder="Ex: 2,00 (deixe igual à mínima se não houver variação)"
-                min={0}
-                step="0.01"
+                placeholder="Ex: 2,00 (igual à mínima se não houver variação)"
               />
             </div>
 

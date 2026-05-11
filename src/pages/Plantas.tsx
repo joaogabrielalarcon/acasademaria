@@ -7,21 +7,25 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, ImageIcon, Star, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, ImageIcon, Star, AlertTriangle, GitMerge } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DataTableExcel, DataTableColumn } from "@/components/ui/data-table-excel";
 import { usePlantas, Planta } from "@/hooks/usePlantas";
 import { useCategoriasPlantas } from "@/hooks/useCategoriasPlantas";
 import { useFornecedores } from "@/hooks/useFornecedores";
-import { useAuth, useIsAdmin } from "@/hooks/useAuth";
+import { useAuth, useIsAdmin, useIsAdminOrAdministrativo } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { MesclarItensDialog, ItemFusivel } from "@/components/catalogo/MesclarItensDialog";
+import { formatPorteMetros } from "@/lib/porte";
 
 export function PlantasContent() {
   const [itemToDelete, setItemToDelete] = useState<Planta | null>(null);
+  const [mergePrincipal, setMergePrincipal] = useState<Planta | null>(null);
 
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
+  const podeMesclar = useIsAdminOrAdministrativo(user?.id);
 
   const { data: plantas = [], isLoading } = usePlantas();
   const { data: categorias = [] } = useCategoriasPlantas();
@@ -30,6 +34,16 @@ export function PlantasContent() {
 
   const categoriasMap = new Map(categorias.map((c) => [c.id, c.nome]));
   const fornecedoresMap = new Map(fornecedores.map((f) => [f.id, f.nome]));
+
+  const candidatosFusao: ItemFusivel[] = plantas.map((p) => ({
+    id: p.id,
+    nome: p.nome_popular,
+    nome_secundario: p.nome_cientifico,
+    altura_m: p.altura_m ?? p.altura_min_m ?? p.altura_max_m ?? null,
+    fornecedor_id: p.fornecedor_id,
+    fornecedor_nome: p.fornecedor_id ? fornecedoresMap.get(p.fornecedor_id) ?? null : null,
+    preco_unitario: p.preco_unitario,
+  }));
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -155,6 +169,11 @@ export function PlantasContent() {
                   <Pencil className="w-4 h-4" />
                 </Link>
               </Button>
+              {podeMesclar && (
+                <Button variant="ghost" size="icon-sm" title="Mesclar duplicatas em desta planta" onClick={() => setMergePrincipal(planta)}>
+                  <GitMerge className="w-4 h-4" />
+                </Button>
+              )}
               {isAdmin && (
                 <Button
                   variant="ghost" size="icon-sm"
@@ -188,6 +207,25 @@ export function PlantasContent() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {mergePrincipal && (
+        <MesclarItensDialog
+          open={!!mergePrincipal}
+          onOpenChange={(o) => !o && setMergePrincipal(null)}
+          tipo="planta"
+          principal={{
+            id: mergePrincipal.id,
+            nome: mergePrincipal.nome_popular,
+            nome_secundario: mergePrincipal.nome_cientifico,
+            altura_m: mergePrincipal.altura_m ?? mergePrincipal.altura_min_m ?? mergePrincipal.altura_max_m ?? null,
+            fornecedor_id: mergePrincipal.fornecedor_id,
+            fornecedor_nome: mergePrincipal.fornecedor_id ? fornecedoresMap.get(mergePrincipal.fornecedor_id) ?? null : null,
+            preco_unitario: mergePrincipal.preco_unitario,
+          }}
+          candidatos={candidatosFusao}
+          onMerged={() => setMergePrincipal(null)}
+        />
+      )}
     </>
   );
 }

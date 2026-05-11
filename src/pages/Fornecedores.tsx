@@ -24,6 +24,7 @@ import { DataTableExcel, DataTableColumn } from "@/components/ui/data-table-exce
 import { useFornecedores, Fornecedor } from "@/hooks/useFornecedores";
 import { useAuth, useIsAdmin, useIsAdminOrAdministrativo } from "@/hooks/useAuth";
 import { MesclarManualDialog } from "@/components/fornecedores/MesclarManualDialog";
+import { AtendentesSection } from "@/components/fornecedores/AtendentesSection";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatCNPJ, formatPhone, capitalizeWords } from "@/hooks/useInputMasks";
@@ -341,6 +342,10 @@ export function FornecedoresContent() {
                     />
                   </div>
                 </div>
+
+                {editingFornecedor && (
+                  <AtendentesSection fornecedorId={editingFornecedor.id} />
+                )}
 
                 <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 pt-4">
                   <div>

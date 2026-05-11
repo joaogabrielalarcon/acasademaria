@@ -21,11 +21,12 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, History } from "lucide-react";
+import { Plus, Pencil, Trash2, History, GitMerge } from "lucide-react";
 import { DataTableExcel, DataTableColumn } from "@/components/ui/data-table-excel";
 import { useInsumos, Insumo } from "@/hooks/useInsumos";
 import { useFornecedores } from "@/hooks/useFornecedores";
-import { useAuth, useIsAdmin } from "@/hooks/useAuth";
+import { useAuth, useIsAdmin, useIsAdminOrAdministrativo } from "@/hooks/useAuth";
+import { MesclarItensDialog, ItemFusivel } from "@/components/catalogo/MesclarItensDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { capitalizeWords } from "@/hooks/useInputMasks";
@@ -51,11 +52,12 @@ export function InsumosContent() {
   const [editingInsumo, setEditingInsumo] = useState<Insumo | null>(null);
   const [itemToDelete, setItemToDelete] = useState<Insumo | null>(null);
   const [showHistorico, setShowHistorico] = useState<Insumo | null>(null);
-  // Aba ativa: filtra a listagem por tipo de produto.
+  const [mergePrincipal, setMergePrincipal] = useState<Insumo | null>(null);
   const [tipoAba, setTipoAba] = useState<"insumo" | "condicionador_solo">("insumo");
 
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
+  const podeMesclar = useIsAdminOrAdministrativo(user?.id);
 
   const { data: insumos = [], isLoading } = useInsumos();
   const { data: fornecedores = [] } = useFornecedores();
@@ -377,6 +379,11 @@ export function InsumosContent() {
               >
                 <History className="w-4 h-4" />
               </Button>
+              {podeMesclar && (
+                <Button variant="ghost" size="icon-sm" title="Mesclar duplicatas neste insumo" onClick={() => setMergePrincipal(insumo)}>
+                  <GitMerge className="w-4 h-4" />
+                </Button>
+              )}
               {isAdmin && (
                 <Button
                   variant="ghost" size="icon-sm"
@@ -422,6 +429,31 @@ export function InsumosContent() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {mergePrincipal && (
+        <MesclarItensDialog
+          open={!!mergePrincipal}
+          onOpenChange={(o) => !o && setMergePrincipal(null)}
+          tipo="insumo"
+          principal={{
+            id: mergePrincipal.id,
+            nome: mergePrincipal.nome,
+            nome_secundario: mergePrincipal.descricao_produto,
+            fornecedor_id: mergePrincipal.fornecedor_id,
+            fornecedor_nome: mergePrincipal.fornecedor_id ? fornecedoresMap.get(mergePrincipal.fornecedor_id) ?? null : null,
+            preco_unitario: mergePrincipal.preco_unitario,
+          }}
+          candidatos={insumosFiltrados.map((i): ItemFusivel => ({
+            id: i.id,
+            nome: i.nome,
+            nome_secundario: i.descricao_produto,
+            fornecedor_id: i.fornecedor_id,
+            fornecedor_nome: i.fornecedor_id ? fornecedoresMap.get(i.fornecedor_id) ?? null : null,
+            preco_unitario: i.preco_unitario,
+          }))}
+          onMerged={() => setMergePrincipal(null)}
+        />
+      )}
     </>
   );
 }
