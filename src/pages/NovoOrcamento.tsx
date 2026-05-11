@@ -1941,15 +1941,19 @@ export default function NovoOrcamento() {
     });
   };
 
-  const confirmarMercadoModal = async () => {
-    if (!mercadoModal.fornecedorId || !mercadoModal.valor.trim() || !mercadoModal.pendente) {
-      toast({ title: "Informe o mercado/central", variant: "destructive" });
+  const confirmarMercadoModal = async (override?: string[]) => {
+    const lista = (override ?? mercadoModal.selecionados).map((s) => s.trim()).filter(Boolean);
+    if (!mercadoModal.fornecedorId || lista.length === 0 || !mercadoModal.pendente) {
+      toast({ title: "Selecione ao menos um mercado", variant: "destructive" });
       return;
     }
+    const finalStr = Array.from(new Set(lista.map((s) => s.toLowerCase())))
+      .map((low) => lista.find((x) => x.toLowerCase() === low)!)
+      .join(", ");
     try {
       const { error } = await (supabase as any)
         .from("fornecedores")
-        .update({ mercado: mercadoModal.valor.trim() })
+        .update({ mercado: finalStr })
         .eq("id", mercadoModal.fornecedorId);
       if (error) throw error;
       // Atualiza queries relacionadas
