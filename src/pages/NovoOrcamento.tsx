@@ -3576,7 +3576,7 @@ export default function NovoOrcamento() {
                               {/* Botão expandir maiores */}
                               {maiores.length > 0 && (
                                 <TableRow>
-                                  <TableCell colSpan={9} className="p-2 bg-muted/30">
+                                  <TableCell colSpan={10} className="p-2 bg-muted/30">
                                     <button
                                       type="button"
                                       onClick={() => setExpandirMaiores((p) => ({ ...p, [idx]: !p[idx] }))}
@@ -3593,7 +3593,7 @@ export default function NovoOrcamento() {
                               {/* Botão expandir menores */}
                               {menores.length > 0 && (
                                 <TableRow>
-                                  <TableCell colSpan={9} className="p-2 bg-muted/30">
+                                  <TableCell colSpan={10} className="p-2 bg-muted/30">
                                     <button
                                       type="button"
                                       onClick={() => setExpandirMenores((p) => ({ ...p, [idx]: !p[idx] }))}
