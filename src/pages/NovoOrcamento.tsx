@@ -3734,7 +3734,7 @@ export default function NovoOrcamento() {
                           </div>
                         )}
 
-                        <div className="border rounded-md overflow-hidden">
+                        <div className="border rounded-md overflow-hidden hidden md:block">
                           <Table>
                             <TableHeader>
                               <TableRow>
@@ -3789,6 +3789,122 @@ export default function NovoOrcamento() {
                               {expMenor && menoresOrd.map((l) => renderTableRow(l, "menor"))}
                             </TableBody>
                           </Table>
+                        </div>
+
+                        {/* Mobile cards (≤md) — uso de campo */}
+                        <MobileCardList
+                          items={[...exatasOrd, ...(exatasOrd.length === 0 ? indefOrd : []), ...(expMaior ? maioresOrd : []), ...(expMenor ? menoresOrd : [])].map((l) => {
+                            const r = l.row;
+                            const f = r.fornecedores || {};
+                            const papel = papelAtual(idx, r.fornecedor_id);
+                            const indispKey = r.item_id ? `${r.item_id}::${r.fornecedor_id}` : "";
+                            const indisp = indispKey ? (indispMap as Map<string, any>).get(indispKey) : null;
+                            return {
+                              key: `${r.fornecedor_id}-${l.portUsado || "x"}`,
+                              title: f.nome || "Fornecedor",
+                              subtitle: f.mercado ? `Mercado: ${f.mercado}` : (
+                                <button
+                                  type="button"
+                                  className="text-amber-700 underline-offset-2 hover:underline text-xs"
+                                  onClick={() =>
+                                    setMercadoInlineDialog({
+                                      open: true,
+                                      fornecedorId: f.id,
+                                      fornecedorNome: f.nome,
+                                      mercadoAtual: f.mercado || null,
+                                    })
+                                  }
+                                >
+                                  Definir mercado
+                                </button>
+                              ),
+                              badges: papel ? (
+                                <span className={cn(
+                                  "text-[10px] px-1.5 py-0.5 rounded-full border font-medium",
+                                  papel === "principal" ? "bg-primary text-primary-foreground border-primary" : "bg-secondary text-secondary-foreground border-secondary",
+                                )}>{papelLabel[papel]}</span>
+                              ) : indisp ? (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground border">Não tinha</span>
+                              ) : null,
+                              fields: [
+                                { label: "Preço", value: l.precoUsado != null ? `R$ ${l.precoUsado.toFixed(2)}` : "—" },
+                                { label: "Porte", value: l.portUsado || "—" },
+                                { label: "Última", value: l.dataUsada ? new Date(l.dataUsada).toLocaleDateString("pt-BR") : "—" },
+                                { label: "Un.", value: r.unidade || "—" },
+                              ],
+                              actions: (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant={papel ? "secondary" : "default"}
+                                    className="flex-1"
+                                    onClick={() => {
+                                      if (papel) {
+                                        definirPapel(idx, r.fornecedor_id, "remover", f);
+                                      } else {
+                                        const livre = proximoPapelLivre(idx);
+                                        if (!livre) {
+                                          toast({ title: "Limite de 3 fornecedores", variant: "destructive" });
+                                          return;
+                                        }
+                                        definirPapel(idx, r.fornecedor_id, livre, f);
+                                      }
+                                    }}
+                                  >
+                                    {papel ? "Remover" : "Selecionar"}
+                                  </Button>
+                                  {!indisp && r.item_id && r.item_tipo && (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() =>
+                                        setIndispTarget({
+                                          itemId: r.item_id,
+                                          itemTipo: r.item_tipo,
+                                          fornecedorId: r.fornecedor_id,
+                                          fornecedorNome: f.nome,
+                                          itemNome: item.nome_popular,
+                                        })
+                                      }
+                                    >
+                                      <PackageX className="w-4 h-4" /> Não tinha
+                                    </Button>
+                                  )}
+                                  {indisp && (
+                                    <DesfazerIndisponibilidadeButton
+                                      marcacaoId={indisp.id}
+                                      fornecedorNome={f.nome}
+                                    />
+                                  )}
+                                </>
+                              ),
+                            };
+                          })}
+                          emptyTitle="Sem fornecedores para exibir"
+                        />
+
+                        {/* Toggle expandir maiores/menores no mobile */}
+                        <div className="md:hidden flex flex-wrap gap-2">
+                          {maiores.length > 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setExpandirMaiores((p) => ({ ...p, [idx]: !p[idx] }))}
+                            >
+                              <ChevronsUp className="w-3.5 h-3.5" />
+                              {expMaior ? "Ocultar" : "Ver"} portes maiores ({maiores.length})
+                            </Button>
+                          )}
+                          {menores.length > 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setExpandirMenores((p) => ({ ...p, [idx]: !p[idx] }))}
+                            >
+                              <ChevronsDown className="w-3.5 h-3.5" />
+                              {expMenor ? "Ocultar" : "Ver"} portes menores ({menores.length})
+                            </Button>
+                          )}
                         </div>
                       </>
                     )}
