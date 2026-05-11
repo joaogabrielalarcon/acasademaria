@@ -128,8 +128,8 @@ export function MercadoInlineEditor({
     setSelecionados((prev) => prev.filter((p) => p.toLowerCase() !== v.toLowerCase()));
   };
 
-  const salvar = async () => {
-    const finalStr = joinMercados(selecionados);
+  const salvar = async (lista?: string[]) => {
+    const finalStr = joinMercados(lista ?? selecionados);
     setSalvando(true);
     try {
       const { error } = await (supabase as any).rpc("set_fornecedor_mercado", {
