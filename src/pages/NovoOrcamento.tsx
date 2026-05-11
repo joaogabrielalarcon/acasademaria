@@ -1454,7 +1454,7 @@ export default function NovoOrcamento() {
   });
 
   // === Auto-save silencioso ===
-  // Salva o orçamento completo (cabeçalho + itens + cotações) automaticamente
+  // Salva o orçamento completo (informações iniciais + itens + cotações) automaticamente
   // sempre que dados-chave mudam, com debounce. Não exibe toast.
   const persistirRef = useRef(persistirOrcamentoCompleto);
   useEffect(() => {
