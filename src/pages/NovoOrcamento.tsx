@@ -110,14 +110,16 @@ interface TipoProposta {
   nome_completo: string;
 }
 
+// Refatoração: fluxo de 7 → 6 etapas.
+// "Insumos" deixou de ser etapa separada (foi fundido em Fornecedores).
+// "Cotação" foi substituída por "Markup e Margens" (placeholder até nova lógica).
 const ETAPAS = [
-  "Cabeçalho",
-  "Memorial",
+  "Informações Iniciais",
+  "Memorial Descritivo",
   "Fornecedores",
-  "Cotação",
-  "Insumos",
-  "MO e Fretes",
-  "Resumo",
+  "Markup e Margens",
+  "Mão de Obra, Fretes e Transporte",
+  "Resumo Final",
 ];
 
 const TIPOS_CLIENTE = [
