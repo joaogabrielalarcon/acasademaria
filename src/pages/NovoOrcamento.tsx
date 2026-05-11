@@ -4102,7 +4102,8 @@ export default function NovoOrcamento() {
             </div>
           )}
 
-          {etapaAtual === 6 && (
+          {/* Etapa 5 - Mão de Obra, Fretes e Transporte */}
+          {etapaAtual === 5 && (
             <div className="space-y-6 pb-24">
               {/* Seção A — MÃO DE OBRA */}
               <Card className="p-4 space-y-3">
