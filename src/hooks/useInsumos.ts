@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+export type TipoProduto = "insumo" | "condicionador_solo";
+
 export interface Insumo {
   id: string;
   nome: string;
@@ -13,6 +15,7 @@ export interface Insumo {
   observacoes: string | null;
   ultima_compra: string | null;
   ativo: boolean;
+  tipo_produto: TipoProduto;
 }
 
 export function useInsumos() {
