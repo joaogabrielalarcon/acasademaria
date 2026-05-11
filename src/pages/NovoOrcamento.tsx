@@ -1489,7 +1489,7 @@ export default function NovoOrcamento() {
       return;
     }
     // No modo edição, sempre auto-salva (o orçamento já existe).
-    // No modo criação, espera os campos obrigatórios pra criar o cabeçalho.
+    // No modo criação, espera os campos obrigatórios pra criar o registro inicial.
     if (!isEdit && !camposObrigatoriosOk) return;
     const t = setTimeout(() => {
       triggerAutoSave();
