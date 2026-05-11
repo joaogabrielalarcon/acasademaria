@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { mergeMercadosSugestoes } from "@/lib/mercados";
 
 interface EditarMercadoDialogProps {
   open: boolean;
