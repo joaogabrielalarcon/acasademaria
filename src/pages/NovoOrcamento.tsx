@@ -586,7 +586,7 @@ export default function NovoOrcamento() {
   const [savingFinal, setSavingFinal] = useState(false);
 
   useEffect(() => {
-    if (etapaAtual !== 7) return;
+    if (etapaAtual !== 6) return;
     setMarkupsCategoria((prev) => {
       const next = { ...prev };
       CATEGORIAS_RESUMO.forEach((c) => {
