@@ -235,8 +235,22 @@ export default function NovoOrcamento() {
   };
   const filtroPadraoTab3: FiltrosTab3 = { primaria: "data", secundaria: "nenhuma", mercados: [], somenteRecentes: false };
   const [filtrosTab3, setFiltrosTab3] = useState<Record<number, FiltrosTab3>>({});
-  // Colapso por bloco de item na Etapa 3 (independente do legado cardsColapsados)
-  const [blocosColapsados, setBlocosColapsados] = useState<Record<number, boolean>>({});
+  // Colapso por bloco de item na Etapa 3 (persistido na sessão por orçamento)
+  const blocosStorageKey = `orc:${id || "novo"}:blocosColapsados`;
+  const [blocosColapsados, setBlocosColapsados] = useState<Record<number, boolean>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const raw = sessionStorage.getItem(blocosStorageKey);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  });
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(blocosStorageKey, JSON.stringify(blocosColapsados));
+    } catch {}
+  }, [blocosColapsados, blocosStorageKey]);
   // Modal inline para preencher Mercado de fornecedor sem sair da etapa
   const [mercadoInlineDialog, setMercadoInlineDialog] = useState<{
     open: boolean;
