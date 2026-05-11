@@ -55,7 +55,17 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FornecedorPopover } from "@/components/orcamento/FornecedorPopover";
-import { MercadoInlineEditor } from "@/components/orcamento/MercadoInlineEditor";
+import { MercadoInlineEditor, parseMercados } from "@/components/orcamento/MercadoInlineEditor";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ResumoFornecedoresDialog, type ResumoItem } from "@/components/orcamento/ResumoFornecedoresDialog";
 import { ImportarRespostaFornecedorDialog } from "@/components/orcamento/ImportarRespostaFornecedorDialog";
 import { EnderecoFields, composeEndereco } from "@/components/EnderecoFields";
