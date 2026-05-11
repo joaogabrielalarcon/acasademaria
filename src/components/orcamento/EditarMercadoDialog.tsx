@@ -51,9 +51,7 @@ export function EditarMercadoDialog({
     }
   }, [open, mercadoAtual]);
 
-  const sugestoesUnicas = Array.from(
-    new Set((sugestoes || []).map((s) => String(s || "").trim()).filter(Boolean)),
-  ).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  const sugestoesUnicas = mergeMercadosSugestoes(sugestoes);
 
   const mutation = useMutation({
     mutationFn: async () => {
