@@ -1745,6 +1745,22 @@ export default function NovoOrcamento() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itensMaterial, JSON.stringify(historicoPorItem)]);
 
+  // IDs de catálogo presentes na etapa, para buscar marcações de "não tinha o item"
+  const itemIdsCatalogo = useMemo(
+    () => Array.from(new Set(Object.values(itemDbInfoByIdx).map((v) => v.item_id))),
+    [itemDbInfoByIdx],
+  );
+  const { data: indispMap = new Map() } = useIndisponibilidades(itemIdsCatalogo);
+
+  // Estado do diálogo de marcação "não tinha o item"
+  const [indispTarget, setIndispTarget] = useState<{
+    itemId: string;
+    itemTipo: "planta" | "insumo";
+    fornecedorId: string;
+    fornecedorNome?: string | null;
+    itemNome?: string;
+  } | null>(null);
+
   // Auto-grava histórico de preços quando o usuário ajusta o valor cotado.
   // Cotação foi fundida na etapa Fornecedores (etapa 3 no novo fluxo).
   const lastSavedPrecoRef = useRef<Record<string, number>>({});
