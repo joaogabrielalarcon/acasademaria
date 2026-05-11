@@ -105,12 +105,23 @@ export function MercadoInlineEditor({
     return base.filter((s) => s.toLowerCase().includes(q)).slice(0, 8);
   }, [draft, sugestoesUnicas, selecionados]);
 
-  const adicionar = (raw: string) => {
+  const adicionarDireto = (raw: string) => {
     const v = toTitleCase(raw);
     if (!v) return;
     setSelecionados((prev) => (prev.some((p) => p.toLowerCase() === v.toLowerCase()) ? prev : [...prev, v]));
     setDraft("");
     setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const adicionar = (raw: string) => {
+    const v = toTitleCase(raw);
+    if (!v) return;
+    const existe = sugestoesUnicas.some((s) => s.toLowerCase() === v.toLowerCase());
+    if (!existe) {
+      setConfirmarNovo(v);
+      return;
+    }
+    adicionarDireto(v);
   };
 
   const remover = (v: string) => {
