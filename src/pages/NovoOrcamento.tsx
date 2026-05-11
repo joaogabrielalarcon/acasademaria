@@ -292,7 +292,8 @@ export default function NovoOrcamento() {
 
   // Calcular insumos automaticamente ao entrar na Etapa 5 (uma vez, permitindo edição)
   useEffect(() => {
-    if (etapaAtual !== 5 || insumosCalculados) return;
+    // Insumos foram fundidos na etapa Fornecedores (etapa 3 no novo fluxo).
+    if (etapaAtual !== 3 || insumosCalculados) return;
     if (!coeficientes || coeficientes.length === 0) return;
 
     const acc = { mo: 0, terra: 0, adubo: 0, munck: 0, corda: 0 };
