@@ -375,29 +375,89 @@ export function FornecedoresContent() {
           </Dialog>
         </div>
 
-        <DataTableExcel
-          data={fornecedores}
-          columns={columns}
-          rowKey={(f) => f.id}
-          loading={isLoading}
-          searchPlaceholder="Buscar fornecedores..."
-          globalSearchKeys={["nome", "nome_alternativo", "cnpj", "cidade", "email", "categoria_fornecedor", "mercado"]}
-          rowActions={(fornecedor) => (
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(fornecedor)}>
-                <Pencil className="w-4 h-4" />
-              </Button>
-              {isAdmin && (
-                <Button
-                  variant="ghost" size="icon-sm"
-                  onClick={() => setItemToDelete(fornecedor)}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="w-4 h-4" />
+        <div className="hidden md:block">
+          <DataTableExcel
+            data={fornecedores}
+            columns={columns}
+            rowKey={(f) => f.id}
+            loading={isLoading}
+            searchPlaceholder="Buscar fornecedores..."
+            globalSearchKeys={["nome", "nome_alternativo", "cnpj", "cidade", "email", "categoria_fornecedor", "mercado"]}
+            rowActions={(fornecedor) => (
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(fornecedor)}>
+                  <Pencil className="w-4 h-4" />
                 </Button>
-              )}
-            </div>
-          )}
+                {isAdmin && (
+                  <Button
+                    variant="ghost" size="icon-sm"
+                    onClick={() => setItemToDelete(fornecedor)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            )}
+          />
+        </div>
+
+        <MobileCardList
+          loading={isLoading}
+          searchValue={mobileSearch}
+          onSearchChange={setMobileSearch}
+          searchPlaceholder="Buscar fornecedores..."
+          emptyTitle="Nenhum fornecedor encontrado"
+          emptyDescription="Cadastre um novo fornecedor ou ajuste a busca."
+          items={fornecedores
+            .filter((f) => {
+              if (!mobileSearch.trim()) return true;
+              const q = mobileSearch.toLowerCase();
+              return [f.nome, f.nome_alternativo, f.cnpj, f.cidade, f.email, f.categoria_fornecedor, f.mercado]
+                .filter(Boolean).some((v) => String(v).toLowerCase().includes(q));
+            })
+            .map<MobileCardItem>((f) => ({
+              key: f.id,
+              title: f.nome,
+              subtitle: f.nome_alternativo || undefined,
+              badges: (
+                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                  f.status === "ativo" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                }`}>
+                  {f.status === "ativo" ? "Ativo" : "Inativo"}
+                </span>
+              ),
+              fields: [
+                { label: "Mercado", value: f.mercado ?? "" },
+                { label: "Categoria", value: f.categoria_fornecedor ?? "" },
+                {
+                  label: "Telefone",
+                  value: f.whatsapp ? (
+                    <a href={`https://wa.me/${f.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="text-primary underline">
+                      {f.whatsapp}
+                    </a>
+                  ) : f.telefone ?? "",
+                },
+                { label: "Cidade", value: [f.cidade, f.estado].filter(Boolean).join(" / ") },
+              ],
+              actions: (
+                <>
+                  <Button variant="outline" size="sm" onClick={() => handleEdit(f)} className="flex-1 gap-2">
+                    <Pencil className="w-4 h-4" /> Editar
+                  </Button>
+                  {isAdmin && (
+                    <Button
+                      variant="ghost" size="sm"
+                      onClick={() => setItemToDelete(f)}
+                      className="text-destructive hover:text-destructive"
+                      aria-label="Excluir"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </>
+              ),
+            }))}
         />
       </div>
 
