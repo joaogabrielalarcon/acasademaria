@@ -267,5 +267,28 @@ export function MercadoInlineEditor({
         </div>
       </PopoverContent>
     </Popover>
+
+    <AlertDialog open={!!confirmarNovo} onOpenChange={(o) => !o && setConfirmarNovo(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Criar novo mercado?</AlertDialogTitle>
+          <AlertDialogDescription>
+            O mercado <strong>"{confirmarNovo}"</strong> ainda não existe na base. Deseja criá-lo agora? Ele ficará disponível para todos os fornecedores a partir de então.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              if (confirmarNovo) adicionarDireto(confirmarNovo);
+              setConfirmarNovo(null);
+            }}
+          >
+            Sim, criar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
