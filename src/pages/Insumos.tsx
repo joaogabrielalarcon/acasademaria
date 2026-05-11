@@ -2,7 +2,8 @@
 // via texto ou voz — o usuário descreve o item e a IA preenche os campos
 // automaticamente, confirmando com o usuário antes de salvar.
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HistoricoPrecos } from "@/components/HistoricoPrecos";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
