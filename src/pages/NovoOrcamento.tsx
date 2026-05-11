@@ -56,6 +56,12 @@ import {
 import { cn } from "@/lib/utils";
 import { FornecedorPopover } from "@/components/orcamento/FornecedorPopover";
 import { MercadoInlineEditor, parseMercados } from "@/components/orcamento/MercadoInlineEditor";
+import { EditarPrecoPopover } from "@/components/orcamento/EditarPrecoPopover";
+import {
+  IndisponibilidadeDialog,
+  useIndisponibilidades,
+  DesfazerIndisponibilidadeButton,
+} from "@/components/orcamento/IndisponibilidadeDialog";
 import {
   AlertDialog,
   AlertDialogAction,
