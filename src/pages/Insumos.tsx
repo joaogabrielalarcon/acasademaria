@@ -197,14 +197,29 @@ export function InsumosContent() {
   return (
     <>
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-4">
+          <Tabs value={tipoAba} onValueChange={(v) => setTipoAba(v as "insumo" | "condicionador_solo")}>
+            <TabsList>
+              <TabsTrigger value="insumo">Insumos</TabsTrigger>
+              <TabsTrigger value="condicionador_solo">Condicionadores de Solo</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
-              <Button className="gap-2"><Plus className="w-4 h-4" /> Novo Insumo</Button>
+              <Button className="gap-2">
+                <Plus className="w-4 h-4" />
+                {tipoAba === "condicionador_solo" ? "Novo Condicionador de Solo" : "Novo Insumo"}
+              </Button>
             </DialogTrigger>
             <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>{editingInsumo ? "Editar Insumo" : "Novo Insumo"}</DialogTitle>
+                <DialogTitle>
+                  {editingInsumo
+                    ? (formData.tipo_produto === "condicionador_solo" ? "Editar Condicionador de Solo" : "Editar Insumo")
+                    : (formData.tipo_produto === "condicionador_solo" ? "Novo Condicionador de Solo" : "Novo Insumo")}
+                </DialogTitle>
               </DialogHeader>
 
               <form onSubmit={handleSubmit} className="space-y-4">
