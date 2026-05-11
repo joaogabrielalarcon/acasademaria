@@ -7,7 +7,8 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, ImageIcon, Star, AlertTriangle, GitMerge } from "lucide-react";
+import { Plus, Pencil, Trash2, ImageIcon, Star, AlertTriangle, GitMerge, Upload } from "lucide-react";
+import { ImportarPlantasDialog } from "@/components/ImportarPlantasDialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DataTableExcel, DataTableColumn } from "@/components/ui/data-table-excel";
 import { usePlantas, Planta } from "@/hooks/usePlantas";
