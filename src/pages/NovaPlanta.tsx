@@ -247,25 +247,22 @@ export default function NovaPlanta() {
               <Label htmlFor="altura_min_m">Altura mínima (m)</Label>
               <Input
                 id="altura_min_m"
-                type="number"
+                inputMode="decimal"
                 value={formData.altura_min_m}
                 onChange={(e) => setFormData({ ...formData, altura_min_m: e.target.value })}
-                placeholder="Ex: 1,50"
-                min={0}
-                step="0.01"
+                placeholder="Ex: 0,40 — 1,20 — 5,00"
               />
+              <p className="text-xs text-muted-foreground">Use vírgula. Sem unidade. "P14", "Pt 24", "DAP" não são aceitos.</p>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="altura_max_m">Altura máxima (m)</Label>
               <Input
                 id="altura_max_m"
-                type="number"
+                inputMode="decimal"
                 value={formData.altura_max_m}
                 onChange={(e) => setFormData({ ...formData, altura_max_m: e.target.value })}
-                placeholder="Ex: 2,00 (deixe igual à mínima se não houver variação)"
-                min={0}
-                step="0.01"
+                placeholder="Ex: 2,00 (igual à mínima se não houver variação)"
               />
             </div>
 
