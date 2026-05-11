@@ -343,6 +343,10 @@ export function FornecedoresContent() {
                   </div>
                 </div>
 
+                {editingFornecedor && (
+                  <AtendentesSection fornecedorId={editingFornecedor.id} />
+                )}
+
                 <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 pt-4">
                   <div>
                     {editingFornecedor && podeMesclar && (
