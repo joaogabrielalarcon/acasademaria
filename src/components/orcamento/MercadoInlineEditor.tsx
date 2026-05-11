@@ -280,11 +280,19 @@ export function MercadoInlineEditor({
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
           <AlertDialogAction
             onClick={() => {
-              if (confirmarNovo) adicionarDireto(confirmarNovo);
+              if (!confirmarNovo) return;
+              const novo = toTitleCase(confirmarNovo);
+              const nova = selecionados.some((p) => p.toLowerCase() === novo.toLowerCase())
+                ? selecionados
+                : [...selecionados, novo];
+              setSelecionados(nova);
+              setDraft("");
               setConfirmarNovo(null);
+              // persiste imediatamente para que o novo mercado vire opção definitiva
+              salvar(nova);
             }}
           >
-            Sim, criar
+            Sim, criar e salvar
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
