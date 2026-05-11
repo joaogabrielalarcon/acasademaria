@@ -52,11 +52,12 @@ export function InsumosContent() {
   const [editingInsumo, setEditingInsumo] = useState<Insumo | null>(null);
   const [itemToDelete, setItemToDelete] = useState<Insumo | null>(null);
   const [showHistorico, setShowHistorico] = useState<Insumo | null>(null);
-  // Aba ativa: filtra a listagem por tipo de produto.
+  const [mergePrincipal, setMergePrincipal] = useState<Insumo | null>(null);
   const [tipoAba, setTipoAba] = useState<"insumo" | "condicionador_solo">("insumo");
 
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
+  const podeMesclar = useIsAdminOrAdministrativo(user?.id);
 
   const { data: insumos = [], isLoading } = useInsumos();
   const { data: fornecedores = [] } = useFornecedores();
