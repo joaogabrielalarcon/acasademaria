@@ -21,11 +21,12 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, History } from "lucide-react";
+import { Plus, Pencil, Trash2, History, GitMerge } from "lucide-react";
 import { DataTableExcel, DataTableColumn } from "@/components/ui/data-table-excel";
 import { useInsumos, Insumo } from "@/hooks/useInsumos";
 import { useFornecedores } from "@/hooks/useFornecedores";
-import { useAuth, useIsAdmin } from "@/hooks/useAuth";
+import { useAuth, useIsAdmin, useIsAdminOrAdministrativo } from "@/hooks/useAuth";
+import { MesclarItensDialog, ItemFusivel } from "@/components/catalogo/MesclarItensDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { capitalizeWords } from "@/hooks/useInputMasks";
