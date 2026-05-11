@@ -1835,6 +1835,37 @@ export default function NovoOrcamento() {
     return { semForn, risco, ok };
   }, [itensMaterial, fornecedoresSelecionados, historicoPorItem]);
 
+  // Pendências para avançar à Etapa 4 (Markup)
+  const pendenciasEtapa3 = useMemo(() => {
+    const itensSemPrincipal: { idx: number; nome: string }[] = [];
+    const fornsSemMercadoMap: Map<string, { id: string; nome: string; itens: string[] }> = new Map();
+    itensMaterial.forEach((it, idx) => {
+      const sel = fornecedoresSelecionados[idx] || [];
+      const linhas = cotacoes[idx] || {};
+      const temPrincipal = sel.some((fid) => linhas[fid]?.status_selecao === "principal");
+      if (!temPrincipal) {
+        itensSemPrincipal.push({ idx, nome: it.nome_popular || `Item ${idx + 1}` });
+      }
+      // Verifica fornecedores selecionados sem mercado
+      const fornsBruto = fornecedoresDoItem(it) as any[];
+      sel.forEach((fid) => {
+        const row = fornsBruto.find((r: any) => r.fornecedor_id === fid);
+        const f = row?.fornecedores;
+        if (f && !String(f.mercado || "").trim()) {
+          const cur = fornsSemMercadoMap.get(fid) || { id: fid, nome: f.nome || "Fornecedor", itens: [] };
+          if (!cur.itens.includes(it.nome_popular)) cur.itens.push(it.nome_popular || `Item ${idx + 1}`);
+          fornsSemMercadoMap.set(fid, cur);
+        }
+      });
+    });
+    return {
+      itensSemPrincipal,
+      fornsSemMercado: Array.from(fornsSemMercadoMap.values()),
+      bloqueia: itensSemPrincipal.length > 0 || fornsSemMercadoMap.size > 0,
+    };
+  }, [itensMaterial, fornecedoresSelecionados, cotacoes, historicoPorItem]);
+
+
   const resumoCotacoes = useMemo(() => {
     let semCot = 0;
     let porteDiv = 0;
