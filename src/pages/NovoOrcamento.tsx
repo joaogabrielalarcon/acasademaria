@@ -1645,7 +1645,7 @@ export default function NovoOrcamento() {
             const { data, error: hErr } = await (supabase as any)
               .from("historico_precos")
               .select(
-                "id, item_id, item_tipo, preco, porte, unidade, data_orcamento, fornecedor_id, fornecedores(id, nome, mercado, cidade, telefone, whatsapp)",
+                "id, item_id, item_tipo, preco, porte, unidade, data_orcamento, fornecedor_id, registrado_por, observacoes, criado_em, fornecedores(id, nome, mercado, cidade, telefone, whatsapp), colaboradores:registrado_por(nome)",
               )
               .in("item_id", ids)
               .order("data_orcamento", { ascending: false });
