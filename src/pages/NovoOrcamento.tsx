@@ -3126,6 +3126,8 @@ export default function NovoOrcamento() {
                         .split(/[,;|]/)
                         .map((s: string) => s.trim())
                         .filter((s: string) => !!s);
+                      // Fornecedores sem mercado aparecem em todos os filtros (forçar preenchimento)
+                      if (ms.length === 0) return true;
                       return ms.some((m) => filtros.mercados.includes(m));
                     });
                   }
