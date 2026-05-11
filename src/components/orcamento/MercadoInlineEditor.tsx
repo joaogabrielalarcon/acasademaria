@@ -160,6 +160,7 @@ export function MercadoInlineEditor({
   const possuiValor = mercadosAtuais.length > 0;
 
   return (
+    <>
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
