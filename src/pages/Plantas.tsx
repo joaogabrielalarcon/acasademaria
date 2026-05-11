@@ -81,12 +81,15 @@ export function PlantasContent() {
       key: "altura_m", header: "Altura (m)", width: 140, type: "number",
       accessor: (p) => p.altura_max_m ?? p.altura_min_m ?? p.altura_m,
       render: (p) => {
-        const fmt = (v: number) => Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const min = p.altura_min_m ?? p.altura_m;
         const max = p.altura_max_m ?? p.altura_m;
-        if (min == null && max == null) return <span className="text-muted-foreground">—</span>;
-        if (min != null && max != null && Number(min) !== Number(max)) return `${fmt(min)} – ${fmt(max)} m`;
-        return `${fmt((min ?? max) as number)} m`;
+        if ((min == null || Number(min) === 0) && (max == null || Number(max) === 0)) {
+          return <span className="text-muted-foreground">—</span>;
+        }
+        if (min != null && max != null && Number(min) !== Number(max)) {
+          return `${formatPorteMetros(min, { suffix: false })} – ${formatPorteMetros(max)}`;
+        }
+        return formatPorteMetros((min ?? max) as number);
       },
     },
     { key: "dap_cm", header: "DAP (cm)", width: 100, type: "number", accessor: (p) => p.dap_cm },
