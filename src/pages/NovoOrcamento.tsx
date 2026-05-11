@@ -4642,8 +4642,8 @@ export default function NovoOrcamento() {
             </div>
           )}
 
-          {/* Etapa 7 (placeholder) */}
-          {etapaAtual === 7 && (
+          {/* Etapa 6 - Resumo Final */}
+          {etapaAtual === 6 && (
             <div className="space-y-6 pb-32">
               {/* Perfil de Markup (opcional) */}
               <Card className="p-4">
