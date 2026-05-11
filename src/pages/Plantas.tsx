@@ -23,6 +23,7 @@ import { formatPorteMetros } from "@/lib/porte";
 export function PlantasContent() {
   const [itemToDelete, setItemToDelete] = useState<Planta | null>(null);
   const [mergePrincipal, setMergePrincipal] = useState<Planta | null>(null);
+  const [importarOpen, setImportarOpen] = useState(false);
 
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
