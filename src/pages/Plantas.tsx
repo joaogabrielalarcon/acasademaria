@@ -16,11 +16,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { MesclarItensDialog, ItemFusivel } from "@/components/catalogo/MesclarItensDialog";
 import { formatPorteMetros } from "@/lib/porte";
+import { MobileCardList, MobileCardItem } from "@/components/ui/mobile-card-list";
 
 export function PlantasContent() {
   const [itemToDelete, setItemToDelete] = useState<Planta | null>(null);
   const [mergePrincipal, setMergePrincipal] = useState<Planta | null>(null);
   const [importarOpen, setImportarOpen] = useState(false);
+  const [mobileSearch, setMobileSearch] = useState("");
 
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
