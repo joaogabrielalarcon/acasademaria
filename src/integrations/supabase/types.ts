@@ -1872,6 +1872,59 @@ export type Database = {
           },
         ]
       }
+      fornecedor_atendentes: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          created_by: string | null
+          email: string | null
+          fornecedor_id: string
+          funcao: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          telefone: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          fornecedor_id: string
+          funcao?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          telefone?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          fornecedor_id?: string
+          funcao?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          telefone?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fornecedor_atendentes_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fornecedor_avaliacoes: {
         Row: {
           comentario: string | null
@@ -1940,6 +1993,7 @@ export type Database = {
           email: string | null
           endereco: string | null
           estado: string | null
+          fundido_em: string | null
           id: string
           mercado: string | null
           nome: string
@@ -1960,6 +2014,7 @@ export type Database = {
           email?: string | null
           endereco?: string | null
           estado?: string | null
+          fundido_em?: string | null
           id?: string
           mercado?: string | null
           nome: string
@@ -1980,6 +2035,7 @@ export type Database = {
           email?: string | null
           endereco?: string | null
           estado?: string | null
+          fundido_em?: string | null
           id?: string
           mercado?: string | null
           nome?: string
@@ -1991,7 +2047,15 @@ export type Database = {
           updated_by?: string | null
           whatsapp?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fornecedores_fundido_em_fkey"
+            columns: ["fundido_em"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       fornecedores_merge_log: {
         Row: {
@@ -2204,6 +2268,7 @@ export type Database = {
           created_by: string | null
           descricao_produto: string | null
           fornecedor_id: string | null
+          fundido_em: string | null
           id: string
           nome: string
           observacoes: string | null
@@ -2222,6 +2287,7 @@ export type Database = {
           created_by?: string | null
           descricao_produto?: string | null
           fornecedor_id?: string | null
+          fundido_em?: string | null
           id?: string
           nome: string
           observacoes?: string | null
@@ -2240,6 +2306,7 @@ export type Database = {
           created_by?: string | null
           descricao_produto?: string | null
           fornecedor_id?: string | null
+          fundido_em?: string | null
           id?: string
           nome?: string
           observacoes?: string | null
@@ -2257,6 +2324,13 @@ export type Database = {
             columns: ["fornecedor_id"]
             isOneToOne: false
             referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insumos_fundido_em_fkey"
+            columns: ["fundido_em"]
+            isOneToOne: false
+            referencedRelation: "insumos"
             referencedColumns: ["id"]
           },
         ]
@@ -2366,6 +2440,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      itens_merge_log: {
+        Row: {
+          contadores: Json | null
+          dados_anteriores: Json | null
+          duplicado_id: string
+          duplicado_nome: string | null
+          executado_em: string
+          executado_por: string | null
+          executado_por_nome: string | null
+          id: string
+          principal_id: string
+          tipo: string
+        }
+        Insert: {
+          contadores?: Json | null
+          dados_anteriores?: Json | null
+          duplicado_id: string
+          duplicado_nome?: string | null
+          executado_em?: string
+          executado_por?: string | null
+          executado_por_nome?: string | null
+          id?: string
+          principal_id: string
+          tipo: string
+        }
+        Update: {
+          contadores?: Json | null
+          dados_anteriores?: Json | null
+          duplicado_id?: string
+          duplicado_nome?: string | null
+          executado_em?: string
+          executado_por?: string | null
+          executado_por_nome?: string | null
+          id?: string
+          principal_id?: string
+          tipo?: string
+        }
+        Relationships: []
       }
       locais_cliente: {
         Row: {
@@ -2851,6 +2964,48 @@ export type Database = {
             columns: ["projeto_id"]
             isOneToOne: false
             referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      operador_atendente_padrao: {
+        Row: {
+          atendente_id: string
+          created_at: string
+          fornecedor_id: string
+          id: string
+          operador_id: string
+          updated_at: string
+        }
+        Insert: {
+          atendente_id: string
+          created_at?: string
+          fornecedor_id: string
+          id?: string
+          operador_id: string
+          updated_at?: string
+        }
+        Update: {
+          atendente_id?: string
+          created_at?: string
+          fornecedor_id?: string
+          id?: string
+          operador_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operador_atendente_padrao_atendente_id_fkey"
+            columns: ["atendente_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedor_atendentes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operador_atendente_padrao_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
             referencedColumns: ["id"]
           },
         ]
@@ -3748,6 +3903,7 @@ export type Database = {
           dap_cm: number | null
           embalagem: string | null
           fornecedor_id: string | null
+          fundido_em: string | null
           id: string
           midia: Json | null
           nome_cientifico: string | null
@@ -3773,6 +3929,7 @@ export type Database = {
           dap_cm?: number | null
           embalagem?: string | null
           fornecedor_id?: string | null
+          fundido_em?: string | null
           id?: string
           midia?: Json | null
           nome_cientifico?: string | null
@@ -3798,6 +3955,7 @@ export type Database = {
           dap_cm?: number | null
           embalagem?: string | null
           fornecedor_id?: string | null
+          fundido_em?: string | null
           id?: string
           midia?: Json | null
           nome_cientifico?: string | null
@@ -3824,6 +3982,13 @@ export type Database = {
             columns: ["fornecedor_id"]
             isOneToOne: false
             referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plantas_fundido_em_fkey"
+            columns: ["fundido_em"]
+            isOneToOne: false
+            referencedRelation: "plantas"
             referencedColumns: ["id"]
           },
         ]
@@ -4808,6 +4973,14 @@ export type Database = {
       is_colaborador_ativo: { Args: { _user_id: string }; Returns: boolean }
       is_manager_or_admin: { Args: { _user_id: string }; Returns: boolean }
       merge_fornecedores: {
+        Args: { p_duplicado_ids: string[]; p_principal_id: string }
+        Returns: Json
+      }
+      merge_insumos: {
+        Args: { p_duplicado_ids: string[]; p_principal_id: string }
+        Returns: Json
+      }
+      merge_plantas: {
         Args: { p_duplicado_ids: string[]; p_principal_id: string }
         Returns: Json
       }
