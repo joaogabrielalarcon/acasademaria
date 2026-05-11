@@ -3605,7 +3605,21 @@ export default function NovoOrcamento() {
             </div>
           )}
 
+          {/* Etapa 4 - Markup e Margens (placeholder — nova lógica em prompt posterior) */}
           {etapaAtual === 4 && (
+            <Card className="p-12">
+              <div className="text-center space-y-2">
+                <h2 className="font-display text-xl text-foreground">Markup e Margens</h2>
+                <p className="text-sm text-muted-foreground">
+                  Etapa em construção — será implementada em breve.
+                </p>
+              </div>
+            </Card>
+          )}
+
+          {/* LEGADO: UI antiga de Cotação — desativada na refatoração de 6 etapas.
+              Mantida no código para referência; não renderiza mais. */}
+          {false && (
             <div className="space-y-4">
               <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border rounded-lg p-3 flex flex-wrap gap-3 text-sm">
                 <span className="text-destructive font-medium">
