@@ -147,6 +147,81 @@ export type Database = {
           },
         ]
       }
+      audit_price_changes: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          changed_by_nome: string | null
+          entity_id: string
+          entity_table: string
+          fornecedor_id: string | null
+          id: string
+          metadata: Json
+          preco_anterior: number | null
+          preco_novo: number | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          changed_by_nome?: string | null
+          entity_id: string
+          entity_table: string
+          fornecedor_id?: string | null
+          id?: string
+          metadata?: Json
+          preco_anterior?: number | null
+          preco_novo?: number | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          changed_by_nome?: string | null
+          entity_id?: string
+          entity_table?: string
+          fornecedor_id?: string | null
+          id?: string
+          metadata?: Json
+          preco_anterior?: number | null
+          preco_novo?: number | null
+        }
+        Relationships: []
+      }
+      audit_status_changes: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          changed_by_nome: string | null
+          entity_id: string
+          entity_table: string
+          id: string
+          metadata: Json
+          status_anterior: string | null
+          status_novo: string | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          changed_by_nome?: string | null
+          entity_id: string
+          entity_table: string
+          id?: string
+          metadata?: Json
+          status_anterior?: string | null
+          status_novo?: string | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          changed_by_nome?: string | null
+          entity_id?: string
+          entity_table?: string
+          id?: string
+          metadata?: Json
+          status_anterior?: string | null
+          status_novo?: string | null
+        }
+        Relationships: []
+      }
       calendario_eventos: {
         Row: {
           created_at: string
