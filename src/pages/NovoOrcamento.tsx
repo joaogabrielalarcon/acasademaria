@@ -3825,7 +3825,125 @@ export default function NovoOrcamento() {
                 />
               )}
             </div>
-          )}
+              )}
+
+              {/* Modal: definir mercado de fornecedor sem sair da etapa */}
+              <EditarMercadoDialog
+                open={mercadoInlineDialog.open}
+                onOpenChange={(o) =>
+                  setMercadoInlineDialog((p) => ({ ...p, open: o }))
+                }
+                fornecedorId={mercadoInlineDialog.fornecedorId || ""}
+                fornecedorNome={mercadoInlineDialog.fornecedorNome}
+                mercadoAtual={mercadoInlineDialog.mercadoAtual}
+                sugestoes={(fornecedoresLista || [])
+                  .map((x: any) => x.mercado)
+                  .filter((m: any) => m && String(m).trim())}
+                onSaved={() => refetchHistorico?.()}
+              />
+
+              {/* Modal: validação ao avançar para Etapa 4 */}
+              <Dialog open={validacaoEtapa4Open} onOpenChange={setValidacaoEtapa4Open}>
+                <DialogContent className="sm:max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle>Pendências antes de avançar</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 text-sm max-h-[60vh] overflow-auto">
+                    {pendenciasEtapa3.itensSemPrincipal.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="font-medium text-foreground">
+                          {pendenciasEtapa3.itensSemPrincipal.length} item(ns) sem fornecedor Principal
+                        </p>
+                        <ul className="space-y-1">
+                          {pendenciasEtapa3.itensSemPrincipal.map((it) => (
+                            <li
+                              key={it.idx}
+                              className="flex items-center justify-between gap-2 rounded-md border bg-muted/30 px-2 py-1.5"
+                            >
+                              <span className="truncate">{it.nome}</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-xs"
+                                onClick={() => {
+                                  setBlocosColapsados((p) => ({ ...p, [it.idx]: false }));
+                                  setValidacaoEtapa4Open(false);
+                                  // tenta rolar até o card
+                                  setTimeout(() => {
+                                    const el = document.querySelectorAll(".space-y-4 > .p-4")[it.idx] as HTMLElement | undefined;
+                                    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                                  }, 100);
+                                }}
+                              >
+                                Ir até o item
+                              </Button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {pendenciasEtapa3.fornsSemMercado.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="font-medium text-foreground">
+                          {pendenciasEtapa3.fornsSemMercado.length} fornecedor(es) sem mercado
+                        </p>
+                        <ul className="space-y-1">
+                          {pendenciasEtapa3.fornsSemMercado.map((f) => (
+                            <li
+                              key={f.id}
+                              className="flex items-center justify-between gap-2 rounded-md border bg-muted/30 px-2 py-1.5"
+                            >
+                              <div className="min-w-0">
+                                <p className="truncate font-medium">{f.nome}</p>
+                                <p className="text-[11px] text-muted-foreground truncate">
+                                  Em: {f.itens.join(", ")}
+                                </p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-xs"
+                                onClick={() => {
+                                  setMercadoInlineDialog({
+                                    open: true,
+                                    fornecedorId: f.id,
+                                    fornecedorNome: f.nome,
+                                    mercadoAtual: null,
+                                  });
+                                }}
+                              >
+                                Definir mercado
+                              </Button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {!pendenciasEtapa3.bloqueia && (
+                      <p className="text-muted-foreground">
+                        Todas as pendências foram resolvidas. Você já pode avançar.
+                      </p>
+                    )}
+                  </div>
+                  <DialogFooter className="gap-2">
+                    <Button variant="ghost" onClick={() => setValidacaoEtapa4Open(false)}>
+                      Continuar revisando
+                    </Button>
+                    <Button
+                      variant="terracota"
+                      disabled={pendenciasEtapa3.bloqueia}
+                      onClick={() => {
+                        setValidacaoEtapa4Open(false);
+                        irParaEtapa(4);
+                      }}
+                    >
+                      Avançar para Markup
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
 
           {/* Etapa 4 - Markup e Margens (placeholder — nova lógica em prompt posterior) */}
           {etapaAtual === 4 && (
