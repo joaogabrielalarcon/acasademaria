@@ -2,7 +2,8 @@
 // via texto ou voz — o usuário descreve o item e a IA preenche os campos
 // automaticamente, confirmando com o usuário antes de salvar.
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HistoricoPrecos } from "@/components/HistoricoPrecos";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -30,8 +31,14 @@ import { toast } from "sonner";
 import { capitalizeWords } from "@/hooks/useInputMasks";
 
 const CATEGORIAS_INSUMOS = [
-  "Fertilizante", "Substrato", "Defensivo", "Semente", "Ferramenta",
+  "Fertilizante", "Defensivo", "Semente", "Ferramenta",
   "Irrigação", "Vasos / Decoração", "Materiais Construtivos", "Outros",
+];
+
+// Categorias dedicadas a Condicionadores de Solo (separados conceitualmente dos insumos).
+const CATEGORIAS_CONDICIONADORES = [
+  "Adubo Orgânico", "Adubo Mineral", "Adubo de Liberação Lenta",
+  "Substrato", "Terra Preta", "Mix de Adubo", "Composto", "Outros",
 ];
 
 const UNIDADES_INSUMOS = [
@@ -44,6 +51,8 @@ export function InsumosContent() {
   const [editingInsumo, setEditingInsumo] = useState<Insumo | null>(null);
   const [itemToDelete, setItemToDelete] = useState<Insumo | null>(null);
   const [showHistorico, setShowHistorico] = useState<Insumo | null>(null);
+  // Aba ativa: filtra a listagem por tipo de produto.
+  const [tipoAba, setTipoAba] = useState<"insumo" | "condicionador_solo">("insumo");
 
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
@@ -54,6 +63,11 @@ export function InsumosContent() {
 
   const fornecedoresMap = new Map(fornecedores.map((f) => [f.id, f.nome]));
 
+  const insumosFiltrados = useMemo(
+    () => insumos.filter((i) => (i.tipo_produto ?? "insumo") === tipoAba),
+    [insumos, tipoAba]
+  );
+
   const [formData, setFormData] = useState({
     nome: "",
     categoria: "",
@@ -63,12 +77,14 @@ export function InsumosContent() {
     descricao_produto: "",
     volume_apresentacao: "",
     observacoes: "",
+    tipo_produto: "insumo" as "insumo" | "condicionador_solo",
   });
 
   const resetForm = () => {
     setFormData({
       nome: "", categoria: "", unidade: "", fornecedor_id: "",
       preco_unitario: "", descricao_produto: "", volume_apresentacao: "", observacoes: "",
+      tipo_produto: tipoAba,
     });
     setEditingInsumo(null);
   };
@@ -84,6 +100,7 @@ export function InsumosContent() {
       descricao_produto: insumo.descricao_produto || "",
       volume_apresentacao: insumo.volume_apresentacao || "",
       observacoes: insumo.observacoes || "",
+      tipo_produto: insumo.tipo_produto ?? "insumo",
     });
     setDialogOpen(true);
   };
@@ -103,6 +120,7 @@ export function InsumosContent() {
         descricao_produto: data.descricao_produto || null,
         volume_apresentacao: data.volume_apresentacao || null,
         observacoes: data.observacoes || null,
+        tipo_produto: data.tipo_produto,
       };
 
       if (editingInsumo) {
@@ -179,14 +197,29 @@ export function InsumosContent() {
   return (
     <>
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-4">
+          <Tabs value={tipoAba} onValueChange={(v) => setTipoAba(v as "insumo" | "condicionador_solo")}>
+            <TabsList>
+              <TabsTrigger value="insumo">Insumos</TabsTrigger>
+              <TabsTrigger value="condicionador_solo">Condicionadores de Solo</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
-              <Button className="gap-2"><Plus className="w-4 h-4" /> Novo Insumo</Button>
+              <Button className="gap-2">
+                <Plus className="w-4 h-4" />
+                {tipoAba === "condicionador_solo" ? "Novo Condicionador de Solo" : "Novo Insumo"}
+              </Button>
             </DialogTrigger>
             <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>{editingInsumo ? "Editar Insumo" : "Novo Insumo"}</DialogTitle>
+                <DialogTitle>
+                  {editingInsumo
+                    ? (formData.tipo_produto === "condicionador_solo" ? "Editar Condicionador de Solo" : "Editar Insumo")
+                    : (formData.tipo_produto === "condicionador_solo" ? "Novo Condicionador de Solo" : "Novo Insumo")}
+                </DialogTitle>
               </DialogHeader>
 
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -199,13 +232,37 @@ export function InsumosContent() {
                   />
                 </div>
 
+                <div className="space-y-2">
+                  <Label>Tipo de Produto *</Label>
+                  <Select
+                    value={formData.tipo_produto}
+                    onValueChange={(v) =>
+                      setFormData({
+                        ...formData,
+                        tipo_produto: v as "insumo" | "condicionador_solo",
+                        // Limpa a categoria ao trocar de tipo (listas distintas).
+                        categoria: "",
+                      })
+                    }
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="insumo">Insumo</SelectItem>
+                      <SelectItem value="condicionador_solo">Condicionador de Solo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label>Categoria</Label>
                     <Select value={formData.categoria} onValueChange={(v) => setFormData({ ...formData, categoria: v })}>
                       <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>
-                        {CATEGORIAS_INSUMOS.map((cat) => (
+                        {(formData.tipo_produto === "condicionador_solo"
+                          ? CATEGORIAS_CONDICIONADORES
+                          : CATEGORIAS_INSUMOS
+                        ).map((cat) => (
                           <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                         ))}
                       </SelectContent>
@@ -299,14 +356,15 @@ export function InsumosContent() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         <DataTableExcel
-          data={insumos}
+          data={insumosFiltrados}
           columns={columns}
           rowKey={(i) => i.id}
           loading={isLoading}
-          searchPlaceholder="Buscar insumos..."
+          searchPlaceholder={tipoAba === "condicionador_solo" ? "Buscar condicionadores de solo..." : "Buscar insumos..."}
           globalSearchKeys={["nome", "categoria", "fornecedor", "descricao_produto", "observacoes"]}
           rowActions={(insumo) => (
             <div className="flex items-center gap-1">

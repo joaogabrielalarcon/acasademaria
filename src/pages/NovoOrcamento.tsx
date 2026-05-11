@@ -110,14 +110,16 @@ interface TipoProposta {
   nome_completo: string;
 }
 
+// Refatoração: fluxo de 7 → 6 etapas.
+// "Insumos" deixou de ser etapa separada (foi fundido em Fornecedores).
+// "Cotação" foi substituída por "Markup e Margens" (placeholder até nova lógica).
 const ETAPAS = [
-  "Cabeçalho",
-  "Memorial",
+  "Informações Iniciais",
+  "Memorial Descritivo",
   "Fornecedores",
-  "Cotação",
-  "Insumos",
-  "MO e Fretes",
-  "Resumo",
+  "Markup e Margens",
+  "Mão de Obra, Fretes e Transporte",
+  "Resumo Final",
 ];
 
 const TIPOS_CLIENTE = [
@@ -290,7 +292,8 @@ export default function NovoOrcamento() {
 
   // Calcular insumos automaticamente ao entrar na Etapa 5 (uma vez, permitindo edição)
   useEffect(() => {
-    if (etapaAtual !== 5 || insumosCalculados) return;
+    // Insumos foram fundidos na etapa Fornecedores (etapa 3 no novo fluxo).
+    if (etapaAtual !== 3 || insumosCalculados) return;
     if (!coeficientes || coeficientes.length === 0) return;
 
     const acc = { mo: 0, terra: 0, adubo: 0, munck: 0, corda: 0 };
@@ -583,7 +586,7 @@ export default function NovoOrcamento() {
   const [savingFinal, setSavingFinal] = useState(false);
 
   useEffect(() => {
-    if (etapaAtual !== 7) return;
+    if (etapaAtual !== 6) return;
     setMarkupsCategoria((prev) => {
       const next = { ...prev };
       CATEGORIAS_RESUMO.forEach((c) => {
@@ -1451,7 +1454,7 @@ export default function NovoOrcamento() {
   });
 
   // === Auto-save silencioso ===
-  // Salva o orçamento completo (cabeçalho + itens + cotações) automaticamente
+  // Salva o orçamento completo (informações iniciais + itens + cotações) automaticamente
   // sempre que dados-chave mudam, com debounce. Não exibe toast.
   const persistirRef = useRef(persistirOrcamentoCompleto);
   useEffect(() => {
@@ -1486,7 +1489,7 @@ export default function NovoOrcamento() {
       return;
     }
     // No modo edição, sempre auto-salva (o orçamento já existe).
-    // No modo criação, espera os campos obrigatórios pra criar o cabeçalho.
+    // No modo criação, espera os campos obrigatórios pra criar o registro inicial.
     if (!isEdit && !camposObrigatoriosOk) return;
     const t = setTimeout(() => {
       triggerAutoSave();
@@ -1731,10 +1734,11 @@ export default function NovoOrcamento() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itensMaterial, JSON.stringify(historicoPorItem)]);
 
-  // Auto-grava histórico de preços quando o usuário ajusta o valor cotado na Etapa 4
+  // Auto-grava histórico de preços quando o usuário ajusta o valor cotado.
+  // Cotação foi fundida na etapa Fornecedores (etapa 3 no novo fluxo).
   const lastSavedPrecoRef = useRef<Record<string, number>>({});
   useEffect(() => {
-    if (etapaAtual !== 4) return;
+    if (etapaAtual !== 3) return;
     const t = setTimeout(async () => {
       const inserts: any[] = [];
       Object.entries(cotacoes).forEach(([idxStr, linhas]) => {
@@ -2457,11 +2461,11 @@ export default function NovoOrcamento() {
             </div>
           </Card>
 
-          {/* Etapa 1 - Cabeçalho */}
+          {/* Etapa 1 - Informações Iniciais */}
           {etapaAtual === 1 && (
             <Card className="p-6 space-y-6">
               <div>
-                <h2 className="font-display text-xl text-foreground">Cabeçalho</h2>
+                <h2 className="font-display text-xl text-foreground">Informações Iniciais</h2>
                 <p className="text-sm text-muted-foreground">Dados básicos do orçamento</p>
               </div>
 
@@ -3601,7 +3605,21 @@ export default function NovoOrcamento() {
             </div>
           )}
 
+          {/* Etapa 4 - Markup e Margens (placeholder — nova lógica em prompt posterior) */}
           {etapaAtual === 4 && (
+            <Card className="p-12">
+              <div className="text-center space-y-2">
+                <h2 className="font-display text-xl text-foreground">Markup e Margens</h2>
+                <p className="text-sm text-muted-foreground">
+                  Etapa em construção — será implementada em breve.
+                </p>
+              </div>
+            </Card>
+          )}
+
+          {/* LEGADO: UI antiga de Cotação — desativada na refatoração de 6 etapas.
+              Mantida no código para referência; não renderiza mais. */}
+          {false && (
             <div className="space-y-4">
               <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border rounded-lg p-3 flex flex-wrap gap-3 text-sm">
                 <span className="text-destructive font-medium">
@@ -3836,7 +3854,8 @@ export default function NovoOrcamento() {
             </div>
           )}
 
-          {etapaAtual === 5 && (
+          {/* Insumos (fundidos na etapa Fornecedores no novo fluxo de 6 etapas) */}
+          {etapaAtual === 3 && (
             <div className="space-y-6">
               {/* Seção A — Insumos calculados */}
               <Card className="p-4 space-y-3">
@@ -4083,7 +4102,8 @@ export default function NovoOrcamento() {
             </div>
           )}
 
-          {etapaAtual === 6 && (
+          {/* Etapa 5 - Mão de Obra, Fretes e Transporte */}
+          {etapaAtual === 5 && (
             <div className="space-y-6 pb-24">
               {/* Seção A — MÃO DE OBRA */}
               <Card className="p-4 space-y-3">
@@ -4622,8 +4642,8 @@ export default function NovoOrcamento() {
             </div>
           )}
 
-          {/* Etapa 7 (placeholder) */}
-          {etapaAtual === 7 && (
+          {/* Etapa 6 - Resumo Final */}
+          {etapaAtual === 6 && (
             <div className="space-y-6 pb-32">
               {/* Perfil de Markup (opcional) */}
               <Card className="p-4">
