@@ -3706,6 +3706,17 @@ export default function NovoOrcamento() {
                   Resumo para fornecedores (WhatsApp)
                 </Button>
               </div>
+              {indispTarget && (
+                <IndisponibilidadeDialog
+                  open={!!indispTarget}
+                  onOpenChange={(o) => !o && setIndispTarget(null)}
+                  itemId={indispTarget.itemId}
+                  itemTipo={indispTarget.itemTipo}
+                  fornecedorId={indispTarget.fornecedorId}
+                  fornecedorNome={indispTarget.fornecedorNome}
+                  itemNome={indispTarget.itemNome}
+                />
+              )}
             </div>
           )}
 
