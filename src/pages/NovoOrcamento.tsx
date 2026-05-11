@@ -58,11 +58,16 @@ import { cn } from "@/lib/utils";
 import { FornecedorPopover } from "@/components/orcamento/FornecedorPopover";
 import { MercadoInlineEditor, parseMercados } from "@/components/orcamento/MercadoInlineEditor";
 import { EditarPrecoPopover } from "@/components/orcamento/EditarPrecoPopover";
+import { EditarPortePopover } from "@/components/orcamento/EditarPortePopover";
+import { EditarMercadoDialog } from "@/components/orcamento/EditarMercadoDialog";
 import {
   IndisponibilidadeDialog,
   useIndisponibilidades,
   DesfazerIndisponibilidadeButton,
 } from "@/components/orcamento/IndisponibilidadeDialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { EmptyState, ErrorState } from "@/components/ui/list-states";
+import { MobileCardList } from "@/components/ui/mobile-card-list";
 import {
   AlertDialog,
   AlertDialogAction,
