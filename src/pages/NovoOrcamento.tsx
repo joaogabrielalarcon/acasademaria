@@ -3323,7 +3323,24 @@ export default function NovoOrcamento() {
                         )}
                       </TableCell>
                       <TableCell className={cn("p-2 text-sm whitespace-nowrap", precoCls)}>
-                        {l.precoUsado != null ? `R$ ${l.precoUsado.toFixed(2)}` : <span className="text-muted-foreground italic">—</span>}
+                        <div className="inline-flex items-center gap-1.5">
+                          <span>
+                            {l.precoUsado != null ? `R$ ${l.precoUsado.toFixed(2)}` : <span className="text-muted-foreground italic">—</span>}
+                          </span>
+                          {r.item_id && r.item_tipo && (
+                            <EditarPrecoPopover
+                              itemId={r.item_id}
+                              itemTipo={r.item_tipo}
+                              fornecedorId={r.fornecedor_id}
+                              fornecedorNome={f.nome}
+                              precoAtual={l.precoUsado}
+                              ultimaAtualizacao={l.dataUsada}
+                              atualizadoPorNome={r.colaboradores?.nome}
+                              unidade={r.unidade}
+                              onSaved={() => refetchHistorico?.()}
+                            />
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="p-2 text-xs text-muted-foreground">{r.unidade || "—"}</TableCell>
                       <TableCell className="p-2 whitespace-nowrap">
@@ -3351,6 +3368,33 @@ export default function NovoOrcamento() {
                         ) : (
                           <span className="text-[10px] text-muted-foreground/70 italic">sem avaliação</span>
                         )}
+                      </TableCell>
+                      <TableCell className="p-2">
+                        {(() => {
+                          const indispKey = r.item_id ? `${r.item_id}::${r.fornecedor_id}` : "";
+                          const indisp = indispKey ? (indispMap as Map<string, any>).get(indispKey) : null;
+                          if (indisp) {
+                            return (
+                              <div className="flex flex-col gap-0.5">
+                                <span
+                                  className="text-[10px] inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border bg-muted text-muted-foreground border-muted-foreground/30 w-fit"
+                                  title={indisp.observacao || "Marcado como indisponível"}
+                                >
+                                  <PackageX className="w-3 h-3" />
+                                  Não tinha · {new Date(indisp.data_marcacao).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+                                </span>
+                                {indisp.registrado_por_nome && (
+                                  <span className="text-[10px] text-muted-foreground/70">por {indisp.registrado_por_nome}</span>
+                                )}
+                              </div>
+                            );
+                          }
+                          return (
+                            <span className="text-[11px] text-muted-foreground">
+                              {r.colaboradores?.nome || <span className="italic text-muted-foreground/60">—</span>}
+                            </span>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell className="p-2">
                         <div className="flex items-center gap-1">
@@ -3383,6 +3427,37 @@ export default function NovoOrcamento() {
                               Selecionar
                             </Button>
                           )}
+                          {(() => {
+                            const indispKey = r.item_id ? `${r.item_id}::${r.fornecedor_id}` : "";
+                            const indisp = indispKey ? (indispMap as Map<string, any>).get(indispKey) : null;
+                            if (indisp) {
+                              return (
+                                <DesfazerIndisponibilidadeButton
+                                  marcacaoId={indisp.id}
+                                  fornecedorNome={f.nome}
+                                />
+                              );
+                            }
+                            if (!r.item_id || !r.item_tipo) return null;
+                            return (
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                title="Marcar como 'não tinha o item'"
+                                onClick={() =>
+                                  setIndispTarget({
+                                    itemId: r.item_id,
+                                    itemTipo: r.item_tipo,
+                                    fornecedorId: r.fornecedor_id,
+                                    fornecedorNome: f.nome,
+                                    itemNome: item.nome_popular,
+                                  })
+                                }
+                              >
+                                <PackageX className="w-3.5 h-3.5" />
+                              </Button>
+                            );
+                          })()}
                           <Button
                             variant="ghost"
                             size="icon-sm"
