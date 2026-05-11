@@ -215,8 +215,11 @@ export default function NovoOrcamento() {
     fornecedorId: string | null;
     nome: string;
     valor: string;
+    selecionados: string[];
+    draft: string;
+    confirmarNovo: string | null;
     pendente: { itemIdx: number; papel: "principal" | "backup1" | "backup2" } | null;
-  }>({ open: false, fornecedorId: null, nome: "", valor: "", pendente: null });
+  }>({ open: false, fornecedorId: null, nome: "", valor: "", selecionados: [], draft: "", confirmarNovo: null, pendente: null });
 
   // Etapa 5 — Insumos
   type InsumoCalc = { tipo: string; nome: string; quantidade: number; unidade: string };
