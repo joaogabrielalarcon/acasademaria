@@ -3067,6 +3067,9 @@ export default function NovoOrcamento() {
                     ),
                   ),
                 ).sort((a, b) => a.localeCompare(b, "pt-BR"));
+                const temSemMercado = fornsBruto.some(
+                  (r: any) => !String(r.fornecedores?.mercado || "").trim(),
+                );
 
                 // Classifica por porte (exato/maior/menor) e considera outros_portes embutidos
                 const expandeRowsPorPorte = (r: any): { row: any; portClass: "exato" | "maior" | "menor" | "indef"; portUsado: string | null; precoUsado: number | null; dataUsada: string | null }[] => {
@@ -3123,6 +3126,8 @@ export default function NovoOrcamento() {
                         .split(/[,;|]/)
                         .map((s: string) => s.trim())
                         .filter((s: string) => !!s);
+                      // Fornecedores sem mercado aparecem em todos os filtros (forçar preenchimento)
+                      if (ms.length === 0) return true;
                       return ms.some((m) => filtros.mercados.includes(m));
                     });
                   }
@@ -3445,7 +3450,7 @@ export default function NovoOrcamento() {
                             </Button>
                           )}
                         </div>
-                        {mercadosUnicos.length > 0 && (
+                        {(mercadosUnicos.length > 0 || temSemMercado) && (
                           <div className="flex flex-wrap items-center gap-1">
                             <span className="text-muted-foreground mr-1">Mercados:</span>
                             {mercadosUnicos.map((m) => {
@@ -3474,6 +3479,14 @@ export default function NovoOrcamento() {
                                 </button>
                               );
                             })}
+                            {temSemMercado && (
+                              <span
+                                title="Fornecedores sem mercado cadastrado aparecem em todos os filtros até serem preenchidos"
+                                className="text-[11px] px-2 py-0.5 rounded-md border bg-amber-500/10 text-amber-800 border-amber-500/40"
+                              >
+                                Sem mercado
+                              </span>
+                            )}
                           </div>
                         )}
                       </div>
