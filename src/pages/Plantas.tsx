@@ -193,25 +193,32 @@ export function PlantasContent() {
         />
       </div>
 
-      <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir planta?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação não pode ser desfeita. A planta "{itemToDelete?.nome_popular}" será removida permanentemente.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => itemToDelete && deleteMutation.mutate(itemToDelete.id)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDestructiveDialog
+        open={!!itemToDelete}
+        onOpenChange={(o) => !o && setItemToDelete(null)}
+        title="Excluir planta permanentemente?"
+        description="Esta ação não pode ser desfeita. Históricos e referências em orçamentos antigos podem ficar sem vínculo."
+        mode="type-name"
+        expectedName={itemToDelete?.nome_popular ?? ""}
+        confirmLabel="Excluir definitivamente"
+        confirmVariant="destructive"
+        preview={
+          itemToDelete && (
+            <div>
+              <div><span className="text-muted-foreground">Planta:</span> <strong>{itemToDelete.nome_popular}</strong></div>
+              {itemToDelete.nome_cientifico && (
+                <div className="italic text-muted-foreground">{itemToDelete.nome_cientifico}</div>
+              )}
+              <div className="text-xs text-muted-foreground mt-1">
+                Considere mesclar duplicatas em vez de excluir, para preservar o histórico.
+              </div>
+            </div>
+          )
+        }
+        onConfirm={async () => {
+          if (itemToDelete) await deleteMutation.mutateAsync(itemToDelete.id);
+        }}
+      />
 
       {mergePrincipal && (
         <MesclarItensDialog
