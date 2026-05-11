@@ -51,6 +51,8 @@ export function InsumosContent() {
   const [editingInsumo, setEditingInsumo] = useState<Insumo | null>(null);
   const [itemToDelete, setItemToDelete] = useState<Insumo | null>(null);
   const [showHistorico, setShowHistorico] = useState<Insumo | null>(null);
+  // Aba ativa: filtra a listagem por tipo de produto.
+  const [tipoAba, setTipoAba] = useState<"insumo" | "condicionador_solo">("insumo");
 
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
@@ -61,6 +63,11 @@ export function InsumosContent() {
 
   const fornecedoresMap = new Map(fornecedores.map((f) => [f.id, f.nome]));
 
+  const insumosFiltrados = useMemo(
+    () => insumos.filter((i) => (i.tipo_produto ?? "insumo") === tipoAba),
+    [insumos, tipoAba]
+  );
+
   const [formData, setFormData] = useState({
     nome: "",
     categoria: "",
@@ -70,12 +77,14 @@ export function InsumosContent() {
     descricao_produto: "",
     volume_apresentacao: "",
     observacoes: "",
+    tipo_produto: "insumo" as "insumo" | "condicionador_solo",
   });
 
   const resetForm = () => {
     setFormData({
       nome: "", categoria: "", unidade: "", fornecedor_id: "",
       preco_unitario: "", descricao_produto: "", volume_apresentacao: "", observacoes: "",
+      tipo_produto: tipoAba,
     });
     setEditingInsumo(null);
   };
@@ -91,6 +100,7 @@ export function InsumosContent() {
       descricao_produto: insumo.descricao_produto || "",
       volume_apresentacao: insumo.volume_apresentacao || "",
       observacoes: insumo.observacoes || "",
+      tipo_produto: insumo.tipo_produto ?? "insumo",
     });
     setDialogOpen(true);
   };
