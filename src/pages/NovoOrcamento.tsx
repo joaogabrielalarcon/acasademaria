@@ -3697,7 +3697,15 @@ export default function NovoOrcamento() {
                     )}
 
                     {fornsBruto.length === 0 ? (
-                      <p className="text-sm text-muted-foreground italic">Nenhum fornecedor cadastrado para este item.</p>
+                      <EmptyState
+                        title="Nenhum fornecedor cadastrado"
+                        description="Cadastre um fornecedor para este item ou volte à Etapa 2 para revisar o nome."
+                        action={
+                          <Button variant="outline" size="sm" onClick={() => abrirNovoFornecedor(idx)}>
+                            <UserPlus className="w-4 h-4" /> Cadastrar fornecedor
+                          </Button>
+                        }
+                      />
                     ) : (
                       <>
                         {semExato && item.porte && (
