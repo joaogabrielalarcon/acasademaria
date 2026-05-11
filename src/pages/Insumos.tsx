@@ -31,8 +31,14 @@ import { toast } from "sonner";
 import { capitalizeWords } from "@/hooks/useInputMasks";
 
 const CATEGORIAS_INSUMOS = [
-  "Fertilizante", "Substrato", "Defensivo", "Semente", "Ferramenta",
+  "Fertilizante", "Defensivo", "Semente", "Ferramenta",
   "Irrigação", "Vasos / Decoração", "Materiais Construtivos", "Outros",
+];
+
+// Categorias dedicadas a Condicionadores de Solo (separados conceitualmente dos insumos).
+const CATEGORIAS_CONDICIONADORES = [
+  "Adubo Orgânico", "Adubo Mineral", "Adubo de Liberação Lenta",
+  "Substrato", "Terra Preta", "Mix de Adubo", "Composto", "Outros",
 ];
 
 const UNIDADES_INSUMOS = [
