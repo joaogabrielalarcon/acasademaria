@@ -52,10 +52,17 @@ import {
   UserPlus,
   ChevronDown,
   ChevronUp,
+  PackageX,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FornecedorPopover } from "@/components/orcamento/FornecedorPopover";
 import { MercadoInlineEditor, parseMercados } from "@/components/orcamento/MercadoInlineEditor";
+import { EditarPrecoPopover } from "@/components/orcamento/EditarPrecoPopover";
+import {
+  IndisponibilidadeDialog,
+  useIndisponibilidades,
+  DesfazerIndisponibilidadeButton,
+} from "@/components/orcamento/IndisponibilidadeDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1639,7 +1646,7 @@ export default function NovoOrcamento() {
             const { data, error: hErr } = await (supabase as any)
               .from("historico_precos")
               .select(
-                "id, item_id, item_tipo, preco, porte, unidade, data_orcamento, fornecedor_id, fornecedores(id, nome, mercado, cidade, telefone, whatsapp)",
+                "id, item_id, item_tipo, preco, porte, unidade, data_orcamento, fornecedor_id, registrado_por, observacoes, criado_em, fornecedores(id, nome, mercado, cidade, telefone, whatsapp), colaboradores:registrado_por(nome)",
               )
               .in("item_id", ids)
               .order("data_orcamento", { ascending: false });
@@ -1738,6 +1745,22 @@ export default function NovoOrcamento() {
     return map;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itensMaterial, JSON.stringify(historicoPorItem)]);
+
+  // IDs de catálogo presentes na etapa, para buscar marcações de "não tinha o item"
+  const itemIdsCatalogo = useMemo(
+    () => Array.from(new Set(Object.values(itemDbInfoByIdx).map((v) => v.item_id))),
+    [itemDbInfoByIdx],
+  );
+  const { data: indispMap = new Map() } = useIndisponibilidades(itemIdsCatalogo);
+
+  // Estado do diálogo de marcação "não tinha o item"
+  const [indispTarget, setIndispTarget] = useState<{
+    itemId: string;
+    itemTipo: "planta" | "insumo";
+    fornecedorId: string;
+    fornecedorNome?: string | null;
+    itemNome?: string;
+  } | null>(null);
 
   // Auto-grava histórico de preços quando o usuário ajusta o valor cotado.
   // Cotação foi fundida na etapa Fornecedores (etapa 3 no novo fluxo).
@@ -3301,7 +3324,24 @@ export default function NovoOrcamento() {
                         )}
                       </TableCell>
                       <TableCell className={cn("p-2 text-sm whitespace-nowrap", precoCls)}>
-                        {l.precoUsado != null ? `R$ ${l.precoUsado.toFixed(2)}` : <span className="text-muted-foreground italic">—</span>}
+                        <div className="inline-flex items-center gap-1.5">
+                          <span>
+                            {l.precoUsado != null ? `R$ ${l.precoUsado.toFixed(2)}` : <span className="text-muted-foreground italic">—</span>}
+                          </span>
+                          {r.item_id && r.item_tipo && (
+                            <EditarPrecoPopover
+                              itemId={r.item_id}
+                              itemTipo={r.item_tipo}
+                              fornecedorId={r.fornecedor_id}
+                              fornecedorNome={f.nome}
+                              precoAtual={l.precoUsado}
+                              ultimaAtualizacao={l.dataUsada}
+                              atualizadoPorNome={r.colaboradores?.nome}
+                              unidade={r.unidade}
+                              onSaved={() => refetchHistorico?.()}
+                            />
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="p-2 text-xs text-muted-foreground">{r.unidade || "—"}</TableCell>
                       <TableCell className="p-2 whitespace-nowrap">
@@ -3329,6 +3369,33 @@ export default function NovoOrcamento() {
                         ) : (
                           <span className="text-[10px] text-muted-foreground/70 italic">sem avaliação</span>
                         )}
+                      </TableCell>
+                      <TableCell className="p-2">
+                        {(() => {
+                          const indispKey = r.item_id ? `${r.item_id}::${r.fornecedor_id}` : "";
+                          const indisp = indispKey ? (indispMap as Map<string, any>).get(indispKey) : null;
+                          if (indisp) {
+                            return (
+                              <div className="flex flex-col gap-0.5">
+                                <span
+                                  className="text-[10px] inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border bg-muted text-muted-foreground border-muted-foreground/30 w-fit"
+                                  title={indisp.observacao || "Marcado como indisponível"}
+                                >
+                                  <PackageX className="w-3 h-3" />
+                                  Não tinha · {new Date(indisp.data_marcacao).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+                                </span>
+                                {indisp.registrado_por_nome && (
+                                  <span className="text-[10px] text-muted-foreground/70">por {indisp.registrado_por_nome}</span>
+                                )}
+                              </div>
+                            );
+                          }
+                          return (
+                            <span className="text-[11px] text-muted-foreground">
+                              {r.colaboradores?.nome || <span className="italic text-muted-foreground/60">—</span>}
+                            </span>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell className="p-2">
                         <div className="flex items-center gap-1">
@@ -3361,6 +3428,37 @@ export default function NovoOrcamento() {
                               Selecionar
                             </Button>
                           )}
+                          {(() => {
+                            const indispKey = r.item_id ? `${r.item_id}::${r.fornecedor_id}` : "";
+                            const indisp = indispKey ? (indispMap as Map<string, any>).get(indispKey) : null;
+                            if (indisp) {
+                              return (
+                                <DesfazerIndisponibilidadeButton
+                                  marcacaoId={indisp.id}
+                                  fornecedorNome={f.nome}
+                                />
+                              );
+                            }
+                            if (!r.item_id || !r.item_tipo) return null;
+                            return (
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                title="Marcar como 'não tinha o item'"
+                                onClick={() =>
+                                  setIndispTarget({
+                                    itemId: r.item_id,
+                                    itemTipo: r.item_tipo,
+                                    fornecedorId: r.fornecedor_id,
+                                    fornecedorNome: f.nome,
+                                    itemNome: item.nome_popular,
+                                  })
+                                }
+                              >
+                                <PackageX className="w-3.5 h-3.5" />
+                              </Button>
+                            );
+                          })()}
                           <Button
                             variant="ghost"
                             size="icon-sm"
@@ -3543,6 +3641,7 @@ export default function NovoOrcamento() {
                                 <TableHead className="px-2">Un.</TableHead>
                                 <TableHead className="px-2">Última cotação</TableHead>
                                 <TableHead className="px-2">Nota</TableHead>
+                                <TableHead className="px-2">Atualizado por</TableHead>
                                 <TableHead className="px-2"></TableHead>
                               </TableRow>
                             </TableHeader>
@@ -3553,7 +3652,7 @@ export default function NovoOrcamento() {
                               {/* Botão expandir maiores */}
                               {maiores.length > 0 && (
                                 <TableRow>
-                                  <TableCell colSpan={9} className="p-2 bg-muted/30">
+                                  <TableCell colSpan={10} className="p-2 bg-muted/30">
                                     <button
                                       type="button"
                                       onClick={() => setExpandirMaiores((p) => ({ ...p, [idx]: !p[idx] }))}
@@ -3570,7 +3669,7 @@ export default function NovoOrcamento() {
                               {/* Botão expandir menores */}
                               {menores.length > 0 && (
                                 <TableRow>
-                                  <TableCell colSpan={9} className="p-2 bg-muted/30">
+                                  <TableCell colSpan={10} className="p-2 bg-muted/30">
                                     <button
                                       type="button"
                                       onClick={() => setExpandirMenores((p) => ({ ...p, [idx]: !p[idx] }))}
@@ -3607,6 +3706,17 @@ export default function NovoOrcamento() {
                   Resumo para fornecedores (WhatsApp)
                 </Button>
               </div>
+              {indispTarget && (
+                <IndisponibilidadeDialog
+                  open={!!indispTarget}
+                  onOpenChange={(o) => !o && setIndispTarget(null)}
+                  itemId={indispTarget.itemId}
+                  itemTipo={indispTarget.itemTipo}
+                  fornecedorId={indispTarget.fornecedorId}
+                  fornecedorNome={indispTarget.fornecedorNome}
+                  itemNome={indispTarget.itemNome}
+                />
+              )}
             </div>
           )}
 
