@@ -72,6 +72,7 @@ export function MercadoInlineEditor({
   const [salvando, setSalvando] = useState(false);
   // Estado local imediato para refletir mudança antes do refetch
   const [valorLocal, setValorLocal] = useState<string | null>(valorAtual ?? null);
+  const [confirmarNovo, setConfirmarNovo] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
