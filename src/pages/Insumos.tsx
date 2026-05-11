@@ -232,6 +232,27 @@ export function InsumosContent() {
                   />
                 </div>
 
+                <div className="space-y-2">
+                  <Label>Tipo de Produto *</Label>
+                  <Select
+                    value={formData.tipo_produto}
+                    onValueChange={(v) =>
+                      setFormData({
+                        ...formData,
+                        tipo_produto: v as "insumo" | "condicionador_solo",
+                        // Limpa a categoria ao trocar de tipo (listas distintas).
+                        categoria: "",
+                      })
+                    }
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="insumo">Insumo</SelectItem>
+                      <SelectItem value="condicionador_solo">Condicionador de Solo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label>Categoria</Label>
