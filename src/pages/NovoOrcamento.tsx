@@ -235,6 +235,17 @@ export default function NovoOrcamento() {
   };
   const filtroPadraoTab3: FiltrosTab3 = { primaria: "data", secundaria: "nenhuma", mercados: [], somenteRecentes: false };
   const [filtrosTab3, setFiltrosTab3] = useState<Record<number, FiltrosTab3>>({});
+  // Colapso por bloco de item na Etapa 3 (independente do legado cardsColapsados)
+  const [blocosColapsados, setBlocosColapsados] = useState<Record<number, boolean>>({});
+  // Modal inline para preencher Mercado de fornecedor sem sair da etapa
+  const [mercadoInlineDialog, setMercadoInlineDialog] = useState<{
+    open: boolean;
+    fornecedorId: string | null;
+    fornecedorNome: string | null;
+    mercadoAtual: string | null;
+  }>({ open: false, fornecedorId: null, fornecedorNome: null, mercadoAtual: null });
+  // Modal de validação ao avançar para Etapa 4
+  const [validacaoEtapa4Open, setValidacaoEtapa4Open] = useState(false);
   const [mercadoModal, setMercadoModal] = useState<{
     open: boolean;
     fornecedorId: string | null;
