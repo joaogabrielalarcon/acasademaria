@@ -2461,11 +2461,11 @@ export default function NovoOrcamento() {
             </div>
           </Card>
 
-          {/* Etapa 1 - Cabeçalho */}
+          {/* Etapa 1 - Informações Iniciais */}
           {etapaAtual === 1 && (
             <Card className="p-6 space-y-6">
               <div>
-                <h2 className="font-display text-xl text-foreground">Cabeçalho</h2>
+                <h2 className="font-display text-xl text-foreground">Informações Iniciais</h2>
                 <p className="text-sm text-muted-foreground">Dados básicos do orçamento</p>
               </div>
 
