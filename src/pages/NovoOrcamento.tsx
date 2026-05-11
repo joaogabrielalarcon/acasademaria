@@ -1981,7 +1981,7 @@ export default function NovoOrcamento() {
         const atuais = prev[itemIdx] || [];
         return { ...prev, [itemIdx]: atuais.includes(fornId) ? atuais : [...atuais, fornId] };
       });
-      setMercadoModal({ open: false, fornecedorId: null, nome: "", valor: "", pendente: null });
+      setMercadoModal({ open: false, fornecedorId: null, nome: "", valor: "", selecionados: [], draft: "", confirmarNovo: null, pendente: null });
       toast({ title: "Mercado cadastrado e fornecedor adicionado" });
     } catch (e: any) {
       toast({ title: "Erro ao salvar mercado", description: e?.message, variant: "destructive" });
@@ -5335,7 +5335,7 @@ export default function NovoOrcamento() {
       {/* Modal: cadastro obrigatório de mercado */}
       <Dialog
         open={mercadoModal.open}
-        onOpenChange={(v) => { if (!v) setMercadoModal({ open: false, fornecedorId: null, nome: "", valor: "", pendente: null }); }}
+        onOpenChange={(v) => { if (!v) setMercadoModal({ open: false, fornecedorId: null, nome: "", valor: "", selecionados: [], draft: "", confirmarNovo: null, pendente: null }); }}
       >
         <DialogContent>
           <DialogHeader>
@@ -5356,7 +5356,7 @@ export default function NovoOrcamento() {
             />
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setMercadoModal({ open: false, fornecedorId: null, nome: "", valor: "", pendente: null })}>
+            <Button variant="ghost" onClick={() => setMercadoModal({ open: false, fornecedorId: null, nome: "", valor: "", selecionados: [], draft: "", confirmarNovo: null, pendente: null })}>
               Cancelar
             </Button>
             <Button variant="terracota" onClick={confirmarMercadoModal}>
