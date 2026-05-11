@@ -1734,10 +1734,11 @@ export default function NovoOrcamento() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itensMaterial, JSON.stringify(historicoPorItem)]);
 
-  // Auto-grava histórico de preços quando o usuário ajusta o valor cotado na Etapa 4
+  // Auto-grava histórico de preços quando o usuário ajusta o valor cotado.
+  // Cotação foi fundida na etapa Fornecedores (etapa 3 no novo fluxo).
   const lastSavedPrecoRef = useRef<Record<string, number>>({});
   useEffect(() => {
-    if (etapaAtual !== 4) return;
+    if (etapaAtual !== 3) return;
     const t = setTimeout(async () => {
       const inserts: any[] = [];
       Object.entries(cotacoes).forEach(([idxStr, linhas]) => {
