@@ -123,6 +123,8 @@ interface Props<T> {
   searchPlaceholder?: string;
   /** keys searched by global search */
   globalSearchKeys?: string[];
+  /** invoked when user presses Enter on a focused row */
+  onRowEnter?: (row: T) => void;
 }
 
 export function DataTableExcel<T>({
@@ -132,6 +134,7 @@ export function DataTableExcel<T>({
   loading = false,
   searchPlaceholder = "Buscar...",
   globalSearchKeys,
+  onRowEnter,
 }: Props<T>) {
   const [globalSearch, setGlobalSearch] = useState("");
   // per-column funnel: selected values (checkboxes)
