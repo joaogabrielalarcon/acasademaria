@@ -5337,38 +5337,170 @@ export default function NovoOrcamento() {
       )}
 
       {/* Modal: cadastro obrigatório de mercado */}
-      <Dialog
-        open={mercadoModal.open}
-        onOpenChange={(v) => { if (!v) setMercadoModal({ open: false, fornecedorId: null, nome: "", valor: "", selecionados: [], draft: "", confirmarNovo: null, pendente: null }); }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Mercado/central obrigatório</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Para adicionar <strong className="text-foreground">{mercadoModal.nome}</strong> ao orçamento, informe a qual mercado ou central ele pertence. O cadastro do fornecedor será atualizado.
-          </p>
-          <div className="space-y-2">
-            <Label htmlFor="mercado-modal-input">Mercado / central</Label>
-            <Input
-              id="mercado-modal-input"
-              autoFocus
-              value={mercadoModal.valor}
-              onChange={(e) => setMercadoModal((p) => ({ ...p, valor: e.target.value }))}
-              placeholder="Ex: Jarinu, Ceagesp, CEASA..."
-              onKeyDown={(e) => { if (e.key === "Enter") confirmarMercadoModal(); }}
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setMercadoModal({ open: false, fornecedorId: null, nome: "", valor: "", selecionados: [], draft: "", confirmarNovo: null, pendente: null })}>
-              Cancelar
-            </Button>
-            <Button variant="terracota" onClick={confirmarMercadoModal}>
-              Salvar e adicionar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {(() => {
+        const RESET = { open: false, fornecedorId: null, nome: "", valor: "", selecionados: [], draft: "", confirmarNovo: null, pendente: null } as const;
+        const sugestoesMercados = Array.from(
+          new Map(
+            (fornecedoresLista as any[])
+              .flatMap((f) => parseMercados(f.mercado))
+              .map((v) => [v.toLowerCase(), v]),
+          ).values(),
+        ).sort((a, b) => a.localeCompare(b, "pt-BR"));
+        const selSet = new Set(mercadoModal.selecionados.map((s) => s.toLowerCase()));
+        const disponiveis = sugestoesMercados.filter((s) => !selSet.has(s.toLowerCase()));
+        const tryAdicionar = (raw: string) => {
+          const v = raw.trim().replace(/\s+/g, " ");
+          if (!v) return;
+          const titled = v.split(" ").map((w) => (w ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w)).join(" ");
+          if (selSet.has(titled.toLowerCase())) return;
+          const existe = sugestoesMercados.some((s) => s.toLowerCase() === titled.toLowerCase());
+          if (!existe) {
+            setMercadoModal((p) => ({ ...p, confirmarNovo: titled }));
+            return;
+          }
+          setMercadoModal((p) => ({ ...p, selecionados: [...p.selecionados, titled], draft: "" }));
+        };
+        return (
+          <>
+            <Dialog
+              open={mercadoModal.open}
+              onOpenChange={(v) => { if (!v) setMercadoModal({ ...RESET }); }}
+            >
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Mercado/central obrigatório</DialogTitle>
+                </DialogHeader>
+                <p className="text-sm text-muted-foreground">
+                  Para adicionar <strong className="text-foreground">{mercadoModal.nome}</strong> ao orçamento, informe a qual mercado ou central ele pertence. Pode pertencer a mais de um.
+                </p>
+
+                {mercadoModal.selecionados.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {mercadoModal.selecionados.map((s) => (
+                      <span
+                        key={s}
+                        className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/30"
+                      >
+                        {s}
+                        <button
+                          type="button"
+                          aria-label={`Remover ${s}`}
+                          onClick={() =>
+                            setMercadoModal((p) => ({
+                              ...p,
+                              selecionados: p.selecionados.filter((x) => x.toLowerCase() !== s.toLowerCase()),
+                            }))
+                          }
+                          className="hover:text-destructive"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex gap-1">
+                  <Input
+                    id="mercado-modal-input"
+                    autoFocus
+                    value={mercadoModal.draft}
+                    onChange={(e) => setMercadoModal((p) => ({ ...p, draft: e.target.value }))}
+                    placeholder="Buscar ou criar mercado (ex.: Ceasa, Holambra…)"
+                    className="h-9 text-sm"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (mercadoModal.draft.trim()) tryAdicionar(mercadoModal.draft);
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-9 px-2"
+                    onClick={() => mercadoModal.draft.trim() && tryAdicionar(mercadoModal.draft)}
+                    disabled={!mercadoModal.draft.trim()}
+                  >
+                    +
+                  </Button>
+                </div>
+
+                {disponiveis.length > 0 && (
+                  <div>
+                    <div className="text-[11px] text-muted-foreground mb-1">Mercados existentes — clique para adicionar:</div>
+                    <div className="flex flex-wrap gap-1 max-h-40 overflow-y-auto">
+                      {disponiveis
+                        .filter((s) =>
+                          mercadoModal.draft.trim()
+                            ? s.toLowerCase().includes(mercadoModal.draft.trim().toLowerCase())
+                            : true,
+                        )
+                        .map((s) => (
+                          <button
+                            key={s}
+                            type="button"
+                            onClick={() => tryAdicionar(s)}
+                            className="text-[11px] px-2 py-0.5 rounded-md border bg-secondary text-secondary-foreground hover:border-primary/40 transition-colors"
+                          >
+                            {s}
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                <DialogFooter>
+                  <Button variant="ghost" onClick={() => setMercadoModal({ ...RESET })}>
+                    Cancelar
+                  </Button>
+                  <Button
+                    variant="terracota"
+                    onClick={() => confirmarMercadoModal()}
+                    disabled={mercadoModal.selecionados.length === 0}
+                  >
+                    Salvar e adicionar
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <AlertDialog
+              open={!!mercadoModal.confirmarNovo}
+              onOpenChange={(o) => !o && setMercadoModal((p) => ({ ...p, confirmarNovo: null }))}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Criar novo mercado?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    O mercado <strong>"{mercadoModal.confirmarNovo}"</strong> ainda não existe na base. Deseja criá-lo agora? Ele ficará disponível para todos os fornecedores a partir de então.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => {
+                      const novo = mercadoModal.confirmarNovo;
+                      if (!novo) return;
+                      setMercadoModal((p) => ({
+                        ...p,
+                        selecionados: p.selecionados.some((x) => x.toLowerCase() === novo.toLowerCase())
+                          ? p.selecionados
+                          : [...p.selecionados, novo],
+                        draft: "",
+                        confirmarNovo: null,
+                      }));
+                    }}
+                  >
+                    Sim, criar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </>
+        );
+      })()}
     </AppLayout>
   );
 }
