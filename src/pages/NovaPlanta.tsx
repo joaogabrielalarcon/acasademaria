@@ -100,18 +100,16 @@ export default function NovaPlanta() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const minM = parsePorteMetros(formData.altura_min_m).value;
+      const maxM = parsePorteMetros(formData.altura_max_m).value;
       const payload = {
         nome_popular: formData.nome_popular,
         nome_cientifico: formData.nome_cientifico || null,
         categoria_id: formData.categoria_id || null,
         fornecedor_id: formData.fornecedor_id || null,
-        altura_min_m: formData.altura_min_m ? parseFloat(formData.altura_min_m) : null,
-        altura_max_m: formData.altura_max_m ? parseFloat(formData.altura_max_m) : null,
-        altura_m: formData.altura_min_m && formData.altura_max_m
-          ? (parseFloat(formData.altura_min_m) + parseFloat(formData.altura_max_m)) / 2
-          : formData.altura_min_m
-            ? parseFloat(formData.altura_min_m)
-            : null,
+        altura_min_m: minM,
+        altura_max_m: maxM,
+        altura_m: minM != null && maxM != null ? (minM + maxM) / 2 : (minM ?? maxM ?? 0),
         dap_cm: isArvore && formData.dap_cm ? parseFloat(formData.dap_cm) : null,
         unidade: formData.unidade || null,
         embalagem: formData.embalagem || null,
