@@ -21,9 +21,11 @@ import { formatPorteMetros } from "@/lib/porte";
 
 export function PlantasContent() {
   const [itemToDelete, setItemToDelete] = useState<Planta | null>(null);
+  const [mergePrincipal, setMergePrincipal] = useState<Planta | null>(null);
 
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
+  const podeMesclar = useIsAdminOrAdministrativo(user?.id);
 
   const { data: plantas = [], isLoading } = usePlantas();
   const { data: categorias = [] } = useCategoriasPlantas();
@@ -32,6 +34,16 @@ export function PlantasContent() {
 
   const categoriasMap = new Map(categorias.map((c) => [c.id, c.nome]));
   const fornecedoresMap = new Map(fornecedores.map((f) => [f.id, f.nome]));
+
+  const candidatosFusao: ItemFusivel[] = plantas.map((p) => ({
+    id: p.id,
+    nome: p.nome_popular,
+    nome_secundario: p.nome_cientifico,
+    altura_m: p.altura_m ?? p.altura_min_m ?? p.altura_max_m ?? null,
+    fornecedor_id: p.fornecedor_id,
+    fornecedor_nome: p.fornecedor_id ? fornecedoresMap.get(p.fornecedor_id) ?? null : null,
+    preco_unitario: p.preco_unitario,
+  }));
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
