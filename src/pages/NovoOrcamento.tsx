@@ -5338,7 +5338,7 @@ export default function NovoOrcamento() {
 
       {/* Modal: cadastro obrigatório de mercado */}
       {(() => {
-        const RESET = { open: false, fornecedorId: null, nome: "", valor: "", selecionados: [], draft: "", confirmarNovo: null, pendente: null } as const;
+        const RESET = { open: false, fornecedorId: null as string | null, nome: "", valor: "", selecionados: [] as string[], draft: "", confirmarNovo: null as string | null, pendente: null as { itemIdx: number; papel: "principal" | "backup1" | "backup2" } | null };
         const sugestoesMercados = Array.from(
           new Map(
             (fornecedoresLista as any[])
