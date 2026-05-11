@@ -3552,24 +3552,44 @@ export default function NovoOrcamento() {
 
                 return (
                   <Card key={idx} className="p-4 space-y-3">
-                    <div className="flex items-start justify-between gap-3 flex-wrap">
-                      <div>
-                        <p className="font-semibold text-foreground">
-                          {item.nome_popular || "(sem nome)"}
-                          {item.nome_cientifico && (
-                            <span className="ml-2 italic font-normal text-muted-foreground">{item.nome_cientifico}</span>
-                          )}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {item.porte && <>Porte solicitado: <strong>{item.porte}</strong> · </>}
-                          {item.quantidade} {item.unidade}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">{exibidasCount} de {totalCount} fornecedores</span>
-                        <span className={cn("px-2 py-1 rounded-md text-xs font-medium", badge.cls)}>{badge.label}</span>
-                      </div>
-                    </div>
+                    <Collapsible
+                      open={!blocosColapsados[idx]}
+                      onOpenChange={(o) =>
+                        setBlocosColapsados((p) => ({ ...p, [idx]: !o }))
+                      }
+                    >
+                      <CollapsibleTrigger asChild>
+                        <button
+                          type="button"
+                          className="w-full flex items-start justify-between gap-3 flex-wrap text-left rounded-md hover:bg-muted/40 px-1 py-1 -mx-1"
+                          aria-label={`Expandir ou recolher ${item.nome_popular || "item"}`}
+                        >
+                          <div className="flex items-start gap-2">
+                            {blocosColapsados[idx] ? (
+                              <ChevronDown className="w-4 h-4 mt-0.5 text-muted-foreground" />
+                            ) : (
+                              <ChevronUp className="w-4 h-4 mt-0.5 text-muted-foreground" />
+                            )}
+                            <div>
+                              <p className="font-semibold text-foreground">
+                                {item.nome_popular || "(sem nome)"}
+                                {item.nome_cientifico && (
+                                  <span className="ml-2 italic font-normal text-muted-foreground">{item.nome_cientifico}</span>
+                                )}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {item.porte && <>Porte solicitado: <strong>{item.porte}</strong> · </>}
+                                {item.quantidade} {item.unidade}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">{exibidasCount} de {totalCount} fornecedores</span>
+                            <span className={cn("px-2 py-1 rounded-md text-xs font-medium", badge.cls)}>{badge.label}</span>
+                          </div>
+                        </button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="space-y-3 pt-3">
 
                     {/* Ordenação e filtragem múltipla */}
                     {fornsBruto.length > 0 && (
