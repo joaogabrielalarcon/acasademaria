@@ -52,6 +52,7 @@ import {
   UserPlus,
   ChevronDown,
   ChevronUp,
+  PackageX,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FornecedorPopover } from "@/components/orcamento/FornecedorPopover";
