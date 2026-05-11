@@ -28,6 +28,7 @@ import { AtendentesSection } from "@/components/fornecedores/AtendentesSection";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatCNPJ, formatPhone, capitalizeWords } from "@/hooks/useInputMasks";
+import { MobileCardList, MobileCardItem } from "@/components/ui/mobile-card-list";
 
 const MERCADOS = [
   'Ceagesp','Ceaflor','Jundiaí','Ceasa','Itapetininga','Atibaia',
