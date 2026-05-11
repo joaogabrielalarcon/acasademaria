@@ -260,7 +260,7 @@ export function MercadoInlineEditor({
             <span className="text-[10px] text-muted-foreground">
               Atualiza o cadastro do fornecedor
             </span>
-            <Button size="sm" onClick={salvar} disabled={salvando}>
+            <Button size="sm" onClick={() => salvar()} disabled={salvando}>
               {salvando ? <Loader2 className="w-3 h-3 animate-spin" /> : "Salvar"}
             </Button>
           </div>
