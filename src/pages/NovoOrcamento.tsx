@@ -58,11 +58,16 @@ import { cn } from "@/lib/utils";
 import { FornecedorPopover } from "@/components/orcamento/FornecedorPopover";
 import { MercadoInlineEditor, parseMercados } from "@/components/orcamento/MercadoInlineEditor";
 import { EditarPrecoPopover } from "@/components/orcamento/EditarPrecoPopover";
+import { EditarPortePopover } from "@/components/orcamento/EditarPortePopover";
+import { EditarMercadoDialog } from "@/components/orcamento/EditarMercadoDialog";
 import {
   IndisponibilidadeDialog,
   useIndisponibilidades,
   DesfazerIndisponibilidadeButton,
 } from "@/components/orcamento/IndisponibilidadeDialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { EmptyState, ErrorState } from "@/components/ui/list-states";
+import { MobileCardList } from "@/components/ui/mobile-card-list";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -230,6 +235,17 @@ export default function NovoOrcamento() {
   };
   const filtroPadraoTab3: FiltrosTab3 = { primaria: "data", secundaria: "nenhuma", mercados: [], somenteRecentes: false };
   const [filtrosTab3, setFiltrosTab3] = useState<Record<number, FiltrosTab3>>({});
+  // Colapso por bloco de item na Etapa 3 (independente do legado cardsColapsados)
+  const [blocosColapsados, setBlocosColapsados] = useState<Record<number, boolean>>({});
+  // Modal inline para preencher Mercado de fornecedor sem sair da etapa
+  const [mercadoInlineDialog, setMercadoInlineDialog] = useState<{
+    open: boolean;
+    fornecedorId: string | null;
+    fornecedorNome: string | null;
+    mercadoAtual: string | null;
+  }>({ open: false, fornecedorId: null, fornecedorNome: null, mercadoAtual: null });
+  // Modal de validação ao avançar para Etapa 4
+  const [validacaoEtapa4Open, setValidacaoEtapa4Open] = useState(false);
   const [mercadoModal, setMercadoModal] = useState<{
     open: boolean;
     fornecedorId: string | null;
@@ -1819,6 +1835,37 @@ export default function NovoOrcamento() {
     return { semForn, risco, ok };
   }, [itensMaterial, fornecedoresSelecionados, historicoPorItem]);
 
+  // Pendências para avançar à Etapa 4 (Markup)
+  const pendenciasEtapa3 = useMemo(() => {
+    const itensSemPrincipal: { idx: number; nome: string }[] = [];
+    const fornsSemMercadoMap: Map<string, { id: string; nome: string; itens: string[] }> = new Map();
+    itensMaterial.forEach((it, idx) => {
+      const sel = fornecedoresSelecionados[idx] || [];
+      const linhas = cotacoes[idx] || {};
+      const temPrincipal = sel.some((fid) => linhas[fid]?.status_selecao === "principal");
+      if (!temPrincipal) {
+        itensSemPrincipal.push({ idx, nome: it.nome_popular || `Item ${idx + 1}` });
+      }
+      // Verifica fornecedores selecionados sem mercado
+      const fornsBruto = fornecedoresDoItem(it) as any[];
+      sel.forEach((fid) => {
+        const row = fornsBruto.find((r: any) => r.fornecedor_id === fid);
+        const f = row?.fornecedores;
+        if (f && !String(f.mercado || "").trim()) {
+          const cur = fornsSemMercadoMap.get(fid) || { id: fid, nome: f.nome || "Fornecedor", itens: [] };
+          if (!cur.itens.includes(it.nome_popular)) cur.itens.push(it.nome_popular || `Item ${idx + 1}`);
+          fornsSemMercadoMap.set(fid, cur);
+        }
+      });
+    });
+    return {
+      itensSemPrincipal,
+      fornsSemMercado: Array.from(fornsSemMercadoMap.values()),
+      bloqueia: itensSemPrincipal.length > 0 || fornsSemMercadoMap.size > 0,
+    };
+  }, [itensMaterial, fornecedoresSelecionados, cotacoes, historicoPorItem]);
+
+
   const resumoCotacoes = useMemo(() => {
     let semCot = 0;
     let porteDiv = 0;
@@ -2291,7 +2338,14 @@ export default function NovoOrcamento() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleProxima = () => irParaEtapa(etapaAtual + 1);
+  const handleProxima = () => {
+    // Validação ao sair da Etapa 3 (Fornecedores) para Etapa 4 (Markup)
+    if (etapaAtual === 3 && pendenciasEtapa3.bloqueia) {
+      setValidacaoEtapa4Open(true);
+      return;
+    }
+    irParaEtapa(etapaAtual + 1);
+  };
 
   const copiarCodigo = async () => {
     if (!form.codigo) return;
@@ -3099,11 +3153,15 @@ export default function NovoOrcamento() {
               </div>
 
               {itensMaterial.length === 0 && (
-                <Card className="p-6">
-                  <p className="text-sm text-muted-foreground">
-                    Nenhum item no memorial. Volte à Etapa 2 para adicionar itens.
-                  </p>
-                </Card>
+                <EmptyState
+                  title="Sem itens no memorial"
+                  description="Volte à Etapa 2 para adicionar plantas, insumos ou condicionadores antes de selecionar fornecedores."
+                  action={
+                    <Button variant="outline" size="sm" onClick={() => irParaEtapa(2)}>
+                      <ArrowLeft className="w-4 h-4" /> Voltar à Etapa 2
+                    </Button>
+                  }
+                />
               )}
 
               {itensMaterial.map((item, idx) => {
@@ -3310,18 +3368,37 @@ export default function NovoOrcamento() {
                         />
                       </TableCell>
                       <TableCell className="p-2">
-                        {l.portUsado ? (
-                          <span className={cn(
-                            "text-xs",
-                            grupo === "maior" && "text-amber-700",
-                            grupo === "menor" && "text-amber-700",
-                            grupo === "indef" && "text-muted-foreground italic",
-                          )}>
-                            {l.portUsado}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground italic">—</span>
-                        )}
+                        <div className="inline-flex items-center gap-1">
+                          {l.portUsado ? (
+                            <span className={cn(
+                              "text-xs",
+                              grupo === "maior" && "text-amber-700",
+                              grupo === "menor" && "text-amber-700",
+                              grupo === "indef" && "text-muted-foreground italic",
+                            )}>
+                              {l.portUsado}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground italic">—</span>
+                          )}
+                          {r.item_id && r.item_tipo && (
+                            <EditarPortePopover
+                              itemId={r.item_id}
+                              itemTipo={r.item_tipo}
+                              fornecedorId={r.fornecedor_id}
+                              fornecedorNome={f.nome}
+                              itemNome={item.nome_popular}
+                              porteAtual={l.portUsado}
+                              precoAtual={l.precoUsado}
+                              unidade={r.unidade}
+                              portesExistentes={[
+                                r.porte,
+                                ...((r.outros_portes || []) as any[]).map((o: any) => o.porte),
+                              ].filter(Boolean) as string[]}
+                              onSaved={() => refetchHistorico?.()}
+                            />
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className={cn("p-2 text-sm whitespace-nowrap", precoCls)}>
                         <div className="inline-flex items-center gap-1.5">
@@ -3475,24 +3552,44 @@ export default function NovoOrcamento() {
 
                 return (
                   <Card key={idx} className="p-4 space-y-3">
-                    <div className="flex items-start justify-between gap-3 flex-wrap">
-                      <div>
-                        <p className="font-semibold text-foreground">
-                          {item.nome_popular || "(sem nome)"}
-                          {item.nome_cientifico && (
-                            <span className="ml-2 italic font-normal text-muted-foreground">{item.nome_cientifico}</span>
-                          )}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {item.porte && <>Porte solicitado: <strong>{item.porte}</strong> · </>}
-                          {item.quantidade} {item.unidade}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">{exibidasCount} de {totalCount} fornecedores</span>
-                        <span className={cn("px-2 py-1 rounded-md text-xs font-medium", badge.cls)}>{badge.label}</span>
-                      </div>
-                    </div>
+                    <Collapsible
+                      open={!blocosColapsados[idx]}
+                      onOpenChange={(o) =>
+                        setBlocosColapsados((p) => ({ ...p, [idx]: !o }))
+                      }
+                    >
+                      <CollapsibleTrigger asChild>
+                        <button
+                          type="button"
+                          className="w-full flex items-start justify-between gap-3 flex-wrap text-left rounded-md hover:bg-muted/40 px-1 py-1 -mx-1"
+                          aria-label={`Expandir ou recolher ${item.nome_popular || "item"}`}
+                        >
+                          <div className="flex items-start gap-2">
+                            {blocosColapsados[idx] ? (
+                              <ChevronDown className="w-4 h-4 mt-0.5 text-muted-foreground" />
+                            ) : (
+                              <ChevronUp className="w-4 h-4 mt-0.5 text-muted-foreground" />
+                            )}
+                            <div>
+                              <p className="font-semibold text-foreground">
+                                {item.nome_popular || "(sem nome)"}
+                                {item.nome_cientifico && (
+                                  <span className="ml-2 italic font-normal text-muted-foreground">{item.nome_cientifico}</span>
+                                )}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {item.porte && <>Porte solicitado: <strong>{item.porte}</strong> · </>}
+                                {item.quantidade} {item.unidade}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">{exibidasCount} de {totalCount} fornecedores</span>
+                            <span className={cn("px-2 py-1 rounded-md text-xs font-medium", badge.cls)}>{badge.label}</span>
+                          </div>
+                        </button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="space-y-3 pt-3">
 
                     {/* Ordenação e filtragem múltipla */}
                     {fornsBruto.length > 0 && (
@@ -3620,7 +3717,15 @@ export default function NovoOrcamento() {
                     )}
 
                     {fornsBruto.length === 0 ? (
-                      <p className="text-sm text-muted-foreground italic">Nenhum fornecedor cadastrado para este item.</p>
+                      <EmptyState
+                        title="Nenhum fornecedor cadastrado"
+                        description="Cadastre um fornecedor para este item ou volte à Etapa 2 para revisar o nome."
+                        action={
+                          <Button variant="outline" size="sm" onClick={() => abrirNovoFornecedor(idx)}>
+                            <UserPlus className="w-4 h-4" /> Cadastrar fornecedor
+                          </Button>
+                        }
+                      />
                     ) : (
                       <>
                         {semExato && item.porte && (
@@ -3629,7 +3734,7 @@ export default function NovoOrcamento() {
                           </div>
                         )}
 
-                        <div className="border rounded-md overflow-hidden">
+                        <div className="border rounded-md overflow-hidden hidden md:block">
                           <Table>
                             <TableHeader>
                               <TableRow>
@@ -3685,6 +3790,122 @@ export default function NovoOrcamento() {
                             </TableBody>
                           </Table>
                         </div>
+
+                        {/* Mobile cards (≤md) — uso de campo */}
+                        <MobileCardList
+                          items={[...exatasOrd, ...(exatasOrd.length === 0 ? indefOrd : []), ...(expMaior ? maioresOrd : []), ...(expMenor ? menoresOrd : [])].map((l) => {
+                            const r = l.row;
+                            const f = r.fornecedores || {};
+                            const papel = papelAtual(idx, r.fornecedor_id);
+                            const indispKey = r.item_id ? `${r.item_id}::${r.fornecedor_id}` : "";
+                            const indisp = indispKey ? (indispMap as Map<string, any>).get(indispKey) : null;
+                            return {
+                              key: `${r.fornecedor_id}-${l.portUsado || "x"}`,
+                              title: f.nome || "Fornecedor",
+                              subtitle: f.mercado ? `Mercado: ${f.mercado}` : (
+                                <button
+                                  type="button"
+                                  className="text-amber-700 underline-offset-2 hover:underline text-xs"
+                                  onClick={() =>
+                                    setMercadoInlineDialog({
+                                      open: true,
+                                      fornecedorId: f.id,
+                                      fornecedorNome: f.nome,
+                                      mercadoAtual: f.mercado || null,
+                                    })
+                                  }
+                                >
+                                  Definir mercado
+                                </button>
+                              ),
+                              badges: papel ? (
+                                <span className={cn(
+                                  "text-[10px] px-1.5 py-0.5 rounded-full border font-medium",
+                                  papel === "principal" ? "bg-primary text-primary-foreground border-primary" : "bg-secondary text-secondary-foreground border-secondary",
+                                )}>{papelLabel[papel]}</span>
+                              ) : indisp ? (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground border">Não tinha</span>
+                              ) : null,
+                              fields: [
+                                { label: "Preço", value: l.precoUsado != null ? `R$ ${l.precoUsado.toFixed(2)}` : "—" },
+                                { label: "Porte", value: l.portUsado || "—" },
+                                { label: "Última", value: l.dataUsada ? new Date(l.dataUsada).toLocaleDateString("pt-BR") : "—" },
+                                { label: "Un.", value: r.unidade || "—" },
+                              ],
+                              actions: (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant={papel ? "secondary" : "default"}
+                                    className="flex-1"
+                                    onClick={() => {
+                                      if (papel) {
+                                        definirPapel(idx, r.fornecedor_id, "remover", f);
+                                      } else {
+                                        const livre = proximoPapelLivre(idx);
+                                        if (!livre) {
+                                          toast({ title: "Limite de 3 fornecedores", variant: "destructive" });
+                                          return;
+                                        }
+                                        definirPapel(idx, r.fornecedor_id, livre, f);
+                                      }
+                                    }}
+                                  >
+                                    {papel ? "Remover" : "Selecionar"}
+                                  </Button>
+                                  {!indisp && r.item_id && r.item_tipo && (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() =>
+                                        setIndispTarget({
+                                          itemId: r.item_id,
+                                          itemTipo: r.item_tipo,
+                                          fornecedorId: r.fornecedor_id,
+                                          fornecedorNome: f.nome,
+                                          itemNome: item.nome_popular,
+                                        })
+                                      }
+                                    >
+                                      <PackageX className="w-4 h-4" /> Não tinha
+                                    </Button>
+                                  )}
+                                  {indisp && (
+                                    <DesfazerIndisponibilidadeButton
+                                      marcacaoId={indisp.id}
+                                      fornecedorNome={f.nome}
+                                    />
+                                  )}
+                                </>
+                              ),
+                            };
+                          })}
+                          emptyTitle="Sem fornecedores para exibir"
+                        />
+
+                        {/* Toggle expandir maiores/menores no mobile */}
+                        <div className="md:hidden flex flex-wrap gap-2">
+                          {maiores.length > 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setExpandirMaiores((p) => ({ ...p, [idx]: !p[idx] }))}
+                            >
+                              <ChevronsUp className="w-3.5 h-3.5" />
+                              {expMaior ? "Ocultar" : "Ver"} portes maiores ({maiores.length})
+                            </Button>
+                          )}
+                          {menores.length > 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setExpandirMenores((p) => ({ ...p, [idx]: !p[idx] }))}
+                            >
+                              <ChevronsDown className="w-3.5 h-3.5" />
+                              {expMenor ? "Ocultar" : "Ver"} portes menores ({menores.length})
+                            </Button>
+                          )}
+                        </div>
                       </>
                     )}
 
@@ -3692,6 +3913,8 @@ export default function NovoOrcamento() {
                       <UserPlus className="w-4 h-4" />
                       Adicionar fornecedor não cadastrado
                     </Button>
+                      </CollapsibleContent>
+                    </Collapsible>
                   </Card>
                 );
               })}
@@ -3718,7 +3941,125 @@ export default function NovoOrcamento() {
                 />
               )}
             </div>
-          )}
+              )}
+
+              {/* Modal: definir mercado de fornecedor sem sair da etapa */}
+              <EditarMercadoDialog
+                open={mercadoInlineDialog.open}
+                onOpenChange={(o) =>
+                  setMercadoInlineDialog((p) => ({ ...p, open: o }))
+                }
+                fornecedorId={mercadoInlineDialog.fornecedorId || ""}
+                fornecedorNome={mercadoInlineDialog.fornecedorNome}
+                mercadoAtual={mercadoInlineDialog.mercadoAtual}
+                sugestoes={(fornecedoresLista || [])
+                  .map((x: any) => x.mercado)
+                  .filter((m: any) => m && String(m).trim())}
+                onSaved={() => refetchHistorico?.()}
+              />
+
+              {/* Modal: validação ao avançar para Etapa 4 */}
+              <Dialog open={validacaoEtapa4Open} onOpenChange={setValidacaoEtapa4Open}>
+                <DialogContent className="sm:max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle>Pendências antes de avançar</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 text-sm max-h-[60vh] overflow-auto">
+                    {pendenciasEtapa3.itensSemPrincipal.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="font-medium text-foreground">
+                          {pendenciasEtapa3.itensSemPrincipal.length} item(ns) sem fornecedor Principal
+                        </p>
+                        <ul className="space-y-1">
+                          {pendenciasEtapa3.itensSemPrincipal.map((it) => (
+                            <li
+                              key={it.idx}
+                              className="flex items-center justify-between gap-2 rounded-md border bg-muted/30 px-2 py-1.5"
+                            >
+                              <span className="truncate">{it.nome}</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-xs"
+                                onClick={() => {
+                                  setBlocosColapsados((p) => ({ ...p, [it.idx]: false }));
+                                  setValidacaoEtapa4Open(false);
+                                  // tenta rolar até o card
+                                  setTimeout(() => {
+                                    const el = document.querySelectorAll(".space-y-4 > .p-4")[it.idx] as HTMLElement | undefined;
+                                    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                                  }, 100);
+                                }}
+                              >
+                                Ir até o item
+                              </Button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {pendenciasEtapa3.fornsSemMercado.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="font-medium text-foreground">
+                          {pendenciasEtapa3.fornsSemMercado.length} fornecedor(es) sem mercado
+                        </p>
+                        <ul className="space-y-1">
+                          {pendenciasEtapa3.fornsSemMercado.map((f) => (
+                            <li
+                              key={f.id}
+                              className="flex items-center justify-between gap-2 rounded-md border bg-muted/30 px-2 py-1.5"
+                            >
+                              <div className="min-w-0">
+                                <p className="truncate font-medium">{f.nome}</p>
+                                <p className="text-[11px] text-muted-foreground truncate">
+                                  Em: {f.itens.join(", ")}
+                                </p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-xs"
+                                onClick={() => {
+                                  setMercadoInlineDialog({
+                                    open: true,
+                                    fornecedorId: f.id,
+                                    fornecedorNome: f.nome,
+                                    mercadoAtual: null,
+                                  });
+                                }}
+                              >
+                                Definir mercado
+                              </Button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {!pendenciasEtapa3.bloqueia && (
+                      <p className="text-muted-foreground">
+                        Todas as pendências foram resolvidas. Você já pode avançar.
+                      </p>
+                    )}
+                  </div>
+                  <DialogFooter className="gap-2">
+                    <Button variant="ghost" onClick={() => setValidacaoEtapa4Open(false)}>
+                      Continuar revisando
+                    </Button>
+                    <Button
+                      variant="terracota"
+                      disabled={pendenciasEtapa3.bloqueia}
+                      onClick={() => {
+                        setValidacaoEtapa4Open(false);
+                        irParaEtapa(4);
+                      }}
+                    >
+                      Avançar para Markup
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
 
           {/* Etapa 4 - Markup e Margens (placeholder — nova lógica em prompt posterior) */}
           {etapaAtual === 4 && (
