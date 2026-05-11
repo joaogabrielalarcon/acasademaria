@@ -2208,6 +2208,7 @@ export type Database = {
           nome: string
           observacoes: string | null
           preco_unitario: number | null
+          tipo_produto: string
           ultima_compra: string | null
           unidade: string | null
           updated_at: string | null
@@ -2225,6 +2226,7 @@ export type Database = {
           nome: string
           observacoes?: string | null
           preco_unitario?: number | null
+          tipo_produto?: string
           ultima_compra?: string | null
           unidade?: string | null
           updated_at?: string | null
@@ -2242,6 +2244,7 @@ export type Database = {
           nome?: string
           observacoes?: string | null
           preco_unitario?: number | null
+          tipo_produto?: string
           ultima_compra?: string | null
           unidade?: string | null
           updated_at?: string | null

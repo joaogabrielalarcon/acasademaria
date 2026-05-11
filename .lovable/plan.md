@@ -1,128 +1,157 @@
-# Melhorias no Orçamento e Cotações
+Refatoração estrutural do módulo de Orçamentos. Sete itens distintos, alguns com mudanças de banco. Vou organizar por dependência (banco primeiro, UI depois) e separar em PRs lógicos para evitar quebrar o fluxo existente.
 
-Vou implementar um conjunto de melhorias no fluxo de orçamento (`/orcamentos/:id` e Memorial Descritivo) organizadas em 6 frentes. Caso queira priorizar / remover algo, me diga antes de aprovar.
+## 1. Renomear "Cabeçalho" → "Informações Iniciais"
 
----
+Em `src/pages/NovoOrcamento.tsx`:
+- Array `ETAPAS[0]`: `"Cabeçalho"` → `"Informações Iniciais"`
+- Título da seção da etapa 1 (`<h2>Cabeçalho</h2>`) → `"Informações Iniciais"`
+- Comentários `// Etapa 1 - Cabeçalho` atualizados
+- Buscar qualquer outra ocorrência do termo no fluxo (mensagens de validação, toasts)
 
-## 1. Memorial Descritivo — edição completa
+## 2. Reestruturar 7 → 6 etapas
 
-- **Editar porte** (altura/DAP) já é possível na seção "Plantas", mas vou garantir que essas alterações sejam respeitadas pelo orçamento.
-- **Excluir itens**: já existe botão de lixeira no modo edição — vou tornar a edição mais acessível (botão "Editar" mais visível) e permitir excluir item a item também na visualização do orçamento.
+Nova ordem do array `ETAPAS`:
+```
+1. Informações Iniciais
+2. Memorial Descritivo
+3. Fornecedores       (agora cobre plantas E insumos)
+4. Markup e Margens   (placeholder)
+5. Mão de Obra, Fretes e Transporte
+6. Resumo Final
+```
 
----
+Mudanças concretas:
+- A antiga etapa 5 ("Insumos") **desaparece como etapa**. Toda a UI/lógica de seleção de fornecedores para insumos passa para a etapa 3 (Fornecedores), reaproveitando o mesmo padrão visual usado para plantas. Os cálculos automáticos de insumos (`insumosCalc`) e insumos adicionais (`insumosAdicionais`) continuam existindo internamente — apenas a aba dedicada some; eles aparecem dentro da etapa Fornecedores numa seção "Insumos" abaixo de "Plantas", com a mesma UI de cotação.
+- A antiga etapa 4 ("Cotação") vira "Markup e Margens" e por enquanto renderiza apenas:
+  ```
+  <div className="text-center py-16 text-muted-foreground">
+    Etapa em construção — será implementada em breve.
+  </div>
+  ```
+  A lógica antiga de cotação (`cotacoes`, `markupsCategoria`, etc.) é preservada no estado para não quebrar o resumo, mas a UI da etapa fica oculta. A seleção de fornecedor por item migra para a etapa 3.
+- Ajustar todos os checks `etapaAtual === N`: 5→3 (insumos), 7→6 (resumo), 6→5 (MO/Fretes), e os efeitos `useEffect` que dependem disso.
+- `podeAvancar = etapaAtual < ETAPAS.length` continua válido.
+- Orçamentos antigos: o estado é tudo em memória + tabela `orcamentos`/`orcamento_itens`; nenhum campo `etapa_atual` é persistido com semântica posicional crítica. Confirmar isso lendo os hooks de salvamento; se houver, fazer mapeamento defensivo.
 
-## 2. Cotações com tolerância de porte
+## 3. Categoria "Condicionadores de Solo"
 
-Hoje o orçamento busca preços do **histórico** apenas pelo nome (popular). Vou adicionar:
+**Decisão de modelagem**: criar uma terceira tabela `condicionadores_solo` espelhando `insumos` seria mais limpo, mas multiplica trabalho em todo o app (hooks, RLS, históricos, estoque, fornecedor links, fusão). 
 
-- **Filtro por porte** com tolerância configurável (ex.: ±20% na altura, ±2cm DAP).
-- Toggle por item: "Apenas porte exato" / "Aceitar portes próximos" / "Qualquer porte".
-- Quando o porte cotado for diferente do solicitado, mostrar badge "Porte ~2,5m (solicitado 3m)" ao lado do preço.  
+**Alternativa mais econômica e que atende o requisito**: tratar como uma **categoria especial dentro de `insumos`**, com flag `tipo_produto` (`'insumo' | 'condicionador_solo'`). Toda UI que filtra/lista insumos passa a separar em duas seções; o memorial ganha uma terceira seção; cadastro tem um seletor.
 
-- exibir todas as opçoes de porte que temos para cada planta, assim o orçamento fica personalizavel na hora da seleção. o usuario pode qual padrao de porte ele quer visualizar para aquele item em especifico, caso contrario todos as opçoes daquele item cadastrados serao exibidas.  
+Vou propor a opção com flag por padrão (mais simples, menos migração de dados). Se preferir tabela separada, ajusto o plano.
 
-- exibir todos os dados relevantes para a escolha do fornecedor - porte; valor; data de ultima cotação e nota de avaliaçao daquele item.
-- ser possivel filtrar os itens que vao aparecer tambem pela localizaçao do fornecedor (ceagesp, ceaflor, e caso nao tenha essa informação cadastrada aparece em todas as seleções)   
+Migração:
+- `ALTER TABLE insumos ADD COLUMN tipo_produto text NOT NULL DEFAULT 'insumo' CHECK (tipo_produto IN ('insumo','condicionador_solo'))`
+- Índice em `tipo_produto`
 
+UI:
+- `src/pages/Insumos.tsx`: filtro de aba/segmented control (Insumos | Condicionadores de Solo), seletor no cadastro
+- `src/components/projeto/MemorialDescritivo.tsx`: terceira seção
+- Orçamento (etapa Fornecedores): terceira sub-seção
 
----
+## 4. Múltiplos atendentes por fornecedor + atendente padrão por operador
 
-## 3. Atualizar preço diretamente na cotação
+Migração:
+```sql
+CREATE TABLE fornecedor_atendentes (
+  id uuid PK default gen_random_uuid(),
+  fornecedor_id uuid REFERENCES fornecedores(id) ON DELETE CASCADE,
+  nome text NOT NULL,
+  telefone text,
+  funcao text,
+  ativo boolean DEFAULT true,
+  created_at timestamptz DEFAULT now()
+);
 
-- Cada linha de fornecedor terá um campo de preço **editável**.
-- Ao salvar, registra automaticamente em `historico_precos` com a data atual e o usuário, mantendo o histórico.
-- Botão "Atualizar cotação" registra um novo ponto no histórico mesmo se o valor for igual (revalidação).
+CREATE TABLE operador_atendente_padrao (
+  id uuid PK default gen_random_uuid(),
+  operador_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  fornecedor_id uuid REFERENCES fornecedores(id) ON DELETE CASCADE,
+  atendente_id uuid REFERENCES fornecedor_atendentes(id) ON DELETE CASCADE,
+  UNIQUE (operador_id, fornecedor_id)
+);
+```
+Com RLS: leitura para autenticados; escrita conforme regras existentes (admin/administrativo no fornecedor; cada operador na sua própria preferência).
 
----
+UI em `src/pages/Fornecedores.tsx` (modal de edição):
+- Nova seção "Atendentes" abaixo dos contatos: lista editável (adicionar/remover/editar/ativar)
+- Para cada atendente, botão "Definir como meu padrão" (estrela)
+- Os campos `telefone`/`whatsapp` legados continuam existindo; novos atendentes os substituem na prática
 
-## 4. Adicionar fornecedor + item na hora
+Onde gerar mensagem para fornecedor (provavelmente `ResumoFornecedoresDialog`): pré-selecionar o atendente padrão do operador atual.
 
-No diálogo de "Adicionar cotação":
+## 5. Fusão de duplicatas — Fornecedores
 
-- Campo de fornecedor com **autocomplete + opção "Cadastrar novo fornecedor"** (abre mini-form: nome, telefone/WhatsApp, e-mail, cidade, mercado).
-- Se o item ainda não existe na base de plantas/insumos, opção **"Cadastrar nova planta"** já preenchida com nome popular/científico do memorial, e o usuário só preenche porte, unidade e preço.
-- Tudo num único modal, sem sair do orçamento.
+Já existe `merge_fornecedores` RPC e UI `MesclagemFornecedoresDialog` / `MesclarManualDialog`. Preciso:
+- Adicionar status `'fundido'` ao filtro padrão de listagem (esconder)
+- Atualizar `merge_fornecedores`: em vez de DELETE, marcar `status='fundido'`; concatenar nome no `nome_alternativo` com `;`; migrar atendentes com dedup por `(nome,telefone)`
+- Garantir botão "Fundir fornecedores" visível na tela de listagem (já existe via `MesclarManualDialog`?). Confirmar e expor explicitamente no header.
 
----
+## 6. Fusão de duplicatas — Plantas/Insumos/Condicionadores
 
-## 5. Acesso rápido aos dados do fornecedor
+RPCs novas: `merge_plantas(p_canonico uuid, p_duplicados uuid[])` e `merge_insumos(...)` (que cobre condicionadores via mesma tabela).
 
-- Na linha de cada cotação, ícone para **abrir um popover** com: nome, telefone, WhatsApp (link `wa.me`), e-mail, cidade, categoria, observações.
-- Botão direto "Abrir WhatsApp" e "Copiar telefone".
+Comportamento:
+- Migrar `historico_precos` dos duplicados para o canônico
+- O preço mais recente (entre canônico e duplicados) vira `preco_unitario` do canônico
+- Migrar referências em `orcamento_itens`, `estoque_movimentacoes`, `diario_insumos_area`, `orcamento_insumos`
+- Marcar duplicados com `ativo=false` e adicionar coluna `fundido_em uuid REFERENCES ...` para auditoria
+- Modal de validação visual antes de confirmar (checa nome popular/científico + porte + fornecedor)
 
----
+UI: botões "Fundir" nas listagens `Plantas.tsx` e `Insumos.tsx`, modal comparativo similar ao de fornecedores.
 
-## 6. Filtros e ranking de fornecedores
+## 7. Padronização de porte em metros
 
-Para cada item, oferecer ordenação/filtro dos fornecedores listados por:
+Definir helper utilitário `parsePorteMetros(input: string): number | null` e `formatPorteMetros(m: number): string`:
+- Aceita apenas dígitos e vírgula/ponto, máximo 2 decimais
+- Converte ponto para vírgula na exibição
+- Rejeita "P14", "DAP", "Pt" etc. com mensagem clara
+- 0 exibido como "—"
 
-- Menor preço
-- Cotação mais recente
-- Porte mais próximo do solicitado
-- Melhor avaliação (nota média) — exige adicionar tabela de avaliações de fornecedor (ver técnico)
+Aplicar em:
+- `src/pages/NovaPlanta.tsx` e qualquer formulário de planta
+- Importações (planilhas): rotina de normalização — se valor for `< 5` assumir já em metros, se for `> 5` e não tiver vírgula, alertar; se vier com "cm", dividir por 100
+- Tabela de plantas: exibição usa `formatPorteMetros`
+- Memorial e orçamento: idem
 
-Filtros aplicados como chips acima da lista de cotações.
+Schema: campos `altura_m`, `altura_min_m`, `altura_max_m`, `dap_cm` já existem. Manter `dap_cm` (DAP é diâmetro do tronco em cm, padrão da silvicultura — não converter para metros). Forçar `altura_m` como fonte única para porte de exibição.
 
----
+## Plano de execução por mensagens
 
-## 7. Resumo para WhatsApp (mais importante)
+Esta refatoração é grande demais para uma única resposta sem virar um monstro instável. Proposta de fatiamento (vou executar tudo se você aprovar, mas em ordem):
 
-Após selecionar fornecedores, novo botão **"Gerar resumo para fornecedores"** que abre um modal com:
+**PR 1 (esta resposta)** — Itens 1, 2 e 3:
+- Renomear etapas
+- Reestruturar para 6 etapas (mover insumos para dentro de Fornecedores; placeholder Markup)
+- Migration: adicionar `tipo_produto` em insumos + UI básica de filtro
 
-- **Agrupamento por fornecedor** dos itens selecionados.
-- Para cada fornecedor, uma **tabela** com: Nome popular | Nome científico | Porte | Unidade | Quantidade.
-- Botão **"Copiar tabela"** (formato compatível com WhatsApp — texto monoespaçado / markdown simples).
-- Botão **"Abrir WhatsApp"** com mensagem-padrão pré-preenchida + tabela.
-- Mensagem padrão editável (ex.: "Olá, [nome], poderia atualizar os valores das plantas abaixo? Obrigado, MFM Paisagismo.").
+**PR 2** — Itens 4 e 5:
+- Migrations de `fornecedor_atendentes` e `operador_atendente_padrao`
+- UI no cadastro de fornecedor
+- Atualizar `merge_fornecedores` (status fundido + atendentes)
 
----
+**PR 3** — Item 6:
+- RPCs `merge_plantas` e `merge_insumos`
+- Modais de fusão em Plantas e Insumos
 
-## 8. Importar resposta do fornecedor via IA
-
-Quando o fornecedor responder no WhatsApp:
-
-- Botão "Colar resposta do fornecedor" abre textarea + seleção do fornecedor.
-- IA (Claude via edge function existente) extrai: item → preço → porte → unidade -> registra a data.
-- Mostra preview "atualizar X itens?" com confirmação.
-- Ao confirmar, grava em `historico_precos` (mantendo histórico) e atualiza a cotação atual.
-
----
+**PR 4** — Item 7:
+- Helpers de porte
+- Validação em formulários e importações
+- Migração de dados existentes (script de normalização opcional)
 
 ## Detalhes técnicos
 
-**Migrations:**
+- Banco: Supabase via `supabase--migration` para schemas; `supabase--insert` para dados.
+- RLS: todas as novas tabelas com policies espelhando as de `fornecedores` (admin/administrativo escrevem; autenticados leem).
+- Tipos: após cada migration, `src/integrations/supabase/types.ts` regenera automaticamente.
+- Identidade visual: zero alterações em paleta/tipografia/componentes — só renomear e reorganizar.
 
-- `fornecedor_avaliacoes` (fornecedor_id, item_id, item_tipo, nota 1–5, comentario, criado_por, created_at) — para ranking.
-- Garantir que `historico_precos` tem coluna `porte` (altura/dap) — adicionar se faltar.
+## Risco principal
 
-**Frontend (`src/pages/NovoOrcamento.tsx` + novos componentes):**
+Mover insumos da etapa 5 para dentro da etapa 3 toca em muitos `useEffect` e estado em `NovoOrcamento.tsx` (4000+ linhas). Vou fazer com cuidado, preservando o estado (`insumosCalc`, `insumosAdicionais`) e movendo apenas o JSX/handlers de UI. Os cálculos automáticos disparados por `etapaAtual === 5` viram `etapaAtual === 3` (ou removo a guarda e disparo quando os pré-requisitos estiverem prontos).
 
-- `CotacaoLinhaPreco.tsx` — input editável de preço com auto-save no histórico.
-- `FornecedorPopover.tsx` — dados rápidos + WhatsApp.
-- `NovoFornecedorInline.tsx` — mini-form em dialog.
-- `ResumoFornecedoresDialog.tsx` — agrupamento + tabela copiável.
-- `ImportarRespostaFornecedorDialog.tsx` — colar texto + IA.
-- Filtros/ordenação com `useMemo` sobre o array de cotações por item.
+Confirmação que preciso de você antes de começar:
 
-**Edge function:**
-
-- Reusar `extract-doc-data` ou criar `extract-cotacao-resposta` (Claude) com schema `{itens: [{nome, preco, porte, unidade}]}`.
-
-**Memorial (`src/components/projeto/MemorialDescritivo.tsx`):**
-
-- Já tem add/remove no modo edição — adicionar atalho "Editar" mais visível e tooltip nos botões.
-
----
-
-## Ordem sugerida de entrega
-
-1. Edição inline de preço + histórico automático (#3)
-2. Popover de fornecedor + WhatsApp (#5)
-3. Cadastrar fornecedor/item inline (#4)
-4. Resumo agrupado para WhatsApp (#7)
-5. Filtros/ranking de fornecedores (#6) — sem nota inicialmente
-6. Tolerância de porte nas cotações (#2)
-7. Importar resposta via IA (#8)
-8. Avaliações de fornecedor + ranking por nota (parte do #6)
-
-Posso entregar tudo de uma vez (resposta longa) ou ir por blocos. **Como prefere?**
+1. **Item 3 — modelagem de Condicionadores de Solo**: posso usar a flag `tipo_produto` na tabela `insumos` (mais simples) ou prefere tabela separada `condicionadores_solo`?
+2. **Ordem de execução**: posso seguir os 4 PRs em sequência nesta mesma conversa, ou prefere que eu pause após cada PR para você validar?
