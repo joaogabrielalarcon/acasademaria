@@ -169,6 +169,11 @@ export function PlantasContent() {
                   <Pencil className="w-4 h-4" />
                 </Link>
               </Button>
+              {podeMesclar && (
+                <Button variant="ghost" size="icon-sm" title="Mesclar duplicatas em desta planta" onClick={() => setMergePrincipal(planta)}>
+                  <GitMerge className="w-4 h-4" />
+                </Button>
+              )}
               {isAdmin && (
                 <Button
                   variant="ghost" size="icon-sm"
