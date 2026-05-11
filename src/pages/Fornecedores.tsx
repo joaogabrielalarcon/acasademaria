@@ -15,10 +15,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDestructiveDialog } from "@/components/ui/confirm-destructive-dialog";
 import { Plus, Pencil, Trash2, GitMerge } from "lucide-react";
 import { DataTableExcel, DataTableColumn } from "@/components/ui/data-table-excel";
 import { useFornecedores, Fornecedor } from "@/hooks/useFornecedores";
