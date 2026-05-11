@@ -120,6 +120,7 @@ export function InsumosContent() {
         descricao_produto: data.descricao_produto || null,
         volume_apresentacao: data.volume_apresentacao || null,
         observacoes: data.observacoes || null,
+        tipo_produto: data.tipo_produto,
       };
 
       if (editingInsumo) {
