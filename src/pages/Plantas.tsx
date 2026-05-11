@@ -234,6 +234,8 @@ export function PlantasContent() {
           onMerged={() => setMergePrincipal(null)}
         />
       )}
+
+      <ImportarPlantasDialog open={importarOpen} onOpenChange={setImportarOpen} />
     </>
   );
 }
