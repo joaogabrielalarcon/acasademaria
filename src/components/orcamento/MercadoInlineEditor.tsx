@@ -2,6 +2,16 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { AlertCircle, Check, Loader2, Store, X, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -62,6 +72,7 @@ export function MercadoInlineEditor({
   const [salvando, setSalvando] = useState(false);
   // Estado local imediato para refletir mudança antes do refetch
   const [valorLocal, setValorLocal] = useState<string | null>(valorAtual ?? null);
+  const [confirmarNovo, setConfirmarNovo] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -94,12 +105,23 @@ export function MercadoInlineEditor({
     return base.filter((s) => s.toLowerCase().includes(q)).slice(0, 8);
   }, [draft, sugestoesUnicas, selecionados]);
 
-  const adicionar = (raw: string) => {
+  const adicionarDireto = (raw: string) => {
     const v = toTitleCase(raw);
     if (!v) return;
     setSelecionados((prev) => (prev.some((p) => p.toLowerCase() === v.toLowerCase()) ? prev : [...prev, v]));
     setDraft("");
     setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const adicionar = (raw: string) => {
+    const v = toTitleCase(raw);
+    if (!v) return;
+    const existe = sugestoesUnicas.some((s) => s.toLowerCase() === v.toLowerCase());
+    if (!existe) {
+      setConfirmarNovo(v);
+      return;
+    }
+    adicionarDireto(v);
   };
 
   const remover = (v: string) => {
@@ -138,6 +160,7 @@ export function MercadoInlineEditor({
   const possuiValor = mercadosAtuais.length > 0;
 
   return (
+    <>
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
@@ -244,5 +267,28 @@ export function MercadoInlineEditor({
         </div>
       </PopoverContent>
     </Popover>
+
+    <AlertDialog open={!!confirmarNovo} onOpenChange={(o) => !o && setConfirmarNovo(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Criar novo mercado?</AlertDialogTitle>
+          <AlertDialogDescription>
+            O mercado <strong>"{confirmarNovo}"</strong> ainda não existe na base. Deseja criá-lo agora? Ele ficará disponível para todos os fornecedores a partir de então.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              if (confirmarNovo) adicionarDireto(confirmarNovo);
+              setConfirmarNovo(null);
+            }}
+          >
+            Sim, criar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
