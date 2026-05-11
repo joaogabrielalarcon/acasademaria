@@ -71,6 +71,7 @@ import { ImportarRespostaFornecedorDialog } from "@/components/orcamento/Importa
 import { EnderecoFields, composeEndereco } from "@/components/EnderecoFields";
 import { Star, Filter, MessageCircle, Download, Lock, Crown, ChevronsUp, ChevronsDown, Zap, Store, AlertCircle } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatPorteMetros } from "@/lib/porte";
 
 const CATEGORIAS_ITEM = [
   "Árvores",
@@ -1578,13 +1579,17 @@ export default function NovoOrcamento() {
         plantasMatch.forEach((p: any) => {
           itemIdToKey.set(p.id, { tipo: "planta", key: requested });
           if (p.fornecedor_id) {
-            const altura = [p.altura_min_m || p.altura_m, p.altura_max_m].filter(Boolean).join("–");
+            const minM = p.altura_min_m ?? p.altura_m;
+            const maxM = p.altura_max_m ?? p.altura_m;
+            const portePadronizado = (minM != null && maxM != null && Number(minM) !== Number(maxM))
+              ? `${formatPorteMetros(minM, { suffix: false })} – ${formatPorteMetros(maxM)}`
+              : formatPorteMetros((minM ?? maxM) as number | null);
             catalogRows.push({
               id: `catalogo-${p.id}-${p.fornecedor_id}`,
               item_id: p.id,
               item_tipo: "planta",
               preco: p.preco_unitario,
-              porte: p.porte || (altura ? `${altura} m` : null),
+              porte: p.porte || (portePadronizado !== "—" ? portePadronizado : null),
               unidade: p.unidade,
               data_orcamento: p.ultima_compra || null,
               fornecedor_id: p.fornecedor_id,

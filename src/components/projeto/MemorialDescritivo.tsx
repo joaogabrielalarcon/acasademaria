@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { formatPorteMetros } from "@/lib/porte";
 
 const CATEGORIA_OPTIONS = [
   "Árvore",
@@ -256,7 +257,7 @@ function PlantasSection({
                           placeholder="Altura"
                         />
                       ) : (
-                        <span>{item.altura_m != null ? `${Number(item.altura_m).toFixed(2)} m` : "—"}</span>
+                        <span>{formatPorteMetros(item.altura_m)}</span>
                       )}
                     </TableCell>
                     <TableCell>

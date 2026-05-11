@@ -7,7 +7,8 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, ImageIcon, Star, AlertTriangle, GitMerge } from "lucide-react";
+import { Plus, Pencil, Trash2, ImageIcon, Star, AlertTriangle, GitMerge, Upload } from "lucide-react";
+import { ImportarPlantasDialog } from "@/components/ImportarPlantasDialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DataTableExcel, DataTableColumn } from "@/components/ui/data-table-excel";
 import { usePlantas, Planta } from "@/hooks/usePlantas";
@@ -22,6 +23,7 @@ import { formatPorteMetros } from "@/lib/porte";
 export function PlantasContent() {
   const [itemToDelete, setItemToDelete] = useState<Planta | null>(null);
   const [mergePrincipal, setMergePrincipal] = useState<Planta | null>(null);
+  const [importarOpen, setImportarOpen] = useState(false);
 
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
@@ -81,12 +83,15 @@ export function PlantasContent() {
       key: "altura_m", header: "Altura (m)", width: 140, type: "number",
       accessor: (p) => p.altura_max_m ?? p.altura_min_m ?? p.altura_m,
       render: (p) => {
-        const fmt = (v: number) => Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const min = p.altura_min_m ?? p.altura_m;
         const max = p.altura_max_m ?? p.altura_m;
-        if (min == null && max == null) return <span className="text-muted-foreground">—</span>;
-        if (min != null && max != null && Number(min) !== Number(max)) return `${fmt(min)} – ${fmt(max)} m`;
-        return `${fmt((min ?? max) as number)} m`;
+        if ((min == null || Number(min) === 0) && (max == null || Number(max) === 0)) {
+          return <span className="text-muted-foreground">—</span>;
+        }
+        if (min != null && max != null && Number(min) !== Number(max)) {
+          return `${formatPorteMetros(min, { suffix: false })} – ${formatPorteMetros(max)}`;
+        }
+        return formatPorteMetros((min ?? max) as number);
       },
     },
     { key: "dap_cm", header: "DAP (cm)", width: 100, type: "number", accessor: (p) => p.dap_cm },
@@ -152,6 +157,9 @@ export function PlantasContent() {
             <Link to="/plantas/nova">
               <Plus className="w-4 h-4" /> Nova Planta
             </Link>
+          </Button>
+          <Button variant="outline" className="gap-2" onClick={() => setImportarOpen(true)}>
+            <Upload className="w-4 h-4" /> Importar Plantas
           </Button>
         </div>
 
@@ -226,6 +234,8 @@ export function PlantasContent() {
           onMerged={() => setMergePrincipal(null)}
         />
       )}
+
+      <ImportarPlantasDialog open={importarOpen} onOpenChange={setImportarOpen} />
     </>
   );
 }
