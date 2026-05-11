@@ -3067,6 +3067,9 @@ export default function NovoOrcamento() {
                     ),
                   ),
                 ).sort((a, b) => a.localeCompare(b, "pt-BR"));
+                const temSemMercado = fornsBruto.some(
+                  (r: any) => !String(r.fornecedores?.mercado || "").trim(),
+                );
 
                 // Classifica por porte (exato/maior/menor) e considera outros_portes embutidos
                 const expandeRowsPorPorte = (r: any): { row: any; portClass: "exato" | "maior" | "menor" | "indef"; portUsado: string | null; precoUsado: number | null; dataUsada: string | null }[] => {
