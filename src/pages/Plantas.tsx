@@ -158,6 +158,9 @@ export function PlantasContent() {
               <Plus className="w-4 h-4" /> Nova Planta
             </Link>
           </Button>
+          <Button variant="outline" className="gap-2" onClick={() => setImportarOpen(true)}>
+            <Upload className="w-4 h-4" /> Importar Plantas
+          </Button>
         </div>
 
         <DataTableExcel
