@@ -207,6 +207,25 @@ export function PlantasContent() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {mergePrincipal && (
+        <MesclarItensDialog
+          open={!!mergePrincipal}
+          onOpenChange={(o) => !o && setMergePrincipal(null)}
+          tipo="planta"
+          principal={{
+            id: mergePrincipal.id,
+            nome: mergePrincipal.nome_popular,
+            nome_secundario: mergePrincipal.nome_cientifico,
+            altura_m: mergePrincipal.altura_m ?? mergePrincipal.altura_min_m ?? mergePrincipal.altura_max_m ?? null,
+            fornecedor_id: mergePrincipal.fornecedor_id,
+            fornecedor_nome: mergePrincipal.fornecedor_id ? fornecedoresMap.get(mergePrincipal.fornecedor_id) ?? null : null,
+            preco_unitario: mergePrincipal.preco_unitario,
+          }}
+          candidatos={candidatosFusao}
+          onMerged={() => setMergePrincipal(null)}
+        />
+      )}
     </>
   );
 }
