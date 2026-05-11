@@ -16,11 +16,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { MesclarItensDialog, ItemFusivel } from "@/components/catalogo/MesclarItensDialog";
 import { formatPorteMetros } from "@/lib/porte";
+import { MobileCardList, MobileCardItem } from "@/components/ui/mobile-card-list";
 
 export function PlantasContent() {
   const [itemToDelete, setItemToDelete] = useState<Planta | null>(null);
   const [mergePrincipal, setMergePrincipal] = useState<Planta | null>(null);
   const [importarOpen, setImportarOpen] = useState(false);
+  const [mobileSearch, setMobileSearch] = useState("");
 
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
@@ -160,36 +162,115 @@ export function PlantasContent() {
           </Button>
         </div>
 
-        <DataTableExcel
-          data={plantas}
-          columns={columns}
-          rowKey={(p) => p.id}
+        {/* Desktop / tablet */}
+        <div className="hidden md:block">
+          <DataTableExcel
+            data={plantas}
+            columns={columns}
+            rowKey={(p) => p.id}
+            loading={isLoading}
+            searchPlaceholder="Buscar plantas..."
+            globalSearchKeys={["nome_popular", "nome_cientifico", "categoria", "fornecedor", "embalagem"]}
+            rowActions={(planta) => (
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon-sm" asChild>
+                  <Link to={`/plantas/${planta.id}/editar`}>
+                    <Pencil className="w-4 h-4" />
+                  </Link>
+                </Button>
+                {podeMesclar && (
+                  <Button variant="ghost" size="icon-sm" title="Mesclar duplicatas em desta planta" onClick={() => setMergePrincipal(planta)}>
+                    <GitMerge className="w-4 h-4" />
+                  </Button>
+                )}
+                {isAdmin && (
+                  <Button
+                    variant="ghost" size="icon-sm"
+                    onClick={() => setItemToDelete(planta)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            )}
+          />
+        </div>
+
+        {/* Mobile */}
+        <MobileCardList
           loading={isLoading}
+          searchValue={mobileSearch}
+          onSearchChange={setMobileSearch}
           searchPlaceholder="Buscar plantas..."
-          globalSearchKeys={["nome_popular", "nome_cientifico", "categoria", "fornecedor", "embalagem"]}
-          rowActions={(planta) => (
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon-sm" asChild>
-                <Link to={`/plantas/${planta.id}/editar`}>
-                  <Pencil className="w-4 h-4" />
-                </Link>
-              </Button>
-              {podeMesclar && (
-                <Button variant="ghost" size="icon-sm" title="Mesclar duplicatas em desta planta" onClick={() => setMergePrincipal(planta)}>
-                  <GitMerge className="w-4 h-4" />
-                </Button>
-              )}
-              {isAdmin && (
-                <Button
-                  variant="ghost" size="icon-sm"
-                  onClick={() => setItemToDelete(planta)}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-          )}
+          emptyTitle="Nenhuma planta encontrada"
+          emptyDescription="Cadastre uma nova planta ou ajuste a busca."
+          items={plantas
+            .filter((p) => {
+              if (!mobileSearch.trim()) return true;
+              const q = mobileSearch.toLowerCase();
+              return (
+                p.nome_popular?.toLowerCase().includes(q) ||
+                p.nome_cientifico?.toLowerCase().includes(q) ||
+                (p.fornecedor_id ? fornecedoresMap.get(p.fornecedor_id) ?? "" : "").toLowerCase().includes(q)
+              );
+            })
+            .map<MobileCardItem>((p) => {
+              const min = p.altura_min_m ?? p.altura_m;
+              const max = p.altura_max_m ?? p.altura_m;
+              const altura = (min == null || Number(min) === 0) && (max == null || Number(max) === 0)
+                ? "—"
+                : (min != null && max != null && Number(min) !== Number(max))
+                  ? `${formatPorteMetros(min, { suffix: false })} – ${formatPorteMetros(max)}`
+                  : formatPorteMetros((min ?? max) as number);
+              const cat = p.categoria_id ? categoriasMap.get(p.categoria_id) : null;
+              const forn = p.fornecedor_id ? fornecedoresMap.get(p.fornecedor_id) : null;
+              return {
+                key: p.id,
+                title: p.nome_popular,
+                subtitle: p.nome_cientifico ? <span className="italic">{p.nome_cientifico}</span> : undefined,
+                badges: p.alerta_validacao ? (
+                  <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-500/10 text-amber-700">
+                    <AlertTriangle className="w-4 h-4" />
+                  </span>
+                ) : undefined,
+                fields: [
+                  { label: "Categoria", value: cat ?? "" },
+                  { label: "Fornecedor", value: forn ?? "" },
+                  { label: "Altura", value: altura },
+                  {
+                    label: "Preço",
+                    value: p.preco_unitario != null
+                      ? `R$ ${Number(p.preco_unitario).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
+                      : "",
+                  },
+                ],
+                actions: (
+                  <>
+                    <Button variant="outline" size="sm" asChild className="flex-1 gap-2">
+                      <Link to={`/plantas/${p.id}/editar`}>
+                        <Pencil className="w-4 h-4" /> Editar
+                      </Link>
+                    </Button>
+                    {podeMesclar && (
+                      <Button variant="ghost" size="sm" onClick={() => setMergePrincipal(p)} aria-label="Mesclar">
+                        <GitMerge className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {isAdmin && (
+                      <Button
+                        variant="ghost" size="sm"
+                        onClick={() => setItemToDelete(p)}
+                        className="text-destructive hover:text-destructive"
+                        aria-label="Excluir"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </>
+                ),
+              };
+            })}
         />
       </div>
 

@@ -506,17 +506,17 @@ export default function NovoRecebimento() {
                 {itens.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                    className="flex items-center justify-between gap-3 p-3 rounded-lg bg-muted/50"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
                       {item.tipoItem === "planta" ? (
-                        <Leaf className="w-4 h-4 text-primary" />
+                        <Leaf className="w-4 h-4 text-primary shrink-0" />
                       ) : (
-                        <Package className="w-4 h-4 text-secondary" />
+                        <Package className="w-4 h-4 text-secondary shrink-0" />
                       )}
-                      <div>
-                        <p className="font-medium text-foreground">{item.nome}</p>
-                        <p className="text-sm text-muted-foreground">
+                      <div className="min-w-0">
+                        <p className="font-medium text-foreground truncate">{item.nome}</p>
+                        <p className="text-sm text-muted-foreground truncate">
                           {item.quantidade} {item.unidade}
                           {item.altura && ` • ${item.altura}${item.alturaUnidade}`}
                           {item.dap && ` • DAP ${item.dap}`}
@@ -525,8 +525,10 @@ export default function NovoRecebimento() {
                     </div>
                     <Button
                       variant="ghost"
-                      size="icon-sm"
+                      size="icon"
                       onClick={() => removerItem(item.id)}
+                      className="h-11 w-11 shrink-0"
+                      aria-label={`Remover ${item.nome}`}
                     >
                       <Trash2 className="w-4 h-4 text-destructive" />
                     </Button>
@@ -537,14 +539,15 @@ export default function NovoRecebimento() {
           )}
 
           {/* Ações */}
-          <div className="flex justify-end gap-3 pt-4">
-            <Button variant="outline" onClick={() => navigate(-1)}>
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4">
+            <Button variant="outline" onClick={() => navigate(-1)} className="h-11 sm:h-10">
               Cancelar
             </Button>
             <Button
               variant="terracota"
               onClick={handleSubmit}
               disabled={isSubmitting}
+              className="h-11 sm:h-10"
             >
               {isSubmitting ? (
                 <>

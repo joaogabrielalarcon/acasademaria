@@ -15,10 +15,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDestructiveDialog } from "@/components/ui/confirm-destructive-dialog";
 import { Plus, Pencil, Trash2, GitMerge } from "lucide-react";
 import { DataTableExcel, DataTableColumn } from "@/components/ui/data-table-excel";
 import { useFornecedores, Fornecedor } from "@/hooks/useFornecedores";
@@ -28,6 +25,7 @@ import { AtendentesSection } from "@/components/fornecedores/AtendentesSection";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatCNPJ, formatPhone, capitalizeWords } from "@/hooks/useInputMasks";
+import { MobileCardList, MobileCardItem } from "@/components/ui/mobile-card-list";
 
 const MERCADOS = [
   'Ceagesp','Ceaflor','Jundiaí','Ceasa','Itapetininga','Atibaia',
@@ -46,6 +44,7 @@ export function FornecedoresContent() {
   const [editingFornecedor, setEditingFornecedor] = useState<Fornecedor | null>(null);
   const [itemToDelete, setItemToDelete] = useState<Fornecedor | null>(null);
   const [mesclarOpen, setMesclarOpen] = useState(false);
+  const [mobileSearch, setMobileSearch] = useState("");
 
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
@@ -373,48 +372,113 @@ export function FornecedoresContent() {
           </Dialog>
         </div>
 
-        <DataTableExcel
-          data={fornecedores}
-          columns={columns}
-          rowKey={(f) => f.id}
-          loading={isLoading}
-          searchPlaceholder="Buscar fornecedores..."
-          globalSearchKeys={["nome", "nome_alternativo", "cnpj", "cidade", "email", "categoria_fornecedor", "mercado"]}
-          rowActions={(fornecedor) => (
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(fornecedor)}>
-                <Pencil className="w-4 h-4" />
-              </Button>
-              {isAdmin && (
-                <Button
-                  variant="ghost" size="icon-sm"
-                  onClick={() => setItemToDelete(fornecedor)}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="w-4 h-4" />
+        <div className="hidden md:block">
+          <DataTableExcel
+            data={fornecedores}
+            columns={columns}
+            rowKey={(f) => f.id}
+            loading={isLoading}
+            searchPlaceholder="Buscar fornecedores..."
+            globalSearchKeys={["nome", "nome_alternativo", "cnpj", "cidade", "email", "categoria_fornecedor", "mercado"]}
+            rowActions={(fornecedor) => (
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(fornecedor)}>
+                  <Pencil className="w-4 h-4" />
                 </Button>
-              )}
-            </div>
-          )}
+                {isAdmin && (
+                  <Button
+                    variant="ghost" size="icon-sm"
+                    onClick={() => setItemToDelete(fornecedor)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            )}
+          />
+        </div>
+
+        <MobileCardList
+          loading={isLoading}
+          searchValue={mobileSearch}
+          onSearchChange={setMobileSearch}
+          searchPlaceholder="Buscar fornecedores..."
+          emptyTitle="Nenhum fornecedor encontrado"
+          emptyDescription="Cadastre um novo fornecedor ou ajuste a busca."
+          items={fornecedores
+            .filter((f) => {
+              if (!mobileSearch.trim()) return true;
+              const q = mobileSearch.toLowerCase();
+              return [f.nome, f.nome_alternativo, f.cnpj, f.cidade, f.email, f.categoria_fornecedor, f.mercado]
+                .filter(Boolean).some((v) => String(v).toLowerCase().includes(q));
+            })
+            .map<MobileCardItem>((f) => ({
+              key: f.id,
+              title: f.nome,
+              subtitle: f.nome_alternativo || undefined,
+              badges: (
+                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                  f.status === "ativo" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                }`}>
+                  {f.status === "ativo" ? "Ativo" : "Inativo"}
+                </span>
+              ),
+              fields: [
+                { label: "Mercado", value: f.mercado ?? "" },
+                { label: "Categoria", value: f.categoria_fornecedor ?? "" },
+                {
+                  label: "Telefone",
+                  value: f.whatsapp ? (
+                    <a href={`https://wa.me/${f.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="text-primary underline">
+                      {f.whatsapp}
+                    </a>
+                  ) : f.telefone ?? "",
+                },
+                { label: "Cidade", value: [f.cidade, f.estado].filter(Boolean).join(" / ") },
+              ],
+              actions: (
+                <>
+                  <Button variant="outline" size="sm" onClick={() => handleEdit(f)} className="flex-1 gap-2">
+                    <Pencil className="w-4 h-4" /> Editar
+                  </Button>
+                  {isAdmin && (
+                    <Button
+                      variant="ghost" size="sm"
+                      onClick={() => setItemToDelete(f)}
+                      className="text-destructive hover:text-destructive"
+                      aria-label="Excluir"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </>
+              ),
+            }))}
         />
       </div>
 
-      <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir fornecedor?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação não pode ser desfeita. O fornecedor "{itemToDelete?.nome}" será removido permanentemente.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={() => itemToDelete && deleteMutation.mutate(itemToDelete.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDestructiveDialog
+        open={!!itemToDelete}
+        onOpenChange={(o) => !o && setItemToDelete(null)}
+        title="Excluir fornecedor permanentemente?"
+        description="Esta ação não pode ser desfeita. Considere mesclar fornecedores em vez de excluir, para preservar histórico de cotações e compras."
+        mode="type-name"
+        expectedName={itemToDelete?.nome ?? ""}
+        confirmLabel="Excluir definitivamente"
+        confirmVariant="destructive"
+        preview={
+          itemToDelete && (
+            <div>
+              <div><span className="text-muted-foreground">Fornecedor:</span> <strong>{itemToDelete.nome}</strong></div>
+              {itemToDelete.cnpj && <div className="text-xs text-muted-foreground">CNPJ {itemToDelete.cnpj}</div>}
+            </div>
+          )
+        }
+        onConfirm={async () => {
+          if (itemToDelete) await deleteMutation.mutateAsync(itemToDelete.id);
+        }}
+      />
 
       {editingFornecedor && (
         <MesclarManualDialog
