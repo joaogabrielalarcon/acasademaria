@@ -3565,6 +3565,7 @@ export default function NovoOrcamento() {
                                 <TableHead className="px-2">Un.</TableHead>
                                 <TableHead className="px-2">Última cotação</TableHead>
                                 <TableHead className="px-2">Nota</TableHead>
+                                <TableHead className="px-2">Atualizado por</TableHead>
                                 <TableHead className="px-2"></TableHead>
                               </TableRow>
                             </TableHeader>
