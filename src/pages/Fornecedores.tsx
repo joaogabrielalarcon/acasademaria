@@ -458,22 +458,27 @@ export function FornecedoresContent() {
         />
       </div>
 
-      <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir fornecedor?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação não pode ser desfeita. O fornecedor "{itemToDelete?.nome}" será removido permanentemente.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={() => itemToDelete && deleteMutation.mutate(itemToDelete.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDestructiveDialog
+        open={!!itemToDelete}
+        onOpenChange={(o) => !o && setItemToDelete(null)}
+        title="Excluir fornecedor permanentemente?"
+        description="Esta ação não pode ser desfeita. Considere mesclar fornecedores em vez de excluir, para preservar histórico de cotações e compras."
+        mode="type-name"
+        expectedName={itemToDelete?.nome ?? ""}
+        confirmLabel="Excluir definitivamente"
+        confirmVariant="destructive"
+        preview={
+          itemToDelete && (
+            <div>
+              <div><span className="text-muted-foreground">Fornecedor:</span> <strong>{itemToDelete.nome}</strong></div>
+              {itemToDelete.cnpj && <div className="text-xs text-muted-foreground">CNPJ {itemToDelete.cnpj}</div>}
+            </div>
+          )
+        }
+        onConfirm={async () => {
+          if (itemToDelete) await deleteMutation.mutateAsync(itemToDelete.id);
+        }}
+      />
 
       {editingFornecedor && (
         <MesclarManualDialog
