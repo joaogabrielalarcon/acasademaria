@@ -429,6 +429,31 @@ export function InsumosContent() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {mergePrincipal && (
+        <MesclarItensDialog
+          open={!!mergePrincipal}
+          onOpenChange={(o) => !o && setMergePrincipal(null)}
+          tipo="insumo"
+          principal={{
+            id: mergePrincipal.id,
+            nome: mergePrincipal.nome,
+            nome_secundario: mergePrincipal.descricao_produto,
+            fornecedor_id: mergePrincipal.fornecedor_id,
+            fornecedor_nome: mergePrincipal.fornecedor_id ? fornecedoresMap.get(mergePrincipal.fornecedor_id) ?? null : null,
+            preco_unitario: mergePrincipal.preco_unitario,
+          }}
+          candidatos={insumosFiltrados.map((i): ItemFusivel => ({
+            id: i.id,
+            nome: i.nome,
+            nome_secundario: i.descricao_produto,
+            fornecedor_id: i.fornecedor_id,
+            fornecedor_nome: i.fornecedor_id ? fornecedoresMap.get(i.fornecedor_id) ?? null : null,
+            preco_unitario: i.preco_unitario,
+          }))}
+          onMerged={() => setMergePrincipal(null)}
+        />
+      )}
     </>
   );
 }
