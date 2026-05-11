@@ -146,6 +146,10 @@ export default function NovaPlanta() {
       toast.error("Nome popular é obrigatório");
       return;
     }
+    const minR = parsePorteMetros(formData.altura_min_m);
+    const maxR = parsePorteMetros(formData.altura_max_m);
+    if (!minR.ok) { toast.error("Altura mínima: " + minR.error); return; }
+    if (!maxR.ok) { toast.error("Altura máxima: " + maxR.error); return; }
     saveMutation.mutate();
   };
 
