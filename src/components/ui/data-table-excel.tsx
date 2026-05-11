@@ -478,8 +478,34 @@ export function DataTableExcel<T>({
                 </TableCell>
               </TableRow>
             ) : (
-              visible.map((row) => (
-                <TableRow key={rowKey(row)}>
+              visible.map((row, idx) => (
+                <TableRow
+                  key={rowKey(row)}
+                  tabIndex={0}
+                  data-row-idx={idx}
+                  className="focus:outline-none focus-visible:bg-muted/60 focus-visible:ring-1 focus-visible:ring-primary/40"
+                  onKeyDown={(e) => {
+                    const target = e.currentTarget as HTMLElement;
+                    if (e.key === "ArrowDown") {
+                      e.preventDefault();
+                      const next = target.nextElementSibling as HTMLElement | null;
+                      next?.focus();
+                    } else if (e.key === "ArrowUp") {
+                      e.preventDefault();
+                      const prev = target.previousElementSibling as HTMLElement | null;
+                      if (prev && prev.hasAttribute("data-row-idx")) prev.focus();
+                    } else if (e.key === "Home") {
+                      e.preventDefault();
+                      (target.parentElement?.firstElementChild as HTMLElement | null)?.focus();
+                    } else if (e.key === "End") {
+                      e.preventDefault();
+                      (target.parentElement?.lastElementChild as HTMLElement | null)?.focus();
+                    } else if (e.key === "Enter" && onRowEnter) {
+                      e.preventDefault();
+                      onRowEnter(row);
+                    }
+                  }}
+                >
                   {columns.map((col) => (
                     <TableCell
                       key={col.key}
