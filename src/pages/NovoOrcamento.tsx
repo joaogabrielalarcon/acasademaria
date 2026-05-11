@@ -3364,18 +3364,37 @@ export default function NovoOrcamento() {
                         />
                       </TableCell>
                       <TableCell className="p-2">
-                        {l.portUsado ? (
-                          <span className={cn(
-                            "text-xs",
-                            grupo === "maior" && "text-amber-700",
-                            grupo === "menor" && "text-amber-700",
-                            grupo === "indef" && "text-muted-foreground italic",
-                          )}>
-                            {l.portUsado}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground italic">—</span>
-                        )}
+                        <div className="inline-flex items-center gap-1">
+                          {l.portUsado ? (
+                            <span className={cn(
+                              "text-xs",
+                              grupo === "maior" && "text-amber-700",
+                              grupo === "menor" && "text-amber-700",
+                              grupo === "indef" && "text-muted-foreground italic",
+                            )}>
+                              {l.portUsado}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground italic">—</span>
+                          )}
+                          {r.item_id && r.item_tipo && (
+                            <EditarPortePopover
+                              itemId={r.item_id}
+                              itemTipo={r.item_tipo}
+                              fornecedorId={r.fornecedor_id}
+                              fornecedorNome={f.nome}
+                              itemNome={item.nome_popular}
+                              porteAtual={l.portUsado}
+                              precoAtual={l.precoUsado}
+                              unidade={r.unidade}
+                              portesExistentes={[
+                                r.porte,
+                                ...((r.outros_portes || []) as any[]).map((o: any) => o.porte),
+                              ].filter(Boolean) as string[]}
+                              onSaved={() => refetchHistorico?.()}
+                            />
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className={cn("p-2 text-sm whitespace-nowrap", precoCls)}>
                         <div className="inline-flex items-center gap-1.5">
