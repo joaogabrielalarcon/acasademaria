@@ -3797,6 +3797,8 @@ export default function NovoOrcamento() {
                       <UserPlus className="w-4 h-4" />
                       Adicionar fornecedor não cadastrado
                     </Button>
+                      </CollapsibleContent>
+                    </Collapsible>
                   </Card>
                 );
               })}
