@@ -1888,6 +1888,9 @@ export default function NovoOrcamento() {
           fornecedorId: fornId,
           nome: fornecedorObj?.nome || "Fornecedor",
           valor: "",
+          selecionados: [],
+          draft: "",
+          confirmarNovo: null,
           pendente: { itemIdx, papel },
         });
         return;
