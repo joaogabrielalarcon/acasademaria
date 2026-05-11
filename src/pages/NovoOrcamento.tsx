@@ -3153,11 +3153,15 @@ export default function NovoOrcamento() {
               </div>
 
               {itensMaterial.length === 0 && (
-                <Card className="p-6">
-                  <p className="text-sm text-muted-foreground">
-                    Nenhum item no memorial. Volte à Etapa 2 para adicionar itens.
-                  </p>
-                </Card>
+                <EmptyState
+                  title="Sem itens no memorial"
+                  description="Volte à Etapa 2 para adicionar plantas, insumos ou condicionadores antes de selecionar fornecedores."
+                  action={
+                    <Button variant="outline" size="sm" onClick={() => irParaEtapa(2)}>
+                      <ArrowLeft className="w-4 h-4" /> Voltar à Etapa 2
+                    </Button>
+                  }
+                />
               )}
 
               {itensMaterial.map((item, idx) => {
