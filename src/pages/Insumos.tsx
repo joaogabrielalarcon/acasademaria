@@ -379,6 +379,11 @@ export function InsumosContent() {
               >
                 <History className="w-4 h-4" />
               </Button>
+              {podeMesclar && (
+                <Button variant="ghost" size="icon-sm" title="Mesclar duplicatas neste insumo" onClick={() => setMergePrincipal(insumo)}>
+                  <GitMerge className="w-4 h-4" />
+                </Button>
+              )}
               {isAdmin && (
                 <Button
                   variant="ghost" size="icon-sm"
