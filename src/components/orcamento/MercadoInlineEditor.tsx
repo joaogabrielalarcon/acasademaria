@@ -128,8 +128,8 @@ export function MercadoInlineEditor({
     setSelecionados((prev) => prev.filter((p) => p.toLowerCase() !== v.toLowerCase()));
   };
 
-  const salvar = async () => {
-    const finalStr = joinMercados(selecionados);
+  const salvar = async (lista?: string[]) => {
+    const finalStr = joinMercados(lista ?? selecionados);
     setSalvando(true);
     try {
       const { error } = await (supabase as any).rpc("set_fornecedor_mercado", {
@@ -260,7 +260,7 @@ export function MercadoInlineEditor({
             <span className="text-[10px] text-muted-foreground">
               Atualiza o cadastro do fornecedor
             </span>
-            <Button size="sm" onClick={salvar} disabled={salvando}>
+            <Button size="sm" onClick={() => salvar()} disabled={salvando}>
               {salvando ? <Loader2 className="w-3 h-3 animate-spin" /> : "Salvar"}
             </Button>
           </div>
@@ -280,11 +280,19 @@ export function MercadoInlineEditor({
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
           <AlertDialogAction
             onClick={() => {
-              if (confirmarNovo) adicionarDireto(confirmarNovo);
+              if (!confirmarNovo) return;
+              const novo = toTitleCase(confirmarNovo);
+              const nova = selecionados.some((p) => p.toLowerCase() === novo.toLowerCase())
+                ? selecionados
+                : [...selecionados, novo];
+              setSelecionados(nova);
+              setDraft("");
               setConfirmarNovo(null);
+              // persiste imediatamente para que o novo mercado vire opção definitiva
+              salvar(nova);
             }}
           >
-            Sim, criar
+            Sim, criar e salvar
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
