@@ -2338,7 +2338,14 @@ export default function NovoOrcamento() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleProxima = () => irParaEtapa(etapaAtual + 1);
+  const handleProxima = () => {
+    // Validação ao sair da Etapa 3 (Fornecedores) para Etapa 4 (Markup)
+    if (etapaAtual === 3 && pendenciasEtapa3.bloqueia) {
+      setValidacaoEtapa4Open(true);
+      return;
+    }
+    irParaEtapa(etapaAtual + 1);
+  };
 
   const copiarCodigo = async () => {
     if (!form.codigo) return;
