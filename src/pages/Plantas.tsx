@@ -7,15 +7,17 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, ImageIcon, Star, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, ImageIcon, Star, AlertTriangle, GitMerge } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DataTableExcel, DataTableColumn } from "@/components/ui/data-table-excel";
 import { usePlantas, Planta } from "@/hooks/usePlantas";
 import { useCategoriasPlantas } from "@/hooks/useCategoriasPlantas";
 import { useFornecedores } from "@/hooks/useFornecedores";
-import { useAuth, useIsAdmin } from "@/hooks/useAuth";
+import { useAuth, useIsAdmin, useIsAdminOrAdministrativo } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { MesclarItensDialog, ItemFusivel } from "@/components/catalogo/MesclarItensDialog";
+import { formatPorteMetros } from "@/lib/porte";
 
 export function PlantasContent() {
   const [itemToDelete, setItemToDelete] = useState<Planta | null>(null);
