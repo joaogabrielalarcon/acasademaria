@@ -47,6 +47,7 @@ export function FornecedoresContent() {
   const [editingFornecedor, setEditingFornecedor] = useState<Fornecedor | null>(null);
   const [itemToDelete, setItemToDelete] = useState<Fornecedor | null>(null);
   const [mesclarOpen, setMesclarOpen] = useState(false);
+  const [mobileSearch, setMobileSearch] = useState("");
 
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
