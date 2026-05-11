@@ -1,157 +1,126 @@
-Refatoração estrutural do módulo de Orçamentos. Sete itens distintos, alguns com mudanças de banco. Vou organizar por dependência (banco primeiro, UI depois) e separar em PRs lógicos para evitar quebrar o fluxo existente.
+## Auditoria transversal — status atual vs. o que falta
 
-## 1. Renomear "Cabeçalho" → "Informações Iniciais"
+Antes de qualquer código novo, um diagnóstico honesto de cada item. Marquei ✅ atendido, 🟡 parcial, ❌ falta.
 
-Em `src/pages/NovoOrcamento.tsx`:
-- Array `ETAPAS[0]`: `"Cabeçalho"` → `"Informações Iniciais"`
-- Título da seção da etapa 1 (`<h2>Cabeçalho</h2>`) → `"Informações Iniciais"`
-- Comentários `// Etapa 1 - Cabeçalho` atualizados
-- Buscar qualquer outra ocorrência do termo no fluxo (mensagens de validação, toasts)
+---
 
-## 2. Reestruturar 7 → 6 etapas
+### (a) RLS no Supabase com escopo por operador
 
-Nova ordem do array `ETAPAS`:
-```
-1. Informações Iniciais
-2. Memorial Descritivo
-3. Fornecedores       (agora cobre plantas E insumos)
-4. Markup e Margens   (placeholder)
-5. Mão de Obra, Fretes e Transporte
-6. Resumo Final
-```
+**Status: 🟡 parcial.**
 
-Mudanças concretas:
-- A antiga etapa 5 ("Insumos") **desaparece como etapa**. Toda a UI/lógica de seleção de fornecedores para insumos passa para a etapa 3 (Fornecedores), reaproveitando o mesmo padrão visual usado para plantas. Os cálculos automáticos de insumos (`insumosCalc`) e insumos adicionais (`insumosAdicionais`) continuam existindo internamente — apenas a aba dedicada some; eles aparecem dentro da etapa Fornecedores numa seção "Insumos" abaixo de "Plantas", com a mesma UI de cotação.
-- A antiga etapa 4 ("Cotação") vira "Markup e Margens" e por enquanto renderiza apenas:
-  ```
-  <div className="text-center py-16 text-muted-foreground">
-    Etapa em construção — será implementada em breve.
-  </div>
-  ```
-  A lógica antiga de cotação (`cotacoes`, `markupsCategoria`, etc.) é preservada no estado para não quebrar o resumo, mas a UI da etapa fica oculta. A seleção de fornecedor por item migra para a etapa 3.
-- Ajustar todos os checks `etapaAtual === N`: 5→3 (insumos), 7→6 (resumo), 6→5 (MO/Fretes), e os efeitos `useEffect` que dependem disso.
-- `podeAvancar = etapaAtual < ETAPAS.length` continua válido.
-- Orçamentos antigos: o estado é tudo em memória + tabela `orcamentos`/`orcamento_itens`; nenhum campo `etapa_atual` é persistido com semântica posicional crítica. Confirmar isso lendo os hooks de salvamento; se houver, fazer mapeamento defensivo.
+Atendido:
+- RLS já está habilitada na maioria das tabelas operacionais (`projetos`, `clientes`, `diario_visitas`, `colaboradores`, `user_roles`, `fornecedores`, `plantas`, `insumos`).
+- Funções security-definer corretas: `has_role`, `has_any_role`, `is_allocated_to_project`, `can_access_diario_project`, `can_access_manutencao_client`, `can_access_avaliacao`. Sem recursão.
+- Catálogo (`fornecedores`, `plantas`, `insumos`, `categorias_*`) com leitura para autenticados — alinhado à Core memory "Shared Catalog Access".
 
-## 3. Categoria "Condicionadores de Solo"
+Falta / a verificar (PR transversal de RLS):
+- Tabelas adicionadas no PR2 sem checagem explícita: `fornecedor_atendentes`, `operador_atendente_padrao`, `fornecedores_merge_log`, `itens_merge_log`. Confirmar RLS habilitada e políticas: leitura para autenticados; escrita admin/administrativo; `operador_atendente_padrao` com escopo `auth.uid() = operador_id`.
+- Logs (`*_merge_log`, `historico_precos`, `registros_historico`, `historico_salarios`): leitura restrita a admin/administrativo; insert apenas via trigger/security-definer.
+- Tabelas de orçamento (`orcamento_*`): garantir leitura/escrita restrita a admin/administrativo/arquitetura (operador_campo não acessa orçamento).
+- Confirmar que nenhuma tabela ficou com `FOR ALL USING (true)` legada.
 
-**Decisão de modelagem**: criar uma terceira tabela `condicionadores_solo` espelhando `insumos` seria mais limpo, mas multiplica trabalho em todo o app (hooks, RLS, históricos, estoque, fornecedor links, fusão). 
+### (b) Índices em FKs e colunas mais consultadas
 
-**Alternativa mais econômica e que atende o requisito**: tratar como uma **categoria especial dentro de `insumos`**, com flag `tipo_produto` (`'insumo' | 'condicionador_solo'`). Toda UI que filtra/lista insumos passa a separar em duas seções; o memorial ganha uma terceira seção; cadastro tem um seletor.
+**Status: 🟡 parcial.** Há alguns índices ad-hoc (`idx_insumos_tipo_produto` do PR1; índice trgm em `fornecedores.nome`), mas não há cobertura sistemática.
 
-Vou propor a opção com flag por padrão (mais simples, menos migração de dados). Se preferir tabela separada, ajusto o plano.
+Falta — migration única adicionando `IF NOT EXISTS`:
+- FKs: `fornecedor_id` em `plantas`, `insumos`, `historico_precos`, `estoque_movimentacoes`, `financeiro_movimentacoes`, `orcamento_cotacoes`, `orcamento_insumos`, `fornecedor_avaliacoes`, `fornecedor_atendentes`.
+- `historico_precos (item_id, item_tipo)` composto + `(data_orcamento DESC)`.
+- `orcamento_cotacoes (orcamento_id)`, `(item_id, item_tipo)`.
+- `projetos (cliente_id)`, `(status)`, `(responsavel_id)`.
+- `crm_cards (status)`, `(projeto_id)`, `(cliente_id)`.
+- `diario_visitas (projeto_id, data_visita DESC)`, `(cliente_id)`.
+- `financeiro_movimentacoes (data_movimentacao DESC)`, `(projeto_id)`, `(tipo)`.
+- Parciais úteis: `plantas (ativo) WHERE ativo`, `fornecedores (status) WHERE status='ativo'`.
 
-Migração:
-- `ALTER TABLE insumos ADD COLUMN tipo_produto text NOT NULL DEFAULT 'insumo' CHECK (tipo_produto IN ('insumo','condicionador_solo'))`
-- Índice em `tipo_produto`
+### (c) Loading / empty / error padronizados
 
-UI:
-- `src/pages/Insumos.tsx`: filtro de aba/segmented control (Insumos | Condicionadores de Solo), seletor no cadastro
-- `src/components/projeto/MemorialDescritivo.tsx`: terceira seção
-- Orçamento (etapa Fornecedores): terceira sub-seção
+**Status: 🟡 parcial.** A maioria das páginas trata `isLoading`, mas o estilo é inconsistente: algumas usam `Loader2` inline, outras nada; "empty state" frequentemente é só "—" ou nada; erros geralmente caem em `toast` mas não há tela de fallback.
 
-## 4. Múltiplos atendentes por fornecedor + atendente padrão por operador
+Falta:
+- Criar 3 componentes reutilizáveis em `src/components/ui/`: `<ListSkeleton rows={n} />`, `<EmptyState icon title description action />`, `<ErrorState message retry />`.
+- Aplicar nas listagens críticas: `Plantas`, `Insumos`, `Fornecedores`, `Orcamentos`, `Clientes`, `Equipe`, `Maquinas`, `Compras`, `AReceber`, `Diario`, `MinhaAgenda`.
+- Padronizar modais (Mesclar, Importar, Fornecedor edit) com mesmos estados.
 
-Migração:
-```sql
-CREATE TABLE fornecedor_atendentes (
-  id uuid PK default gen_random_uuid(),
-  fornecedor_id uuid REFERENCES fornecedores(id) ON DELETE CASCADE,
-  nome text NOT NULL,
-  telefone text,
-  funcao text,
-  ativo boolean DEFAULT true,
-  created_at timestamptz DEFAULT now()
-);
+### (d) Confirmação dupla com prévia detalhada para ações destrutivas
 
-CREATE TABLE operador_atendente_padrao (
-  id uuid PK default gen_random_uuid(),
-  operador_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
-  fornecedor_id uuid REFERENCES fornecedores(id) ON DELETE CASCADE,
-  atendente_id uuid REFERENCES fornecedor_atendentes(id) ON DELETE CASCADE,
-  UNIQUE (operador_id, fornecedor_id)
-);
-```
-Com RLS: leitura para autenticados; escrita conforme regras existentes (admin/administrativo no fornecedor; cada operador na sua própria preferência).
+**Status: 🟡 parcial.**
+- Atendido: `MesclarItensDialog` já mostra prévia + alertas de divergência; `merge_fornecedores`/`plantas`/`insumos` marcam `fundido` em vez de deletar.
+- Atendido: exclusão de cliente/planta usa `AlertDialog` simples.
 
-UI em `src/pages/Fornecedores.tsx` (modal de edição):
-- Nova seção "Atendentes" abaixo dos contatos: lista editável (adicionar/remover/editar/ativar)
-- Para cada atendente, botão "Definir como meu padrão" (estrela)
-- Os campos `telefone`/`whatsapp` legados continuam existindo; novos atendentes os substituem na prática
+Falta:
+- Componente `<ConfirmDestructiveDialog>` exigindo digitar o nome do item OU checkbox "Entendo que esta ação..." + prévia (contadores de relacionamento) antes de habilitar o botão.
+- Aplicar em: exclusão de Planta, Insumo, Fornecedor, Cliente, Projeto; mudança de status em massa; inativação de colaborador (já tem motive obrigatório, mas falta prévia de impacto).
+- Fusão: já tem prévia, adicionar passo final "confirmo a mesclagem de N itens em X" antes do botão executar.
 
-Onde gerar mensagem para fornecedor (provavelmente `ResumoFornecedoresDialog`): pré-selecionar o atendente padrão do operador atual.
+### (e) Auditoria de mutações (preço, fusão, status)
 
-## 5. Fusão de duplicatas — Fornecedores
+**Status: 🟡 parcial.**
 
-Já existe `merge_fornecedores` RPC e UI `MesclagemFornecedoresDialog` / `MesclarManualDialog`. Preciso:
-- Adicionar status `'fundido'` ao filtro padrão de listagem (esconder)
-- Atualizar `merge_fornecedores`: em vez de DELETE, marcar `status='fundido'`; concatenar nome no `nome_alternativo` com `;`; migrar atendentes com dedup por `(nome,telefone)`
-- Garantir botão "Fundir fornecedores" visível na tela de listagem (já existe via `MesclarManualDialog`?). Confirmar e expor explicitamente no header.
+Atendido:
+- `historico_precos` populado por triggers `log_preco_planta` e `log_preco_insumo`.
+- `fornecedores_merge_log` e `itens_merge_log` registram fusão com `executado_por`, `executado_por_nome`, `dados_anteriores`, `contadores`.
+- `historico_salarios` via `log_alteracao_salario`.
+- `registros_historico` via `log_registro_changes`.
+- `cliente_atividades` via `log_*_atividade`.
 
-## 6. Fusão de duplicatas — Plantas/Insumos/Condicionadores
+Falta:
+- Tabela `audit_status_changes` (entidade, entidade_id, status_anterior, status_novo, usuario_id, usuario_nome, motivo, criado_em) com triggers em: `projetos`, `crm_cards`, `financeiro_parcelas`, `colaboradores.ativo`, `fornecedores.status`, `plantas.ativo`, `insumos.ativo`.
+- Garantir que `historico_precos` capture também alterações via `merge_*` (já capturado para insumos/plantas; revisar fornecedores).
+- Política de leitura dos logs: admin/administrativo apenas.
 
-RPCs novas: `merge_plantas(p_canonico uuid, p_duplicados uuid[])` e `merge_insumos(...)` (que cobre condicionadores via mesma tabela).
+### (f) Responsividade mobile básica
 
-Comportamento:
-- Migrar `historico_precos` dos duplicados para o canônico
-- O preço mais recente (entre canônico e duplicados) vira `preco_unitario` do canônico
-- Migrar referências em `orcamento_itens`, `estoque_movimentacoes`, `diario_insumos_area`, `orcamento_insumos`
-- Marcar duplicados com `ativo=false` e adicionar coluna `fundido_em uuid REFERENCES ...` para auditoria
-- Modal de validação visual antes de confirmar (checa nome popular/científico + porte + fornecedor)
+**Status: 🟡 parcial.** Existe `MobileNav` e `MobileHeader`. Algumas páginas usam classes responsivas, mas tabelas críticas (Fornecedores, Plantas, Recebimento) usam `DataTableExcel` que rola horizontalmente mas não oferece "card view" no mobile.
 
-UI: botões "Fundir" nas listagens `Plantas.tsx` e `Insumos.tsx`, modal comparativo similar ao de fornecedores.
+Falta nas telas de campo:
+- `NovoRecebimento`: revisar grid/tabs em viewport <640px (botões em coluna única, inputs full-width, número grande para quantidade).
+- `Fornecedores` (consulta): card-list em mobile com nome, mercado, telefone (botão WhatsApp já existe), atendente padrão.
+- `Plantas` (busca): em mobile, exibir cards (nome popular + altura formatada + foto thumbnail) em vez de tabela.
+- Garantir que modais (`MesclarItensDialog`, `ImportarPlantasDialog`, `FornecedorPopover`) usem `max-h-[90vh] overflow-auto` e largura fluida.
 
-## 7. Padronização de porte em metros
+### (g) Navegação por teclado em tabelas e formulários
 
-Definir helper utilitário `parsePorteMetros(input: string): number | null` e `formatPorteMetros(m: number): string`:
-- Aceita apenas dígitos e vírgula/ponto, máximo 2 decimais
-- Converte ponto para vírgula na exibição
-- Rejeita "P14", "DAP", "Pt" etc. com mensagem clara
-- 0 exibido como "—"
+**Status: ❌ pouco coberto.** Componentes shadcn (Input, Select, Button) já são acessíveis por padrão, mas:
+- `DataTableExcel` não tem navegação por setas entre células nem `Enter` para abrir editor inline.
+- Modais não fecham com `Esc` consistentemente (na verdade Radix Dialog faz isso por padrão — confirmar que não há `onOpenChange` bloqueando).
+- Forms longos (`NovaPlanta`, `NovoCliente`, `NovoOrcamento`) não têm "submit on Cmd+Enter" nem foco automático no primeiro campo.
 
-Aplicar em:
-- `src/pages/NovaPlanta.tsx` e qualquer formulário de planta
-- Importações (planilhas): rotina de normalização — se valor for `< 5` assumir já em metros, se for `> 5` e não tiver vírgula, alertar; se vier com "cm", dividir por 100
-- Tabela de plantas: exibição usa `formatPorteMetros`
-- Memorial e orçamento: idem
+Falta:
+- `DataTableExcel`: arrow-keys para navegar linhas, `Enter` para abrir ações da linha, `/` para focar busca.
+- Hook `useFormKeyboard({ onSubmit })` que escuta `Cmd/Ctrl+Enter`.
+- Auto-focus no primeiro campo dos modais (`autoFocus` no primeiro Input).
+- Botão de ação primária recebe `Enter` global no contexto do form.
 
-Schema: campos `altura_m`, `altura_min_m`, `altura_max_m`, `dap_cm` já existem. Manter `dap_cm` (DAP é diâmetro do tronco em cm, padrão da silvicultura — não converter para metros). Forçar `altura_m` como fonte única para porte de exibição.
+---
 
-## Plano de execução por mensagens
+## Plano de execução — 4 PRs transversais antes do próximo PR funcional
 
-Esta refatoração é grande demais para uma única resposta sem virar um monstro instável. Proposta de fatiamento (vou executar tudo se você aprovar, mas em ordem):
+### PR-T1 — Banco: RLS auditada + índices (1 migração SQL)
+- Habilitar/ajustar RLS nas tabelas de log e PR2.
+- Criar todos os índices listados em (b) com `IF NOT EXISTS`.
+- Rodar `supabase--linter` e zerar erros críticos.
 
-**PR 1 (esta resposta)** — Itens 1, 2 e 3:
-- Renomear etapas
-- Reestruturar para 6 etapas (mover insumos para dentro de Fornecedores; placeholder Markup)
-- Migration: adicionar `tipo_produto` em insumos + UI básica de filtro
+### PR-T2 — UI primitives (loading/empty/error + confirm destrutivo)
+- `ListSkeleton`, `EmptyState`, `ErrorState`, `ConfirmDestructiveDialog`.
+- Aplicar nas 10 listagens críticas e nos 4 modais destrutivos.
+- Wrap em `MesclarItensDialog` e exclusões para usar `ConfirmDestructiveDialog`.
 
-**PR 2** — Itens 4 e 5:
-- Migrations de `fornecedor_atendentes` e `operador_atendente_padrao`
-- UI no cadastro de fornecedor
-- Atualizar `merge_fornecedores` (status fundido + atendentes)
+### PR-T3 — Auditoria de status + responsividade mobile
+- Migration: tabela `audit_status_changes` + triggers nas 7 entidades.
+- Card-view mobile para `Plantas`, `Fornecedores`, `NovoRecebimento`.
+- Padronizar modais com largura/altura fluidas.
 
-**PR 3** — Item 6:
-- RPCs `merge_plantas` e `merge_insumos`
-- Modais de fusão em Plantas e Insumos
+### PR-T4 — Acessibilidade por teclado
+- Setas/Enter em `DataTableExcel`.
+- `useFormKeyboard` aplicado nos forms longos.
+- Auto-focus em modais.
 
-**PR 4** — Item 7:
-- Helpers de porte
-- Validação em formulários e importações
-- Migração de dados existentes (script de normalização opcional)
+---
 
-## Detalhes técnicos
+## Decisões a confirmar antes de começar
 
-- Banco: Supabase via `supabase--migration` para schemas; `supabase--insert` para dados.
-- RLS: todas as novas tabelas com policies espelhando as de `fornecedores` (admin/administrativo escrevem; autenticados leem).
-- Tipos: após cada migration, `src/integrations/supabase/types.ts` regenera automaticamente.
-- Identidade visual: zero alterações em paleta/tipografia/componentes — só renomear e reorganizar.
-
-## Risco principal
-
-Mover insumos da etapa 5 para dentro da etapa 3 toca em muitos `useEffect` e estado em `NovoOrcamento.tsx` (4000+ linhas). Vou fazer com cuidado, preservando o estado (`insumosCalc`, `insumosAdicionais`) e movendo apenas o JSX/handlers de UI. Os cálculos automáticos disparados por `etapaAtual === 5` viram `etapaAtual === 3` (ou removo a guarda e disparo quando os pré-requisitos estiverem prontos).
-
-Confirmação que preciso de você antes de começar:
-
-1. **Item 3 — modelagem de Condicionadores de Solo**: posso usar a flag `tipo_produto` na tabela `insumos` (mais simples) ou prefere tabela separada `condicionadores_solo`?
-2. **Ordem de execução**: posso seguir os 4 PRs em sequência nesta mesma conversa, ou prefere que eu pause após cada PR para você validar?
+1. **Escopo de RLS para `orcamento_*`**: confirmar que `operador_campo` e `responsavel_obra` não têm acesso a orçamentos (atualmente está aberto?). Quero restringir a `admin`, `administrativo`, `arquitetura`.
+2. **`ConfirmDestructiveDialog`**: prefere "digitar o nome" (mais friccional, estilo GitHub) ou só checkbox "Entendo o impacto" + prévia? Recomendo digitar o nome para exclusão definitiva e checkbox para fusão.
+3. **Card-view mobile**: posso adicionar um modo automático em `DataTableExcel` (vira cards <640px) ou prefere componentes dedicados em cada página?
+4. **Ordem de execução**: posso emendar os 4 PRs nesta mesma conversa, ou paramos após cada um para você validar visualmente no preview?
