@@ -3450,7 +3450,7 @@ export default function NovoOrcamento() {
                             </Button>
                           )}
                         </div>
-                        {mercadosUnicos.length > 0 && (
+                        {(mercadosUnicos.length > 0 || temSemMercado) && (
                           <div className="flex flex-wrap items-center gap-1">
                             <span className="text-muted-foreground mr-1">Mercados:</span>
                             {mercadosUnicos.map((m) => {
@@ -3479,6 +3479,14 @@ export default function NovoOrcamento() {
                                 </button>
                               );
                             })}
+                            {temSemMercado && (
+                              <span
+                                title="Fornecedores sem mercado cadastrado aparecem em todos os filtros até serem preenchidos"
+                                className="text-[11px] px-2 py-0.5 rounded-md border bg-amber-500/10 text-amber-800 border-amber-500/40"
+                              >
+                                Sem mercado
+                              </span>
+                            )}
                           </div>
                         )}
                       </div>
