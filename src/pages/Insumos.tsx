@@ -238,7 +238,10 @@ export function InsumosContent() {
                     <Select value={formData.categoria} onValueChange={(v) => setFormData({ ...formData, categoria: v })}>
                       <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>
-                        {CATEGORIAS_INSUMOS.map((cat) => (
+                        {(formData.tipo_produto === "condicionador_solo"
+                          ? CATEGORIAS_CONDICIONADORES
+                          : CATEGORIAS_INSUMOS
+                        ).map((cat) => (
                           <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                         ))}
                       </SelectContent>
