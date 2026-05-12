@@ -193,7 +193,7 @@ export function AtualizarCotacoesPanel({
                     size="sm"
                     variant="outline"
                     className="ml-auto"
-                    onClick={onIAClick}
+                    onClick={() => onIAClick?.()}
                     disabled={!onIAClick}
                   >
                     <Sparkles className="w-4 h-4" />
