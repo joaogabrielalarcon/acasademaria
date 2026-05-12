@@ -4943,6 +4943,7 @@ export default function NovoOrcamento() {
                     <table className="w-full text-sm">
                       <thead className="bg-muted/50 text-xs">
                         <tr>
+                          <th className="text-left p-2">Colaborador</th>
                           <th className="text-left p-2">Cargo</th>
                           <th className="text-left p-2 w-24">Qtd func.</th>
                           <th className="text-left p-2 w-24">Dias</th>
