@@ -1919,7 +1919,81 @@ export default function NovoOrcamento() {
     return { semCot, porteDiv, completos };
   }, [itensMaterial, fornecedoresSelecionados, cotacoes]);
 
-  const nomeFornecedor = (item: ItemMemorial, fornId: string) => {
+  // Sub-PR 2B/2C — fornecedores envolvidos no orçamento (para sub-aba Atualizar Cotações + IA)
+  const fornecedoresEnvolvidos = useMemo<FornecedorAtualizacaoItem[]>(() => {
+    const map = new Map<string, FornecedorAtualizacaoItem>();
+    itensMaterial.forEach((it, idx) => {
+      const info = itemDbInfoByIdx[idx];
+      const sel = fornecedoresSelecionados[idx] || [];
+      const fornsBruto = fornecedoresDoItem(it) as any[];
+      sel.forEach((fid) => {
+        const row = fornsBruto.find((r: any) => r.fornecedor_id === fid);
+        const f = row?.fornecedores;
+        if (!f) return;
+        if (!map.has(fid)) {
+          map.set(fid, {
+            fornecedorId: fid,
+            fornecedorNome: f.nome || "Fornecedor",
+            mercado: f.mercado || null,
+            telefone: f.telefone || null,
+            whatsapp: f.whatsapp || null,
+            itens: [],
+          });
+        }
+        if (info) {
+          const linha = (cotacoes[idx] || {})[fid];
+          map.get(fid)!.itens.push({
+            item_id: info.item_id,
+            item_tipo: info.item_tipo,
+            nome_popular: it.nome_popular,
+            nome_cientifico: it.nome_cientifico || null,
+            porte: linha?.porte_ofertado || it.porte || row.porte || null,
+            unidade: it.unidade || row.unidade || null,
+            quantidade: it.quantidade || null,
+            preco_atual: linha?.valor_unitario != null ? Number(linha.valor_unitario)
+              : (row.preco != null ? Number(row.preco) : null),
+            ultima_cotacao: row.data_orcamento || null,
+          });
+        }
+      });
+    });
+    return Array.from(map.values()).sort((a, b) =>
+      a.fornecedorNome.localeCompare(b.fornecedorNome, "pt-BR"),
+    );
+  }, [itensMaterial, fornecedoresSelecionados, cotacoes, historicoPorItem, itemDbInfoByIdx]);
+
+  // Itens em formato IAChatItemContexto para o painel IA, por fornecedor
+  const iaContextoPorFornecedor = useMemo(() => {
+    const map = new Map<string, IAChatItemContexto[]>();
+    fornecedoresEnvolvidos.forEach((f) => {
+      // agrupa portes disponíveis por item_id (todos do histórico, mesmo de outros fornecedores)
+      const itens: IAChatItemContexto[] = f.itens
+        .filter((i) => i.item_id && i.item_tipo !== "condicionador_solo")
+        .map((i) => {
+          const memorialIdx = itensMaterial.findIndex((m) => m.nome_popular === i.nome_popular);
+          const todosForns = memorialIdx >= 0 ? (fornecedoresDoItem(itensMaterial[memorialIdx]) as any[]) : [];
+          const portes = new Set<string>();
+          todosForns.forEach((row) => {
+            if (row.porte) portes.add(String(row.porte));
+            (row.outros_portes || []).forEach((o: any) => o?.porte && portes.add(String(o.porte)));
+          });
+          return {
+            item_id: i.item_id!,
+            item_tipo: i.item_tipo as "planta" | "insumo",
+            nome_popular: i.nome_popular,
+            nome_cientifico: i.nome_cientifico || null,
+            porte: i.porte || null,
+            preco_atual: i.preco_atual ?? null,
+            unidade: i.unidade || null,
+            ultima_cotacao: i.ultima_cotacao || null,
+            portes_disponiveis: Array.from(portes).sort(),
+          };
+        });
+      map.set(f.fornecedorId, itens);
+    });
+    return map;
+  }, [fornecedoresEnvolvidos, itensMaterial, historicoPorItem]);
+
     const row = fornecedoresDoItem(item).find((r: any) => r.fornecedor_id === fornId);
     return row?.fornecedores?.nome || "Fornecedor";
   };
