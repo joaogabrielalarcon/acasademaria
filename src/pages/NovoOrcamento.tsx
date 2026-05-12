@@ -1167,7 +1167,7 @@ export default function NovoOrcamento() {
           .update({ status: "Aprovado" })
           .eq("cliente_id", form.cliente_id);
       }
-      setAprovarModal({ open: false, valor: "" });
+      setAprovarModal({ open: false, valor: "", observacao: "" });
       toast({ title: "Orçamento aprovado com sucesso!" });
       setTimeout(() => navigate("/orcamentos"), 2000);
     } catch (e: any) {
@@ -5755,7 +5755,7 @@ export default function NovoOrcamento() {
                 <Button
                   variant="terracota"
                   onClick={() =>
-                    setAprovarModal({ open: true, valor: totalCliente.toFixed(2) })
+                    setAprovarModal({ open: true, valor: totalCliente.toFixed(2), observacao: "" })
                   }
                   disabled={savingFinal}
                 >
@@ -5851,7 +5851,7 @@ export default function NovoOrcamento() {
               <DialogFooter>
                 <Button
                   variant="outline"
-                  onClick={() => setAprovarModal({ open: false, valor: "" })}
+                  onClick={() => setAprovarModal({ open: false, valor: "", observacao: "" })}
                   disabled={savingFinal}
                 >
                   Cancelar
