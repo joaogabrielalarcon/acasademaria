@@ -4075,6 +4075,7 @@ export default function NovoOrcamento() {
                   itemNome={indispTarget.itemNome}
                 />
               )}
+              </>)}
             </div>
               )}
 
