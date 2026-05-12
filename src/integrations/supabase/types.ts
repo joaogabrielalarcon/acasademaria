@@ -1026,6 +1026,75 @@ export type Database = {
           },
         ]
       }
+      cotacao_ia_conversas: {
+        Row: {
+          aplicado_em: string | null
+          atualizacoes_aplicadas: Json
+          atualizado_em: string
+          criado_em: string
+          criado_por: string | null
+          criado_por_nome: string | null
+          fornecedor_id: string | null
+          id: string
+          mensagens: Json
+          metadata: Json
+          orcamento_id: string | null
+          propostas: Json
+          status: string
+          total_atualizacoes: number
+          total_mensagens: number
+        }
+        Insert: {
+          aplicado_em?: string | null
+          atualizacoes_aplicadas?: Json
+          atualizado_em?: string
+          criado_em?: string
+          criado_por?: string | null
+          criado_por_nome?: string | null
+          fornecedor_id?: string | null
+          id?: string
+          mensagens?: Json
+          metadata?: Json
+          orcamento_id?: string | null
+          propostas?: Json
+          status?: string
+          total_atualizacoes?: number
+          total_mensagens?: number
+        }
+        Update: {
+          aplicado_em?: string | null
+          atualizacoes_aplicadas?: Json
+          atualizado_em?: string
+          criado_em?: string
+          criado_por?: string | null
+          criado_por_nome?: string | null
+          fornecedor_id?: string | null
+          id?: string
+          mensagens?: Json
+          metadata?: Json
+          orcamento_id?: string | null
+          propostas?: Json
+          status?: string
+          total_atualizacoes?: number
+          total_mensagens?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cotacao_ia_conversas_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotacao_ia_conversas_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cotacao_indisponibilidades: {
         Row: {
           created_at: string
