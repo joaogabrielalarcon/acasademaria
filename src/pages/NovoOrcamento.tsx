@@ -59,7 +59,7 @@ import { FornecedorPopover } from "@/components/orcamento/FornecedorPopover";
 import { MercadoInlineEditor, parseMercados } from "@/components/orcamento/MercadoInlineEditor";
 import { AtualizarCotacaoPopover } from "@/components/orcamento/AtualizarCotacaoPopover";
 import { MafeFAB } from "@/components/orcamento/MafeFAB";
-import { Etapa4MarkupBlocoA } from "@/components/orcamento/Etapa4MarkupBlocoA";
+import { Etapa4MarkupBlocoA, useEtapa4Validacao } from "@/components/orcamento/Etapa4MarkupBlocoA";
 import { EditarMercadoDialog } from "@/components/orcamento/EditarMercadoDialog";
 import {
   IndisponibilidadeDialog,
@@ -2442,10 +2442,21 @@ export default function NovoOrcamento() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const { data: validacaoEtapa4 } = useEtapa4Validacao(id);
+
   const handleProxima = () => {
     // Validação ao sair da Etapa 3 (Fornecedores) para Etapa 4 (Markup)
     if (etapaAtual === 3 && pendenciasEtapa3.bloqueia) {
       setValidacaoEtapa4Open(true);
+      return;
+    }
+    // Validação ao sair da Etapa 4 (Markup) para Etapa 5 (MO/Fretes/Transporte)
+    if (etapaAtual === 4 && validacaoEtapa4 && !validacaoEtapa4.ok) {
+      toast({
+        title: "Não é possível avançar",
+        description: validacaoEtapa4.motivo,
+        variant: "destructive",
+      });
       return;
     }
     irParaEtapa(etapaAtual + 1);
@@ -4228,14 +4239,107 @@ export default function NovoOrcamento() {
 
           {/* Etapa 4 - Markup e Margens */}
           {etapaAtual === 4 && (
-            <Etapa4MarkupBlocoA
-              orcamentoId={id}
-              perfilSelecionadoId={form.perfil_markup_id}
-              onPerfilSelecionado={(pid) => setForm((p) => ({ ...p, perfil_markup_id: pid }))}
-              tipoNf={tipoNf}
-              aliquotaPct={aliquotaMes}
-              areaM2={areaM2}
-            />
+            <div className="space-y-4">
+              <Etapa4MarkupBlocoA
+                orcamentoId={id}
+                perfilSelecionadoId={form.perfil_markup_id}
+                onPerfilSelecionado={(pid) => setForm((p) => ({ ...p, perfil_markup_id: pid }))}
+                tipoNf={tipoNf}
+                aliquotaPct={aliquotaMes}
+                areaM2={areaM2}
+              />
+
+              {/* Bloco D — Comissão */}
+              <Card className="p-4">
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between"
+                  onClick={() => setComissaoAberta((v) => !v)}
+                >
+                  <div className="flex items-center gap-3">
+                    <h3 className="font-display text-base text-foreground">Comissão</h3>
+                    <Switch
+                      checked={comissaoOn}
+                      onCheckedChange={(v) => {
+                        setComissaoOn(v);
+                        if (v) setComissaoAberta(true);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                  {comissaoAberta ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </button>
+                {comissaoAberta && comissaoOn && (
+                  <div className="mt-3 grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div className="space-y-1 md:col-span-2">
+                      <Label className="text-xs">Tipo</Label>
+                      <RadioGroup
+                        value={comissaoTipo}
+                        onValueChange={(v: any) => setComissaoTipo(v)}
+                        className="flex gap-4"
+                      >
+                        <label className="flex items-center gap-2 text-sm">
+                          <RadioGroupItem value="vendas" /> Vendas
+                        </label>
+                        <label className="flex items-center gap-2 text-sm">
+                          <RadioGroupItem value="indicacao" /> Indicação
+                        </label>
+                      </RadioGroup>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Percentual (%)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={comissaoPct}
+                        onChange={(e) => setComissaoPct(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Beneficiário</Label>
+                      <Input
+                        value={comissaoBeneficiario}
+                        onChange={(e) => setComissaoBeneficiario(e.target.value)}
+                      />
+                    </div>
+                    <div className="md:col-span-4 text-sm text-muted-foreground">
+                      Valor calculado:{" "}
+                      <strong className="text-foreground">{fmtBRL(valorComissao)}</strong>
+                    </div>
+                  </div>
+                )}
+              </Card>
+
+              {/* Bloco E — Margem de negociação */}
+              <Card className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-display text-base text-foreground">
+                    Margem de negociação disponível
+                  </h3>
+                  <span className="text-sm font-medium">{margemNegPct}%</span>
+                </div>
+                <Slider
+                  value={[margemNegPct]}
+                  min={0}
+                  max={30}
+                  step={1}
+                  onValueChange={(v) => setMargemNegPct(v[0])}
+                />
+                <div className="text-sm text-muted-foreground flex flex-wrap gap-4">
+                  <span>
+                    Desconto máximo:{" "}
+                    <strong className="text-foreground">{fmtBRL(descontoMaximo)}</strong>
+                  </span>
+                  <span>
+                    Valor mínimo aceitável:{" "}
+                    <strong className="text-foreground">{fmtBRL(valorMinimo)}</strong>
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Define o desconto máximo que a equipe comercial pode conceder sem nova aprovação.
+                </p>
+              </Card>
+            </div>
           )}
 
           {/* LEGADO: UI antiga de Cotação — desativada na refatoração de 6 etapas.
