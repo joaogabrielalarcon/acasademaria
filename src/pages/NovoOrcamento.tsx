@@ -4226,12 +4226,15 @@ export default function NovoOrcamento() {
                 </DialogContent>
               </Dialog>
 
-          {/* Etapa 4 - Markup e Margens — Sub-PR 3A: Bloco A (seleção/aplicação de perfil) */}
+          {/* Etapa 4 - Markup e Margens */}
           {etapaAtual === 4 && (
             <Etapa4MarkupBlocoA
               orcamentoId={id}
               perfilSelecionadoId={form.perfil_markup_id}
               onPerfilSelecionado={(pid) => setForm((p) => ({ ...p, perfil_markup_id: pid }))}
+              tipoNf={tipoNf}
+              aliquotaPct={aliquotaMes}
+              areaM2={areaM2}
             />
           )}
 
