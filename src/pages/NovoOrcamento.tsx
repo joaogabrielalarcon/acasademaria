@@ -613,6 +613,49 @@ export default function NovoOrcamento() {
     [custosIndiretos],
   );
 
+  // Custo diário (R$/dia) de cargos administrativos para Bloco D — Custos Indiretos
+  const cargoDiarioPorTipo = useMemo(() => {
+    const arr = (cargosMo as any[]) || [];
+    const findBy = (frags: string[]) =>
+      arr.find((c) => {
+        const n = String(c.nome || "").toLowerCase();
+        return frags.every((f) => n.includes(f));
+      });
+    const mfm = findBy(["maria", "fernanda"]);
+    const adm = findBy(["administrativ"]);
+    return {
+      maria_fernanda: Number(mfm?.salario_diario) || 0,
+      administrativo: Number(adm?.salario_diario) || 0,
+    } as Record<string, number>;
+  }, [cargosMo]);
+
+  // Ao entrar na Etapa 5, garante linhas Maria Fernanda e Administrativo no Bloco D
+  // com valor_unitario puxado de cargos_mo. Roda apenas uma vez por sessão.
+  const indiretosSeedRef = useRef(false);
+  useEffect(() => {
+    if (etapaAtual !== 5) return;
+    if (indiretosSeedRef.current) return;
+    if ((cargosMo as any[]).length === 0) return;
+    indiretosSeedRef.current = true;
+    setCustosIndiretos((prev) => {
+      const next = [...prev];
+      const ensure = (tipo: "maria_fernanda" | "administrativo", descricao: string) => {
+        if (next.some((c) => c.tipo === tipo)) return;
+        const valor = cargoDiarioPorTipo[tipo] || 0;
+        if (valor <= 0) return;
+        next.push({
+          tipo,
+          descricao,
+          valor_unitario: String(valor),
+          quantidade: "0",
+        });
+      };
+      ensure("maria_fernanda", "Maria Fernanda envolvida (dias)");
+      ensure("administrativo", "Administrativo envolvido (dias)");
+      return next;
+    });
+  }, [etapaAtual, cargosMo, cargoDiarioPorTipo]);
+
   const totalEtapa6 = valorNfMo + totalFretes + totalTransporte + totalIndiretos;
   const fmtBRL = (n: number) =>
     n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -4873,18 +4916,25 @@ export default function NovoOrcamento() {
               )}
               {/* Seção A — MÃO DE OBRA */}
               <Card className="p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="font-display text-lg text-foreground">Mão de Obra Prevista</h2>
-                    <p className="text-xs text-muted-foreground">
-                      Adicione cargos previstos para execução do projeto.
-                    </p>
-                  </div>
+                <Collapsible open={openBlocoMo} onOpenChange={setOpenBlocoMo}>
+                <div className="flex items-center justify-between gap-2">
+                  <CollapsibleTrigger asChild>
+                    <button type="button" className="flex items-start gap-2 text-left flex-1 rounded-md hover:bg-muted/40 px-1 py-1 -mx-1">
+                      {openBlocoMo ? <ChevronUp className="w-4 h-4 mt-1 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 mt-1 text-muted-foreground" />}
+                      <div>
+                        <h2 className="font-display text-lg text-foreground">Mão de Obra Prevista</h2>
+                        <p className="text-xs text-muted-foreground">
+                          Adicione cargos previstos para execução do projeto. Total: <strong className="text-foreground">{fmtBRL(valorNfMo)}</strong>
+                        </p>
+                      </div>
+                    </button>
+                  </CollapsibleTrigger>
                   <Button variant="outline" size="sm" onClick={addMoLinha}>
                     <Plus className="w-4 h-4" />
                     Adicionar cargo
                   </Button>
                 </div>
+                <CollapsibleContent className="space-y-3 pt-3">
 
                 {moLinhas.length === 0 ? (
                   <p className="text-sm text-muted-foreground italic">Nenhum cargo adicionado.</p>
@@ -4893,6 +4943,7 @@ export default function NovoOrcamento() {
                     <table className="w-full text-sm">
                       <thead className="bg-muted/50 text-xs">
                         <tr>
+                          <th className="text-left p-2">Colaborador</th>
                           <th className="text-left p-2">Cargo</th>
                           <th className="text-left p-2 w-24">Qtd func.</th>
                           <th className="text-left p-2 w-24">Dias</th>
@@ -4907,6 +4958,49 @@ export default function NovoOrcamento() {
                             (Number(l.qtd) || 0) * (Number(l.dias) || 0) * (Number(l.salario_diario) || 0);
                           return (
                             <tr key={idx} className="border-t">
+                              <td className="p-2">
+                                <Select
+                                  value={l.colaborador_id || "__none__"}
+                                  onValueChange={(v) => {
+                                    if (v === "__none__") {
+                                      updateMoLinha(idx, { colaborador_id: "", colaborador_nome: "" });
+                                      return;
+                                    }
+                                    const co = (colaboradoresAtivos as any[]).find((x) => x.id === v);
+                                    const patch: Partial<MoLinha> = {
+                                      colaborador_id: v,
+                                      colaborador_nome: co?.nome || "",
+                                    };
+                                    // Se cargo ainda vazio e colaborador tem cargo, tenta auto-vincular
+                                    if (!l.cargo_id && co?.cargo) {
+                                      const match = (cargosMo as any[]).find(
+                                        (c) => String(c.nome).toLowerCase() === String(co.cargo).toLowerCase(),
+                                      );
+                                      if (match) {
+                                        patch.cargo_id = match.id;
+                                        patch.cargo_nome = match.nome;
+                                        patch.salario_diario = String(match.salario_diario ?? "0");
+                                      }
+                                    }
+                                    updateMoLinha(idx, patch);
+                                  }}
+                                >
+                                  <SelectTrigger className="h-8">
+                                    <SelectValue placeholder="Genérico" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="__none__">Genérico (sem nome)</SelectItem>
+                                    {(colaboradoresAtivos as any[]).map((co) => (
+                                      <SelectItem key={co.id} value={co.id}>
+                                        {co.nome}
+                                        {co.cargo && (
+                                          <span className="text-xs text-muted-foreground"> · {co.cargo}</span>
+                                        )}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </td>
                               <td className="p-2">
                                 <div className="flex gap-1">
                                   <Select
@@ -5041,22 +5135,31 @@ export default function NovoOrcamento() {
                     </span>
                   </div>
                 </div>
+                </CollapsibleContent>
+                </Collapsible>
               </Card>
 
               {/* Seção B — FRETES */}
               <Card className="p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="font-display text-lg text-foreground">Fretes do Projeto</h2>
-                    <p className="text-xs text-muted-foreground">
-                      Todos os fretes são repassados ao cliente.
-                    </p>
-                  </div>
+                <Collapsible open={openBlocoFretes} onOpenChange={setOpenBlocoFretes}>
+                <div className="flex items-center justify-between gap-2">
+                  <CollapsibleTrigger asChild>
+                    <button type="button" className="flex items-start gap-2 text-left flex-1 rounded-md hover:bg-muted/40 px-1 py-1 -mx-1">
+                      {openBlocoFretes ? <ChevronUp className="w-4 h-4 mt-1 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 mt-1 text-muted-foreground" />}
+                      <div>
+                        <h2 className="font-display text-lg text-foreground">Fretes do Projeto</h2>
+                        <p className="text-xs text-muted-foreground">
+                          Todos os fretes são repassados ao cliente. Total: <strong className="text-foreground">{fmtBRL(totalFretes)}</strong>
+                        </p>
+                      </div>
+                    </button>
+                  </CollapsibleTrigger>
                   <Button variant="outline" size="sm" onClick={addFrete}>
                     <Plus className="w-4 h-4" />
                     Adicionar frete
                   </Button>
                 </div>
+                <CollapsibleContent className="space-y-3 pt-3">
 
                 {fretes.length === 0 ? (
                   <p className="text-sm text-muted-foreground italic">Nenhum frete adicionado.</p>
@@ -5202,16 +5305,25 @@ export default function NovoOrcamento() {
                     })}
                   </div>
                 )}
+                </CollapsibleContent>
+                </Collapsible>
               </Card>
 
               {/* Seção C — TRANSPORTE DA EQUIPE */}
               <Card className="p-4 space-y-3">
-                <div>
-                  <h2 className="font-display text-lg text-foreground">Transporte da Equipe</h2>
-                  <p className="text-xs text-muted-foreground">
-                    Custos de deslocamento da equipe e acompanhamento técnico.
-                  </p>
-                </div>
+                <Collapsible open={openBlocoTransp} onOpenChange={setOpenBlocoTransp}>
+                <CollapsibleTrigger asChild>
+                  <button type="button" className="w-full flex items-start gap-2 text-left rounded-md hover:bg-muted/40 px-1 py-1 -mx-1">
+                    {openBlocoTransp ? <ChevronUp className="w-4 h-4 mt-1 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 mt-1 text-muted-foreground" />}
+                    <div>
+                      <h2 className="font-display text-lg text-foreground">Transporte da Equipe</h2>
+                      <p className="text-xs text-muted-foreground">
+                        Custos de deslocamento da equipe e acompanhamento técnico. Total: <strong className="text-foreground">{fmtBRL(totalTransporte)}</strong>
+                      </p>
+                    </div>
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-3 pt-3">
                 <div className="border rounded-md overflow-hidden">
                   <table className="w-full text-sm">
                     <thead className="bg-muted/50 text-xs">
@@ -5269,22 +5381,31 @@ export default function NovoOrcamento() {
                     </tbody>
                   </table>
                 </div>
+                </CollapsibleContent>
+                </Collapsible>
               </Card>
 
               {/* Seção D — CUSTOS INDIRETOS */}
               <Card className="p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="font-display text-lg text-foreground">Custos Indiretos</h2>
-                    <p className="text-xs text-muted-foreground">
-                      Refeições, escritório e demais despesas indiretas.
-                    </p>
-                  </div>
+                <Collapsible open={openBlocoIndir} onOpenChange={setOpenBlocoIndir}>
+                <div className="flex items-center justify-between gap-2">
+                  <CollapsibleTrigger asChild>
+                    <button type="button" className="flex items-start gap-2 text-left flex-1 rounded-md hover:bg-muted/40 px-1 py-1 -mx-1">
+                      {openBlocoIndir ? <ChevronUp className="w-4 h-4 mt-1 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 mt-1 text-muted-foreground" />}
+                      <div>
+                        <h2 className="font-display text-lg text-foreground">Custos Indiretos</h2>
+                        <p className="text-xs text-muted-foreground">
+                          Refeições, escritório e demais despesas indiretas. Total: <strong className="text-foreground">{fmtBRL(totalIndiretos)}</strong>
+                        </p>
+                      </div>
+                    </button>
+                  </CollapsibleTrigger>
                   <Button variant="outline" size="sm" onClick={addIndireto}>
                     <Plus className="w-4 h-4" />
                     Adicionar custo
                   </Button>
                 </div>
+                <CollapsibleContent className="space-y-3 pt-3">
 
                 {custosIndiretos.length === 0 ? (
                   <p className="text-sm text-muted-foreground italic">
@@ -5314,13 +5435,14 @@ export default function NovoOrcamento() {
                                   value={c.tipo}
                                   onValueChange={(v) => {
                                     const ref = TIPOS_INDIRETO.find((t) => t.value === v);
-                                    updateIndireto(idx, {
-                                      tipo: v,
-                                      valor_unitario:
-                                        ref && ref.padrao > 0 && !c.valor_unitario
-                                          ? String(ref.padrao)
-                                          : c.valor_unitario,
-                                    });
+                                    const cargoVal = cargoDiarioPorTipo[v];
+                                    let novoValor = c.valor_unitario;
+                                    if (cargoVal && cargoVal > 0) {
+                                      novoValor = String(cargoVal);
+                                    } else if (ref && ref.padrao > 0 && !c.valor_unitario) {
+                                      novoValor = String(ref.padrao);
+                                    }
+                                    updateIndireto(idx, { tipo: v, valor_unitario: novoValor });
                                   }}
                                 >
                                   <SelectTrigger className="h-8">
@@ -5383,6 +5505,8 @@ export default function NovoOrcamento() {
                     </table>
                   </div>
                 )}
+                </CollapsibleContent>
+                </Collapsible>
               </Card>
 
               {/* Resumo consolidado da Etapa 5 */}
