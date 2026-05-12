@@ -1075,6 +1075,52 @@ export default function NovoOrcamento() {
       }
       setVersoesPendentes([]);
 
+      // Snapshot imutável em momentos-chave: envio ao cliente e aprovação
+      const tipoSnapshot =
+        statusFinal === "aguardando_aprovacao"
+          ? "envio"
+          : statusFinal === "aprovado"
+            ? "aprovacao"
+            : null;
+      if (tipoSnapshot) {
+        const snapshot = {
+          form,
+          itensMaterial,
+          cotacoes,
+          margensSeg,
+          insumosCalc,
+          insumosAdicionais,
+          fretes,
+          moLinhas,
+          transporte,
+          custosIndiretos,
+          markupsCategoria,
+          aliquotaMes,
+          tipoNf,
+          comissao: comissaoOn
+            ? { tipo: comissaoTipo, percentual: Number(comissaoPct) || 0, beneficiario: comissaoBeneficiario, valor: valorComissao }
+            : null,
+          margemNegPct,
+          totais: {
+            totalCusto: totaisResumo.totalCusto,
+            totalVenda: totaisResumo.totalVenda,
+            totalCliente,
+            descontoMaximo,
+            valorMinimo,
+            impostoProdutos,
+            margemBrutaVal: totaisResumo.margemBrutaVal,
+            markupMedio: totaisResumo.markupMedio,
+          },
+          extras: extras || null,
+        };
+        await (supabase as any).from("orcamento_snapshots").insert({
+          orcamento_id: orcId,
+          tipo: tipoSnapshot,
+          snapshot,
+          created_by: uid,
+        });
+      }
+
       queryClient.invalidateQueries({ queryKey: ["orcamentos"] });
       if (!isEdit) navigate(`/orcamentos/${orcId}`, { replace: true });
       return orcId;
