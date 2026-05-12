@@ -3502,60 +3502,80 @@ export default function NovoOrcamento() {
                             .filter((m: any) => m && String(m).trim())}
                         />
                       </TableCell>
-                      <TableCell className="p-2">
-                        <div className="inline-flex items-center gap-1">
-                          {l.portUsado ? (
-                            <span className={cn(
-                              "text-xs",
-                              grupo === "maior" && "text-amber-700",
-                              grupo === "menor" && "text-amber-700",
-                              grupo === "indef" && "text-muted-foreground italic",
-                            )}>
-                              {l.portUsado}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-muted-foreground italic">—</span>
-                          )}
-                          {r.item_id && r.item_tipo && (
-                            <EditarPortePopover
+                      {(() => {
+                        const podeEditar = !!(r.item_id && r.item_tipo);
+                        const portesExistentes = [
+                          r.porte,
+                          ...((r.outros_portes || []) as any[]).map((o: any) => o.porte),
+                        ].filter(Boolean) as string[];
+                        const indispKey = r.item_id ? `${r.item_id}::${r.fornecedor_id}` : "";
+                        const indispRow = indispKey ? (indispMap as Map<string, any>).get(indispKey) : null;
+                        const wrap = (node: React.ReactNode, label: string) =>
+                          podeEditar ? (
+                            <AtualizarCotacaoPopover
                               itemId={r.item_id}
                               itemTipo={r.item_tipo}
                               fornecedorId={r.fornecedor_id}
                               fornecedorNome={f.nome}
                               itemNome={item.nome_popular}
-                              porteAtual={l.portUsado}
                               precoAtual={l.precoUsado}
-                              unidade={r.unidade}
-                              portesExistentes={[
-                                r.porte,
-                                ...((r.outros_portes || []) as any[]).map((o: any) => o.porte),
-                              ].filter(Boolean) as string[]}
-                              onSaved={() => refetchHistorico?.()}
-                            />
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className={cn("p-2 text-sm whitespace-nowrap", precoCls)}>
-                        <div className="inline-flex items-center gap-1.5">
-                          <span>
-                            {l.precoUsado != null ? `R$ ${l.precoUsado.toFixed(2)}` : <span className="text-muted-foreground italic">—</span>}
-                          </span>
-                          {r.item_id && r.item_tipo && (
-                            <EditarPrecoPopover
-                              itemId={r.item_id}
-                              itemTipo={r.item_tipo}
-                              fornecedorId={r.fornecedor_id}
-                              fornecedorNome={f.nome}
-                              precoAtual={l.precoUsado}
+                              porteAtual={l.portUsado || null}
+                              unidadeAtual={r.unidade || null}
                               ultimaAtualizacao={l.dataUsada}
                               atualizadoPorNome={r.colaboradores?.nome}
-                              unidade={r.unidade}
+                              portesExistentes={portesExistentes}
+                              jaIndisponivel={!!indispRow}
                               onSaved={() => refetchHistorico?.()}
-                            />
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="p-2 text-xs text-muted-foreground">{r.unidade || "—"}</TableCell>
+                            >
+                              <button
+                                type="button"
+                                aria-label={`Atualizar ${label} de ${f.nome || "fornecedor"}`}
+                                className="text-left w-full -mx-1 px-1 py-0.5 rounded hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                              >
+                                {node}
+                              </button>
+                            </AtualizarCotacaoPopover>
+                          ) : (
+                            node
+                          );
+                        return (
+                          <>
+                            <TableCell className="p-2">
+                              {wrap(
+                                l.portUsado ? (
+                                  <span className={cn(
+                                    "text-xs",
+                                    grupo === "maior" && "text-amber-700",
+                                    grupo === "menor" && "text-amber-700",
+                                    grupo === "indef" && "text-muted-foreground italic",
+                                  )}>
+                                    {l.portUsado}
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground italic">—</span>
+                                ),
+                                "porte",
+                              )}
+                            </TableCell>
+                            <TableCell className={cn("p-2 text-sm whitespace-nowrap", precoCls)}>
+                              {wrap(
+                                <span>
+                                  {l.precoUsado != null
+                                    ? `R$ ${l.precoUsado.toFixed(2)}`
+                                    : <span className="text-muted-foreground italic">—</span>}
+                                </span>,
+                                "preço",
+                              )}
+                            </TableCell>
+                            <TableCell className="p-2 text-xs text-muted-foreground">
+                              {wrap(
+                                <span>{r.unidade || "—"}</span>,
+                                "unidade",
+                              )}
+                            </TableCell>
+                          </>
+                        );
+                      })()}
                       <TableCell className="p-2 whitespace-nowrap">
                         {l.dataUsada ? (
                           <div className="flex items-center gap-1.5">
