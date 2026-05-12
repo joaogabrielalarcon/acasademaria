@@ -430,6 +430,8 @@ export default function NovoOrcamento() {
 
   // ============ Etapa 6 — Mão de obra, fretes, transporte, indiretos ============
   type MoLinha = {
+    colaborador_id: string;
+    colaborador_nome: string;
     cargo_id: string;
     cargo_nome: string;
     qtd: string;
