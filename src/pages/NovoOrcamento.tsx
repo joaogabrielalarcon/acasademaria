@@ -3287,7 +3287,7 @@ export default function NovoOrcamento() {
               )}
 
               {tabEtapa3 === "comparativo" && (<>
-
+              {itensMaterial.length === 0 && (
                 <EmptyState
                   title="Sem itens no memorial"
                   description="Volte à Etapa 2 para adicionar plantas, insumos ou condicionadores antes de selecionar fornecedores."
