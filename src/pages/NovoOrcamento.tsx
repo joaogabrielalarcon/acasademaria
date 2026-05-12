@@ -4038,10 +4038,14 @@ export default function NovoOrcamento() {
                       </>
                     )}
 
-                    <Button variant="outline" size="sm" onClick={() => abrirNovoFornecedor(idx)}>
-                      <UserPlus className="w-4 h-4" />
+                    <button
+                      type="button"
+                      onClick={() => abrirNovoFornecedor(idx)}
+                      className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary underline-offset-2 hover:underline mt-1"
+                    >
+                      <UserPlus className="w-3.5 h-3.5" />
                       Adicionar fornecedor não cadastrado
-                    </Button>
+                    </button>
                       </CollapsibleContent>
                     </Collapsible>
                   </Card>
