@@ -4447,7 +4447,7 @@ export default function NovoOrcamento() {
           )}
 
           {/* Insumos (fundidos na etapa Fornecedores no novo fluxo de 6 etapas) */}
-          {etapaAtual === 3 && (
+          {etapaAtual === 3 && tabEtapa3 === "comparativo" && (
             <div className="space-y-6">
               {/* Seção A — Insumos calculados */}
               <Card className="p-4 space-y-3">
