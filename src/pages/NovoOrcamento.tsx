@@ -495,6 +495,22 @@ export default function NovoOrcamento() {
     },
   });
 
+  const { data: colaboradoresAtivos = [] } = useQuery({
+    queryKey: ["colaboradores-ativos-mo"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("colaboradores_basico")
+        .select("id, nome, cargo")
+        .eq("ativo", true)
+        .order("nome");
+      if (error) {
+        console.warn("[colaboradores] erro:", error);
+        return [];
+      }
+      return data || [];
+    },
+  });
+
   const { data: transportadoras = [] } = useQuery({
     queryKey: ["transportadoras"],
     queryFn: async () => {
