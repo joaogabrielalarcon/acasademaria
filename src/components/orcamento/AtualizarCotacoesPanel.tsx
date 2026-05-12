@@ -38,8 +38,8 @@ interface AtualizarCotacoesPanelProps {
   fornecedoresEnvolvidos: FornecedorAtualizacaoItem[];
   /** sugestões adicionais de mercado (cadastradas em outros fornecedores) */
   sugestoesMercado?: string[];
-  /** quando o operador acionar IA (placeholder até 2C) */
-  onIAClick?: () => void;
+  /** chamado ao acionar IA para um fornecedor específico */
+  onIAClick?: (f?: FornecedorAtualizacaoItem) => void;
 }
 
 type FiltroIdade = "todos" | "30d" | "60d" | "180d";
