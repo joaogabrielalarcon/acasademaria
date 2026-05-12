@@ -4857,6 +4857,20 @@ export default function NovoOrcamento() {
           {/* Etapa 5 - Mão de Obra, Fretes e Transporte */}
           {etapaAtual === 5 && (
             <div className="space-y-6 pb-24">
+              {moLinhas.length > 0 && (!form.tipo_proposta_id || !aliquotaMes || aliquotaMes <= 0) && (
+                <div className="rounded-md border border-primary/40 bg-primary/10 p-3 flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-semibold text-foreground">Empresa de faturamento ausente</p>
+                    <p className="text-xs text-muted-foreground">
+                      Defina a empresa de faturamento e a alíquota na Etapa 1 para calcular impostos sobre a mão de obra corretamente.
+                    </p>
+                    <Button variant="link" size="sm" className="px-0 h-auto text-primary" onClick={() => setEtapaAtual(1)}>
+                      Ir para Etapa 1
+                    </Button>
+                  </div>
+                </div>
+              )}
               {/* Seção A — MÃO DE OBRA */}
               <Card className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
