@@ -57,8 +57,8 @@ import {
 import { cn } from "@/lib/utils";
 import { FornecedorPopover } from "@/components/orcamento/FornecedorPopover";
 import { MercadoInlineEditor, parseMercados } from "@/components/orcamento/MercadoInlineEditor";
-import { EditarPrecoPopover } from "@/components/orcamento/EditarPrecoPopover";
-import { EditarPortePopover } from "@/components/orcamento/EditarPortePopover";
+import { AtualizarCotacaoPopover } from "@/components/orcamento/AtualizarCotacaoPopover";
+import { MafeFAB } from "@/components/orcamento/MafeFAB";
 import { EditarMercadoDialog } from "@/components/orcamento/EditarMercadoDialog";
 import {
   IndisponibilidadeDialog,
