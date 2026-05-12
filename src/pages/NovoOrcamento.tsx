@@ -709,7 +709,9 @@ export default function NovoOrcamento() {
       const next = { ...prev };
       CATEGORIAS_RESUMO.forEach((c) => {
         if (next[c] === undefined) {
-          next[c] = c === "Fretes" ? 0 : 100;
+          // Categorias da Etapa 5 são repasse direto ao cliente (sem markup adicional)
+          const repasseDireto = c === "Fretes" || c === "Mão de Obra" || c === "Transporte" || c === "Custos Indiretos";
+          next[c] = repasseDireto ? 0 : 100;
         }
       });
       return next;
