@@ -5385,26 +5385,24 @@ export default function NovoOrcamento() {
                 )}
               </Card>
 
-              {/* Resumo sticky */}
-              <div className="sticky bottom-0 z-10 -mx-4 px-4 py-3 bg-background/95 backdrop-blur border-t border-primary/20">
-                <div className="text-sm flex flex-wrap gap-x-5 gap-y-1">
-                  <span>
-                    MO c/ imposto: <strong>{fmtBRL(valorNfMo)}</strong>
-                  </span>
-                  <span>
-                    Fretes: <strong>{fmtBRL(totalFretes)}</strong>
-                  </span>
-                  <span>
-                    Transporte: <strong>{fmtBRL(totalTransporte)}</strong>
-                  </span>
-                  <span>
-                    Indiretos: <strong>{fmtBRL(totalIndiretos)}</strong>
-                  </span>
-                  <span className="ml-auto">
-                    Total etapa: <strong className="text-primary">{fmtBRL(totalEtapa6)}</strong>
-                  </span>
+              {/* Resumo consolidado da Etapa 5 */}
+              <Card className="p-5 border-2 border-primary bg-primary/5">
+                <div className="flex flex-wrap items-baseline justify-between gap-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-primary font-semibold">Custo total da Etapa 5</p>
+                    <p className="font-display text-3xl text-primary">{fmtBRL(totalEtapa6)}</p>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-1 text-sm">
+                    <div><span className="text-muted-foreground">Mão de obra:</span> <strong>{fmtBRL(valorNfMo)}</strong></div>
+                    <div><span className="text-muted-foreground">Fretes:</span> <strong>{fmtBRL(totalFretes)}</strong></div>
+                    <div><span className="text-muted-foreground">Transporte:</span> <strong>{fmtBRL(totalTransporte)}</strong></div>
+                    <div><span className="text-muted-foreground">Indiretos:</span> <strong>{fmtBRL(totalIndiretos)}</strong></div>
+                  </div>
                 </div>
-              </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Repasse direto ao cliente, sem markup adicional. Compõe a linha "Adicionais" no resumo financeiro da Etapa 6.
+                </p>
+              </Card>
             </div>
           )}
 
