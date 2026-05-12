@@ -515,7 +515,7 @@ export default function NovoOrcamento() {
   const addMoLinha = () =>
     setMoLinhas((p) => [
       ...p,
-      { cargo_id: "", cargo_nome: "", qtd: "1", dias: "", salario_diario: "0" },
+      { colaborador_id: "", colaborador_nome: "", cargo_id: "", cargo_nome: "", qtd: "1", dias: "", salario_diario: "0" },
     ]);
   const updateMoLinha = (idx: number, patch: Partial<MoLinha>) =>
     setMoLinhas((p) => p.map((l, i) => (i === idx ? { ...l, ...patch } : l)));
