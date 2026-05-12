@@ -4442,7 +4442,6 @@ export default function NovoOrcamento() {
                   </Card>
                 );
               })}
-              </>)}
             </div>
           )}
 
