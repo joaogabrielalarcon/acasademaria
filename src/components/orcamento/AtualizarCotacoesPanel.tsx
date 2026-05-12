@@ -267,7 +267,18 @@ export function AtualizarCotacoesPanel({
                     )}
                   </ul>
 
-                  <div className="flex justify-end pt-1">
+                  <div className="flex justify-end gap-2 pt-1">
+                    {onIAClick && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onIAClick(f)}
+                        disabled={f.itens.length === 0}
+                        title="Atualizar via conversa com a Mafe"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" /> Mafe
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="terracota"
