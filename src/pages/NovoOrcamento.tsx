@@ -4959,6 +4959,49 @@ export default function NovoOrcamento() {
                           return (
                             <tr key={idx} className="border-t">
                               <td className="p-2">
+                                <Select
+                                  value={l.colaborador_id || "__none__"}
+                                  onValueChange={(v) => {
+                                    if (v === "__none__") {
+                                      updateMoLinha(idx, { colaborador_id: "", colaborador_nome: "" });
+                                      return;
+                                    }
+                                    const co = (colaboradoresAtivos as any[]).find((x) => x.id === v);
+                                    const patch: Partial<MoLinha> = {
+                                      colaborador_id: v,
+                                      colaborador_nome: co?.nome || "",
+                                    };
+                                    // Se cargo ainda vazio e colaborador tem cargo, tenta auto-vincular
+                                    if (!l.cargo_id && co?.cargo) {
+                                      const match = (cargosMo as any[]).find(
+                                        (c) => String(c.nome).toLowerCase() === String(co.cargo).toLowerCase(),
+                                      );
+                                      if (match) {
+                                        patch.cargo_id = match.id;
+                                        patch.cargo_nome = match.nome;
+                                        patch.salario_diario = String(match.salario_diario ?? "0");
+                                      }
+                                    }
+                                    updateMoLinha(idx, patch);
+                                  }}
+                                >
+                                  <SelectTrigger className="h-8">
+                                    <SelectValue placeholder="Genérico" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="__none__">Genérico (sem nome)</SelectItem>
+                                    {(colaboradoresAtivos as any[]).map((co) => (
+                                      <SelectItem key={co.id} value={co.id}>
+                                        {co.nome}
+                                        {co.cargo && (
+                                          <span className="text-xs text-muted-foreground"> · {co.cargo}</span>
+                                        )}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </td>
+                              <td className="p-2">
                                 <div className="flex gap-1">
                                   <Select
                                     value={l.cargo_id}
