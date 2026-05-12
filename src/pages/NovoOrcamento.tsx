@@ -693,9 +693,10 @@ export default function NovoOrcamento() {
 
   const [margemNegPct, setMargemNegPct] = useState<number>(0);
 
-  const [aprovarModal, setAprovarModal] = useState<{ open: boolean; valor: string }>({
+  const [aprovarModal, setAprovarModal] = useState<{ open: boolean; valor: string; observacao: string }>({
     open: false,
     valor: "",
+    observacao: "",
   });
   const [naoAprovarModal, setNaoAprovarModal] = useState<{ open: boolean; motivo: string }>({
     open: false,
