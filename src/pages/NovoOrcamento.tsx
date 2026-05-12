@@ -3255,7 +3255,39 @@ export default function NovoOrcamento() {
                 </div>
               </div>
 
-              {itensMaterial.length === 0 && (
+              {/* Sub-PR 2B/2C — Sub-aba dentro da Etapa 3 */}
+              <Tabs value={tabEtapa3} onValueChange={(v) => setTabEtapa3(v as "comparativo" | "atualizar")} className="w-full">
+                <TabsList>
+                  <TabsTrigger value="comparativo">Comparativo de fornecedores</TabsTrigger>
+                  <TabsTrigger value="atualizar">
+                    Atualizar Cotações
+                    {fornecedoresEnvolvidos.length > 0 && (
+                      <span className="ml-1.5 text-[10px] bg-muted text-muted-foreground rounded-full px-1.5">
+                        {fornecedoresEnvolvidos.length}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+
+              {tabEtapa3 === "atualizar" && (
+                <AtualizarCotacoesPanel
+                  orcamentoId={id || null}
+                  fornecedoresEnvolvidos={fornecedoresEnvolvidos}
+                  onIAClick={() => {
+                    if (fornecedoresEnvolvidos.length === 0) return;
+                    const f = fornecedoresEnvolvidos[0];
+                    setIaChatTarget({
+                      fornecedorId: f.fornecedorId,
+                      fornecedorNome: f.fornecedorNome,
+                      mercado: f.mercado,
+                    });
+                  }}
+                />
+              )}
+
+              {tabEtapa3 === "comparativo" && (<>
+
                 <EmptyState
                   title="Sem itens no memorial"
                   description="Volte à Etapa 2 para adicionar plantas, insumos ou condicionadores antes de selecionar fornecedores."
