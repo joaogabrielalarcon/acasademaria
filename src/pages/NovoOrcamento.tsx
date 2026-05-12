@@ -693,9 +693,10 @@ export default function NovoOrcamento() {
 
   const [margemNegPct, setMargemNegPct] = useState<number>(0);
 
-  const [aprovarModal, setAprovarModal] = useState<{ open: boolean; valor: string }>({
+  const [aprovarModal, setAprovarModal] = useState<{ open: boolean; valor: string; observacao: string }>({
     open: false,
     valor: "",
+    observacao: "",
   });
   const [naoAprovarModal, setNaoAprovarModal] = useState<{ open: boolean; motivo: string }>({
     open: false,
@@ -709,7 +710,9 @@ export default function NovoOrcamento() {
       const next = { ...prev };
       CATEGORIAS_RESUMO.forEach((c) => {
         if (next[c] === undefined) {
-          next[c] = c === "Fretes" ? 0 : 100;
+          // Categorias da Etapa 5 são repasse direto ao cliente (sem markup adicional)
+          const repasseDireto = c === "Fretes" || c === "Mão de Obra" || c === "Transporte" || c === "Custos Indiretos";
+          next[c] = repasseDireto ? 0 : 100;
         }
       });
       return next;
@@ -1073,6 +1076,52 @@ export default function NovoOrcamento() {
       }
       setVersoesPendentes([]);
 
+      // Snapshot imutável em momentos-chave: envio ao cliente e aprovação
+      const tipoSnapshot =
+        statusFinal === "aguardando_aprovacao"
+          ? "envio"
+          : statusFinal === "aprovado"
+            ? "aprovacao"
+            : null;
+      if (tipoSnapshot) {
+        const snapshot = {
+          form,
+          itensMaterial,
+          cotacoes,
+          margensSeg,
+          insumosCalc,
+          insumosAdicionais,
+          fretes,
+          moLinhas,
+          transporte,
+          custosIndiretos,
+          markupsCategoria,
+          aliquotaMes,
+          tipoNf,
+          comissao: comissaoOn
+            ? { tipo: comissaoTipo, percentual: Number(comissaoPct) || 0, beneficiario: comissaoBeneficiario, valor: valorComissao }
+            : null,
+          margemNegPct,
+          totais: {
+            totalCusto: totaisResumo.totalCusto,
+            totalVenda: totaisResumo.totalVenda,
+            totalCliente,
+            descontoMaximo,
+            valorMinimo,
+            impostoProdutos,
+            margemBrutaVal: totaisResumo.margemBrutaVal,
+            markupMedio: totaisResumo.markupMedio,
+          },
+          extras: extras || null,
+        };
+        await (supabase as any).from("orcamento_snapshots").insert({
+          orcamento_id: orcId,
+          tipo: tipoSnapshot,
+          snapshot,
+          created_by: uid,
+        });
+      }
+
       queryClient.invalidateQueries({ queryKey: ["orcamentos"] });
       if (!isEdit) navigate(`/orcamentos/${orcId}`, { replace: true });
       return orcId;
@@ -1110,6 +1159,7 @@ export default function NovoOrcamento() {
       await persistirOrcamentoCompleto("aprovado", {
         valor_negociado_final: Number(aprovarModal.valor) || totalCliente,
         data_aprovacao: new Date().toISOString(),
+        observacao_aprovacao: aprovarModal.observacao?.trim() || null,
         editavel: false,
       });
       if (form.cliente_id) {
@@ -1118,7 +1168,7 @@ export default function NovoOrcamento() {
           .update({ status: "Aprovado" })
           .eq("cliente_id", form.cliente_id);
       }
-      setAprovarModal({ open: false, valor: "" });
+      setAprovarModal({ open: false, valor: "", observacao: "" });
       toast({ title: "Orçamento aprovado com sucesso!" });
       setTimeout(() => navigate("/orcamentos"), 2000);
     } catch (e: any) {
@@ -5677,22 +5727,68 @@ export default function NovoOrcamento() {
                 </div>
               </div>
 
-              {/* Comissão e Margem de negociação foram movidas para a Etapa 4 (Markup e Margens). */}
-              <Card className="p-4 bg-muted/30 border-dashed">
-                <p className="text-xs text-muted-foreground">
-                  Comissão e margem de negociação agora são definidas na Etapa 4 (Markup e Margens).
-                  {comissaoOn && (
-                    <>
-                      {" "}Comissão ativa: <strong className="text-foreground">{fmtBRL(valorComissao)}</strong>.
-                    </>
-                  )}
-                  {margemNegPct > 0 && (
-                    <>
-                      {" "}Desconto máximo permitido: <strong className="text-foreground">{fmtBRL(descontoMaximo)}</strong> ({margemNegPct}%).
-                    </>
-                  )}
-                </p>
-              </Card>
+              {/* Read-only: Adicionais (Etapa 5) e Comissão/Margem (Etapa 4) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className="p-4 space-y-2">
+                  <div className="flex items-baseline justify-between">
+                    <h3 className="font-display text-base text-foreground">Adicionais (Etapa 5)</h3>
+                    <Button variant="link" size="sm" className="px-0 h-auto text-primary" onClick={() => setEtapaAtual(5)}>
+                      Editar
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Repasse direto ao cliente, sem markup adicional. Já compõe a tabela acima.
+                  </p>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm pt-1">
+                    <span className="text-muted-foreground">Mão de obra:</span>
+                    <strong className="text-right">{fmtBRL(valorNfMo)}</strong>
+                    <span className="text-muted-foreground">Fretes:</span>
+                    <strong className="text-right">{fmtBRL(totalFretes)}</strong>
+                    <span className="text-muted-foreground">Transporte:</span>
+                    <strong className="text-right">{fmtBRL(totalTransporte)}</strong>
+                    <span className="text-muted-foreground">Indiretos:</span>
+                    <strong className="text-right">{fmtBRL(totalIndiretos)}</strong>
+                    <span className="text-foreground font-semibold border-t pt-1">Subtotal:</span>
+                    <strong className="text-right text-primary border-t pt-1">{fmtBRL(totalEtapa6)}</strong>
+                  </div>
+                </Card>
+
+                <Card className="p-4 space-y-2">
+                  <div className="flex items-baseline justify-between">
+                    <h3 className="font-display text-base text-foreground">Comissão e Margem de Negociação</h3>
+                    <Button variant="link" size="sm" className="px-0 h-auto text-primary" onClick={() => setEtapaAtual(4)}>
+                      Editar na Etapa 4
+                    </Button>
+                  </div>
+                  <div className="text-sm space-y-1.5 pt-1">
+                    {comissaoOn ? (
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-muted-foreground">
+                          Comissão {comissaoTipo === "vendas" ? "(vendas)" : "(indicação)"} {Number(comissaoPct).toFixed(1)}%
+                          {comissaoBeneficiario && ` · ${comissaoBeneficiario}`}:
+                        </span>
+                        <strong>{fmtBRL(valorComissao)}</strong>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic">Sem comissão configurada.</p>
+                    )}
+                    {margemNegPct > 0 ? (
+                      <>
+                        <div className="flex items-baseline justify-between">
+                          <span className="text-muted-foreground">Desconto máximo ({margemNegPct}%):</span>
+                          <strong>{fmtBRL(descontoMaximo)}</strong>
+                        </div>
+                        <div className="flex items-baseline justify-between">
+                          <span className="text-muted-foreground">Valor mínimo aceitável:</span>
+                          <strong className="text-primary">{fmtBRL(valorMinimo)}</strong>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic">Sem margem de negociação configurada.</p>
+                    )}
+                  </div>
+                </Card>
+              </div>
 
               {/* Botões de ação sticky */}
               <div className="sticky bottom-0 z-10 -mx-4 px-4 py-3 bg-background/95 backdrop-blur border-t border-primary/20 flex flex-wrap gap-2 justify-end">
@@ -5706,7 +5802,7 @@ export default function NovoOrcamento() {
                 <Button
                   variant="terracota"
                   onClick={() =>
-                    setAprovarModal({ open: true, valor: totalCliente.toFixed(2) })
+                    setAprovarModal({ open: true, valor: totalCliente.toFixed(2), observacao: "" })
                   }
                   disabled={savingFinal}
                 >
@@ -5795,14 +5891,25 @@ export default function NovoOrcamento() {
                     }
                   />
                 </div>
+                <div className="space-y-1.5">
+                  <Label>Observação da aprovação (opcional)</Label>
+                  <Textarea
+                    rows={3}
+                    value={aprovarModal.observacao}
+                    onChange={(e) =>
+                      setAprovarModal((m) => ({ ...m, observacao: e.target.value }))
+                    }
+                    placeholder="Ex.: aprovado em reunião, com desconto de 5% sobre o total."
+                  />
+                </div>
                 <p className="text-sm text-muted-foreground">
-                  Tem certeza? Esta ação não pode ser desfeita.
+                  Após aprovado o orçamento fica imutável. Um snapshot é gravado automaticamente.
                 </p>
               </div>
               <DialogFooter>
                 <Button
                   variant="outline"
-                  onClick={() => setAprovarModal({ open: false, valor: "" })}
+                  onClick={() => setAprovarModal({ open: false, valor: "", observacao: "" })}
                   disabled={savingFinal}
                 >
                   Cancelar
