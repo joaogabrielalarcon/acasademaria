@@ -478,6 +478,10 @@ export default function NovoOrcamento() {
   const [custosIndiretos, setCustosIndiretos] = useState<CustoIndiretoLinha[]>([]);
   const [aliquotaMes, setAliquotaMes] = useState<number>(8.09);
   const [tipoNf, setTipoNf] = useState<"pj" | "cpf">("pj");
+  const [openBlocoMo, setOpenBlocoMo] = useState(true);
+  const [openBlocoFretes, setOpenBlocoFretes] = useState(true);
+  const [openBlocoTransp, setOpenBlocoTransp] = useState(true);
+  const [openBlocoIndir, setOpenBlocoIndir] = useState(true);
 
   const { data: cargosMo = [] } = useQuery({
     queryKey: ["cargos-mo-ativos"],
