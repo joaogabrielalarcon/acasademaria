@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { mergeMercadosSugestoes } from "@/lib/mercados";
 
 interface EditarMercadoDialogProps {
   open: boolean;
@@ -50,9 +51,7 @@ export function EditarMercadoDialog({
     }
   }, [open, mercadoAtual]);
 
-  const sugestoesUnicas = Array.from(
-    new Set((sugestoes || []).map((s) => String(s || "").trim()).filter(Boolean)),
-  ).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  const sugestoesUnicas = mergeMercadosSugestoes(sugestoes);
 
   const mutation = useMutation({
     mutationFn: async () => {

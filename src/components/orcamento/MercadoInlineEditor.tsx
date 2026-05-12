@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import { MERCADOS_REFERENCIA } from "@/lib/mercados";
 
 function toTitleCase(input: string): string {
   return input
@@ -89,9 +90,15 @@ export function MercadoInlineEditor({
 
   const sugestoesUnicas = useMemo(() => {
     const set = new Map<string, string>();
+    // Mercados de referência primeiro (forma canônica)
+    for (const r of MERCADOS_REFERENCIA) {
+      set.set(r.toLowerCase(), r);
+    }
+    // Mercados já cadastrados em outros fornecedores (não sobrescreve)
     for (const raw of sugestoes) {
       for (const v of parseMercados(raw)) {
-        set.set(v.toLowerCase(), v);
+        const k = v.toLowerCase();
+        if (!set.has(k)) set.set(k, v);
       }
     }
     return Array.from(set.values()).sort((a, b) => a.localeCompare(b, "pt-BR"));

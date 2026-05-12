@@ -956,6 +956,76 @@ export type Database = {
           },
         ]
       }
+      cotacao_disparos: {
+        Row: {
+          atendente_id: string | null
+          atendente_nome: string | null
+          canal: string
+          created_at: string
+          disparado_por: string | null
+          disparado_por_nome: string | null
+          fornecedor_id: string
+          id: string
+          itens_resumo: Json
+          mensagem: string
+          metadata: Json
+          orcamento_id: string | null
+          origem: string | null
+        }
+        Insert: {
+          atendente_id?: string | null
+          atendente_nome?: string | null
+          canal?: string
+          created_at?: string
+          disparado_por?: string | null
+          disparado_por_nome?: string | null
+          fornecedor_id: string
+          id?: string
+          itens_resumo?: Json
+          mensagem: string
+          metadata?: Json
+          orcamento_id?: string | null
+          origem?: string | null
+        }
+        Update: {
+          atendente_id?: string | null
+          atendente_nome?: string | null
+          canal?: string
+          created_at?: string
+          disparado_por?: string | null
+          disparado_por_nome?: string | null
+          fornecedor_id?: string
+          id?: string
+          itens_resumo?: Json
+          mensagem?: string
+          metadata?: Json
+          orcamento_id?: string | null
+          origem?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cotacao_disparos_atendente_id_fkey"
+            columns: ["atendente_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedor_atendentes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotacao_disparos_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotacao_disparos_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cotacao_indisponibilidades: {
         Row: {
           created_at: string
