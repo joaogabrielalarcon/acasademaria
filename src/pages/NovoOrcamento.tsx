@@ -5514,86 +5514,21 @@ export default function NovoOrcamento() {
                 </div>
               </div>
 
-              {/* Bloco Comissão */}
-              <Card className="p-4">
-                <button
-                  className="w-full flex items-center justify-between"
-                  onClick={() => setComissaoAberta((v) => !v)}
-                >
-                  <div className="flex items-center gap-3">
-                    <h3 className="font-display text-base">Comissão</h3>
-                    <Switch
-                      checked={comissaoOn}
-                      onCheckedChange={(v) => {
-                        setComissaoOn(v);
-                        if (v) setComissaoAberta(true);
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </div>
-                  {comissaoAberta ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </button>
-                {comissaoAberta && comissaoOn && (
-                  <div className="mt-3 grid grid-cols-1 md:grid-cols-4 gap-3">
-                    <div className="space-y-1 md:col-span-2">
-                      <Label className="text-xs">Tipo</Label>
-                      <RadioGroup
-                        value={comissaoTipo}
-                        onValueChange={(v: any) => setComissaoTipo(v)}
-                        className="flex gap-4"
-                      >
-                        <label className="flex items-center gap-2 text-sm">
-                          <RadioGroupItem value="vendas" /> Vendas
-                        </label>
-                        <label className="flex items-center gap-2 text-sm">
-                          <RadioGroupItem value="indicacao" /> Indicação
-                        </label>
-                      </RadioGroup>
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Percentual (%)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={comissaoPct}
-                        onChange={(e) => setComissaoPct(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Beneficiário</Label>
-                      <Input
-                        value={comissaoBeneficiario}
-                        onChange={(e) => setComissaoBeneficiario(e.target.value)}
-                      />
-                    </div>
-                    <div className="md:col-span-4 text-sm text-muted-foreground">
-                      Valor calculado: <strong className="text-foreground">{fmtBRL(valorComissao)}</strong>
-                    </div>
-                  </div>
-                )}
-              </Card>
-
-              {/* Bloco margem de negociação */}
-              <Card className="p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-display text-base">Margem de negociação disponível</h3>
-                  <span className="text-sm font-medium">{margemNegPct}%</span>
-                </div>
-                <Slider
-                  value={[margemNegPct]}
-                  min={0}
-                  max={30}
-                  step={1}
-                  onValueChange={(v) => setMargemNegPct(v[0])}
-                />
-                <div className="text-sm text-muted-foreground flex flex-wrap gap-4">
-                  <span>
-                    Desconto máximo: <strong className="text-foreground">{fmtBRL(descontoMaximo)}</strong>
-                  </span>
-                  <span>
-                    Valor mínimo aceitável: <strong className="text-foreground">{fmtBRL(valorMinimo)}</strong>
-                  </span>
-                </div>
+              {/* Comissão e Margem de negociação foram movidas para a Etapa 4 (Markup e Margens). */}
+              <Card className="p-4 bg-muted/30 border-dashed">
+                <p className="text-xs text-muted-foreground">
+                  Comissão e margem de negociação agora são definidas na Etapa 4 (Markup e Margens).
+                  {comissaoOn && (
+                    <>
+                      {" "}Comissão ativa: <strong className="text-foreground">{fmtBRL(valorComissao)}</strong>.
+                    </>
+                  )}
+                  {margemNegPct > 0 && (
+                    <>
+                      {" "}Desconto máximo permitido: <strong className="text-foreground">{fmtBRL(descontoMaximo)}</strong> ({margemNegPct}%).
+                    </>
+                  )}
+                </p>
               </Card>
 
               {/* Botões de ação sticky */}
