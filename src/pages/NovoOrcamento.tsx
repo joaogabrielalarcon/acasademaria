@@ -5461,6 +5461,8 @@ export default function NovoOrcamento() {
                     </table>
                   </div>
                 )}
+                </CollapsibleContent>
+                </Collapsible>
               </Card>
 
               {/* Resumo consolidado da Etapa 5 */}
