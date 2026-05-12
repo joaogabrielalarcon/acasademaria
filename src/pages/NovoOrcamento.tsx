@@ -5845,8 +5845,19 @@ export default function NovoOrcamento() {
                     }
                   />
                 </div>
+                <div className="space-y-1.5">
+                  <Label>Observação da aprovação (opcional)</Label>
+                  <Textarea
+                    rows={3}
+                    value={aprovarModal.observacao}
+                    onChange={(e) =>
+                      setAprovarModal((m) => ({ ...m, observacao: e.target.value }))
+                    }
+                    placeholder="Ex.: aprovado em reunião, com desconto de 5% sobre o total."
+                  />
+                </div>
                 <p className="text-sm text-muted-foreground">
-                  Tem certeza? Esta ação não pode ser desfeita.
+                  Após aprovado o orçamento fica imutável. Um snapshot é gravado automaticamente.
                 </p>
               </div>
               <DialogFooter>
