@@ -70,6 +70,7 @@ import { EmptyState, ErrorState } from "@/components/ui/list-states";
 import { MobileCardList } from "@/components/ui/mobile-card-list";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AtualizarCotacoesPanel, type FornecedorAtualizacaoItem } from "@/components/orcamento/AtualizarCotacoesPanel";
+import { IAChatPanel, type IAChatItemContexto } from "@/components/orcamento/IAChatPanel";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -253,6 +254,17 @@ export default function NovoOrcamento() {
       sessionStorage.setItem(blocosStorageKey, JSON.stringify(blocosColapsados));
     } catch {}
   }, [blocosColapsados, blocosStorageKey]);
+
+  // Sub-PR 2B/2C — sub-aba dentro da Etapa 3 (Comparativo / Atualizar Cotações)
+  const [tabEtapa3, setTabEtapa3] = useState<"comparativo" | "atualizar">("comparativo");
+
+  // Sub-PR 2C — IA chat panel state (por fornecedor)
+  const [iaChatTarget, setIaChatTarget] = useState<{
+    fornecedorId: string;
+    fornecedorNome: string;
+    mercado?: string | null;
+  } | null>(null);
+
   // Modal inline para preencher Mercado de fornecedor sem sair da etapa
   const [mercadoInlineDialog, setMercadoInlineDialog] = useState<{
     open: boolean;
@@ -1907,6 +1919,81 @@ export default function NovoOrcamento() {
     return { semCot, porteDiv, completos };
   }, [itensMaterial, fornecedoresSelecionados, cotacoes]);
 
+  // Sub-PR 2B/2C — fornecedores envolvidos no orçamento (para sub-aba Atualizar Cotações + IA)
+  const fornecedoresEnvolvidos = useMemo<FornecedorAtualizacaoItem[]>(() => {
+    const map = new Map<string, FornecedorAtualizacaoItem>();
+    itensMaterial.forEach((it, idx) => {
+      const info = itemDbInfoByIdx[idx];
+      const sel = fornecedoresSelecionados[idx] || [];
+      const fornsBruto = fornecedoresDoItem(it) as any[];
+      sel.forEach((fid) => {
+        const row = fornsBruto.find((r: any) => r.fornecedor_id === fid);
+        const f = row?.fornecedores;
+        if (!f) return;
+        if (!map.has(fid)) {
+          map.set(fid, {
+            fornecedorId: fid,
+            fornecedorNome: f.nome || "Fornecedor",
+            mercado: f.mercado || null,
+            telefone: f.telefone || null,
+            whatsapp: f.whatsapp || null,
+            itens: [],
+          });
+        }
+        if (info) {
+          const linha = (cotacoes[idx] || {})[fid];
+          map.get(fid)!.itens.push({
+            item_id: info.item_id,
+            item_tipo: info.item_tipo,
+            nome_popular: it.nome_popular,
+            nome_cientifico: it.nome_cientifico || null,
+            porte: linha?.porte_ofertado || it.porte || row.porte || null,
+            unidade: it.unidade || row.unidade || null,
+            quantidade: it.quantidade || null,
+            preco_atual: linha?.valor_unitario != null ? Number(linha.valor_unitario)
+              : (row.preco != null ? Number(row.preco) : null),
+            ultima_cotacao: row.data_orcamento || null,
+          });
+        }
+      });
+    });
+    return Array.from(map.values()).sort((a, b) =>
+      a.fornecedorNome.localeCompare(b.fornecedorNome, "pt-BR"),
+    );
+  }, [itensMaterial, fornecedoresSelecionados, cotacoes, historicoPorItem, itemDbInfoByIdx]);
+
+  // Itens em formato IAChatItemContexto para o painel IA, por fornecedor
+  const iaContextoPorFornecedor = useMemo(() => {
+    const map = new Map<string, IAChatItemContexto[]>();
+    fornecedoresEnvolvidos.forEach((f) => {
+      // agrupa portes disponíveis por item_id (todos do histórico, mesmo de outros fornecedores)
+      const itens: IAChatItemContexto[] = f.itens
+        .filter((i) => i.item_id && i.item_tipo !== "condicionador_solo")
+        .map((i) => {
+          const memorialIdx = itensMaterial.findIndex((m) => m.nome_popular === i.nome_popular);
+          const todosForns = memorialIdx >= 0 ? (fornecedoresDoItem(itensMaterial[memorialIdx]) as any[]) : [];
+          const portes = new Set<string>();
+          todosForns.forEach((row) => {
+            if (row.porte) portes.add(String(row.porte));
+            (row.outros_portes || []).forEach((o: any) => o?.porte && portes.add(String(o.porte)));
+          });
+          return {
+            item_id: i.item_id!,
+            item_tipo: i.item_tipo as "planta" | "insumo",
+            nome_popular: i.nome_popular,
+            nome_cientifico: i.nome_cientifico || null,
+            porte: i.porte || null,
+            preco_atual: i.preco_atual ?? null,
+            unidade: i.unidade || null,
+            ultima_cotacao: i.ultima_cotacao || null,
+            portes_disponiveis: Array.from(portes).sort(),
+          };
+        });
+      map.set(f.fornecedorId, itens);
+    });
+    return map;
+  }, [fornecedoresEnvolvidos, itensMaterial, historicoPorItem]);
+
   const nomeFornecedor = (item: ItemMemorial, fornId: string) => {
     const row = fornecedoresDoItem(item).find((r: any) => r.fornecedor_id === fornId);
     return row?.fornecedores?.nome || "Fornecedor";
@@ -3168,6 +3255,38 @@ export default function NovoOrcamento() {
                 </div>
               </div>
 
+              {/* Sub-PR 2B/2C — Sub-aba dentro da Etapa 3 */}
+              <Tabs value={tabEtapa3} onValueChange={(v) => setTabEtapa3(v as "comparativo" | "atualizar")} className="w-full">
+                <TabsList>
+                  <TabsTrigger value="comparativo">Comparativo de fornecedores</TabsTrigger>
+                  <TabsTrigger value="atualizar">
+                    Atualizar Cotações
+                    {fornecedoresEnvolvidos.length > 0 && (
+                      <span className="ml-1.5 text-[10px] bg-muted text-muted-foreground rounded-full px-1.5">
+                        {fornecedoresEnvolvidos.length}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+
+              {tabEtapa3 === "atualizar" && (
+                <AtualizarCotacoesPanel
+                  orcamentoId={id || null}
+                  fornecedoresEnvolvidos={fornecedoresEnvolvidos}
+                  onIAClick={(f) => {
+                    const target = f || fornecedoresEnvolvidos[0];
+                    if (!target) return;
+                    setIaChatTarget({
+                      fornecedorId: target.fornecedorId,
+                      fornecedorNome: target.fornecedorNome,
+                      mercado: target.mercado,
+                    });
+                  }}
+                />
+              )}
+
+              {tabEtapa3 === "comparativo" && (<>
               {itensMaterial.length === 0 && (
                 <EmptyState
                   title="Sem itens no memorial"
@@ -3956,6 +4075,7 @@ export default function NovoOrcamento() {
                   itemNome={indispTarget.itemNome}
                 />
               )}
+              </>)}
             </div>
               )}
 
@@ -4327,7 +4447,7 @@ export default function NovoOrcamento() {
           )}
 
           {/* Insumos (fundidos na etapa Fornecedores no novo fluxo de 6 etapas) */}
-          {etapaAtual === 3 && (
+          {etapaAtual === 3 && tabEtapa3 === "comparativo" && (
             <div className="space-y-6">
               {/* Seção A — Insumos calculados */}
               <Card className="p-4 space-y-3">
@@ -5803,6 +5923,20 @@ export default function NovoOrcamento() {
           return list;
         })()}
       />
+
+      {/* Sub-PR 2C — Painel IA Mafe para atualização de cotações */}
+      {iaChatTarget && (
+        <IAChatPanel
+          open={!!iaChatTarget}
+          onOpenChange={(o) => !o && setIaChatTarget(null)}
+          orcamentoId={id || null}
+          fornecedorId={iaChatTarget.fornecedorId}
+          fornecedorNome={iaChatTarget.fornecedorNome}
+          mercado={iaChatTarget.mercado}
+          itens={iaContextoPorFornecedor.get(iaChatTarget.fornecedorId) || []}
+          onAplicado={() => refetchHistorico?.()}
+        />
+      )}
 
       {/* Importar resposta do fornecedor via IA */}
       {importarFornId && (

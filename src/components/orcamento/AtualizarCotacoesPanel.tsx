@@ -38,8 +38,8 @@ interface AtualizarCotacoesPanelProps {
   fornecedoresEnvolvidos: FornecedorAtualizacaoItem[];
   /** sugestões adicionais de mercado (cadastradas em outros fornecedores) */
   sugestoesMercado?: string[];
-  /** quando o operador acionar IA (placeholder até 2C) */
-  onIAClick?: () => void;
+  /** chamado ao acionar IA para um fornecedor específico */
+  onIAClick?: (f?: FornecedorAtualizacaoItem) => void;
 }
 
 type FiltroIdade = "todos" | "30d" | "60d" | "180d";
@@ -193,7 +193,7 @@ export function AtualizarCotacoesPanel({
                     size="sm"
                     variant="outline"
                     className="ml-auto"
-                    onClick={onIAClick}
+                    onClick={() => onIAClick?.()}
                     disabled={!onIAClick}
                   >
                     <Sparkles className="w-4 h-4" />
@@ -267,7 +267,18 @@ export function AtualizarCotacoesPanel({
                     )}
                   </ul>
 
-                  <div className="flex justify-end pt-1">
+                  <div className="flex justify-end gap-2 pt-1">
+                    {onIAClick && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onIAClick(f)}
+                        disabled={f.itens.length === 0}
+                        title="Atualizar via conversa com a Mafe"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" /> Mafe
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="terracota"
