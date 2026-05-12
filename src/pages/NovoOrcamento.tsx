@@ -5115,6 +5115,7 @@ export default function NovoOrcamento() {
                     Adicionar frete
                   </Button>
                 </div>
+                <CollapsibleContent className="space-y-3 pt-3">
 
                 {fretes.length === 0 ? (
                   <p className="text-sm text-muted-foreground italic">Nenhum frete adicionado.</p>
