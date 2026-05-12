@@ -3274,13 +3274,13 @@ export default function NovoOrcamento() {
                 <AtualizarCotacoesPanel
                   orcamentoId={id || null}
                   fornecedoresEnvolvidos={fornecedoresEnvolvidos}
-                  onIAClick={() => {
-                    if (fornecedoresEnvolvidos.length === 0) return;
-                    const f = fornecedoresEnvolvidos[0];
+                  onIAClick={(f) => {
+                    const target = f || fornecedoresEnvolvidos[0];
+                    if (!target) return;
                     setIaChatTarget({
-                      fornecedorId: f.fornecedorId,
-                      fornecedorNome: f.fornecedorNome,
-                      mercado: f.mercado,
+                      fornecedorId: target.fornecedorId,
+                      fornecedorNome: target.fornecedorNome,
+                      mercado: target.mercado,
                     });
                   }}
                 />
