@@ -5924,6 +5924,20 @@ export default function NovoOrcamento() {
         })()}
       />
 
+      {/* Sub-PR 2C — Painel IA Mafe para atualização de cotações */}
+      {iaChatTarget && (
+        <IAChatPanel
+          open={!!iaChatTarget}
+          onOpenChange={(o) => !o && setIaChatTarget(null)}
+          orcamentoId={id || null}
+          fornecedorId={iaChatTarget.fornecedorId}
+          fornecedorNome={iaChatTarget.fornecedorNome}
+          mercado={iaChatTarget.mercado}
+          itens={iaContextoPorFornecedor.get(iaChatTarget.fornecedorId) || []}
+          onAplicado={() => refetchHistorico?.()}
+        />
+      )}
+
       {/* Importar resposta do fornecedor via IA */}
       {importarFornId && (
         <ImportarRespostaFornecedorDialog
