@@ -59,6 +59,7 @@ import { FornecedorPopover } from "@/components/orcamento/FornecedorPopover";
 import { MercadoInlineEditor, parseMercados } from "@/components/orcamento/MercadoInlineEditor";
 import { AtualizarCotacaoPopover } from "@/components/orcamento/AtualizarCotacaoPopover";
 import { MafeFAB } from "@/components/orcamento/MafeFAB";
+import { Etapa4MarkupBlocoA } from "@/components/orcamento/Etapa4MarkupBlocoA";
 import { EditarMercadoDialog } from "@/components/orcamento/EditarMercadoDialog";
 import {
   IndisponibilidadeDialog,
