@@ -4074,6 +4074,36 @@ export default function NovoOrcamento() {
                 />
               )}
               </>)}
+
+              {/* FAB Mafe — disponível em toda a Etapa 3 (comparativo + atualizar) */}
+              {(() => {
+                const expandidos = itensMaterial
+                  .map((it, i) => ({ it, i }))
+                  .filter(({ i }) => !blocosColapsados[i]);
+                let prioritarios: FornecedorAtualizacaoItem[] = [];
+                let contextoLabel: string | null = null;
+                if (expandidos.length === 1 && tabEtapa3 === "comparativo") {
+                  const nome = expandidos[0].it.nome_popular;
+                  prioritarios = fornecedoresEnvolvidos.filter((f) =>
+                    f.itens.some((i) => i.nome_popular === nome),
+                  );
+                  contextoLabel = nome;
+                }
+                return (
+                  <MafeFAB
+                    fornecedoresEnvolvidos={fornecedoresEnvolvidos}
+                    fornecedoresContextoPrioritario={prioritarios}
+                    contextoLabel={contextoLabel}
+                    onSelecionar={(f) =>
+                      setIaChatTarget({
+                        fornecedorId: f.fornecedorId,
+                        fornecedorNome: f.fornecedorNome,
+                        mercado: f.mercado,
+                      })
+                    }
+                  />
+                );
+              })()}
             </div>
               )}
 
