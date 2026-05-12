@@ -5357,13 +5357,14 @@ export default function NovoOrcamento() {
                                   value={c.tipo}
                                   onValueChange={(v) => {
                                     const ref = TIPOS_INDIRETO.find((t) => t.value === v);
-                                    updateIndireto(idx, {
-                                      tipo: v,
-                                      valor_unitario:
-                                        ref && ref.padrao > 0 && !c.valor_unitario
-                                          ? String(ref.padrao)
-                                          : c.valor_unitario,
-                                    });
+                                    const cargoVal = cargoDiarioPorTipo[v];
+                                    let novoValor = c.valor_unitario;
+                                    if (cargoVal && cargoVal > 0) {
+                                      novoValor = String(cargoVal);
+                                    } else if (ref && ref.padrao > 0 && !c.valor_unitario) {
+                                      novoValor = String(ref.padrao);
+                                    }
+                                    updateIndireto(idx, { tipo: v, valor_unitario: novoValor });
                                   }}
                                 >
                                   <SelectTrigger className="h-8">
