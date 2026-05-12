@@ -5254,6 +5254,16 @@ export type Database = {
       }
     }
     Functions: {
+      ajustar_markup_categoria: {
+        Args: {
+          p_categoria: string
+          p_margem_pct: number
+          p_markup_pct: number
+          p_motivo: string
+          p_orcamento_id: string
+        }
+        Returns: undefined
+      }
       can_access_avaliacao: {
         Args: { p_colaborador_id: string; p_user_id: string }
         Returns: boolean
