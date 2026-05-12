@@ -945,7 +945,9 @@ export default function NovoOrcamento() {
         const qtd = Math.ceil((Number(f.qtd_esperada) || 0) * (1 + (Number(f.margem) || 0) / 100));
         await (supabase as any).from("orcamento_fretes").insert({
           orcamento_id: orcId,
+          fornecedor_id: f.modo_transp === "cad" ? (f.transportador_id || null) : null,
           transportador: f.transportador_nome || null,
+          percurso: f.percurso || null,
           descricao_percurso: f.percurso || null,
           valor_unitario: Number(f.valor_unitario) || 0,
           qtd_esperada: Number(f.qtd_esperada) || 0,
@@ -963,6 +965,7 @@ export default function NovoOrcamento() {
         const valNf = denom > 0 ? bruto / denom : 0;
         await (supabase as any).from("orcamento_mo").insert({
           orcamento_id: orcId,
+          colaborador_id: m.colaborador_id || null,
           cargo_id: m.cargo_id || null,
           qtd_funcionarios: Number(m.qtd) || 0,
           qtd_dias: Number(m.dias) || 0,
