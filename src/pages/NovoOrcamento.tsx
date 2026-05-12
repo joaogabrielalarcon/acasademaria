@@ -5091,17 +5091,25 @@ export default function NovoOrcamento() {
                     </span>
                   </div>
                 </div>
+                </CollapsibleContent>
+                </Collapsible>
               </Card>
 
               {/* Seção B — FRETES */}
               <Card className="p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="font-display text-lg text-foreground">Fretes do Projeto</h2>
-                    <p className="text-xs text-muted-foreground">
-                      Todos os fretes são repassados ao cliente.
-                    </p>
-                  </div>
+                <Collapsible open={openBlocoFretes} onOpenChange={setOpenBlocoFretes}>
+                <div className="flex items-center justify-between gap-2">
+                  <CollapsibleTrigger asChild>
+                    <button type="button" className="flex items-start gap-2 text-left flex-1 rounded-md hover:bg-muted/40 px-1 py-1 -mx-1">
+                      {openBlocoFretes ? <ChevronUp className="w-4 h-4 mt-1 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 mt-1 text-muted-foreground" />}
+                      <div>
+                        <h2 className="font-display text-lg text-foreground">Fretes do Projeto</h2>
+                        <p className="text-xs text-muted-foreground">
+                          Todos os fretes são repassados ao cliente. Total: <strong className="text-foreground">{fmtBRL(totalFretes)}</strong>
+                        </p>
+                      </div>
+                    </button>
+                  </CollapsibleTrigger>
                   <Button variant="outline" size="sm" onClick={addFrete}>
                     <Plus className="w-4 h-4" />
                     Adicionar frete
