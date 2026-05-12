@@ -5337,22 +5337,31 @@ export default function NovoOrcamento() {
                     </tbody>
                   </table>
                 </div>
+                </CollapsibleContent>
+                </Collapsible>
               </Card>
 
               {/* Seção D — CUSTOS INDIRETOS */}
               <Card className="p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="font-display text-lg text-foreground">Custos Indiretos</h2>
-                    <p className="text-xs text-muted-foreground">
-                      Refeições, escritório e demais despesas indiretas.
-                    </p>
-                  </div>
+                <Collapsible open={openBlocoIndir} onOpenChange={setOpenBlocoIndir}>
+                <div className="flex items-center justify-between gap-2">
+                  <CollapsibleTrigger asChild>
+                    <button type="button" className="flex items-start gap-2 text-left flex-1 rounded-md hover:bg-muted/40 px-1 py-1 -mx-1">
+                      {openBlocoIndir ? <ChevronUp className="w-4 h-4 mt-1 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 mt-1 text-muted-foreground" />}
+                      <div>
+                        <h2 className="font-display text-lg text-foreground">Custos Indiretos</h2>
+                        <p className="text-xs text-muted-foreground">
+                          Refeições, escritório e demais despesas indiretas. Total: <strong className="text-foreground">{fmtBRL(totalIndiretos)}</strong>
+                        </p>
+                      </div>
+                    </button>
+                  </CollapsibleTrigger>
                   <Button variant="outline" size="sm" onClick={addIndireto}>
                     <Plus className="w-4 h-4" />
                     Adicionar custo
                   </Button>
                 </div>
+                <CollapsibleContent className="space-y-3 pt-3">
 
                 {custosIndiretos.length === 0 ? (
                   <p className="text-sm text-muted-foreground italic">
