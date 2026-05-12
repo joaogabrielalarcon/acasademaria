@@ -70,6 +70,7 @@ import { EmptyState, ErrorState } from "@/components/ui/list-states";
 import { MobileCardList } from "@/components/ui/mobile-card-list";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AtualizarCotacoesPanel, type FornecedorAtualizacaoItem } from "@/components/orcamento/AtualizarCotacoesPanel";
+import { IAChatPanel, type IAChatItemContexto } from "@/components/orcamento/IAChatPanel";
 import {
   AlertDialog,
   AlertDialogAction,
