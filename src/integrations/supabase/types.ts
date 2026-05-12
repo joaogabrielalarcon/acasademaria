@@ -3268,6 +3268,63 @@ export type Database = {
           },
         ]
       }
+      orcamento_categorias_markup: {
+        Row: {
+          ajustado_manualmente: boolean
+          categoria: string
+          created_at: string
+          created_by: string | null
+          id: string
+          margem_pct: number
+          markup_pct: number
+          orcamento_id: string
+          perfil_id_aplicado: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          ajustado_manualmente?: boolean
+          categoria: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          margem_pct: number
+          markup_pct: number
+          orcamento_id: string
+          perfil_id_aplicado?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          ajustado_manualmente?: boolean
+          categoria?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          margem_pct?: number
+          markup_pct?: number
+          orcamento_id?: string
+          perfil_id_aplicado?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_categorias_markup_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_categorias_markup_perfil_id_aplicado_fkey"
+            columns: ["perfil_id_aplicado"]
+            isOneToOne: false
+            referencedRelation: "perfis_markup"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orcamento_checklist: {
         Row: {
           created_at: string | null
@@ -4073,28 +4130,34 @@ export type Database = {
       }
       perfis_markup: {
         Row: {
+          arquivado: boolean
           ativo: boolean | null
           created_at: string | null
           criado_por: string | null
           descricao: string | null
           id: string
           nome: string
+          updated_at: string
         }
         Insert: {
+          arquivado?: boolean
           ativo?: boolean | null
           created_at?: string | null
           criado_por?: string | null
           descricao?: string | null
           id?: string
           nome: string
+          updated_at?: string
         }
         Update: {
+          arquivado?: boolean
           ativo?: boolean | null
           created_at?: string | null
           criado_por?: string | null
           descricao?: string | null
           id?: string
           nome?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -4119,6 +4182,7 @@ export type Database = {
           created_at: string | null
           id: string
           imposto_pct: number | null
+          margem_pct: number | null
           markup_pct: number
           perfil_id: string | null
         }
@@ -4127,6 +4191,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           imposto_pct?: number | null
+          margem_pct?: number | null
           markup_pct: number
           perfil_id?: string | null
         }
@@ -4135,6 +4200,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           imposto_pct?: number | null
+          margem_pct?: number | null
           markup_pct?: number
           perfil_id?: string | null
         }

@@ -59,6 +59,7 @@ import { FornecedorPopover } from "@/components/orcamento/FornecedorPopover";
 import { MercadoInlineEditor, parseMercados } from "@/components/orcamento/MercadoInlineEditor";
 import { AtualizarCotacaoPopover } from "@/components/orcamento/AtualizarCotacaoPopover";
 import { MafeFAB } from "@/components/orcamento/MafeFAB";
+import { Etapa4MarkupBlocoA } from "@/components/orcamento/Etapa4MarkupBlocoA";
 import { EditarMercadoDialog } from "@/components/orcamento/EditarMercadoDialog";
 import {
   IndisponibilidadeDialog,
@@ -4225,16 +4226,13 @@ export default function NovoOrcamento() {
                 </DialogContent>
               </Dialog>
 
-          {/* Etapa 4 - Markup e Margens (placeholder — nova lógica em prompt posterior) */}
+          {/* Etapa 4 - Markup e Margens — Sub-PR 3A: Bloco A (seleção/aplicação de perfil) */}
           {etapaAtual === 4 && (
-            <Card className="p-12">
-              <div className="text-center space-y-2">
-                <h2 className="font-display text-xl text-foreground">Markup e Margens</h2>
-                <p className="text-sm text-muted-foreground">
-                  Etapa em construção — será implementada em breve.
-                </p>
-              </div>
-            </Card>
+            <Etapa4MarkupBlocoA
+              orcamentoId={id}
+              perfilSelecionadoId={form.perfil_markup_id}
+              onPerfilSelecionado={(pid) => setForm((p) => ({ ...p, perfil_markup_id: pid }))}
+            />
           )}
 
           {/* LEGADO: UI antiga de Cotação — desativada na refatoração de 6 etapas.
