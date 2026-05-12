@@ -430,6 +430,8 @@ export default function NovoOrcamento() {
 
   // ============ Etapa 6 — Mão de obra, fretes, transporte, indiretos ============
   type MoLinha = {
+    colaborador_id: string;
+    colaborador_nome: string;
     cargo_id: string;
     cargo_nome: string;
     qtd: string;
@@ -476,6 +478,10 @@ export default function NovoOrcamento() {
   const [custosIndiretos, setCustosIndiretos] = useState<CustoIndiretoLinha[]>([]);
   const [aliquotaMes, setAliquotaMes] = useState<number>(8.09);
   const [tipoNf, setTipoNf] = useState<"pj" | "cpf">("pj");
+  const [openBlocoMo, setOpenBlocoMo] = useState(true);
+  const [openBlocoFretes, setOpenBlocoFretes] = useState(true);
+  const [openBlocoTransp, setOpenBlocoTransp] = useState(true);
+  const [openBlocoIndir, setOpenBlocoIndir] = useState(true);
 
   const { data: cargosMo = [] } = useQuery({
     queryKey: ["cargos-mo-ativos"],
@@ -487,6 +493,22 @@ export default function NovoOrcamento() {
         .order("nome");
       if (error) {
         console.warn("[cargos_mo] erro:", error);
+        return [];
+      }
+      return data || [];
+    },
+  });
+
+  const { data: colaboradoresAtivos = [] } = useQuery({
+    queryKey: ["colaboradores-ativos-mo"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("colaboradores_basico")
+        .select("id, nome, cargo")
+        .eq("ativo", true)
+        .order("nome");
+      if (error) {
+        console.warn("[colaboradores] erro:", error);
         return [];
       }
       return data || [];
@@ -513,7 +535,7 @@ export default function NovoOrcamento() {
   const addMoLinha = () =>
     setMoLinhas((p) => [
       ...p,
-      { cargo_id: "", cargo_nome: "", qtd: "1", dias: "", salario_diario: "0" },
+      { colaborador_id: "", colaborador_nome: "", cargo_id: "", cargo_nome: "", qtd: "1", dias: "", salario_diario: "0" },
     ]);
   const updateMoLinha = (idx: number, patch: Partial<MoLinha>) =>
     setMoLinhas((p) => p.map((l, i) => (i === idx ? { ...l, ...patch } : l)));
@@ -927,7 +949,9 @@ export default function NovoOrcamento() {
         const qtd = Math.ceil((Number(f.qtd_esperada) || 0) * (1 + (Number(f.margem) || 0) / 100));
         await (supabase as any).from("orcamento_fretes").insert({
           orcamento_id: orcId,
+          fornecedor_id: f.modo_transp === "cad" ? (f.transportador_id || null) : null,
           transportador: f.transportador_nome || null,
+          percurso: f.percurso || null,
           descricao_percurso: f.percurso || null,
           valor_unitario: Number(f.valor_unitario) || 0,
           qtd_esperada: Number(f.qtd_esperada) || 0,
@@ -945,6 +969,7 @@ export default function NovoOrcamento() {
         const valNf = denom > 0 ? bruto / denom : 0;
         await (supabase as any).from("orcamento_mo").insert({
           orcamento_id: orcId,
+          colaborador_id: m.colaborador_id || null,
           cargo_id: m.cargo_id || null,
           qtd_funcionarios: Number(m.qtd) || 0,
           qtd_dias: Number(m.dias) || 0,
@@ -1372,6 +1397,8 @@ export default function NovoOrcamento() {
       // MO
       setMoLinhas(
         (moDb || []).map((m: any) => ({
+          colaborador_id: m.colaborador_id || "",
+          colaborador_nome: "",
           cargo_id: m.cargo_id || "",
           cargo_nome: "",
           qtd: m.qtd_funcionarios != null ? String(m.qtd_funcionarios) : "1",
@@ -1383,10 +1410,10 @@ export default function NovoOrcamento() {
       // Fretes
       setFretes(
         (fretesDb || []).map((f: any) => ({
-          transportador_id: "",
+          transportador_id: f.fornecedor_id || "",
           transportador_nome: f.transportador || "",
-          modo_transp: "livre",
-          percurso: f.descricao_percurso || "",
+          modo_transp: f.fornecedor_id ? "cad" : "livre",
+          percurso: f.percurso || f.descricao_percurso || "",
           valor_unitario: f.valor_unitario != null ? String(f.valor_unitario) : "",
           qtd_esperada: f.qtd_esperada != null ? String(f.qtd_esperada) : "",
           margem: f.margem_seguranca_pct != null ? String(f.margem_seguranca_pct) : "0",
@@ -4830,6 +4857,20 @@ export default function NovoOrcamento() {
           {/* Etapa 5 - Mão de Obra, Fretes e Transporte */}
           {etapaAtual === 5 && (
             <div className="space-y-6 pb-24">
+              {moLinhas.length > 0 && (!form.tipo_proposta_id || !aliquotaMes || aliquotaMes <= 0) && (
+                <div className="rounded-md border border-primary/40 bg-primary/10 p-3 flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-semibold text-foreground">Empresa de faturamento ausente</p>
+                    <p className="text-xs text-muted-foreground">
+                      Defina a empresa de faturamento e a alíquota na Etapa 1 para calcular impostos sobre a mão de obra corretamente.
+                    </p>
+                    <Button variant="link" size="sm" className="px-0 h-auto text-primary" onClick={() => setEtapaAtual(1)}>
+                      Ir para Etapa 1
+                    </Button>
+                  </div>
+                </div>
+              )}
               {/* Seção A — MÃO DE OBRA */}
               <Card className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
@@ -5344,26 +5385,24 @@ export default function NovoOrcamento() {
                 )}
               </Card>
 
-              {/* Resumo sticky */}
-              <div className="sticky bottom-0 z-10 -mx-4 px-4 py-3 bg-background/95 backdrop-blur border-t border-primary/20">
-                <div className="text-sm flex flex-wrap gap-x-5 gap-y-1">
-                  <span>
-                    MO c/ imposto: <strong>{fmtBRL(valorNfMo)}</strong>
-                  </span>
-                  <span>
-                    Fretes: <strong>{fmtBRL(totalFretes)}</strong>
-                  </span>
-                  <span>
-                    Transporte: <strong>{fmtBRL(totalTransporte)}</strong>
-                  </span>
-                  <span>
-                    Indiretos: <strong>{fmtBRL(totalIndiretos)}</strong>
-                  </span>
-                  <span className="ml-auto">
-                    Total etapa: <strong className="text-primary">{fmtBRL(totalEtapa6)}</strong>
-                  </span>
+              {/* Resumo consolidado da Etapa 5 */}
+              <Card className="p-5 border-2 border-primary bg-primary/5">
+                <div className="flex flex-wrap items-baseline justify-between gap-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-primary font-semibold">Custo total da Etapa 5</p>
+                    <p className="font-display text-3xl text-primary">{fmtBRL(totalEtapa6)}</p>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-1 text-sm">
+                    <div><span className="text-muted-foreground">Mão de obra:</span> <strong>{fmtBRL(valorNfMo)}</strong></div>
+                    <div><span className="text-muted-foreground">Fretes:</span> <strong>{fmtBRL(totalFretes)}</strong></div>
+                    <div><span className="text-muted-foreground">Transporte:</span> <strong>{fmtBRL(totalTransporte)}</strong></div>
+                    <div><span className="text-muted-foreground">Indiretos:</span> <strong>{fmtBRL(totalIndiretos)}</strong></div>
+                  </div>
                 </div>
-              </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Repasse direto ao cliente, sem markup adicional. Compõe a linha "Adicionais" no resumo financeiro da Etapa 6.
+                </p>
+              </Card>
             </div>
           )}
 
