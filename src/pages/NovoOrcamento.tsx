@@ -3671,34 +3671,8 @@ export default function NovoOrcamento() {
                                 />
                               );
                             }
-                            if (!r.item_id || !r.item_tipo) return null;
-                            return (
-                              <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                title="Marcar como 'não tinha o item'"
-                                onClick={() =>
-                                  setIndispTarget({
-                                    itemId: r.item_id,
-                                    itemTipo: r.item_tipo,
-                                    fornecedorId: r.fornecedor_id,
-                                    fornecedorNome: f.nome,
-                                    itemNome: item.nome_popular,
-                                  })
-                                }
-                              >
-                                <PackageX className="w-3.5 h-3.5" />
-                              </Button>
-                            );
+                            return null;
                           })()}
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => setImportarFornId(r.fornecedor_id)}
-                            title="Importar resposta deste fornecedor"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
