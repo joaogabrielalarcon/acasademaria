@@ -613,6 +613,49 @@ export default function NovoOrcamento() {
     [custosIndiretos],
   );
 
+  // Custo diário (R$/dia) de cargos administrativos para Bloco D — Custos Indiretos
+  const cargoDiarioPorTipo = useMemo(() => {
+    const arr = (cargosMo as any[]) || [];
+    const findBy = (frags: string[]) =>
+      arr.find((c) => {
+        const n = String(c.nome || "").toLowerCase();
+        return frags.every((f) => n.includes(f));
+      });
+    const mfm = findBy(["maria", "fernanda"]);
+    const adm = findBy(["administrativ"]);
+    return {
+      maria_fernanda: Number(mfm?.salario_diario) || 0,
+      administrativo: Number(adm?.salario_diario) || 0,
+    } as Record<string, number>;
+  }, [cargosMo]);
+
+  // Ao entrar na Etapa 5, garante linhas Maria Fernanda e Administrativo no Bloco D
+  // com valor_unitario puxado de cargos_mo. Roda apenas uma vez por sessão.
+  const indiretosSeedRef = useRef(false);
+  useEffect(() => {
+    if (etapaAtual !== 5) return;
+    if (indiretosSeedRef.current) return;
+    if ((cargosMo as any[]).length === 0) return;
+    indiretosSeedRef.current = true;
+    setCustosIndiretos((prev) => {
+      const next = [...prev];
+      const ensure = (tipo: "maria_fernanda" | "administrativo", descricao: string) => {
+        if (next.some((c) => c.tipo === tipo)) return;
+        const valor = cargoDiarioPorTipo[tipo] || 0;
+        if (valor <= 0) return;
+        next.push({
+          tipo,
+          descricao,
+          valor_unitario: String(valor),
+          quantidade: "0",
+        });
+      };
+      ensure("maria_fernanda", "Maria Fernanda envolvida (dias)");
+      ensure("administrativo", "Administrativo envolvido (dias)");
+      return next;
+    });
+  }, [etapaAtual, cargosMo, cargoDiarioPorTipo]);
+
   const totalEtapa6 = valorNfMo + totalFretes + totalTransporte + totalIndiretos;
   const fmtBRL = (n: number) =>
     n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
