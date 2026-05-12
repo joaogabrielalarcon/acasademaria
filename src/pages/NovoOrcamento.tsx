@@ -1159,6 +1159,7 @@ export default function NovoOrcamento() {
       await persistirOrcamentoCompleto("aprovado", {
         valor_negociado_final: Number(aprovarModal.valor) || totalCliente,
         data_aprovacao: new Date().toISOString(),
+        observacao_aprovacao: aprovarModal.observacao?.trim() || null,
         editavel: false,
       });
       if (form.cliente_id) {
