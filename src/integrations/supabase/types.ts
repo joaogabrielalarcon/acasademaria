@@ -3560,10 +3560,12 @@ export type Database = {
         Row: {
           created_at: string | null
           descricao_percurso: string
+          fornecedor_id: string | null
           id: string
           margem_seguranca_pct: number | null
           obs: string | null
           orcamento_id: string | null
+          percurso: string | null
           qtd_esperada: number | null
           qtd_orcar: number | null
           transportador: string | null
@@ -3573,10 +3575,12 @@ export type Database = {
         Insert: {
           created_at?: string | null
           descricao_percurso: string
+          fornecedor_id?: string | null
           id?: string
           margem_seguranca_pct?: number | null
           obs?: string | null
           orcamento_id?: string | null
+          percurso?: string | null
           qtd_esperada?: number | null
           qtd_orcar?: number | null
           transportador?: string | null
@@ -3586,10 +3590,12 @@ export type Database = {
         Update: {
           created_at?: string | null
           descricao_percurso?: string
+          fornecedor_id?: string | null
           id?: string
           margem_seguranca_pct?: number | null
           obs?: string | null
           orcamento_id?: string | null
+          percurso?: string | null
           qtd_esperada?: number | null
           qtd_orcar?: number | null
           transportador?: string | null
@@ -3597,6 +3603,13 @@ export type Database = {
           valor_unitario?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "orcamento_fretes_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "orcamento_fretes_orcamento_id_fkey"
             columns: ["orcamento_id"]
@@ -3817,6 +3830,7 @@ export type Database = {
         Row: {
           aliquota_mes_pct: number | null
           cargo_id: string | null
+          colaborador_id: string | null
           created_at: string | null
           custo_total: number | null
           id: string
@@ -3830,6 +3844,7 @@ export type Database = {
         Insert: {
           aliquota_mes_pct?: number | null
           cargo_id?: string | null
+          colaborador_id?: string | null
           created_at?: string | null
           custo_total?: number | null
           id?: string
@@ -3843,6 +3858,7 @@ export type Database = {
         Update: {
           aliquota_mes_pct?: number | null
           cargo_id?: string | null
+          colaborador_id?: string | null
           created_at?: string | null
           custo_total?: number | null
           id?: string
@@ -3862,7 +3878,56 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "orcamento_mo_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_mo_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "orcamento_mo_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamento_snapshots: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          orcamento_id: string
+          snapshot: Json
+          tipo: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          orcamento_id: string
+          snapshot: Json
+          tipo: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          orcamento_id?: string
+          snapshot?: Json
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_snapshots_orcamento_id_fkey"
             columns: ["orcamento_id"]
             isOneToOne: false
             referencedRelation: "orcamentos"
@@ -3992,6 +4057,7 @@ export type Database = {
           motivo_nao_aprovacao: string | null
           obs_interna: string | null
           obs_proposta: string | null
+          observacao_aprovacao: string | null
           perfil_markup_id: string | null
           prazo_validade_dias: number | null
           responsavel_id: string | null
@@ -4025,6 +4091,7 @@ export type Database = {
           motivo_nao_aprovacao?: string | null
           obs_interna?: string | null
           obs_proposta?: string | null
+          observacao_aprovacao?: string | null
           perfil_markup_id?: string | null
           prazo_validade_dias?: number | null
           responsavel_id?: string | null
@@ -4058,6 +4125,7 @@ export type Database = {
           motivo_nao_aprovacao?: string | null
           obs_interna?: string | null
           obs_proposta?: string | null
+          observacao_aprovacao?: string | null
           perfil_markup_id?: string | null
           prazo_validade_dias?: number | null
           responsavel_id?: string | null
