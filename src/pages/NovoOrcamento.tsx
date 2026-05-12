@@ -1994,6 +1994,7 @@ export default function NovoOrcamento() {
     return map;
   }, [fornecedoresEnvolvidos, itensMaterial, historicoPorItem]);
 
+  const nomeFornecedor = (item: ItemMemorial, fornId: string) => {
     const row = fornecedoresDoItem(item).find((r: any) => r.fornecedor_id === fornId);
     return row?.fornecedores?.nome || "Fornecedor";
   };
