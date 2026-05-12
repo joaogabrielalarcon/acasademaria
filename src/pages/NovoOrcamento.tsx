@@ -253,6 +253,17 @@ export default function NovoOrcamento() {
       sessionStorage.setItem(blocosStorageKey, JSON.stringify(blocosColapsados));
     } catch {}
   }, [blocosColapsados, blocosStorageKey]);
+
+  // Sub-PR 2B/2C — sub-aba dentro da Etapa 3 (Comparativo / Atualizar Cotações)
+  const [tabEtapa3, setTabEtapa3] = useState<"comparativo" | "atualizar">("comparativo");
+
+  // Sub-PR 2C — IA chat panel state (por fornecedor)
+  const [iaChatTarget, setIaChatTarget] = useState<{
+    fornecedorId: string;
+    fornecedorNome: string;
+    mercado?: string | null;
+  } | null>(null);
+
   // Modal inline para preencher Mercado de fornecedor sem sair da etapa
   const [mercadoInlineDialog, setMercadoInlineDialog] = useState<{
     open: boolean;
