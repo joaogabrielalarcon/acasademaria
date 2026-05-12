@@ -1390,6 +1390,8 @@ export default function NovoOrcamento() {
       // MO
       setMoLinhas(
         (moDb || []).map((m: any) => ({
+          colaborador_id: m.colaborador_id || "",
+          colaborador_nome: "",
           cargo_id: m.cargo_id || "",
           cargo_nome: "",
           qtd: m.qtd_funcionarios != null ? String(m.qtd_funcionarios) : "1",
@@ -1401,10 +1403,10 @@ export default function NovoOrcamento() {
       // Fretes
       setFretes(
         (fretesDb || []).map((f: any) => ({
-          transportador_id: "",
+          transportador_id: f.fornecedor_id || "",
           transportador_nome: f.transportador || "",
-          modo_transp: "livre",
-          percurso: f.descricao_percurso || "",
+          modo_transp: f.fornecedor_id ? "cad" : "livre",
+          percurso: f.percurso || f.descricao_percurso || "",
           valor_unitario: f.valor_unitario != null ? String(f.valor_unitario) : "",
           qtd_esperada: f.qtd_esperada != null ? String(f.qtd_esperada) : "",
           margem: f.margem_seguranca_pct != null ? String(f.margem_seguranca_pct) : "0",
