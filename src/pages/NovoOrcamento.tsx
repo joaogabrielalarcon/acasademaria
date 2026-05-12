@@ -57,8 +57,8 @@ import {
 import { cn } from "@/lib/utils";
 import { FornecedorPopover } from "@/components/orcamento/FornecedorPopover";
 import { MercadoInlineEditor, parseMercados } from "@/components/orcamento/MercadoInlineEditor";
-import { EditarPrecoPopover } from "@/components/orcamento/EditarPrecoPopover";
-import { EditarPortePopover } from "@/components/orcamento/EditarPortePopover";
+import { AtualizarCotacaoPopover } from "@/components/orcamento/AtualizarCotacaoPopover";
+import { MafeFAB } from "@/components/orcamento/MafeFAB";
 import { EditarMercadoDialog } from "@/components/orcamento/EditarMercadoDialog";
 import {
   IndisponibilidadeDialog,
@@ -84,7 +84,7 @@ import {
 import { ResumoFornecedoresDialog, type ResumoItem } from "@/components/orcamento/ResumoFornecedoresDialog";
 import { ImportarRespostaFornecedorDialog } from "@/components/orcamento/ImportarRespostaFornecedorDialog";
 import { EnderecoFields, composeEndereco } from "@/components/EnderecoFields";
-import { Star, Filter, MessageCircle, Download, Lock, Crown, ChevronsUp, ChevronsDown, Zap, Store, AlertCircle } from "lucide-react";
+import { Star, Filter, MessageCircle, Lock, Crown, ChevronsUp, ChevronsDown, Zap, Store, AlertCircle } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatPorteMetros } from "@/lib/porte";
 
@@ -3502,60 +3502,80 @@ export default function NovoOrcamento() {
                             .filter((m: any) => m && String(m).trim())}
                         />
                       </TableCell>
-                      <TableCell className="p-2">
-                        <div className="inline-flex items-center gap-1">
-                          {l.portUsado ? (
-                            <span className={cn(
-                              "text-xs",
-                              grupo === "maior" && "text-amber-700",
-                              grupo === "menor" && "text-amber-700",
-                              grupo === "indef" && "text-muted-foreground italic",
-                            )}>
-                              {l.portUsado}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-muted-foreground italic">—</span>
-                          )}
-                          {r.item_id && r.item_tipo && (
-                            <EditarPortePopover
+                      {(() => {
+                        const podeEditar = !!(r.item_id && r.item_tipo);
+                        const portesExistentes = [
+                          r.porte,
+                          ...((r.outros_portes || []) as any[]).map((o: any) => o.porte),
+                        ].filter(Boolean) as string[];
+                        const indispKey = r.item_id ? `${r.item_id}::${r.fornecedor_id}` : "";
+                        const indispRow = indispKey ? (indispMap as Map<string, any>).get(indispKey) : null;
+                        const wrap = (node: React.ReactNode, label: string) =>
+                          podeEditar ? (
+                            <AtualizarCotacaoPopover
                               itemId={r.item_id}
                               itemTipo={r.item_tipo}
                               fornecedorId={r.fornecedor_id}
                               fornecedorNome={f.nome}
                               itemNome={item.nome_popular}
-                              porteAtual={l.portUsado}
                               precoAtual={l.precoUsado}
-                              unidade={r.unidade}
-                              portesExistentes={[
-                                r.porte,
-                                ...((r.outros_portes || []) as any[]).map((o: any) => o.porte),
-                              ].filter(Boolean) as string[]}
-                              onSaved={() => refetchHistorico?.()}
-                            />
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className={cn("p-2 text-sm whitespace-nowrap", precoCls)}>
-                        <div className="inline-flex items-center gap-1.5">
-                          <span>
-                            {l.precoUsado != null ? `R$ ${l.precoUsado.toFixed(2)}` : <span className="text-muted-foreground italic">—</span>}
-                          </span>
-                          {r.item_id && r.item_tipo && (
-                            <EditarPrecoPopover
-                              itemId={r.item_id}
-                              itemTipo={r.item_tipo}
-                              fornecedorId={r.fornecedor_id}
-                              fornecedorNome={f.nome}
-                              precoAtual={l.precoUsado}
+                              porteAtual={l.portUsado || null}
+                              unidadeAtual={r.unidade || null}
                               ultimaAtualizacao={l.dataUsada}
                               atualizadoPorNome={r.colaboradores?.nome}
-                              unidade={r.unidade}
+                              portesExistentes={portesExistentes}
+                              jaIndisponivel={!!indispRow}
                               onSaved={() => refetchHistorico?.()}
-                            />
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="p-2 text-xs text-muted-foreground">{r.unidade || "—"}</TableCell>
+                            >
+                              <button
+                                type="button"
+                                aria-label={`Atualizar ${label} de ${f.nome || "fornecedor"}`}
+                                className="text-left w-full -mx-1 px-1 py-0.5 rounded hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                              >
+                                {node}
+                              </button>
+                            </AtualizarCotacaoPopover>
+                          ) : (
+                            node
+                          );
+                        return (
+                          <>
+                            <TableCell className="p-2">
+                              {wrap(
+                                l.portUsado ? (
+                                  <span className={cn(
+                                    "text-xs",
+                                    grupo === "maior" && "text-amber-700",
+                                    grupo === "menor" && "text-amber-700",
+                                    grupo === "indef" && "text-muted-foreground italic",
+                                  )}>
+                                    {l.portUsado}
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground italic">—</span>
+                                ),
+                                "porte",
+                              )}
+                            </TableCell>
+                            <TableCell className={cn("p-2 text-sm whitespace-nowrap", precoCls)}>
+                              {wrap(
+                                <span>
+                                  {l.precoUsado != null
+                                    ? `R$ ${l.precoUsado.toFixed(2)}`
+                                    : <span className="text-muted-foreground italic">—</span>}
+                                </span>,
+                                "preço",
+                              )}
+                            </TableCell>
+                            <TableCell className="p-2 text-xs text-muted-foreground">
+                              {wrap(
+                                <span>{r.unidade || "—"}</span>,
+                                "unidade",
+                              )}
+                            </TableCell>
+                          </>
+                        );
+                      })()}
                       <TableCell className="p-2 whitespace-nowrap">
                         {l.dataUsada ? (
                           <div className="flex items-center gap-1.5">
@@ -3651,34 +3671,8 @@ export default function NovoOrcamento() {
                                 />
                               );
                             }
-                            if (!r.item_id || !r.item_tipo) return null;
-                            return (
-                              <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                title="Marcar como 'não tinha o item'"
-                                onClick={() =>
-                                  setIndispTarget({
-                                    itemId: r.item_id,
-                                    itemTipo: r.item_tipo,
-                                    fornecedorId: r.fornecedor_id,
-                                    fornecedorNome: f.nome,
-                                    itemNome: item.nome_popular,
-                                  })
-                                }
-                              >
-                                <PackageX className="w-3.5 h-3.5" />
-                              </Button>
-                            );
+                            return null;
                           })()}
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => setImportarFornId(r.fornecedor_id)}
-                            title="Importar resposta deste fornecedor"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -4044,10 +4038,14 @@ export default function NovoOrcamento() {
                       </>
                     )}
 
-                    <Button variant="outline" size="sm" onClick={() => abrirNovoFornecedor(idx)}>
-                      <UserPlus className="w-4 h-4" />
+                    <button
+                      type="button"
+                      onClick={() => abrirNovoFornecedor(idx)}
+                      className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary underline-offset-2 hover:underline mt-1"
+                    >
+                      <UserPlus className="w-3.5 h-3.5" />
                       Adicionar fornecedor não cadastrado
-                    </Button>
+                    </button>
                       </CollapsibleContent>
                     </Collapsible>
                   </Card>
@@ -4076,6 +4074,36 @@ export default function NovoOrcamento() {
                 />
               )}
               </>)}
+
+              {/* FAB Mafe — disponível em toda a Etapa 3 (comparativo + atualizar) */}
+              {(() => {
+                const expandidos = itensMaterial
+                  .map((it, i) => ({ it, i }))
+                  .filter(({ i }) => !blocosColapsados[i]);
+                let prioritarios: FornecedorAtualizacaoItem[] = [];
+                let contextoLabel: string | null = null;
+                if (expandidos.length === 1 && tabEtapa3 === "comparativo") {
+                  const nome = expandidos[0].it.nome_popular;
+                  prioritarios = fornecedoresEnvolvidos.filter((f) =>
+                    f.itens.some((i) => i.nome_popular === nome),
+                  );
+                  contextoLabel = nome;
+                }
+                return (
+                  <MafeFAB
+                    fornecedoresEnvolvidos={fornecedoresEnvolvidos}
+                    fornecedoresContextoPrioritario={prioritarios}
+                    contextoLabel={contextoLabel}
+                    onSelecionar={(f) =>
+                      setIaChatTarget({
+                        fornecedorId: f.fornecedorId,
+                        fornecedorNome: f.fornecedorNome,
+                        mercado: f.mercado,
+                      })
+                    }
+                  />
+                );
+              })()}
             </div>
               )}
 
