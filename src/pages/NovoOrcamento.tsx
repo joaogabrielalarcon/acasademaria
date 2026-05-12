@@ -5261,16 +5261,25 @@ export default function NovoOrcamento() {
                     })}
                   </div>
                 )}
+                </CollapsibleContent>
+                </Collapsible>
               </Card>
 
               {/* Seção C — TRANSPORTE DA EQUIPE */}
               <Card className="p-4 space-y-3">
-                <div>
-                  <h2 className="font-display text-lg text-foreground">Transporte da Equipe</h2>
-                  <p className="text-xs text-muted-foreground">
-                    Custos de deslocamento da equipe e acompanhamento técnico.
-                  </p>
-                </div>
+                <Collapsible open={openBlocoTransp} onOpenChange={setOpenBlocoTransp}>
+                <CollapsibleTrigger asChild>
+                  <button type="button" className="w-full flex items-start gap-2 text-left rounded-md hover:bg-muted/40 px-1 py-1 -mx-1">
+                    {openBlocoTransp ? <ChevronUp className="w-4 h-4 mt-1 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 mt-1 text-muted-foreground" />}
+                    <div>
+                      <h2 className="font-display text-lg text-foreground">Transporte da Equipe</h2>
+                      <p className="text-xs text-muted-foreground">
+                        Custos de deslocamento da equipe e acompanhamento técnico. Total: <strong className="text-foreground">{fmtBRL(totalTransporte)}</strong>
+                      </p>
+                    </div>
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-3 pt-3">
                 <div className="border rounded-md overflow-hidden">
                   <table className="w-full text-sm">
                     <thead className="bg-muted/50 text-xs">
