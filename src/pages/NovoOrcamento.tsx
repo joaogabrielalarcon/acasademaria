@@ -2442,10 +2442,21 @@ export default function NovoOrcamento() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const { data: validacaoEtapa4 } = useEtapa4Validacao(id);
+
   const handleProxima = () => {
     // Validação ao sair da Etapa 3 (Fornecedores) para Etapa 4 (Markup)
     if (etapaAtual === 3 && pendenciasEtapa3.bloqueia) {
       setValidacaoEtapa4Open(true);
+      return;
+    }
+    // Validação ao sair da Etapa 4 (Markup) para Etapa 5 (MO/Fretes/Transporte)
+    if (etapaAtual === 4 && validacaoEtapa4 && !validacaoEtapa4.ok) {
+      toast({
+        title: "Não é possível avançar",
+        description: validacaoEtapa4.motivo,
+        variant: "destructive",
+      });
       return;
     }
     irParaEtapa(etapaAtual + 1);
