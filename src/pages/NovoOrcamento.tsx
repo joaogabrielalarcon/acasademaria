@@ -3910,6 +3910,8 @@ export default function NovoOrcamento() {
                               <SelectItem value="data">Mais recentes</SelectItem>
                               <SelectItem value="nota">Melhor nota</SelectItem>
                               <SelectItem value="mercado">Mercado</SelectItem>
+                              <SelectItem value="porte_desc">Porte ↓ (maior → menor)</SelectItem>
+                              <SelectItem value="porte_asc">Porte ↑ (menor → maior)</SelectItem>
                             </SelectContent>
                           </Select>
                           <Button
