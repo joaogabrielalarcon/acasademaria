@@ -123,10 +123,32 @@ export function MesclarManualDialog({ open, onOpenChange, principal, onMerged }:
             />
           </div>
 
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">
+              {search.trim()
+                ? `Buscando em todos (${fornecedores.length - 1})`
+                : mostrarTodos
+                  ? `Mostrando todos (${fornecedores.length - 1})`
+                  : `${provaveis.length} provável(eis) duplicata(s) por nome, CNPJ ou telefone`}
+            </span>
+            {!search.trim() && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={() => setMostrarTodos((v) => !v)}
+              >
+                {mostrarTodos ? "Ver só prováveis" : "Ver todos"}
+              </Button>
+            )}
+          </div>
+
           <div className="flex-1 overflow-y-auto rounded-lg border border-border divide-y">
             {lista.length === 0 ? (
               <div className="p-6 text-center text-sm text-muted-foreground">
-                Nenhum fornecedor encontrado
+                {!search.trim() && !mostrarTodos
+                  ? "Nenhuma duplicata óbvia encontrada. Use a busca ou clique em \"Ver todos\"."
+                  : "Nenhum fornecedor encontrado"}
               </div>
             ) : (
               lista.map((f) => {
