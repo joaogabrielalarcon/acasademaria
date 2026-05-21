@@ -230,7 +230,7 @@ export default function NovoOrcamento() {
   // Etapa 3 — refactor: expansão por item, ordenação por preço/data/mercado, modal mercado obrigatório
   const [expandirMaiores, setExpandirMaiores] = useState<Record<number, boolean>>({});
   const [expandirMenores, setExpandirMenores] = useState<Record<number, boolean>>({});
-  type OrdemTab3Chave = "data" | "preco" | "mercado" | "nota";
+  type OrdemTab3Chave = "data" | "preco" | "mercado" | "nota" | "porte_asc" | "porte_desc";
   type FiltrosTab3 = {
     primaria: OrdemTab3Chave;
     secundaria: OrdemTab3Chave | "nenhuma";
