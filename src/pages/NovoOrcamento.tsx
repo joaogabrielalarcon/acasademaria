@@ -87,7 +87,7 @@ import { ImportarRespostaFornecedorDialog } from "@/components/orcamento/Importa
 import { EnderecoFields, composeEndereco } from "@/components/EnderecoFields";
 import { Star, Filter, MessageCircle, Lock, Crown, ChevronsUp, ChevronsDown, Zap, Store, AlertCircle } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatPorteMetros } from "@/lib/porte";
+import { formatPorteMetros, parsePorteMetros } from "@/lib/porte";
 
 const CATEGORIAS_ITEM = [
   "Árvores",
@@ -230,7 +230,7 @@ export default function NovoOrcamento() {
   // Etapa 3 — refactor: expansão por item, ordenação por preço/data/mercado, modal mercado obrigatório
   const [expandirMaiores, setExpandirMaiores] = useState<Record<number, boolean>>({});
   const [expandirMenores, setExpandirMenores] = useState<Record<number, boolean>>({});
-  type OrdemTab3Chave = "data" | "preco" | "mercado" | "nota";
+  type OrdemTab3Chave = "data" | "preco" | "mercado" | "nota" | "porte_asc" | "porte_desc";
   type FiltrosTab3 = {
     primaria: OrdemTab3Chave;
     secundaria: OrdemTab3Chave | "nenhuma";
@@ -3493,6 +3493,13 @@ export default function NovoOrcamento() {
                     const nb = Number(b.row.fornecedores?.nota_media ?? 0);
                     return nb - na;
                   }
+                  if (chave === "porte_asc" || chave === "porte_desc") {
+                    const pa = parsePorteMetros(a.portUsado).value;
+                    const pb = parsePorteMetros(b.portUsado).value;
+                    const va = pa == null ? Infinity : pa;
+                    const vb = pb == null ? Infinity : pb;
+                    return chave === "porte_asc" ? va - vb : vb - va;
+                  }
                   return 0;
                 };
                 const aplicaFiltros = (arr: typeof todasLinhas) => {
@@ -3865,6 +3872,8 @@ export default function NovoOrcamento() {
                             { v: "preco", l: "Menor preço" },
                             { v: "nota", l: "Melhor nota" },
                             { v: "mercado", l: "Mercado" },
+                            { v: "porte_desc", l: "Porte ↓" },
+                            { v: "porte_asc", l: "Porte ↑" },
                           ] as { v: OrdemTab3Chave; l: string }[]).map((opt) => (
                             <Button
                               key={opt.v}
@@ -3901,6 +3910,8 @@ export default function NovoOrcamento() {
                               <SelectItem value="data">Mais recentes</SelectItem>
                               <SelectItem value="nota">Melhor nota</SelectItem>
                               <SelectItem value="mercado">Mercado</SelectItem>
+                              <SelectItem value="porte_desc">Porte ↓ (maior → menor)</SelectItem>
+                              <SelectItem value="porte_asc">Porte ↑ (menor → maior)</SelectItem>
                             </SelectContent>
                           </Select>
                           <Button
