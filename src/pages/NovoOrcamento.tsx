@@ -3872,6 +3872,8 @@ export default function NovoOrcamento() {
                             { v: "preco", l: "Menor preço" },
                             { v: "nota", l: "Melhor nota" },
                             { v: "mercado", l: "Mercado" },
+                            { v: "porte_desc", l: "Porte ↓" },
+                            { v: "porte_asc", l: "Porte ↑" },
                           ] as { v: OrdemTab3Chave; l: string }[]).map((opt) => (
                             <Button
                               key={opt.v}
