@@ -20,17 +20,49 @@ interface Props {
   onMerged?: () => void;
 }
 
+const norm = (s?: string | null) =>
+  (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/\s+/g, " ");
+const onlyDigits = (s?: string | null) => (s || "").replace(/\D/g, "");
+
 export function MesclarManualDialog({ open, onOpenChange, principal, onMerged }: Props) {
   const { data: fornecedores = [] } = useFornecedoresTodos();
   const merge = useMergeFornecedores();
   const [search, setSearch] = useState("");
   const [selecionados, setSelecionados] = useState<Record<string, boolean>>({});
   const [confirmar, setConfirmar] = useState(false);
+  const [mostrarTodos, setMostrarTodos] = useState(false);
+
+  const principalKeys = useMemo(() => {
+    const nome = norm(principal.nome);
+    const alt = norm(principal.nome_alternativo);
+    const cnpj = onlyDigits(principal.cnpj);
+    const tel = onlyDigits((principal as any).telefone);
+    const wa = onlyDigits((principal as any).whatsapp);
+    return { nome, alt, cnpj, tel, wa };
+  }, [principal]);
+
+  const provaveis = useMemo(() => {
+    return fornecedores.filter((f) => {
+      if (f.id === principal.id) return false;
+      const n = norm(f.nome);
+      const a = norm(f.nome_alternativo);
+      if (principalKeys.nome && (n === principalKeys.nome || a === principalKeys.nome)) return true;
+      if (principalKeys.alt && (n === principalKeys.alt || a === principalKeys.alt)) return true;
+      if (principalKeys.cnpj && principalKeys.cnpj.length >= 11 && onlyDigits(f.cnpj) === principalKeys.cnpj) return true;
+      const ft = onlyDigits((f as any).telefone);
+      const fw = onlyDigits((f as any).whatsapp);
+      if (principalKeys.tel && principalKeys.tel.length >= 8 && (ft === principalKeys.tel || fw === principalKeys.tel)) return true;
+      if (principalKeys.wa && principalKeys.wa.length >= 8 && (ft === principalKeys.wa || fw === principalKeys.wa)) return true;
+      return false;
+    });
+  }, [fornecedores, principal.id, principalKeys]);
 
   const lista = useMemo(() => {
     const term = search.trim().toLowerCase();
-    return fornecedores
-      .filter(f => f.id !== principal.id)
+    const base = mostrarTodos || term.length > 0
+      ? fornecedores.filter((f) => f.id !== principal.id)
+      : provaveis;
+    return base
       .filter(f => {
         if (!term) return true;
         return (
@@ -42,7 +74,7 @@ export function MesclarManualDialog({ open, onOpenChange, principal, onMerged }:
       })
       .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
       .slice(0, 50);
-  }, [fornecedores, search, principal.id]);
+  }, [fornecedores, search, principal.id, mostrarTodos, provaveis]);
 
   const idsSelecionados = Object.keys(selecionados).filter(k => selecionados[k]);
 
