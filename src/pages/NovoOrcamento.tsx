@@ -3493,6 +3493,13 @@ export default function NovoOrcamento() {
                     const nb = Number(b.row.fornecedores?.nota_media ?? 0);
                     return nb - na;
                   }
+                  if (chave === "porte_asc" || chave === "porte_desc") {
+                    const pa = parsePorteMetros(a.portUsado).value;
+                    const pb = parsePorteMetros(b.portUsado).value;
+                    const va = pa == null ? Infinity : pa;
+                    const vb = pb == null ? Infinity : pb;
+                    return chave === "porte_asc" ? va - vb : vb - va;
+                  }
                   return 0;
                 };
                 const aplicaFiltros = (arr: typeof todasLinhas) => {
