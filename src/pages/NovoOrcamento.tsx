@@ -87,7 +87,7 @@ import { ImportarRespostaFornecedorDialog } from "@/components/orcamento/Importa
 import { EnderecoFields, composeEndereco } from "@/components/EnderecoFields";
 import { Star, Filter, MessageCircle, Lock, Crown, ChevronsUp, ChevronsDown, Zap, Store, AlertCircle } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatPorteMetros } from "@/lib/porte";
+import { formatPorteMetros, parsePorteMetros } from "@/lib/porte";
 
 const CATEGORIAS_ITEM = [
   "Árvores",
