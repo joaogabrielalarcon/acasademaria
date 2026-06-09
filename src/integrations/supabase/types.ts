@@ -5656,6 +5656,10 @@ export type Database = {
         Returns: boolean
       }
       can_manage_users: { Args: { _user_id: string }; Returns: boolean }
+      can_view_demanda: {
+        Args: { _demanda_id: string; _user_id: string }
+        Returns: boolean
+      }
       check_inactive_clients: { Args: never; Returns: undefined }
       create_diario_visita_with_details: {
         Args: { payload: Json }
