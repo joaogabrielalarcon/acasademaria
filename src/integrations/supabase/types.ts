@@ -1396,6 +1396,243 @@ export type Database = {
           },
         ]
       }
+      demanda_etapas_historico: {
+        Row: {
+          created_at: string | null
+          demanda_id: string | null
+          etapa_de_id: string | null
+          etapa_para_id: string | null
+          id: string
+          movido_por: string | null
+          observacao: string | null
+          tempo_na_etapa_dias: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          demanda_id?: string | null
+          etapa_de_id?: string | null
+          etapa_para_id?: string | null
+          id?: string
+          movido_por?: string | null
+          observacao?: string | null
+          tempo_na_etapa_dias?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          demanda_id?: string | null
+          etapa_de_id?: string | null
+          etapa_para_id?: string | null
+          id?: string
+          movido_por?: string | null
+          observacao?: string | null
+          tempo_na_etapa_dias?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demanda_etapas_historico_demanda_id_fkey"
+            columns: ["demanda_id"]
+            isOneToOne: false
+            referencedRelation: "demandas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demanda_etapas_historico_etapa_de_id_fkey"
+            columns: ["etapa_de_id"]
+            isOneToOne: false
+            referencedRelation: "pipelines_etapas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demanda_etapas_historico_etapa_para_id_fkey"
+            columns: ["etapa_para_id"]
+            isOneToOne: false
+            referencedRelation: "pipelines_etapas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demanda_etapas_historico_movido_por_fkey"
+            columns: ["movido_por"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demanda_etapas_historico_movido_por_fkey"
+            columns: ["movido_por"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demanda_responsaveis: {
+        Row: {
+          colaborador_id: string | null
+          created_at: string | null
+          demanda_id: string | null
+          etapa_id: string | null
+          id: string
+          papel: string | null
+        }
+        Insert: {
+          colaborador_id?: string | null
+          created_at?: string | null
+          demanda_id?: string | null
+          etapa_id?: string | null
+          id?: string
+          papel?: string | null
+        }
+        Update: {
+          colaborador_id?: string | null
+          created_at?: string | null
+          demanda_id?: string | null
+          etapa_id?: string | null
+          id?: string
+          papel?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demanda_responsaveis_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demanda_responsaveis_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demanda_responsaveis_demanda_id_fkey"
+            columns: ["demanda_id"]
+            isOneToOne: false
+            referencedRelation: "demandas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demanda_responsaveis_etapa_id_fkey"
+            columns: ["etapa_id"]
+            isOneToOne: false
+            referencedRelation: "pipelines_etapas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demandas: {
+        Row: {
+          arquivada: boolean | null
+          cliente_id: string | null
+          codigo: string | null
+          created_at: string | null
+          cronograma_fim: string | null
+          cronograma_inicio: string | null
+          data_entrada: string | null
+          etapa_atual_id: string | null
+          id: string
+          notas: string | null
+          orcamento_id: string | null
+          pipeline_id: string | null
+          prazo_final: string | null
+          prioridade: string | null
+          responsavel_atual_id: string | null
+          status_saida: string | null
+          tipo: string
+          titulo: string
+          updated_at: string | null
+          valor: number | null
+        }
+        Insert: {
+          arquivada?: boolean | null
+          cliente_id?: string | null
+          codigo?: string | null
+          created_at?: string | null
+          cronograma_fim?: string | null
+          cronograma_inicio?: string | null
+          data_entrada?: string | null
+          etapa_atual_id?: string | null
+          id?: string
+          notas?: string | null
+          orcamento_id?: string | null
+          pipeline_id?: string | null
+          prazo_final?: string | null
+          prioridade?: string | null
+          responsavel_atual_id?: string | null
+          status_saida?: string | null
+          tipo: string
+          titulo: string
+          updated_at?: string | null
+          valor?: number | null
+        }
+        Update: {
+          arquivada?: boolean | null
+          cliente_id?: string | null
+          codigo?: string | null
+          created_at?: string | null
+          cronograma_fim?: string | null
+          cronograma_inicio?: string | null
+          data_entrada?: string | null
+          etapa_atual_id?: string | null
+          id?: string
+          notas?: string | null
+          orcamento_id?: string | null
+          pipeline_id?: string | null
+          prazo_final?: string | null
+          prioridade?: string | null
+          responsavel_atual_id?: string | null
+          status_saida?: string | null
+          tipo?: string
+          titulo?: string
+          updated_at?: string | null
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demandas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandas_etapa_atual_id_fkey"
+            columns: ["etapa_atual_id"]
+            isOneToOne: false
+            referencedRelation: "pipelines_etapas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandas_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandas_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "pipelines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandas_responsavel_atual_id_fkey"
+            columns: ["responsavel_atual_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandas_responsavel_atual_id_fkey"
+            columns: ["responsavel_atual_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       diarias: {
         Row: {
           cliente_id: string
@@ -4278,6 +4515,80 @@ export type Database = {
             columns: ["perfil_id"]
             isOneToOne: false
             referencedRelation: "perfis_markup"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pipelines: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          ordem: number | null
+          tipo: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          ordem?: number | null
+          tipo: string
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          ordem?: number | null
+          tipo?: string
+        }
+        Relationships: []
+      }
+      pipelines_etapas: {
+        Row: {
+          area_responsavel: string | null
+          cor_sugerida: string | null
+          created_at: string | null
+          eh_saida: boolean | null
+          id: string
+          nome: string
+          ordem: number
+          pipeline_id: string | null
+          tempo_medio_dias: number | null
+        }
+        Insert: {
+          area_responsavel?: string | null
+          cor_sugerida?: string | null
+          created_at?: string | null
+          eh_saida?: boolean | null
+          id?: string
+          nome: string
+          ordem: number
+          pipeline_id?: string | null
+          tempo_medio_dias?: number | null
+        }
+        Update: {
+          area_responsavel?: string | null
+          cor_sugerida?: string | null
+          created_at?: string | null
+          eh_saida?: boolean | null
+          id?: string
+          nome?: string
+          ordem?: number
+          pipeline_id?: string | null
+          tempo_medio_dias?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pipelines_etapas_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "pipelines"
             referencedColumns: ["id"]
           },
         ]
