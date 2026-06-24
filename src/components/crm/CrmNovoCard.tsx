@@ -86,6 +86,7 @@ export function CrmNovoCard({ open, onClose }: Props) {
       prazo: prazo || null,
       observacoes: observacoes || null,
     } as any);
+    await draft.clearDraft();
     toast({ title: "Card criado com sucesso!" });
     onClose();
   };
