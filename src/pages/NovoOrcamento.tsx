@@ -5151,26 +5151,33 @@ export default function NovoOrcamento() {
           {/* Insumos (fundidos na etapa Fornecedores no novo fluxo de 6 etapas) */}
           {etapaAtual === 3 && tabEtapa3 === "comparativo" && (
             <div className="space-y-6">
-              {/* Seção A — Insumos calculados */}
-              <Card className="p-4 space-y-3">
-                <div>
-                  <h2 className="font-display text-lg text-foreground">
-                    Insumos de Plantio (calculados automaticamente)
-                  </h2>
-                  <p className="text-xs text-muted-foreground">
-                    Quantidades calculadas a partir dos coeficientes vigentes. Ajuste se necessário.
-                  </p>
+              {/* Insumos de Plantio — lista única (calculados + adicionais) */}
+              <Card className="p-4 space-y-4">
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div>
+                    <h2 className="font-display text-lg text-foreground">Insumos de Plantio</h2>
+                    <p className="text-xs text-muted-foreground">
+                      Lista única de insumos do projeto. Os primeiros são calculados automaticamente pelos coeficientes; ajuste se necessário. Use "Adicionar insumo" para incluir itens extras do catálogo.
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={addInsumoCustom}>
+                    <Plus className="w-4 h-4" />
+                    Adicionar insumo
+                  </Button>
                 </div>
-                {insumosCalc.length === 0 ? (
+
+                {insumosCalc.length === 0 && insumosAdicionais.length === 0 && (
                   <p className="text-sm text-muted-foreground italic">
-                    Nenhum insumo calculado para os itens selecionados.
+                    Nenhum insumo no projeto. Clique em "Adicionar insumo" para incluir um item do catálogo.
                   </p>
-                ) : (
+                )}
+
+                {insumosCalc.length > 0 && (
                   <div className="border rounded-md overflow-hidden">
                     <table className="w-full text-sm">
                       <thead className="bg-muted/50 text-xs">
                         <tr>
-                          <th className="text-left p-2">Insumo</th>
+                          <th className="text-left p-2">Insumo (calculado)</th>
                           <th className="text-left p-2 w-40">Quantidade</th>
                           <th className="text-left p-2 w-24">Unidade</th>
                         </tr>
@@ -5201,37 +5208,6 @@ export default function NovoOrcamento() {
                     </table>
                   </div>
                 )}
-              </Card>
-
-              {/* Seção B — Insumos adicionais */}
-              <Card className="p-4 space-y-3">
-                <div>
-                  <h2 className="font-display text-lg text-foreground">Insumos Adicionais</h2>
-                  <p className="text-xs text-muted-foreground">
-                    Selecione os insumos extras necessários para este projeto. Adubos e itens variáveis (ex.: pedrisco, seixo) entram em "Adicionar insumo do catálogo".
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  {INSUMOS_SUGERIDOS.map((nome) => {
-                    const sel = insumosAdicionais.some((i) => i.nome === nome);
-                    return (
-                      <label
-                        key={nome}
-                        className={cn(
-                          "flex items-center gap-2 px-3 py-1.5 rounded-md border text-xs cursor-pointer transition-colors",
-                          sel ? "bg-primary/10 border-primary text-primary" : "hover:bg-muted/50",
-                        )}
-                      >
-                        <Checkbox
-                          checked={sel}
-                          onCheckedChange={() => toggleInsumoSugerido(nome)}
-                        />
-                        {nome}
-                      </label>
-                    );
-                  })}
-                </div>
 
                 {insumosAdicionais.length > 0 && (
                   <div className="space-y-3 pt-2">
@@ -5479,11 +5455,6 @@ export default function NovoOrcamento() {
                     })}
                   </div>
                 )}
-
-                <Button variant="outline" size="sm" onClick={addInsumoCustom}>
-                  <Plus className="w-4 h-4" />
-                  Adicionar insumo do catálogo
-                </Button>
 
                 {insumosSemQtd.length > 0 && (
                   <div className="rounded-md border border-yellow-300 bg-yellow-50 text-yellow-800 p-3 text-sm">
