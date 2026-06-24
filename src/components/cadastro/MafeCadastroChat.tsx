@@ -49,6 +49,7 @@ interface Duplicado {
 const ENTIDADE_LABEL: Record<EntidadeCadastro, string> = {
   fornecedores: "Fornecedor",
   plantas: "Planta",
+  preco_fornecedor: "Preço de fornecedor",
 };
 
 // Campos exibidos na revisão (em ordem)
@@ -74,6 +75,12 @@ const CAMPOS_UI: Record<EntidadeCadastro, { name: string; label: string; type?: 
     { name: "embalagem", label: "Embalagem" },
     { name: "categoria", label: "Categoria" },
     { name: "dap_cm", label: "DAP (cm)" },
+    { name: "observacoes", label: "Observações", type: "textarea" },
+  ],
+  preco_fornecedor: [
+    { name: "porte", label: "Porte (m)" },
+    { name: "unidade", label: "Unidade" },
+    { name: "preco", label: "Preço (R$)" },
     { name: "observacoes", label: "Observações", type: "textarea" },
   ],
 };
