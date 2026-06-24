@@ -249,6 +249,7 @@ export default function NovoOrcamento() {
   };
   const filtroPadraoTab3: FiltrosTab3 = { primaria: "data", secundaria: "nenhuma", mercados: [], somenteRecentes: false };
   const [filtrosTab3, setFiltrosTab3] = useState<Record<number, FiltrosTab3>>({});
+  const [soSemFornecedor, setSoSemFornecedor] = useState(false);
   // Colapso por bloco de item na Etapa 3 (persistido na sessão por orçamento)
   const blocosStorageKey = `orc:${id || "novo"}:blocosColapsados`;
   const [blocosColapsados, setBlocosColapsados] = useState<Record<number, boolean>>(() => {
