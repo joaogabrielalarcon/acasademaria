@@ -4094,39 +4094,116 @@ export default function NovoOrcamento() {
                 <TabelaItensProjeto
                   itens={itensProjeto}
                   getAlternativas={(item) => {
-                    const idx = item.ref?.itemMemorialIdx;
-                    if (idx == null || !itensMaterial[idx]) return [];
-                    const rows = fornecedoresDoItem(itensMaterial[idx]) as any[];
-                    const sel = new Set(fornecedoresSelecionados[idx] || []);
+                    // PLANTA — fluxo existente via fornecedoresDoItem
+                    if (item.tipo === "planta") {
+                      const idx = item.ref?.itemMemorialIdx;
+                      if (idx == null || !itensMaterial[idx]) return [];
+                      const rows = fornecedoresDoItem(itensMaterial[idx]) as any[];
+                      const sel = new Set(fornecedoresSelecionados[idx] || []);
+                      return rows.map((r: any) => ({
+                        fornecedor_id: r.fornecedor_id,
+                        fornecedor_nome: r.fornecedores?.nome || "Fornecedor",
+                        porte: r.porte,
+                        preco: r.preco != null ? Number(r.preco) : null,
+                        unidade: r.unidade || itensMaterial[idx].unidade || null,
+                        data: r.data_orcamento,
+                        estrelas:
+                          r.nota_media != null
+                            ? Number(r.nota_media)
+                            : r.fornecedores?.nota_media != null
+                            ? Number(r.fornecedores.nota_media)
+                            : null,
+                        mercado: r.fornecedores?.mercado || null,
+                        selecionado: sel.has(r.fornecedor_id),
+                      }));
+                    }
+                    // INSUMO — busca em historicoPorItem pelo nome normalizado
+                    const hist = historicoPorItem as Record<string, any[]>;
+                    const k = normNome(item.nome);
+                    const rows = (hist[k] || []) as any[];
                     return rows.map((r: any) => ({
                       fornecedor_id: r.fornecedor_id,
                       fornecedor_nome: r.fornecedores?.nome || "Fornecedor",
                       porte: r.porte,
                       preco: r.preco != null ? Number(r.preco) : null,
-                      unidade: r.unidade || itensMaterial[idx].unidade || null,
+                      unidade: r.unidade || item.unidade || null,
                       data: r.data_orcamento,
                       estrelas:
-                        r.fornecedores?.nota_media != null
+                        r.nota_media != null
+                          ? Number(r.nota_media)
+                          : r.fornecedores?.nota_media != null
                           ? Number(r.fornecedores.nota_media)
                           : null,
                       mercado: r.fornecedores?.mercado || null,
-                      selecionado: sel.has(r.fornecedor_id),
+                      selecionado: item.fornecedor_id === r.fornecedor_id,
                     }));
                   }}
                   onSelecionarFornecedor={(item, alt) => {
-                    const idx = item.ref?.itemMemorialIdx;
-                    if (idx == null) {
-                      toast({
-                        title: "Seleção de insumo em breve",
-                        description: "A escolha de fornecedor de insumo será habilitada na próxima entrega.",
+                    if (item.tipo === "planta") {
+                      const idx = item.ref?.itemMemorialIdx;
+                      if (idx == null) return;
+                      setFornecedoresSelecionados((prev) => ({ ...prev, [idx]: [alt.fornecedor_id] }));
+                      setCotacao(idx, alt.fornecedor_id, {
+                        status_selecao: "principal",
+                        valor_unitario: alt.preco != null ? String(alt.preco) : "",
+                        porte_ofertado: alt.porte || item.porte || "",
                       });
+                      toast({ title: "Fornecedor selecionado", description: `${item.nome}: ${alt.fornecedor_nome}` });
                       return;
                     }
-                    setFornecedoresSelecionados((prev) => ({ ...prev, [idx]: [alt.fornecedor_id] }));
-                    setCotacao(idx, alt.fornecedor_id, {
-                      status_selecao: "principal",
-                      valor_unitario: alt.preco != null ? String(alt.preco) : "",
-                      porte_ofertado: alt.porte || item.porte || "",
+                    // INSUMO — upsert em insumosAdicionais
+                    const insumoId = item.ref?.insumoCatalogoId || null;
+                    setInsumosAdicionais((prev) => {
+                      const next = [...prev];
+                      const idxExistente = next.findIndex((a) =>
+                        (insumoId && a.insumo_id === insumoId) ||
+                        a.nome.trim().toLowerCase() === item.nome.trim().toLowerCase(),
+                      );
+                      const linha = {
+                        insumo_id: insumoId || undefined,
+                        nome: item.nome,
+                        fornecedor_id: alt.fornecedor_id,
+                        quantidade_esperada: String(item.quantidade ?? 0),
+                        unidade: alt.unidade || item.unidade || "unidade",
+                        margem: "0",
+                        valor_unitario: alt.preco != null ? String(alt.preco) : "",
+                        obs_interna: "",
+                        obs_proposta: "",
+                      };
+                      if (idxExistente >= 0) {
+                        next[idxExistente] = { ...next[idxExistente], ...linha };
+                      } else {
+                        next.push(linha);
+                      }
+                      return next;
+                    });
+                    toast({ title: "Fornecedor selecionado", description: `${item.nome}: ${alt.fornecedor_nome}` });
+                  }}
+                  onAtualizarQuantidade={(item, quantidade) => {
+                    if (item.tipo !== "insumo") return;
+                    const insumoId = item.ref?.insumoCatalogoId || null;
+                    setInsumosAdicionais((prev) => {
+                      const next = [...prev];
+                      const i = next.findIndex((a) =>
+                        (insumoId && a.insumo_id === insumoId) ||
+                        a.nome.trim().toLowerCase() === item.nome.trim().toLowerCase(),
+                      );
+                      if (i >= 0) {
+                        next[i] = { ...next[i], quantidade_esperada: String(quantidade) };
+                      } else {
+                        next.push({
+                          insumo_id: insumoId || undefined,
+                          nome: item.nome,
+                          fornecedor_id: item.fornecedor_id || "",
+                          quantidade_esperada: String(quantidade),
+                          unidade: item.unidade || "unidade",
+                          margem: "0",
+                          valor_unitario: item.valor_unitario != null ? String(item.valor_unitario) : "",
+                          obs_interna: "",
+                          obs_proposta: "",
+                        });
+                      }
+                      return next;
                     });
                   }}
                   onAdicionarItem={() => {
