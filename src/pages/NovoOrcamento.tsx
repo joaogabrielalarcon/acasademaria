@@ -1030,6 +1030,7 @@ export default function NovoOrcamento() {
         const qtd = Math.ceil(qtdEsp * (1 + margem / 100));
         const vt = qtd * (Number(i.valor_unitario) || 0);
         const markupIns = markupsCategoria["Insumos"] ?? 0;
+        const ovrIns = overridesInsumos.get(insumoKey({ nome: i.nome, fornecedor_id: i.fornecedor_id || null }));
         await (supabase as any).from("orcamento_insumos").insert({
           orcamento_id: orcId,
           nome: i.nome,
@@ -1048,6 +1049,80 @@ export default function NovoOrcamento() {
           obs_interna: i.obs_interna || null,
           obs_proposta: i.obs_proposta || null,
           ordem: ord++,
+          ...(ovrIns || {}),
+        });
+      }
+
+      for (const f of fretes) {
+        const qtd = Math.ceil((Number(f.qtd_esperada) || 0) * (1 + (Number(f.margem) || 0) / 100));
+        const ovrFr = overridesFretes.get(freteKey({
+          percurso: f.percurso,
+          fornecedor_id: f.modo_transp === "cad" ? (f.transportador_id || null) : null,
+          transportador: f.transportador_nome,
+        }));
+        await (supabase as any).from("orcamento_fretes").insert({
+          orcamento_id: orcId,
+          fornecedor_id: f.modo_transp === "cad" ? (f.transportador_id || null) : null,
+          transportador: f.transportador_nome || null,
+          percurso: f.percurso || null,
+          descricao_percurso: f.percurso || null,
+          valor_unitario: Number(f.valor_unitario) || 0,
+          qtd_esperada: Number(f.qtd_esperada) || 0,
+          margem_seguranca_pct: Number(f.margem) || 0,
+          qtd_orcar: qtd,
+          valor_total: qtd * (Number(f.valor_unitario) || 0),
+          ...(ovrFr || {}),
+        });
+      }
+
+      for (const m of moLinhas) {
+        const bruto =
+          (Number(m.qtd) || 0) * (Number(m.dias) || 0) * (Number(m.salario_diario) || 0);
+        const aliq = (aliquotaMes || 0) + (tipoNf === "pj" ? 11 : 0);
+        const denom = (100 - aliq) / 100;
+        const valNf = denom > 0 ? bruto / denom : 0;
+        const ovrMo = overridesMo.get(moKey({ cargo_id: m.cargo_id, colaborador_id: m.colaborador_id }));
+        await (supabase as any).from("orcamento_mo").insert({
+          orcamento_id: orcId,
+          colaborador_id: m.colaborador_id || null,
+          cargo_id: m.cargo_id || null,
+          qtd_funcionarios: Number(m.qtd) || 0,
+          qtd_dias: Number(m.dias) || 0,
+          salario_diario: Number(m.salario_diario) || 0,
+          custo_total: bruto,
+          aliquota_mes_pct: aliquotaMes,
+          tipo_nf: tipoNf,
+          valor_com_imposto: valNf,
+          ...(ovrMo || {}),
+        });
+      }
+
+      for (const t of transporte) {
+        const sub =
+          (Number(t.valor_km) || 0) * (Number(t.dias) || 0) * (Number(t.km) || 0);
+        const ovrTr = overridesTransporte.get(transporteKey({ tipo: t.tipo }));
+        await (supabase as any).from("orcamento_transporte").insert({
+          orcamento_id: orcId,
+          tipo: t.tipo,
+          valor_km: Number(t.valor_km) || 0,
+          qtd_dias: Number(t.dias) || 0,
+          qtd_km: Number(t.km) || 0,
+          subtotal: sub,
+          ...(ovrTr || {}),
+        });
+      }
+
+      for (const c of custosIndiretos) {
+        const total = (Number(c.valor_unitario) || 0) * (Number(c.quantidade) || 0);
+        const ovrCi = overridesIndiretos.get(indiretoKey({ tipo: c.tipo, descricao: c.descricao }));
+        await (supabase as any).from("orcamento_custos_indiretos").insert({
+          orcamento_id: orcId,
+          tipo: c.tipo,
+          descricao: c.descricao || null,
+          valor_unitario: Number(c.valor_unitario) || 0,
+          quantidade: Number(c.quantidade) || 0,
+          total,
+          ...(ovrCi || {}),
         });
       }
 
