@@ -379,15 +379,20 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
         qc.invalidateQueries({ queryKey: ["plantas"] });
         qc.invalidateQueries({ queryKey: ["insumos"] });
       }
+      const isPreco = entidade === "preco_fornecedor";
       toast({
-        title: atualizarId ? "Atualizado" : "Cadastrado",
-        description: `${ENTIDADE_LABEL[entidade]} ${atualizarId ? "atualizado" : "criado"} com sucesso.`,
+        title: isPreco ? "Preço atualizado" : atualizarId ? "Atualizado" : "Cadastrado",
+        description: isPreco
+          ? `Novo preço de ${fornecedorSel?.nome} para ${itemSel?.nome} gravado no histórico.`
+          : `${ENTIDADE_LABEL[entidade]} ${atualizarId ? "atualizado" : "criado"} com sucesso.`,
       });
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: `${atualizarId ? "Atualizei" : "Cadastrei"} esse registro. Quer continuar com outro?`,
+          content: isPreco
+            ? `Gravei R$ ${precoNovoNum.toFixed(2).replace(".", ",")} para ${itemSel?.nome} em ${fornecedorSel?.nome}. Quer atualizar mais algum?`
+            : `${atualizarId ? "Atualizei" : "Cadastrei"} esse registro. Quer continuar com outro?`,
         },
       ]);
       // reset para próximo registro
@@ -396,6 +401,10 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
       setDuplicados([]);
       setAtualizarId(null);
       setModo("criar");
+      setLookup(null);
+      setFornecedorSel(null);
+      setItemSel(null);
+      setConfirmaSalto(false);
     } catch (e: any) {
       toast({
         title: "Erro ao salvar",
