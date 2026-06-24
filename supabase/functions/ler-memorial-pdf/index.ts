@@ -12,16 +12,38 @@ const client = new Anthropic({
   apiKey: Deno.env.get("ANTHROPIC_API_KEY"),
 });
 
-const PROMPT = `Você é especialista em paisagismo. Leia este memorial descritivo e extraia TODOS os itens de plantas e materiais.
-Para cada item retorne JSON com estes campos exatos:
-nome_popular (string),
-nome_cientifico (string ou null),
-porte (string exatamente como escrito no documento),
-quantidade (número),
-unidade (string: UNID/M2/CX/SACO/POTE conforme documento),
-categoria (string: uma de: Árvores / Arbustos e Herbáceas / Forrações / Trepadeiras / Palmeiras / Gramado / Vasos),
-confianca (string: alta/media/baixa).
-Responda APENAS com array JSON válido, sem markdown, sem explicações, sem texto antes ou depois.`;
+const PROMPT = `Você é especialista em paisagismo. Leia este memorial descritivo e extraia DOIS conjuntos de itens:
+
+1) PLANTAS — qualquer espécie vegetal especificada (árvores, arbustos, herbáceas, forrações, trepadeiras, palmeiras, gramado, vasos).
+2) INSUMOS — qualquer material/produto/insumo citado para execução do paisagismo: terra/substrato, adubos e condicionadores (torta de mamona, yoorin, k-forte, algen/lithothamnium, bokashi, terra preta, adubo preparado), cordas, bidim, limitador, lona, telas, mantas, pedriscos, seixos, brita, areia, e qualquer outro produto/insumo extraordinário descrito.
+
+Responda APENAS com um objeto JSON válido (sem markdown, sem texto antes ou depois) no formato:
+
+{
+  "plantas": [
+    {
+      "nome_popular": string,
+      "nome_cientifico": string|null,
+      "porte": string (exatamente como no documento),
+      "quantidade": number,
+      "unidade": string (UNID/M2/CX/SACO/POTE conforme documento),
+      "categoria": string (uma de: Árvores / Arbustos e Herbáceas / Forrações / Trepadeiras / Palmeiras / Gramado / Vasos),
+      "confianca": "alta"|"media"|"baixa"
+    }
+  ],
+  "insumos": [
+    {
+      "nome": string (nome do material exatamente como aparece, sem inferir marca),
+      "quantidade": number|null (se não informado, null),
+      "unidade": string (m³/m²/m/kg/saco/rolo/unidade/tonelada conforme documento, ou "unidade" se omisso),
+      "categoria": string|null (ex.: "Adubo", "Substrato", "Tela", "Pedra"),
+      "observacao": string|null (detalhe relevante: "para canteiros", "10mm", etc.),
+      "confianca": "alta"|"media"|"baixa"
+    }
+  ]
+}
+
+Se um conjunto não existir no memorial, retorne array vazio. Não invente itens.`;
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
@@ -112,16 +134,34 @@ Deno.serve(async (req) => {
     let texto = block.text ?? "";
     texto = texto.trim().replace(/^```json\s*/i, "").replace(/```$/i, "").trim();
 
-    let itens: unknown;
+    let parsed: any;
     try {
-      itens = JSON.parse(texto);
+      parsed = JSON.parse(texto);
     } catch (_e) {
-      const match = texto.match(/\[[\s\S]*\]/);
-      if (!match) throw new Error("Resposta da IA não está em JSON válido");
-      itens = JSON.parse(match[0]);
+      // Tenta extrair objeto {plantas,insumos}; se não der, tenta array (formato antigo).
+      const objMatch = texto.match(/\{[\s\S]*\}/);
+      const arrMatch = texto.match(/\[[\s\S]*\]/);
+      if (objMatch) {
+        parsed = JSON.parse(objMatch[0]);
+      } else if (arrMatch) {
+        parsed = JSON.parse(arrMatch[0]);
+      } else {
+        throw new Error("Resposta da IA não está em JSON válido");
+      }
     }
 
-    return new Response(JSON.stringify({ itens }), {
+    // Normaliza: aceita tanto o novo formato {plantas,insumos} quanto o antigo (array de plantas).
+    let plantas: any[] = [];
+    let insumos: any[] = [];
+    if (Array.isArray(parsed)) {
+      plantas = parsed;
+    } else if (parsed && typeof parsed === "object") {
+      plantas = Array.isArray(parsed.plantas) ? parsed.plantas : [];
+      insumos = Array.isArray(parsed.insumos) ? parsed.insumos : [];
+    }
+
+    // `itens` mantido por compatibilidade com clientes existentes (= plantas).
+    return new Response(JSON.stringify({ itens: plantas, plantas, insumos }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
