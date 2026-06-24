@@ -2602,6 +2602,7 @@ export default function NovoOrcamento() {
     transportadora: "Nova transportadora",
     perfil_markup: "Novo perfil de markup",
     local_cliente: "Novo local do cliente",
+    insumo: "Novo insumo no catálogo",
   };
 
   const salvarQuickAdd = async () => {
