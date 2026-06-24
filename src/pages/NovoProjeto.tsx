@@ -173,6 +173,8 @@ export default function NovoProjeto() {
         {isEditing ? "Editar Projeto" : "Novo Projeto"}
       </h1>
 
+      {!isEditing && <div className="max-w-2xl"><DraftResumeBanner draft={draft} /></div>}
+
       <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
         <div className="space-y-2">
           <Label>Título *</Label>
