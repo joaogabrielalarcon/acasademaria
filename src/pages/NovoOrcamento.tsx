@@ -510,8 +510,6 @@ export default function NovoOrcamento() {
 
   // ============ Etapa 6 — Mão de obra, fretes, transporte, indiretos ============
   type MoLinha = {
-    colaborador_id?: string;
-    colaborador_nome?: string;
     cargo_id: string;
     cargo_nome: string;
     qtd: string;
@@ -1012,7 +1010,7 @@ export default function NovoOrcamento() {
       };
       const insumoKey = (r: any) => `${(r.nome || "").toLowerCase().trim()}|${r.fornecedor_id || ""}`;
       const freteKey = (r: any) => `${(r.percurso || "").toLowerCase().trim()}|${r.fornecedor_id || ""}|${(r.transportador || "").toLowerCase().trim()}`;
-      const moKey = (r: any) => `${r.cargo_id || ""}|${r.colaborador_id || ""}`;
+      const moKey = (r: any) => `${r.cargo_id || ""}`;
       const transporteKey = (r: any) => `${(r.tipo || "").toLowerCase().trim()}`;
       const indiretoKey = (r: any) => `${(r.tipo || "").toLowerCase().trim()}|${(r.descricao || "").toLowerCase().trim()}`;
 
@@ -1180,10 +1178,10 @@ export default function NovoOrcamento() {
         const aliq = (aliquotaMes || 0) + (tipoNf === "pj" ? 11 : 0);
         const denom = (100 - aliq) / 100;
         const valNf = denom > 0 ? bruto / denom : 0;
-        const ovrMo = overridesMo.get(moKey({ cargo_id: m.cargo_id, colaborador_id: m.colaborador_id }));
+        const ovrMo = overridesMo.get(moKey({ cargo_id: m.cargo_id }));
         await (supabase as any).from("orcamento_mo").insert({
           orcamento_id: orcId,
-          colaborador_id: m.colaborador_id || null,
+          colaborador_id: null,
           cargo_id: m.cargo_id || null,
           qtd_funcionarios: Number(m.qtd) || 0,
           qtd_dias: Number(m.dias) || 0,
@@ -1662,13 +1660,16 @@ export default function NovoOrcamento() {
       // MO
       setMoLinhas(
         (moDb || []).map((m: any) => {
-          const diario = m.salario_diario != null ? Number(m.salario_diario) : 0;
+          const cargo = (cargosMo as any[]).find((c) => c.id === m.cargo_id);
+          // Custo mensal sempre vem do cadastro do cargo (fonte da verdade).
+          const mensal = Number(cargo?.salario_mensal) || (Number(m.salario_diario) || 0) * 21;
+          const diario = mensal > 0 ? mensal / 21 : 0;
           return {
             cargo_id: m.cargo_id || "",
-            cargo_nome: "",
+            cargo_nome: cargo?.nome || "",
             qtd: m.qtd_funcionarios != null ? String(m.qtd_funcionarios) : "1",
             dias: m.qtd_dias != null ? String(m.qtd_dias) : "",
-            salario_mensal: String(diario * 21),
+            salario_mensal: String(mensal),
             salario_diario: String(diario),
           };
         }),
