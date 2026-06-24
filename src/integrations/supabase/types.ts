@@ -4211,6 +4211,7 @@ export type Database = {
           orcamento_id: string
           snapshot: Json
           tipo: string
+          versao_sufixo: string | null
         }
         Insert: {
           created_at?: string
@@ -4219,6 +4220,7 @@ export type Database = {
           orcamento_id: string
           snapshot: Json
           tipo: string
+          versao_sufixo?: string | null
         }
         Update: {
           created_at?: string
@@ -4227,6 +4229,7 @@ export type Database = {
           orcamento_id?: string
           snapshot?: Json
           tipo?: string
+          versao_sufixo?: string | null
         }
         Relationships: [
           {
@@ -4294,10 +4297,15 @@ export type Database = {
       orcamento_versoes: {
         Row: {
           campo_alterado: string | null
+          comentario_final: string | null
+          comentario_humano: string | null
           created_at: string | null
+          de_para: Json | null
           id: string
           motivo: string | null
           orcamento_id: string | null
+          snapshot_id: string | null
+          totais: Json | null
           usuario_id: string | null
           valor_anterior: string | null
           valor_novo: string | null
@@ -4305,10 +4313,15 @@ export type Database = {
         }
         Insert: {
           campo_alterado?: string | null
+          comentario_final?: string | null
+          comentario_humano?: string | null
           created_at?: string | null
+          de_para?: Json | null
           id?: string
           motivo?: string | null
           orcamento_id?: string | null
+          snapshot_id?: string | null
+          totais?: Json | null
           usuario_id?: string | null
           valor_anterior?: string | null
           valor_novo?: string | null
@@ -4316,10 +4329,15 @@ export type Database = {
         }
         Update: {
           campo_alterado?: string | null
+          comentario_final?: string | null
+          comentario_humano?: string | null
           created_at?: string | null
+          de_para?: Json | null
           id?: string
           motivo?: string | null
           orcamento_id?: string | null
+          snapshot_id?: string | null
+          totais?: Json | null
           usuario_id?: string | null
           valor_anterior?: string | null
           valor_novo?: string | null
@@ -4331,6 +4349,13 @@ export type Database = {
             columns: ["orcamento_id"]
             isOneToOne: false
             referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_versoes_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_snapshots"
             referencedColumns: ["id"]
           },
           {
@@ -5753,6 +5778,7 @@ export type Database = {
         Returns: string
       }
       detectar_fornecedores_duplicados: { Args: never; Returns: Json }
+      gerar_codigo_orcamento: { Args: { p_sigla: string }; Returns: string }
       get_colaborador_id: { Args: { _user_id: string }; Returns: string }
       get_user_area: { Args: { _user_id: string }; Returns: string }
       get_user_id_by_username: { Args: { _username: string }; Returns: string }
