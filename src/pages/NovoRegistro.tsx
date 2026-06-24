@@ -409,6 +409,7 @@ export default function NovoRegistro() {
               }
             </p>
 
+        <DraftResumeBanner draft={draft} />
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* ===================== */}
           {/* SEÇÃO 1: DADOS DA DIÁRIA */}
