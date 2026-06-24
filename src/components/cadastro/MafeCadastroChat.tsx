@@ -234,10 +234,23 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
     setFaltantes((prev) => prev.filter((f) => f !== name || !value.trim()));
   };
 
+  // Cálculo de salto de preço (> 50% para mais ou menos)
+  const precoNovoNum = Number(String(extraido?.preco ?? "").replace(",", "."));
+  const precoAntigoNum = Number(lookup?.ultimo_preco?.preco ?? NaN);
+  const saltoGrande =
+    Number.isFinite(precoNovoNum) && Number.isFinite(precoAntigoNum) && precoAntigoNum > 0
+      ? Math.abs(precoNovoNum - precoAntigoNum) / precoAntigoNum > 0.5
+      : false;
+
   const podeSalvar = (() => {
     if (!extraido) return false;
     if (entidade === "fornecedores") return Boolean(String(extraido.nome ?? "").trim());
-    return Boolean(String(extraido.nome_popular ?? "").trim());
+    if (entidade === "plantas") return Boolean(String(extraido.nome_popular ?? "").trim());
+    // preco_fornecedor
+    if (!fornecedorSel?.id || !itemSel?.id) return false;
+    if (!Number.isFinite(precoNovoNum) || precoNovoNum <= 0) return false;
+    if (saltoGrande && !confirmaSalto) return false;
+    return true;
   })();
 
   async function gravarFornecedor(payload: Extraido, idExistente: string | null) {
