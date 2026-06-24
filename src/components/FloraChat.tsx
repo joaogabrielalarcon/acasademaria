@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useLocation } from "react-router-dom";
-import { Send, Loader2, User, Mic, Square, Minimize2, Maximize2, X, UserPlus, Leaf, Truck } from "lucide-react";
+import { Send, Loader2, User, Mic, Square, Minimize2, Maximize2, X, UserPlus, Leaf, Truck, DollarSign } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import mafeAvatar from "@/assets/flora-avatar.webp";
 import { supabase } from "@/integrations/supabase/client";
@@ -425,6 +425,15 @@ export function MafeChat() {
             onClick={() => setCadastroEntidade("plantas")}
           >
             <Leaf className="w-3 h-3" /> Cadastrar planta
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-7 text-[11px] gap-1.5"
+            onClick={() => setCadastroEntidade("preco_fornecedor")}
+          >
+            <DollarSign className="w-3 h-3" /> Atualizar preço
           </Button>
         </div>
 

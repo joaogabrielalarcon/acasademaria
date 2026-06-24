@@ -48,17 +48,28 @@ export default function Compras() {
               Fornecedores, produtos, plantas e estoque
             </p>
           </div>
-          {mafeEntidade && (
+          <div className="flex flex-wrap gap-2">
+            {mafeEntidade && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => setCadastroEntidade(mafeEntidade)}
+              >
+                <Sparkles className="w-4 h-4" />
+                Cadastrar com a Mafe
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
               className="gap-1.5"
-              onClick={() => setCadastroEntidade(mafeEntidade)}
+              onClick={() => setCadastroEntidade("preco_fornecedor")}
             >
               <Sparkles className="w-4 h-4" />
-              Cadastrar com a Mafe
+              Atualizar preço
             </Button>
-          )}
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={handleTabChange}>

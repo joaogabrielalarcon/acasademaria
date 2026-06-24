@@ -20,10 +20,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Send, ImagePlus, X, AlertCircle, CheckCircle2, Sparkles } from "lucide-react";
+import { Loader2, Send, ImagePlus, X, AlertCircle, CheckCircle2, Sparkles, TrendingUp } from "lucide-react";
 import mafeAvatar from "@/assets/flora-avatar.webp";
 
-export type EntidadeCadastro = "fornecedores" | "plantas";
+export type EntidadeCadastro = "fornecedores" | "plantas" | "preco_fornecedor";
 
 interface Props {
   open: boolean;
@@ -49,6 +49,7 @@ interface Duplicado {
 const ENTIDADE_LABEL: Record<EntidadeCadastro, string> = {
   fornecedores: "Fornecedor",
   plantas: "Planta",
+  preco_fornecedor: "Preço de fornecedor",
 };
 
 // Campos exibidos na revisão (em ordem)
@@ -74,6 +75,12 @@ const CAMPOS_UI: Record<EntidadeCadastro, { name: string; label: string; type?: 
     { name: "embalagem", label: "Embalagem" },
     { name: "categoria", label: "Categoria" },
     { name: "dap_cm", label: "DAP (cm)" },
+    { name: "observacoes", label: "Observações", type: "textarea" },
+  ],
+  preco_fornecedor: [
+    { name: "porte", label: "Porte (m)" },
+    { name: "unidade", label: "Unidade" },
+    { name: "preco", label: "Preço (R$)" },
     { name: "observacoes", label: "Observações", type: "textarea" },
   ],
 };
@@ -104,17 +111,26 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
   const [modo, setModo] = useState<"criar" | "atualizar">("criar");
   const [atualizarId, setAtualizarId] = useState<string | null>(null);
 
+  // Estado específico para preco_fornecedor
+  const [lookup, setLookup] = useState<{ fornecedores: any[]; itens: any[]; ultimo_preco: any | null } | null>(null);
+  const [fornecedorSel, setFornecedorSel] = useState<any | null>(null);
+  const [itemSel, setItemSel] = useState<any | null>(null);
+  const [confirmaSalto, setConfirmaSalto] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const introMsg = (() => {
+    if (entidade === "fornecedores")
+      return "Olá! Me conte sobre o fornecedor que você quer cadastrar ou atualizar. Pode escrever livre, mandar uma foto ou um print. Eu organizo os dados e te mostro o que falta antes de gravar.";
+    if (entidade === "plantas")
+      return "Olá! Me conte sobre a planta. Pode escrever livre, mandar uma foto ou um print. Eu organizo os dados e te mostro o que falta antes de gravar.";
+    return "Olá! Me diga qual fornecedor tem qual item por qual preço. Ex: \"Adubos Jarinu tem Ipê amarelo porte 1,80 por R$ 45\". Pode mandar foto ou print. Eu busco no catálogo inteiro, confirmo com você e gravo no histórico de preços.";
+  })();
+
   useEffect(() => {
     if (open) {
-      setMessages([
-        {
-          role: "assistant",
-          content: `Olá! Me conte ${entidade === "fornecedores" ? "sobre o fornecedor" : "sobre a planta"} que você quer cadastrar ou atualizar. Pode escrever livre, mandar uma foto ou um print. Eu organizo os dados e te mostro o que falta antes de gravar.`,
-        },
-      ]);
+      setMessages([{ role: "assistant", content: introMsg }]);
       setInput("");
       setImage(null);
       setExtraido(null);
@@ -122,8 +138,12 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
       setDuplicados([]);
       setModo("criar");
       setAtualizarId(null);
+      setLookup(null);
+      setFornecedorSel(null);
+      setItemSel(null);
+      setConfirmaSalto(false);
     }
-  }, [open, entidade]);
+  }, [open, entidade, introMsg]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -173,7 +193,23 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
 
       setExtraido(data.extraido || {});
       setFaltantes(Array.isArray(data.faltantes) ? data.faltantes : []);
-      setDuplicados(Array.isArray(data.duplicados) ? data.duplicados : []);
+
+      if (entidade === "preco_fornecedor" && data.duplicados && !Array.isArray(data.duplicados)) {
+        const lk = data.duplicados as { fornecedores?: any[]; itens?: any[]; ultimo_preco?: any };
+        const normLk = {
+          fornecedores: Array.isArray(lk.fornecedores) ? lk.fornecedores : [],
+          itens: Array.isArray(lk.itens) ? lk.itens : [],
+          ultimo_preco: lk.ultimo_preco ?? null,
+        };
+        setLookup(normLk);
+        // auto-seleciona top quando score alto
+        if (normLk.fornecedores[0]?._score >= 3 && !fornecedorSel) setFornecedorSel(normLk.fornecedores[0]);
+        if (normLk.itens[0]?._score >= 3 && !itemSel) setItemSel(normLk.itens[0]);
+        setDuplicados([]);
+      } else {
+        setDuplicados(Array.isArray(data.duplicados) ? data.duplicados : []);
+      }
+
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: String(data.assistant_message || "Anotado.") },
@@ -198,10 +234,23 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
     setFaltantes((prev) => prev.filter((f) => f !== name || !value.trim()));
   };
 
+  // Cálculo de salto de preço (> 50% para mais ou menos)
+  const precoNovoNum = Number(String(extraido?.preco ?? "").replace(",", "."));
+  const precoAntigoNum = Number(lookup?.ultimo_preco?.preco ?? NaN);
+  const saltoGrande =
+    Number.isFinite(precoNovoNum) && Number.isFinite(precoAntigoNum) && precoAntigoNum > 0
+      ? Math.abs(precoNovoNum - precoAntigoNum) / precoAntigoNum > 0.5
+      : false;
+
   const podeSalvar = (() => {
     if (!extraido) return false;
     if (entidade === "fornecedores") return Boolean(String(extraido.nome ?? "").trim());
-    return Boolean(String(extraido.nome_popular ?? "").trim());
+    if (entidade === "plantas") return Boolean(String(extraido.nome_popular ?? "").trim());
+    // preco_fornecedor
+    if (!fornecedorSel?.id || !itemSel?.id) return false;
+    if (!Number.isFinite(precoNovoNum) || precoNovoNum <= 0) return false;
+    if (saltoGrande && !confirmaSalto) return false;
+    return true;
   })();
 
   async function gravarFornecedor(payload: Extraido, idExistente: string | null) {
@@ -274,6 +323,43 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
     return data.id;
   }
 
+  async function gravarPrecoFornecedor() {
+    if (!fornecedorSel?.id || !itemSel?.id) throw new Error("Selecione fornecedor e item.");
+    const preco = Number(String(extraido?.preco ?? "").replace(",", "."));
+    if (!Number.isFinite(preco) || preco <= 0) throw new Error("Preço inválido.");
+    const porte = (extraido?.porte ? String(extraido.porte).trim() : null) || itemSel.porte || null;
+    const unidade = (extraido?.unidade ? String(extraido.unidade).trim() : null) || itemSel.unidade || null;
+    const hoje = new Date().toISOString().slice(0, 10);
+    const observacoes = extraido?.observacoes ? String(extraido.observacoes).trim() : null;
+
+    // historico_precos (cronológico do item — fonte usada pelos orçamentos)
+    const { error: e1 } = await supabase.from("historico_precos").insert([{
+      item_id: itemSel.id,
+      item_tipo: itemSel.tipo,
+      fornecedor_id: fornecedorSel.id,
+      preco,
+      porte,
+      unidade,
+      data_orcamento: hoje,
+      registrado_por: user?.id,
+      observacoes,
+    }] as any);
+    if (e1) throw e1;
+
+    // historico_precos_fornecedor (visão por fornecedor — só plantas)
+    if (itemSel.tipo === "planta") {
+      const { error: e2 } = await supabase.from("historico_precos_fornecedor").insert([{
+        fornecedor_id: fornecedorSel.id,
+        planta_id: itemSel.id,
+        porte,
+        unidade,
+        preco,
+        data_cotacao: hoje,
+      }] as any);
+      if (e2) console.warn("[preco_fornecedor] aviso historico_precos_fornecedor:", e2.message);
+    }
+  }
+
   const handleSalvar = async () => {
     if (!extraido || !podeSalvar || saving) return;
     setSaving(true);
@@ -283,19 +369,30 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
         id = await gravarFornecedor(extraido, atualizarId);
         qc.invalidateQueries({ queryKey: ["fornecedores"] });
         qc.invalidateQueries({ queryKey: ["fornecedores-todos"] });
-      } else {
+      } else if (entidade === "plantas") {
         id = await gravarPlanta(extraido, atualizarId);
         qc.invalidateQueries({ queryKey: ["plantas"] });
+      } else {
+        await gravarPrecoFornecedor();
+        qc.invalidateQueries({ queryKey: ["historico_precos"] });
+        qc.invalidateQueries({ queryKey: ["historico-precos-fornecedor"] });
+        qc.invalidateQueries({ queryKey: ["plantas"] });
+        qc.invalidateQueries({ queryKey: ["insumos"] });
       }
+      const isPreco = entidade === "preco_fornecedor";
       toast({
-        title: atualizarId ? "Atualizado" : "Cadastrado",
-        description: `${ENTIDADE_LABEL[entidade]} ${atualizarId ? "atualizado" : "criado"} com sucesso.`,
+        title: isPreco ? "Preço atualizado" : atualizarId ? "Atualizado" : "Cadastrado",
+        description: isPreco
+          ? `Novo preço de ${fornecedorSel?.nome} para ${itemSel?.nome} gravado no histórico.`
+          : `${ENTIDADE_LABEL[entidade]} ${atualizarId ? "atualizado" : "criado"} com sucesso.`,
       });
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: `${atualizarId ? "Atualizei" : "Cadastrei"} esse registro. Quer continuar com outro?`,
+          content: isPreco
+            ? `Gravei R$ ${precoNovoNum.toFixed(2).replace(".", ",")} para ${itemSel?.nome} em ${fornecedorSel?.nome}. Quer atualizar mais algum?`
+            : `${atualizarId ? "Atualizei" : "Cadastrei"} esse registro. Quer continuar com outro?`,
         },
       ]);
       // reset para próximo registro
@@ -304,6 +401,10 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
       setDuplicados([]);
       setAtualizarId(null);
       setModo("criar");
+      setLookup(null);
+      setFornecedorSel(null);
+      setItemSel(null);
+      setConfirmaSalto(false);
     } catch (e: any) {
       toast({
         title: "Erro ao salvar",
@@ -321,10 +422,14 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
         <DialogHeader className="px-5 py-3 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2 font-display text-xl">
             <img src={mafeAvatar} alt="Mafe" className="w-7 h-7 rounded-full object-cover object-top" />
-            Cadastrar {ENTIDADE_LABEL[entidade]} com a Mafe
+            {entidade === "preco_fornecedor"
+              ? "Atualizar preço com a Mafe"
+              : `Cadastrar ${ENTIDADE_LABEL[entidade]} com a Mafe`}
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Escreva livre ou envie uma imagem. A Mafe organiza os campos, mostra duplicados e só grava após sua confirmação.
+            {entidade === "preco_fornecedor"
+              ? "Diga qual fornecedor tem qual item por qual preço. A Mafe casa com o catálogo inteiro e grava no histórico após sua confirmação."
+              : "Escreva livre ou envie uma imagem. A Mafe organiza os campos, mostra duplicados e só grava após sua confirmação."}
           </DialogDescription>
         </DialogHeader>
 
@@ -405,7 +510,9 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
                   placeholder={`Ex: ${
                     entidade === "fornecedores"
                       ? "Adubos Jarinu, Jarinu/SP, contato João, 11 99999-9999"
-                      : "Ipê amarelo, Handroanthus chrysotrichus, porte 1,80, unidade Muda"
+                      : entidade === "plantas"
+                      ? "Ipê amarelo, Handroanthus chrysotrichus, porte 1,80, unidade Muda"
+                      : "Adubos Jarinu tem Ipê amarelo porte 1,80 por R$ 45"
                   }`}
                   rows={2}
                   className="resize-none text-sm"
@@ -480,6 +587,106 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
                       </div>
                     )}
 
+                    {entidade === "preco_fornecedor" && lookup && (
+                      <div className="space-y-3">
+                        {/* Fornecedor */}
+                        <div className="space-y-1.5">
+                          <h4 className="text-sm font-semibold">Fornecedor</h4>
+                          {lookup.fornecedores.length === 0 ? (
+                            <p className="text-xs text-muted-foreground">Nenhum fornecedor encontrado. Tente outro nome ou cadastre antes.</p>
+                          ) : (
+                            <div className="space-y-1">
+                              {lookup.fornecedores.map((f) => (
+                                <button
+                                  key={f.id}
+                                  type="button"
+                                  onClick={() => setFornecedorSel(f)}
+                                  className={`w-full text-left text-xs rounded border p-2 transition ${
+                                    fornecedorSel?.id === f.id
+                                      ? "border-primary ring-1 ring-primary bg-background"
+                                      : "border-border bg-background hover:bg-muted"
+                                  }`}
+                                >
+                                  <div className="font-medium">{f.nome}</div>
+                                  <div className="text-muted-foreground">
+                                    {[f.cidade, f.estado, f.mercado].filter(Boolean).join(" · ") || "sem detalhes"}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Item */}
+                        <div className="space-y-1.5">
+                          <h4 className="text-sm font-semibold">Item do catálogo</h4>
+                          {lookup.itens.length === 0 ? (
+                            <p className="text-xs text-muted-foreground">Nenhum item encontrado. Refine o nome ou cadastre antes.</p>
+                          ) : (
+                            <div className="space-y-1">
+                              {lookup.itens.map((it) => (
+                                <button
+                                  key={`${it.tipo}-${it.id}`}
+                                  type="button"
+                                  onClick={() => setItemSel(it)}
+                                  className={`w-full text-left text-xs rounded border p-2 transition ${
+                                    itemSel?.id === it.id && itemSel?.tipo === it.tipo
+                                      ? "border-primary ring-1 ring-primary bg-background"
+                                      : "border-border bg-background hover:bg-muted"
+                                  }`}
+                                >
+                                  <div className="font-medium">
+                                    {it.nome}{" "}
+                                    <span className="text-[10px] uppercase text-muted-foreground">({it.tipo})</span>
+                                  </div>
+                                  <div className="text-muted-foreground">
+                                    {[it.nome_cientifico, it.porte && `porte ${it.porte}`, it.unidade]
+                                      .filter(Boolean)
+                                      .join(" · ") || "sem detalhes"}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Preço comparativo */}
+                        {lookup.ultimo_preco && (
+                          <div className="rounded-md border bg-background p-2 text-xs flex items-center gap-2">
+                            <TrendingUp className="w-3.5 h-3.5 text-muted-foreground" />
+                            <span className="text-muted-foreground">Último preço gravado:</span>
+                            <span className="font-medium">
+                              R$ {Number(lookup.ultimo_preco.preco).toFixed(2).replace(".", ",")}
+                            </span>
+                            <span className="text-muted-foreground">
+                              em {new Date(lookup.ultimo_preco.data_orcamento).toLocaleDateString("pt-BR")}
+                            </span>
+                          </div>
+                        )}
+
+                        {saltoGrande && (
+                          <div className="rounded-md border border-amber-400/60 bg-amber-50/60 dark:bg-amber-950/20 p-3 space-y-2">
+                            <div className="flex items-center gap-2 text-sm font-medium text-amber-900 dark:text-amber-200">
+                              <AlertCircle className="w-4 h-4" />
+                              Salto de preço maior que 50%
+                            </div>
+                            <p className="text-xs text-amber-900/80 dark:text-amber-200/80">
+                              De R$ {precoAntigoNum.toFixed(2).replace(".", ",")} para R$ {precoNovoNum.toFixed(2).replace(".", ",")}. Confirme que está correto.
+                            </p>
+                            <label className="flex items-center gap-2 text-xs text-amber-900 dark:text-amber-200">
+                              <input
+                                type="checkbox"
+                                checked={confirmaSalto}
+                                onChange={(e) => setConfirmaSalto(e.target.checked)}
+                              />
+                              Confirmo o novo preço mesmo com salto grande.
+                            </label>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <h4 className="text-sm font-semibold">Revisar dados</h4>
@@ -533,13 +740,19 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
             {extraido && (
               <div className="border-t p-3 shrink-0 flex items-center justify-between gap-2 bg-background">
                 <div className="text-xs text-muted-foreground">
-                  {atualizarId
+                  {entidade === "preco_fornecedor"
+                    ? fornecedorSel && itemSel
+                      ? `Vai gravar no histórico de preços (data: hoje).`
+                      : "Selecione fornecedor e item."
+                    : atualizarId
                     ? "Vai atualizar o registro selecionado."
                     : "Vai criar um registro novo."}
                 </div>
                 <Button onClick={handleSalvar} disabled={!podeSalvar || saving} size="sm">
                   {saving ? (
                     <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Salvando</>
+                  ) : entidade === "preco_fornecedor" ? (
+                    "Confirmar novo preço"
                   ) : atualizarId ? (
                     "Confirmar atualização"
                   ) : (
