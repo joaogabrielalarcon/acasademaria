@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useLocation } from "react-router-dom";
-import { Send, Loader2, User, Mic, Square, Minimize2, Maximize2, X } from "lucide-react";
+import { Send, Loader2, User, Mic, Square, Minimize2, Maximize2, X, UserPlus, Leaf, Truck } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import mafeAvatar from "@/assets/flora-avatar.webp";
 import { supabase } from "@/integrations/supabase/client";
 import { MafeProjetoPicker, type MafeProjetoOption } from "@/components/mafe/MafeProjetoPicker";
 import { MafeDiarioChat } from "@/components/diario/MafeDiarioChat";
+import { MafeCadastroChat, type EntidadeCadastro } from "@/components/cadastro/MafeCadastroChat";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
@@ -85,6 +86,7 @@ export function MafeChat() {
   const [projectPickerSearch, setProjectPickerSearch] = useState("");
   const [selectedProject, setSelectedProject] = useState<MafeProjetoOption | null>(null);
   const [diarioChatOpen, setDiarioChatOpen] = useState(false);
+  const [cadastroEntidade, setCadastroEntidade] = useState<EntidadeCadastro | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastMsgStartRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -405,6 +407,27 @@ export function MafeChat() {
           </div>
         </div>
 
+        <div className="flex flex-wrap gap-1.5 px-3 pt-2 shrink-0">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-7 text-[11px] gap-1.5"
+            onClick={() => setCadastroEntidade("fornecedores")}
+          >
+            <Truck className="w-3 h-3" /> Cadastrar fornecedor
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-7 text-[11px] gap-1.5"
+            onClick={() => setCadastroEntidade("plantas")}
+          >
+            <Leaf className="w-3 h-3" /> Cadastrar planta
+          </Button>
+        </div>
+
         <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
           {messages.filter(msg => !msg.content.startsWith("[Naveguei para:")).map((msg, i, arr) => {
             const isLastAssistant = msg.role === "assistant" && 
@@ -499,6 +522,14 @@ export function MafeChat() {
         projetoNome={selectedProject?.titulo || "Projeto"}
         clienteNome={selectedProject?.clientes?.nome || "Cliente"}
       />
+
+      {cadastroEntidade && (
+        <MafeCadastroChat
+          open={!!cadastroEntidade}
+          onOpenChange={(v) => { if (!v) setCadastroEntidade(null); }}
+          entidade={cadastroEntidade}
+        />
+      )}
     </>
   );
 }
