@@ -57,6 +57,18 @@ export default function NovaPlanta() {
   });
   const [midia, setMidia] = useState<{ url: string; tipo: string; nome: string }[]>([]);
 
+  const draft = useAutosaveDraft({
+    formKey: "nova-planta",
+    scopeKey: "novo",
+    enabled: !isEditing,
+    getSnapshot: () => ({ formData, midia }),
+    applySnapshot: (s: any) => {
+      if (s?.formData) setFormData((f) => ({ ...f, ...s.formData }));
+      if (Array.isArray(s?.midia)) setMidia(s.midia);
+    },
+  });
+
+
   const { data: plantaExistente } = useQuery({
     queryKey: ["planta", id],
     queryFn: async () => {
