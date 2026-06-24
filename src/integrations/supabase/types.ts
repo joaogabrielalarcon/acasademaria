@@ -2367,6 +2367,39 @@ export type Database = {
           },
         ]
       }
+      form_drafts: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          data: Json
+          form_key: string
+          schema_version: number
+          scope_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          data: Json
+          form_key: string
+          schema_version?: number
+          scope_key?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          data?: Json
+          form_key?: string
+          schema_version?: number
+          scope_key?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       fornecedor_atendentes: {
         Row: {
           ativo: boolean
@@ -5773,6 +5806,7 @@ export type Database = {
         Returns: boolean
       }
       check_inactive_clients: { Args: never; Returns: undefined }
+      cleanup_old_form_drafts: { Args: never; Returns: undefined }
       create_diario_visita_with_details: {
         Args: { payload: Json }
         Returns: string
