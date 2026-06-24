@@ -798,15 +798,24 @@ export default function NovoOrcamento() {
     ? ((Number(comissaoPct) || 0) * totaisResumo.totalVenda) / 100
     : 0;
   // Comissão é ACRESCIDA ao preço final (repasse ao cliente), preservando a margem da empresa.
-  const totalCliente = totaisResumo.totalVenda + valorComissao;
-  const descontoMaximo = totalCliente * (margemNegPct / 100);
-  const valorMinimo = totalCliente - descontoMaximo;
+  // Negociação é DILUÍDA proporcionalmente entre Produtos e Mão de Obra (com base no valor de venda).
+  const vendaMo = useMemo(
+    () => linhasResumo.filter((l) => l.categoria === "Mão de Obra").reduce((s, l) => s + l.venda, 0),
+    [linhasResumo],
+  );
+  const vendaProdutos = Math.max(0, totaisResumo.totalVenda - vendaMo);
+  const baseDiluicao = vendaProdutos + vendaMo;
+  const shareProdutos = baseDiluicao > 0 ? vendaProdutos / baseDiluicao : 0;
+  const shareMo = baseDiluicao > 0 ? vendaMo / baseDiluicao : 0;
+  const negociacaoProdutos = (Number(negociacaoValor) || 0) * shareProdutos;
+  const negociacaoMo = (Number(negociacaoValor) || 0) * shareMo;
+  const totalClienteSemComissao = totaisResumo.totalVenda + (Number(negociacaoValor) || 0);
+  const totalCliente = totalClienteSemComissao + valorComissao;
+  const margemBrutaValFinal = totalClienteSemComissao - totaisResumo.totalCusto;
   const areaM2 = Number(form.area_m2) || 0;
   const custoPorM2 = areaM2 > 0 ? totaisResumo.totalCusto / areaM2 : 0;
   const margemBrutaPctTotal =
-    totaisResumo.totalVenda > 0
-      ? (totaisResumo.margemBrutaVal / totaisResumo.totalVenda) * 100
-      : 0;
+    totalClienteSemComissao > 0 ? (margemBrutaValFinal / totalClienteSemComissao) * 100 : 0;
 
   // Markup por categoria é gerenciado na Etapa 4 (Etapa4MarkupBlocoA).
   // Esta tela (Etapa 6) consome o valor pronto via markupCategoriasQuery.
