@@ -94,6 +94,14 @@ export default function Compras() {
           )}
         </Tabs>
       </div>
+
+      {cadastroEntidade && (
+        <MafeCadastroChat
+          open={!!cadastroEntidade}
+          onOpenChange={(v) => { if (!v) setCadastroEntidade(null); }}
+          entidade={cadastroEntidade}
+        />
+      )}
     </AppLayout>
   );
 }
