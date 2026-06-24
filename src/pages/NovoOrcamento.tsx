@@ -755,7 +755,7 @@ export default function NovoOrcamento() {
     [insumosAdicionais],
   );
 
-  const impostoProdutos = (totalCustoPlantas + totalCustoInsumos) * 0.135;
+  const impostoProdutos = (totalCustoPlantas + totalCustoInsumos) * ((Number(aliquotaProdutos) || 0) / 100);
 
   const custoLinha = (cat: string) => {
     if (cat === "Insumos") return totalCustoInsumos;
