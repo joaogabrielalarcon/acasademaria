@@ -1668,6 +1668,7 @@ export default function NovoOrcamento() {
     JSON.stringify(margensSeg),
     JSON.stringify(markupsCategoria),
     aliquotaMes,
+    aliquotaProdutos,
     tipoNf,
     margemNegPct,
   ]);
