@@ -1188,14 +1188,14 @@ export default function NovoOrcamento() {
             ? { tipo: comissaoTipo, percentual: Number(comissaoPct) || 0, beneficiario: comissaoBeneficiario, valor: valorComissao }
             : null,
           margemNegPct,
+          negociacaoValor,
+          negociacaoDistribuicao: { produtos: negociacaoProdutos, mo: negociacaoMo },
           totais: {
             totalCusto: totaisResumo.totalCusto,
             totalVenda: totaisResumo.totalVenda,
             totalCliente,
-            descontoMaximo,
-            valorMinimo,
             impostoProdutos,
-            margemBrutaVal: totaisResumo.margemBrutaVal,
+            margemBrutaVal: margemBrutaValFinal,
             markupMedio: totaisResumo.markupMedio,
           },
           extras: extras || null,
