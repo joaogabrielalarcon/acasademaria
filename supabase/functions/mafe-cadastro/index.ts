@@ -31,11 +31,11 @@ interface EntidadeCfg {
   label: string;
   tabela: string;
   campos: CampoCfg[];
-  // chave de dedup: dado o "extraido", devolve query candidatos
+  // chave de dedup: dado o "extraido", devolve query candidatos (shape livre por entidade)
   buscarDuplicados: (
     supabase: any,
     extraido: Record<string, any>,
-  ) => Promise<any[]>;
+  ) => Promise<any>;
   systemHint: string;
 }
 
