@@ -5727,224 +5727,68 @@ export default function NovoOrcamento() {
           {/* Etapa 6 - Resumo Final */}
           {etapaAtual === 6 && (
             <div className="space-y-6 pb-32">
-              {/* Markup vem da Etapa 4 — link de edição rápido */}
-              <Card className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                <div>
-                  <h3 className="font-display text-base text-foreground">Markup por categoria</h3>
-                  <p className="text-xs text-muted-foreground">
-                    Definido na Etapa 4 (única fonte). Para alterar o padrão de uma categoria, volte à Etapa 4.
-                  </p>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => setEtapaAtual(4)}>
-                  Editar markup na Etapa 4
-                </Button>
-              </Card>
+              <ResumoCorrenteRail
+                etapa={6}
+                custo={totaisResumo.totalCusto}
+                venda={totaisResumo.totalVenda}
+                margemPct={margemBrutaPctTotal}
+                totalCliente={totalCliente}
+                custoPorM2={custoPorM2}
+                areaM2={areaM2}
+              />
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                {/* Coluna esquerda — Tabela por categoria */}
-                <Card className="p-4 lg:col-span-2 space-y-3">
+              <Etapa6ResumoDRE
+                linhas={linhasResumo}
+                totalCusto={totaisResumo.totalCusto}
+                totalVenda={totaisResumo.totalVenda}
+                markupMedio={totaisResumo.markupMedio}
+                margemBrutaPct={margemBrutaPctTotal}
+                margemBrutaVal={margemBrutaValFinal}
+                impostoProdutos={impostoProdutos}
+                aliquotaProdutos={aliquotaProdutos}
+                onChangeAliquotaProdutos={setAliquotaProdutos}
+                aliquotaMo={aliquotaMes}
+                valorComissao={valorComissao}
+                comissaoOn={comissaoOn}
+                comissaoLabel={`Comissão ${comissaoTipo === "vendas" ? "(vendas)" : "(indicação)"} ${Number(comissaoPct).toFixed(1)}%${
+                  comissaoBeneficiario ? ` · ${comissaoBeneficiario}` : ""
+                }`}
+                negociacaoValor={negociacaoValor}
+                negociacaoProdutos={negociacaoProdutos}
+                negociacaoMo={negociacaoMo}
+                shareProdutos={shareProdutos}
+                shareMo={shareMo}
+                totalCliente={totalCliente}
+                custoPorM2={custoPorM2}
+                areaM2={areaM2}
+                pisos={pisosCategoria}
+              />
+
+              {/* Atalhos para ajustes nas etapas anteriores */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <Card className="p-3 flex items-center justify-between gap-2">
                   <div>
-                    <h2 className="font-display text-lg text-foreground">Resumo por categoria</h2>
-                    <p className="text-xs text-muted-foreground">
-                      Markup vem da Etapa 4. Ajustes finos por item ficam no bloco abaixo.
-                    </p>
+                    <p className="text-sm font-medium">Markup, piso e comissão</p>
+                    <p className="text-xs text-muted-foreground">Editar na Etapa 4</p>
                   </div>
-                  <div className="border rounded-md overflow-hidden">
-                    <table className="w-full text-sm">
-                      <thead className="bg-muted/50 text-xs">
-                        <tr>
-                          <th className="text-left p-2">Categoria</th>
-                          <th className="text-right p-2 w-32">Custo</th>
-                          <th className="text-right p-2 w-28">Markup %</th>
-                          <th className="text-right p-2 w-32">Venda</th>
-                          <th className="text-right p-2 w-28">Margem %</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {linhasResumo.map((l) => (
-                          <tr key={l.categoria} className="border-t">
-                            <td className="p-2 font-medium">{l.categoria}</td>
-                            <td className="p-2 text-right">{fmtBRL(l.custo)}</td>
-                            <td className="p-2 text-right tabular-nums">{l.markup.toFixed(1)}%</td>
-
-                            <td className="p-2 text-right">{fmtBRL(l.venda)}</td>
-                            <td className="p-2 text-right">{l.margemBruta.toFixed(1)}%</td>
-                          </tr>
-                        ))}
-                        <tr className="border-t bg-muted/30 font-semibold">
-                          <td className="p-2">
-                            <div className="flex items-center gap-2">
-                              <span>Imposto produtos</span>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                min={0}
-                                value={aliquotaProdutos}
-                                onChange={(e) => setAliquotaProdutos(Number(e.target.value) || 0)}
-                                className="h-7 w-20 text-right"
-                                aria-label="Alíquota de imposto sobre produtos (%)"
-                              />
-                              <span className="text-xs text-muted-foreground">% sobre plantas + insumos</span>
-                            </div>
-                          </td>
-                          <td className="p-2 text-right">—</td>
-                          <td className="p-2 text-right">—</td>
-                          <td className="p-2 text-right">{fmtBRL(impostoProdutos)}</td>
-                          <td className="p-2 text-right">—</td>
-                        </tr>
-                        <tr className="border-t bg-primary/5 font-bold">
-                          <td className="p-2">Totais (venda)</td>
-                          <td className="p-2 text-right">{fmtBRL(totaisResumo.totalCusto)}</td>
-                          <td className="p-2 text-right">{totaisResumo.markupMedio.toFixed(1)}%</td>
-                          <td className="p-2 text-right">{fmtBRL(totaisResumo.totalVenda)}</td>
-                          <td className="p-2 text-right">{margemBrutaPctTotal.toFixed(1)}%</td>
-                        </tr>
-                        {comissaoOn && valorComissao > 0 && (
-                          <tr className="border-t">
-                            <td className="p-2 text-muted-foreground">
-                              + Comissão {comissaoTipo === "vendas" ? "(vendas)" : "(indicação)"} {Number(comissaoPct).toFixed(1)}%
-                              <span className="block text-[11px]">Repassada ao cliente, não reduz a margem da empresa.</span>
-                            </td>
-                            <td className="p-2 text-right">—</td>
-                            <td className="p-2 text-right">—</td>
-                            <td className="p-2 text-right">{fmtBRL(valorComissao)}</td>
-                            <td className="p-2 text-right">—</td>
-                          </tr>
-                        )}
-                        <tr className="border-t bg-primary/10 font-bold">
-                          <td className="p-2">Total ao cliente</td>
-                          <td className="p-2 text-right">—</td>
-                          <td className="p-2 text-right">—</td>
-                          <td className="p-2 text-right text-primary">{fmtBRL(totalCliente)}</td>
-                          <td className="p-2 text-right">—</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">
-                    Alíquota de produtos aplicada sobre plantas + insumos. Alíquota da mão de obra ({Number(aliquotaMes).toFixed(2)}%) é editada na Etapa 5 (bloco fiscal).
-                  </p>
+                  <Button variant="outline" size="sm" onClick={() => setEtapaAtual(4)}>
+                    Abrir Etapa 4
+                  </Button>
                 </Card>
-
-                {/* Coluna direita — Cards de indicadores */}
-                <div className="space-y-3">
-                  <Card className="p-4 bg-primary/10 border-primary/30">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Total ao Cliente
-                    </p>
-                    <p className="font-display text-3xl text-primary mt-1">
-                      {fmtBRL(totalCliente)}
-                    </p>
-                  </Card>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Card className="p-3">
-                      <p className="text-[11px] uppercase text-muted-foreground">Custo Total</p>
-                      <p className="font-medium">{fmtBRL(totaisResumo.totalCusto)}</p>
-                    </Card>
-                    <Card className="p-3">
-                      <p className="text-[11px] uppercase text-muted-foreground">Margem Bruta</p>
-                      <p className="font-medium">{fmtBRL(totaisResumo.margemBrutaVal)}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {margemBrutaPctTotal.toFixed(1)}%
-                      </p>
-                    </Card>
-                    <Card className="p-3">
-                      <p className="text-[11px] uppercase text-muted-foreground">Impostos</p>
-                      <p className="font-medium">{fmtBRL(impostoProdutos)}</p>
-                    </Card>
-                    <Card className="p-3">
-                      <p className="text-[11px] uppercase text-muted-foreground">Custo / m²</p>
-                      <p className="font-medium">
-                        {areaM2 > 0 ? fmtBRL(custoPorM2) : "—"}
-                      </p>
-                    </Card>
-                    <Card className="p-3 col-span-2">
-                      <p className="text-[11px] uppercase text-muted-foreground">
-                        Markup médio ponderado
-                      </p>
-                      <p className="font-medium">{totaisResumo.markupMedio.toFixed(1)}%</p>
-                    </Card>
+                <Card className="p-3 flex items-center justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-medium">Mão de Obra, Fretes, Transporte</p>
+                    <p className="text-xs text-muted-foreground">Editar na Etapa 5</p>
                   </div>
-                </div>
+                  <Button variant="outline" size="sm" onClick={() => setEtapaAtual(5)}>
+                    Abrir Etapa 5
+                  </Button>
+                </Card>
               </div>
 
               {/* Ajuste item a item (bidirecional, com rastro de auditoria) */}
               <Etapa6AjustesItem orcamentoId={id} />
 
-              {/* Read-only: Adicionais (Etapa 5) e Comissão/Margem (Etapa 4) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className="p-4 space-y-2">
-                  <div className="flex items-baseline justify-between">
-                    <h3 className="font-display text-base text-foreground">Adicionais (Etapa 5)</h3>
-                    <Button variant="link" size="sm" className="px-0 h-auto text-primary" onClick={() => setEtapaAtual(5)}>
-                      Editar
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Repasse direto ao cliente, sem markup adicional. Já compõe a tabela acima.
-                  </p>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm pt-1">
-                    <span className="text-muted-foreground">Mão de obra:</span>
-                    <strong className="text-right">{fmtBRL(valorNfMo)}</strong>
-                    <span className="text-muted-foreground">Fretes:</span>
-                    <strong className="text-right">{fmtBRL(totalFretes)}</strong>
-                    <span className="text-muted-foreground">Transporte:</span>
-                    <strong className="text-right">{fmtBRL(totalTransporte)}</strong>
-                    <span className="text-muted-foreground">Indiretos:</span>
-                    <strong className="text-right">{fmtBRL(totalIndiretos)}</strong>
-                    <span className="text-foreground font-semibold border-t pt-1">Subtotal:</span>
-                    <strong className="text-right text-primary border-t pt-1">{fmtBRL(totalEtapa6)}</strong>
-                  </div>
-                </Card>
-
-                <Card className="p-4 space-y-2">
-                  <div className="flex items-baseline justify-between">
-                    <h3 className="font-display text-base text-foreground">Comissão e Margem de Negociação</h3>
-                    <Button variant="link" size="sm" className="px-0 h-auto text-primary" onClick={() => setEtapaAtual(4)}>
-                      Editar na Etapa 4
-                    </Button>
-                  </div>
-                  <div className="text-sm space-y-1.5 pt-1">
-                    {comissaoOn ? (
-                      <div className="flex items-baseline justify-between">
-                        <span className="text-muted-foreground">
-                          Comissão {comissaoTipo === "vendas" ? "(vendas)" : "(indicação)"} {Number(comissaoPct).toFixed(1)}%
-                          {comissaoBeneficiario && ` · ${comissaoBeneficiario}`}:
-                        </span>
-                        <strong>{fmtBRL(valorComissao)}</strong>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-muted-foreground italic">Sem comissão configurada.</p>
-                    )}
-                    {negociacaoValor !== 0 ? (
-                      <>
-                        <div className="flex items-baseline justify-between">
-                          <span className="text-muted-foreground">
-                            Negociação diluída ({negociacaoValor > 0 ? "embutida" : "absorvida"}):
-                          </span>
-                          <strong className={negociacaoValor < 0 ? "text-destructive" : "text-primary"}>
-                            {fmtBRL(negociacaoValor)}
-                          </strong>
-                        </div>
-                        <div className="flex items-baseline justify-between text-xs text-muted-foreground">
-                          <span>→ Produtos ({(shareProdutos * 100).toFixed(1)}%):</span>
-                          <span>{fmtBRL(negociacaoProdutos)}</span>
-                        </div>
-                        <div className="flex items-baseline justify-between text-xs text-muted-foreground">
-                          <span>→ Mão de Obra ({(shareMo * 100).toFixed(1)}%):</span>
-                          <span>{fmtBRL(negociacaoMo)}</span>
-                        </div>
-                        <div className="flex items-baseline justify-between border-t pt-1 mt-1">
-                          <span className="text-muted-foreground">Margem bruta final:</span>
-                          <strong>{fmtBRL(margemBrutaValFinal)} ({margemBrutaPctTotal.toFixed(1)}%)</strong>
-                        </div>
-                      </>
-                    ) : (
-                      <p className="text-xs text-muted-foreground italic">Sem valor de negociação informado.</p>
-                    )}
-                  </div>
-                </Card>
-              </div>
 
               {/* Botões de ação sticky */}
               <div className="sticky bottom-0 z-10 -mx-4 px-4 py-3 bg-background/95 backdrop-blur border-t border-primary/20 flex flex-wrap gap-2 justify-end">
