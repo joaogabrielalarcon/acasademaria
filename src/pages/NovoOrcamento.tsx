@@ -411,6 +411,29 @@ export default function NovoOrcamento() {
     ].filter((l) => l.quantidade > 0);
 
     setInsumosCalc(linhas);
+
+    // Pré-popula a lista de insumos adicionais com os sugeridos (Adubo, Pedrisco, Seixo etc.)
+    // tentando casar com o catálogo. Só executa se ainda não houver itens adicionados.
+    setInsumosAdicionais((prev) => {
+      if (prev.length > 0) return prev;
+      return INSUMOS_SUGERIDOS.map((nome) => {
+        const match = (insumosCatalogo as any[]).find(
+          (c) => String(c.nome).trim().toLowerCase() === nome.trim().toLowerCase(),
+        );
+        return {
+          insumo_id: match?.id || undefined,
+          nome: match?.nome || nome,
+          fornecedor_id: match?.fornecedor_id || "",
+          quantidade_esperada: "",
+          unidade: match?.unidade || "unidade",
+          margem: "0",
+          valor_unitario: match?.preco_unitario != null ? String(match.preco_unitario) : "",
+          obs_interna: "",
+          obs_proposta: "",
+        } as InsumoAdicional;
+      });
+    });
+
     setInsumosCalculados(true);
   }, [etapaAtual, coeficientes, itensMaterial, margensSeg, insumosCalculados]);
 
