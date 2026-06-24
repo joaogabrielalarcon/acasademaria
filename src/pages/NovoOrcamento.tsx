@@ -3684,7 +3684,27 @@ export default function NovoOrcamento() {
                 />
               )}
 
-              {itensMaterial.map((item, idx) => {
+              {(() => {
+                const visiveisIdx = itensMaterial
+                  .map((_, i) => i)
+                  .filter((i) => !soSemFornecedor || (fornecedoresSelecionados[i]?.length ?? 0) === 0);
+
+                if (itensMaterial.length > 0 && soSemFornecedor && visiveisIdx.length === 0) {
+                  return (
+                    <Card className="p-6 text-center text-sm text-muted-foreground">
+                      Todos os itens já têm pelo menos um fornecedor selecionado.
+                      <div className="mt-2">
+                        <Button variant="ghost" size="sm" onClick={() => setSoSemFornecedor(false)}>
+                          Mostrar todos
+                        </Button>
+                      </div>
+                    </Card>
+                  );
+                }
+
+                const renderCard = (idx: number) => {
+                  const item = itensMaterial[idx];
+                  if (!item) return null;
                 const fornsBruto = fornecedoresDoItem(item) as any[];
                 const filtros = filtrosTab3[idx] || filtroPadraoTab3;
                 const mercadosUnicos = Array.from(
