@@ -92,6 +92,25 @@ export default function NovoRecebimento() {
   const [dap, setDap] = useState("");
   const [observacaoItem, setObservacaoItem] = useState("");
 
+  const draft = useAutosaveDraft({
+    formKey: "novo-recebimento",
+    scopeKey: clienteIdParam || "novo",
+    getSnapshot: () => ({
+      clienteId,
+      dataRecebimento: dataRecebimento ? dataRecebimento.toISOString() : null,
+      observacoes,
+      itens,
+    }),
+    applySnapshot: (s: any) => {
+      if (!s) return;
+      if (typeof s.clienteId === "string") setClienteId(s.clienteId);
+      if (typeof s.dataRecebimento === "string") setDataRecebimento(new Date(s.dataRecebimento));
+      if (typeof s.observacoes === "string") setObservacoes(s.observacoes);
+      if (Array.isArray(s.itens)) setItens(s.itens);
+    },
+  });
+
+
   // Hooks para dados
   const { data: plantas = [], isLoading: loadingPlantas } = usePlantas();
   const { data: insumos = [], isLoading: loadingInsumos } = useInsumos();
