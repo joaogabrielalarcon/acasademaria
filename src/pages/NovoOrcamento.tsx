@@ -2095,8 +2095,18 @@ export default function NovoOrcamento() {
       if (pop) set.add(pop);
       if (sci) set.add(sci);
     });
+    // Insumos também precisam buscar cotações no histórico
+    (insumosFull || []).forEach((ins: any) => {
+      if (ins?.is_base && ins?.nome) set.add(String(ins.nome).trim());
+    });
+    itensInsumoExtra.forEach((e) => {
+      if (e?.nome) set.add(String(e.nome).trim());
+    });
+    insumosAdicionais.forEach((a) => {
+      if (a?.nome) set.add(String(a.nome).trim());
+    });
     return Array.from(set);
-  }, [itensMaterial]);
+  }, [itensMaterial, insumosFull, itensInsumoExtra, insumosAdicionais]);
 
   const fetchCatalogoPaginado = async (table: "plantas" | "insumos") => {
     const pageSize = 1000;
