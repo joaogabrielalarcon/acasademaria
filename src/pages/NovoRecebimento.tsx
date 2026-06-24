@@ -24,6 +24,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { useAutosaveDraft } from "@/hooks/useAutosaveDraft";
+import { DraftResumeBanner } from "@/components/DraftResumeBanner";
 import { usePlantas } from "@/hooks/usePlantas";
 import { useInsumos } from "@/hooks/useInsumos";
 import { useFornecedores } from "@/hooks/useFornecedores";
@@ -89,6 +91,25 @@ export default function NovoRecebimento() {
   const [alturaUnidade, setAlturaUnidade] = useState<"cm" | "m">("cm");
   const [dap, setDap] = useState("");
   const [observacaoItem, setObservacaoItem] = useState("");
+
+  const draft = useAutosaveDraft({
+    formKey: "novo-recebimento",
+    scopeKey: clienteIdParam || "novo",
+    getSnapshot: () => ({
+      clienteId,
+      dataRecebimento: dataRecebimento ? dataRecebimento.toISOString() : null,
+      observacoes,
+      itens,
+    }),
+    applySnapshot: (s: any) => {
+      if (!s) return;
+      if (typeof s.clienteId === "string") setClienteId(s.clienteId);
+      if (typeof s.dataRecebimento === "string") setDataRecebimento(new Date(s.dataRecebimento));
+      if (typeof s.observacoes === "string") setObservacoes(s.observacoes);
+      if (Array.isArray(s.itens)) setItens(s.itens);
+    },
+  });
+
 
   // Hooks para dados
   const { data: plantas = [], isLoading: loadingPlantas } = usePlantas();
@@ -204,6 +225,7 @@ export default function NovoRecebimento() {
 
       if (itensError) throw itensError;
 
+      await draft.clearDraft();
       toast.success("Recebimento registrado com sucesso!");
       navigate(`/clientes/${clienteId}`);
     } catch (error) {
@@ -240,6 +262,7 @@ export default function NovoRecebimento() {
           </div>
         </div>
 
+        <DraftResumeBanner draft={draft} />
         <div className="space-y-6">
           {/* Dados do Recebimento */}
           <section className="card-botanical p-6 space-y-4">

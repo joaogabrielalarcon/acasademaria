@@ -17,6 +17,8 @@ import { useClientesSimples } from "@/hooks/useClientes";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAutosaveDraft } from "@/hooks/useAutosaveDraft";
+import { DraftResumeBanner } from "@/components/DraftResumeBanner";
 
 const statusOptions = [
   { value: "rascunho", label: "Rascunho" },
@@ -46,6 +48,13 @@ export default function NovaProposta() {
   });
   const [isSaving, setIsSaving] = useState(false);
 
+  const draft = useAutosaveDraft({
+    formKey: "nova-proposta",
+    scopeKey: clienteIdFromUrl || "novo",
+    getSnapshot: () => formData,
+    applySnapshot: (s: any) => { if (s) setFormData((f) => ({ ...f, ...s })); },
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -73,6 +82,8 @@ export default function NovaProposta() {
       });
 
       if (error) throw error;
+
+      await draft.clearDraft();
 
       toast({
         title: "Proposta salva!",
@@ -133,6 +144,7 @@ export default function NovaProposta() {
           </div>
         </div>
 
+        <DraftResumeBanner draft={draft} />
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Cliente e Código */}
           <div className="bg-card border border-border rounded-xl p-6 space-y-4">

@@ -19,6 +19,8 @@ import { parseISO, isAfter, startOfDay } from "date-fns";
 import { useClientesSimples } from "@/hooks/useClientes";
 import { useTrechosCliente } from "@/hooks/useCliente";
 import { supabase } from "@/integrations/supabase/client";
+import { useAutosaveDraft } from "@/hooks/useAutosaveDraft";
+import { DraftResumeBanner } from "@/components/DraftResumeBanner";
 
 const prioridadeOptions = [
   { value: "baixa", label: "Baixa", className: "text-muted-foreground" },
@@ -63,6 +65,28 @@ export default function NovaSolicitacao() {
   const [solicitanteOutro, setSolicitanteOutro] = useState("");
   const [trechoId, setTrechoId] = useState<string>("");
   const [isSaving, setIsSaving] = useState(false);
+
+  const draft = useAutosaveDraft({
+    formKey: "nova-solicitacao",
+    scopeKey: clienteIdFromUrl || "novo",
+    getSnapshot: () => ({
+      selectedCliente, dataRegistro, descricao, observacoesInternas,
+      prioridade, statusSolicitacao, solicitante, solicitanteOutro, trechoId,
+    }),
+    applySnapshot: (s: any) => {
+      if (!s) return;
+      if (typeof s.selectedCliente === "string") setSelectedCliente(s.selectedCliente);
+      if (typeof s.dataRegistro === "string") setDataRegistro(s.dataRegistro);
+      if (typeof s.descricao === "string") setDescricao(s.descricao);
+      if (typeof s.observacoesInternas === "string") setObservacoesInternas(s.observacoesInternas);
+      if (typeof s.prioridade === "string") setPrioridade(s.prioridade);
+      if (typeof s.statusSolicitacao === "string") setStatusSolicitacao(s.statusSolicitacao);
+      if (typeof s.solicitante === "string") setSolicitante(s.solicitante);
+      if (typeof s.solicitanteOutro === "string") setSolicitanteOutro(s.solicitanteOutro);
+      if (typeof s.trechoId === "string") setTrechoId(s.trechoId);
+    },
+  });
+
 
   // Trechos do cliente selecionado
   const { data: trechos = [] } = useTrechosCliente(selectedCliente || undefined);
@@ -114,6 +138,8 @@ export default function NovaSolicitacao() {
 
       if (error) throw error;
 
+      await draft.clearDraft();
+
       toast({
         title: "Solicitação registrada!",
         description: "A solicitação foi salva com sucesso.",
@@ -162,6 +188,7 @@ export default function NovaSolicitacao() {
           Registre solicitações do cliente ou observações importantes
         </p>
 
+        <DraftResumeBanner draft={draft} />
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Cliente */}
           <div className="space-y-2">

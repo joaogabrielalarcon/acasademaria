@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useProjeto } from "@/hooks/useProjetos";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAutosaveDraft } from "@/hooks/useAutosaveDraft";
+import { DraftResumeBanner } from "@/components/DraftResumeBanner";
 
 interface ParcelaConfig {
   valor: string;
@@ -40,6 +42,18 @@ export default function NovoProjeto() {
   const [parcelas, setParcelas] = useState<ParcelaConfig[]>([
     { valor: "", data_vencimento: "" },
   ]);
+
+  const draft = useAutosaveDraft({
+    formKey: "novo-projeto",
+    scopeKey: "novo",
+    enabled: !isEditing,
+    getSnapshot: () => ({ form, parcelas }),
+    applySnapshot: (s: any) => {
+      if (s?.form) setForm((f) => ({ ...f, ...s.form }));
+      if (Array.isArray(s?.parcelas)) setParcelas(s.parcelas);
+    },
+  });
+
 
   useEffect(() => {
     if (projeto) {
@@ -117,6 +131,7 @@ export default function NovoProjeto() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projetos"] });
+      if (!isEditing) void draft.clearDraft();
       toast({ title: isEditing ? "Projeto atualizado" : "Projeto criado" });
       navigate(form.cliente_id ? `/clientes/${form.cliente_id}?tab=projetos` : "/");
     },
@@ -157,6 +172,8 @@ export default function NovoProjeto() {
       <h1 className="font-display text-2xl lg:text-3xl font-bold text-foreground mb-6">
         {isEditing ? "Editar Projeto" : "Novo Projeto"}
       </h1>
+
+      {!isEditing && <div className="max-w-2xl"><DraftResumeBanner draft={draft} /></div>}
 
       <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
         <div className="space-y-2">

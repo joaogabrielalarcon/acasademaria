@@ -20,6 +20,8 @@ import { parseISO, isAfter, startOfDay, format, subDays, addWeeks } from "date-f
 import { useClientesSimples } from "@/hooks/useClientes";
 import { useColaboradoresAtivosBasico } from "@/hooks/useColaboradores";
 import { supabase } from "@/integrations/supabase/client";
+import { useAutosaveDraft } from "@/hooks/useAutosaveDraft";
+import { DraftResumeBanner } from "@/components/DraftResumeBanner";
 
 const periodoOptions = [
   { value: "manha", label: "Manhã" },
@@ -69,6 +71,28 @@ export default function NovoRegistro() {
 
   // === SEÇÃO 2: Serviços ===
   const [servicos, setServicos] = useState<ServicoData[]>([createEmptyServico()]);
+
+  const draft = useAutosaveDraft({
+    formKey: "novo-registro",
+    scopeKey: clienteIdFromUrl || "novo",
+    getSnapshot: () => ({
+      selectedCliente, dataVisita, periodo, equipePresente,
+      comentariosJardim, observacoesGerais, statusDiaria, alertaOpcao, servicos,
+    }),
+    applySnapshot: (s: any) => {
+      if (!s) return;
+      if (typeof s.selectedCliente === "string") setSelectedCliente(s.selectedCliente);
+      if (typeof s.dataVisita === "string") setDataVisita(s.dataVisita);
+      if (typeof s.periodo === "string") setPeriodo(s.periodo);
+      if (Array.isArray(s.equipePresente)) setEquipePresente(s.equipePresente);
+      if (typeof s.comentariosJardim === "string") setComentariosJardim(s.comentariosJardim);
+      if (typeof s.observacoesGerais === "string") setObservacoesGerais(s.observacoesGerais);
+      if (typeof s.statusDiaria === "string") setStatusDiaria(s.statusDiaria);
+      if (typeof s.alertaOpcao === "string") setAlertaOpcao(s.alertaOpcao);
+      if (Array.isArray(s.servicos)) setServicos(s.servicos);
+    },
+  });
+
 
   // Atualizar status baseado na data selecionada
   useEffect(() => {
@@ -235,6 +259,8 @@ export default function NovoRegistro() {
         }
       }
 
+      await draft.clearDraft();
+
       toast({
         title: statusDiaria === "agendado" ? "Diária agendada!" : "Diária registrada!",
         description: statusDiaria === "agendado" 
@@ -383,6 +409,7 @@ export default function NovoRegistro() {
               }
             </p>
 
+        <DraftResumeBanner draft={draft} />
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* ===================== */}
           {/* SEÇÃO 1: DADOS DA DIÁRIA */}

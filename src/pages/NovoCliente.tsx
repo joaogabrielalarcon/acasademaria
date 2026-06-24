@@ -17,6 +17,8 @@ import { useToast } from "@/hooks/use-toast";
 import { formatCPFCNPJ, formatPhone, capitalizeWords } from "@/hooks/useInputMasks";
 import { supabase } from "@/integrations/supabase/client";
 import { useCliente } from "@/hooks/useCliente";
+import { useAutosaveDraft } from "@/hooks/useAutosaveDraft";
+import { DraftResumeBanner } from "@/components/DraftResumeBanner";
 
 interface DataImportante {
   data: string;
@@ -37,6 +39,23 @@ export default function NovoCliente() {
   const [cpfCnpj, setCpfCnpj] = useState("");
   const [datasImportantes, setDatasImportantes] = useState<DataImportante[]>([]);
   const [notas, setNotas] = useState("");
+
+  const draft = useAutosaveDraft({
+    formKey: "novo-cliente",
+    scopeKey: "novo",
+    enabled: !isEditing,
+    getSnapshot: () => ({ nome, status, telefone, email, cpfCnpj, datasImportantes, notas }),
+    applySnapshot: (s: any) => {
+      if (!s) return;
+      if (typeof s.nome === "string") setNome(s.nome);
+      if (typeof s.status === "string") setStatus(s.status);
+      if (typeof s.telefone === "string") setTelefone(s.telefone);
+      if (typeof s.email === "string") setEmail(s.email);
+      if (typeof s.cpfCnpj === "string") setCpfCnpj(s.cpfCnpj);
+      if (Array.isArray(s.datasImportantes)) setDatasImportantes(s.datasImportantes);
+      if (typeof s.notas === "string") setNotas(s.notas);
+    },
+  });
 
   const { data: clienteExistente, isLoading: loadingCliente } = useCliente(id);
 
@@ -95,6 +114,7 @@ export default function NovoCliente() {
       } else {
         const { error } = await supabase.from("clientes").insert(clienteData);
         if (error) throw error;
+        await draft.clearDraft();
         toast({ title: "Cliente cadastrado!" });
         navigate("/clientes");
       }
@@ -142,6 +162,7 @@ export default function NovoCliente() {
       </Link>
 
       <div className="max-w-2xl">
+        {!isEditing && <DraftResumeBanner draft={draft} />}
         <h1 className="font-display text-2xl lg:text-3xl font-bold text-foreground mb-2">
           {isEditing ? "Editar Cliente" : "Novo Cliente"}
         </h1>

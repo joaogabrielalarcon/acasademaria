@@ -1,75 +1,53 @@
-## Objetivo
+# Salvamento automático de rascunhos
 
-Tornar a Etapa 4 (markup por categoria gravado em `orcamento_categorias_markup`) a única fonte de verdade do markup. Remover o sistema paralelo `markupsCategoria` / `markupModal` do Resumo Final. Expandir Etapa 4 para incluir Mão de Obra, Fretes, Transporte e Custos Indiretos. Adicionar ajuste bidirecional item a item no fechamento, com rastro de auditoria.
+A pessoa começa a preencher, fecha o navegador, vai pra outro dispositivo, abre de novo e volta exatamente onde parou. Vale para qualquer formulário longo da app.
 
-## Critério de aceite
+## Como vai funcionar pra quem usa
 
-- Um único lugar define markup (Etapa 4, persistido em `orcamento_categorias_markup`).
-- Resumo Final (Etapa 6) lê markup do banco; totais batem com Etapa 4.
-- Etapa 4 contempla categorias de plantas + Insumos + Mão de Obra + Fretes + Transporte + Custos Indiretos.
-- Operador pode ajustar item a item: editar markup recalcula venda; editar venda recalcula markup. Default vem da categoria.
-- Cada ajuste manual em item registra autor + timestamp + observação curta opcional. Categoria continua exigindo motivo (RPC existente).
-- Etapas 1, 2, 3 intactas. Salvamento não quebra.
+- Conforme a pessoa digita, o sistema salva sozinho a cada poucos segundos. Não tem botão de "salvar rascunho".
+- Quando ela volta naquela tela, aparece um aviso discreto no topo: "Você tem um rascunho salvo de [data/hora]. Retomar ou começar do zero?" Se ela escolhe retomar, todos os campos voltam preenchidos, na mesma etapa em que ela parou.
+- Quando ela conclui de verdade (salvar/enviar), o rascunho é apagado sozinho.
+- Funciona mesmo offline: o navegador guarda local na hora e sincroniza pro servidor quando volta a conexão. Se ela trocar de dispositivo, o servidor manda o rascunho mais recente.
 
-## Mudanças
+## Cobertura
 
-### 1. Banco
+Começa pelo **Novo Orçamento** (6 etapas, é onde dá mais prejuízo perder). No mesmo PR, liga em todos os outros formulários longos do sistema:
 
-Migration nova:
-- Adicionar colunas em `orcamento_itens`:
-  - `markup_override_pct numeric(8,4)` (nullable; presente = ajuste manual)
-  - `preco_venda_override` (nullable; sempre derivado/sincronizado com markup)
-  - `ajustado_por uuid`, `ajustado_em timestamptz`, `ajuste_obs text`
-- Adicionar análogos em `orcamento_insumos`, `orcamento_mo`, `orcamento_fretes`, `orcamento_transporte`, `orcamento_custos_indiretos` (apenas `markup_override_pct`, `ajustado_por`, `ajustado_em`, `ajuste_obs`; preço unitário continua na tabela específica).
-- Trigger `audit_orcamento_item_markup`: ao mudar `markup_override_pct`, grava em `audit_price_changes` ou tabela já existente; preencher `ajustado_por`/`ajustado_em` no trigger usando `auth.uid()` e `now()`.
-- Categoria "Mão de Obra", "Fretes", "Transporte", "Custos Indiretos" passam a ser válidas em `perfis_markup_categorias` (apenas atualizar lista `CATEGORIAS_MARKUP` no front; constraint atual já é texto livre).
+- Novo Projeto, Novo Cliente, Nova Planta, Novo Fornecedor, Nova Proposta, Novo Registro/Recebimento, Nova Solicitação de Compras
+- Diário (Nova Visita, Manutenção)
+- CRM Novo Card
+- Chats da Mafe (cadastro, diário, orçamento) — preserva a conversa em andamento
 
-### 2. Etapa 4 (`Etapa4MarkupBlocoA.tsx`)
+Telas curtas (login, filtros, modais de confirmação) ficam fora — não fazem sentido.
 
-- Expandir `custosQuery` para somar custos de:
-  - "Insumos": `orcamento_insumos` (não automáticos).
-  - "Mão de Obra": soma de `orcamento_mo.valor_com_imposto`.
-  - "Fretes": `orcamento_fretes.valor_total`.
-  - "Transporte": `orcamento_transporte.subtotal`.
-  - "Custos Indiretos": `orcamento_custos_indiretos.total`.
-- Adicionar essas categorias à lista canônica (`CATEGORIAS_MARKUP` em `GerenciarPerfisMarkupDialog.tsx`).
-- `useEtapa4Validacao`: validar que todas as categorias com custo > 0 (não só `orcamento_itens`) têm markup definido.
+## O que não entra no rascunho
 
-### 3. Resumo Final (Etapa 6) em `NovoOrcamento.tsx`
+- Arquivos/fotos em upload (o navegador não consegue guardar arquivos selecionados de forma confiável). A pessoa precisa reanexar ao retomar — fica avisado no banner.
+- Telas de edição de registro já existente. Rascunho é só pra novo cadastro/lançamento; em edição, o próprio registro já é o "save".
 
-- Remover `markupsCategoria`, `markupModal`, `abrirEdicaoMarkup`, `confirmarMarkup`, modal de markup categoria e UI do Card "Perfil de markup" duplicado.
-- Substituir hidratação de `novosMarkups` (linha 1421-1432) por leitura direta de `orcamento_categorias_markup`.
-- `linhasResumo` e `totaisResumo` passam a derivar de `orcamento_categorias_markup` (query nova `useOrcamentoMarkups(id)`).
-- `persistirOrcamentoCompleto`: ao gravar `orcamento_itens`/`orcamento_insumos`, usar markup do banco (categoria) como base; se item tem `markup_override_pct`, usa override; `preco_venda_unitario` = custo * (1 + markupEfetivo/100).
-- Auto-save: remover `markupsCategoria` das dependências.
+## Parte técnica
 
-### 4. Ajuste item a item (novo bloco no fechamento — Etapa 6)
+**Tabela `form_drafts`** (nova): `user_id`, `form_key` (ex.: `novo-orcamento`, `nova-visita`), `scope_key` (opcional, pra diferenciar rascunhos por contexto, ex.: orçamento por `cliente_id`), `data jsonb`, `updated_at`. PK composta `(user_id, form_key, scope_key)`. RLS: usuário só lê/escreve os próprios rascunhos.
 
-Novo componente `Etapa6AjustesItem.tsx`:
-- Lista cada item de custo agrupado por categoria (plantas, insumos, MO, fretes, transporte, indiretos).
-- Mostra: descrição, qtd, custo unit, markup % (default da categoria ou override), venda unit, venda total.
-- Inputs editáveis: markup % e venda unit (bidirecionais). Limpar = volta ao default da categoria.
-- Campo "observação" (opcional, max 200 chars) no popover de edição. Sem mínimo de caracteres.
-- Ao salvar (debounce ou onBlur), grava `markup_override_pct`, `ajuste_obs` no row correspondente; trigger preenche autor/timestamp.
-- Indicador visual quando o item está em override (badge "ajustado") com tooltip mostrando autor + quando + obs.
+**Hook `useAutosaveDraft(formKey, state, setState, opts)`**:
+- Na montagem: lê localStorage na hora (instantâneo) + busca do banco em paralelo; usa o mais recente por `updated_at`. Mostra banner "Retomar rascunho" antes de aplicar.
+- Em cada mudança: debounce de ~1,5s, grava em localStorage imediatamente e faz upsert no banco.
+- Serialização defensiva: ignora campos `File`, `FileList`, refs e funções. Só JSON puro.
+- Versão do schema do form (`schemaVersion`) embutida; se mudar, rascunho antigo é descartado com aviso.
+- `clearDraft()` chamado no submit bem-sucedido e no botão "começar do zero".
 
-### 5. Limpeza
+**Componente `DraftResumeBanner`** reutilizável: aparece quando há rascunho, mostra hora + dispositivo, botões Retomar / Descartar.
 
-- Remover snapshot do `markupsCategoria` (substituir por snapshot de `orcamento_categorias_markup` + overrides de itens).
-- Atualizar `versoesPendentes` para não gravar mais `markup_${categoria}` (RPC já grava em `audit_price_changes`).
+**Integração no Novo Orçamento**: o hook serializa todo o `formData` + `etapaAtual` + arrays (itens, insumos, MO, fretes, markup). Retomar coloca a pessoa de volta na etapa exata. Em modo edição (id na URL), o autosave fica desligado.
 
-## Arquivos afetados
+**Integração nas outras telas**: cada página passa a chamar `useAutosaveDraft("nome-do-form", state, setState)`. O hook cuida do resto.
 
-- `supabase/migrations/<nova>.sql` (novo)
-- `src/components/orcamento/Etapa4MarkupBlocoA.tsx`
-- `src/components/orcamento/GerenciarPerfisMarkupDialog.tsx` (lista CATEGORIAS_MARKUP)
-- `src/components/orcamento/Etapa6AjustesItem.tsx` (novo)
-- `src/pages/NovoOrcamento.tsx` (refatoração ampla da etapa 6 e do save)
+**Limpeza**: rascunho com mais de 30 dias é apagado automaticamente por um job de limpeza simples (trigger no select, ou cron leve). Tamanho máximo por rascunho: 500 KB (corta antes de gravar com aviso no console).
 
-## Risco
+## Ordem de entrega
 
-`NovoOrcamento.tsx` tem 6500 linhas com auto-save acoplado. Vou manter `buildPayload` e `persistirOrcamentoCompleto` intactos no esqueleto, trocando apenas a fonte do markup. Snapshots antigos permanecem válidos (campo `markupsCategoria` continua presente lá só como histórico, mas não usado).
-
-## Confirmar antes de seguir
-
-Quer que o ajuste item a item viva na Etapa 6 (fechamento, como descrito) ou prefere um sub-bloco dentro da própria Etapa 4? Em ambos os casos, a fonte do dado é a mesma (`orcamento_itens.markup_override_pct` etc.).
+1. Tabela `form_drafts` + RLS + grants.
+2. Hook `useAutosaveDraft` + `DraftResumeBanner`.
+3. Ligar no Novo Orçamento (validar de ponta a ponta).
+4. Ligar em todos os outros formulários longos listados acima.
+5. Limpeza de rascunhos antigos.

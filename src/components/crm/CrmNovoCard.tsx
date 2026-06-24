@@ -20,6 +20,8 @@ import { useClientesSimples } from "@/hooks/useClientes";
 import { useColaboradoresAtivos } from "@/hooks/useColaboradores";
 import { useCreateCrmCard, type CrmCardTipo } from "@/hooks/useCRM";
 import { toast } from "@/hooks/use-toast";
+import { useAutosaveDraft } from "@/hooks/useAutosaveDraft";
+import { DraftResumeBanner } from "@/components/DraftResumeBanner";
 
 interface Props {
   open: boolean;
@@ -42,6 +44,31 @@ export function CrmNovoCard({ open, onClose }: Props) {
   const [prazo, setPrazo] = useState("");
   const [observacoes, setObservacoes] = useState("");
 
+  const draft = useAutosaveDraft({
+    formKey: "crm-novo-card",
+    scopeKey: "novo",
+    enabled: open,
+    getSnapshot: () => ({
+      tipo, titulo, clienteId, responsavelId,
+      contatoNome, contatoCargo, contatoWhatsapp, contatoEmail,
+      prazo, observacoes,
+    }),
+    applySnapshot: (s: any) => {
+      if (!s) return;
+      if (s.tipo) setTipo(s.tipo);
+      if (typeof s.titulo === "string") setTitulo(s.titulo);
+      if (typeof s.clienteId === "string") setClienteId(s.clienteId);
+      if (typeof s.responsavelId === "string") setResponsavelId(s.responsavelId);
+      if (typeof s.contatoNome === "string") setContatoNome(s.contatoNome);
+      if (typeof s.contatoCargo === "string") setContatoCargo(s.contatoCargo);
+      if (typeof s.contatoWhatsapp === "string") setContatoWhatsapp(s.contatoWhatsapp);
+      if (typeof s.contatoEmail === "string") setContatoEmail(s.contatoEmail);
+      if (typeof s.prazo === "string") setPrazo(s.prazo);
+      if (typeof s.observacoes === "string") setObservacoes(s.observacoes);
+    },
+  });
+
+
   const handleSave = async () => {
     if (!titulo.trim()) {
       toast({ title: "Título obrigatório", variant: "destructive" });
@@ -59,6 +86,7 @@ export function CrmNovoCard({ open, onClose }: Props) {
       prazo: prazo || null,
       observacoes: observacoes || null,
     } as any);
+    await draft.clearDraft();
     toast({ title: "Card criado com sucesso!" });
     onClose();
   };
@@ -71,6 +99,7 @@ export function CrmNovoCard({ open, onClose }: Props) {
         </SheetHeader>
 
         <div className="flex flex-col gap-4 mt-4">
+          <DraftResumeBanner draft={draft} />
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Tipo *</Label>

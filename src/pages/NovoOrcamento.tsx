@@ -6,6 +6,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { capitalizeWords } from "@/hooks/useInputMasks";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { useAutosaveDraft } from "@/hooks/useAutosaveDraft";
+import { DraftResumeBanner, DraftStatusBadge } from "@/components/DraftResumeBanner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -2959,6 +2961,77 @@ export default function NovoOrcamento() {
 
   const Req = () => <span className="text-destructive ml-0.5">*</span>;
 
+  // Autosave de rascunho (banco + cache local) — só no modo "novo orçamento"
+  const draft = useAutosaveDraft({
+    formKey: "novo-orcamento",
+    scopeKey: "novo",
+    schemaVersion: 1,
+    enabled: !isEdit,
+    getSnapshot: () => ({
+      etapaAtual,
+      form,
+      memorialModo,
+      memorialTexto,
+      itensMaterial,
+      margensSeg,
+      fornecedoresSelecionados,
+      cotacoes,
+      ordemFornec,
+      filtroMercado,
+      filtroPorte,
+      insumosAdicionais,
+      moLinhas,
+      fretes,
+      transporte,
+      custosIndiretos,
+      aliquotaMes,
+      aliquotaProdutos,
+      tipoNf,
+      comissaoOn,
+      comissaoTipo,
+      comissaoPct,
+      comissaoBeneficiario,
+      negociacaoValor,
+    }),
+    applySnapshot: (s: any) => {
+      if (!s || typeof s !== "object") return;
+      if (typeof s.etapaAtual === "number") setEtapaAtual(s.etapaAtual);
+      if (s.form) setForm({ ...initialForm, ...s.form });
+      if (s.memorialModo) setMemorialModo(s.memorialModo);
+      if (typeof s.memorialTexto === "string") setMemorialTexto(s.memorialTexto);
+      if (Array.isArray(s.itensMaterial)) setItensMaterial(s.itensMaterial);
+      if (s.margensSeg && typeof s.margensSeg === "object") setMargensSeg(s.margensSeg);
+      if (s.fornecedoresSelecionados) setFornecedoresSelecionados(s.fornecedoresSelecionados);
+      if (s.cotacoes) setCotacoes(s.cotacoes);
+      if (s.ordemFornec) setOrdemFornec(s.ordemFornec);
+      if (s.filtroMercado) setFiltroMercado(s.filtroMercado);
+      if (s.filtroPorte) setFiltroPorte(s.filtroPorte);
+      if (Array.isArray(s.insumosAdicionais)) setInsumosAdicionais(s.insumosAdicionais);
+      if (Array.isArray(s.moLinhas)) setMoLinhas(s.moLinhas);
+      if (Array.isArray(s.fretes)) setFretes(s.fretes);
+      if (Array.isArray(s.transporte)) setTransporte(s.transporte);
+      if (Array.isArray(s.custosIndiretos)) setCustosIndiretos(s.custosIndiretos);
+      if (typeof s.aliquotaMes === "number") setAliquotaMes(s.aliquotaMes);
+      if (typeof s.aliquotaProdutos === "number") setAliquotaProdutos(s.aliquotaProdutos);
+      if (s.tipoNf === "pj" || s.tipoNf === "cpf") setTipoNf(s.tipoNf);
+      if (typeof s.comissaoOn === "boolean") setComissaoOn(s.comissaoOn);
+      if (s.comissaoTipo) setComissaoTipo(s.comissaoTipo);
+      if (typeof s.comissaoPct === "string") setComissaoPct(s.comissaoPct);
+      if (typeof s.comissaoBeneficiario === "string") setComissaoBeneficiario(s.comissaoBeneficiario);
+      if (typeof s.negociacaoValor === "number") setNegociacaoValor(s.negociacaoValor);
+      toast({ title: "Rascunho retomado", description: "Continue de onde parou." });
+    },
+  });
+
+  // Limpa rascunho assim que o orçamento vira persistente (entrou no modo edição)
+  useEffect(() => {
+    if (isEdit) {
+      void draft.clearDraft();
+    }
+  }, [isEdit]); // eslint-disable-line react-hooks/exhaustive-deps
+
+
+
   return (
     <AppLayout>
       <TooltipProvider>
@@ -3002,7 +3075,15 @@ export default function NovoOrcamento() {
             )}
           </div>
 
+          {!isEdit && (
+            <>
+              <DraftResumeBanner draft={draft} hint="Os arquivos anexados (PDF, fotos) precisam ser selecionados de novo." />
+              <div className="flex justify-end -mt-2"><DraftStatusBadge draft={draft} /></div>
+            </>
+          )}
+
           {/* Barra de etapas (navegação livre) */}
+
           <Card className="p-4 sticky top-0 z-20 bg-card border-border/50">
             <div className="flex items-center justify-between gap-2 overflow-x-auto">
               {ETAPAS.map((nome, idx) => {

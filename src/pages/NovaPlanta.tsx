@@ -22,6 +22,8 @@ import { toast } from "sonner";
 import { capitalizeWords } from "@/hooks/useInputMasks";
 import { MidiaUpload } from "@/components/MidiaUpload";
 import { parsePorteMetros } from "@/lib/porte";
+import { useAutosaveDraft } from "@/hooks/useAutosaveDraft";
+import { DraftResumeBanner } from "@/components/DraftResumeBanner";
 
 const UNIDADES_PLANTAS = [
   '1/2 Cuia','Bag','Bdj','Cuia','Cx','Cx com 15','Muda',
@@ -54,6 +56,18 @@ export default function NovaPlanta() {
     observacoes: "",
   });
   const [midia, setMidia] = useState<{ url: string; tipo: string; nome: string }[]>([]);
+
+  const draft = useAutosaveDraft({
+    formKey: "nova-planta",
+    scopeKey: "novo",
+    enabled: !isEditing,
+    getSnapshot: () => ({ formData, midia }),
+    applySnapshot: (s: any) => {
+      if (s?.formData) setFormData((f) => ({ ...f, ...s.formData }));
+      if (Array.isArray(s?.midia)) setMidia(s.midia);
+    },
+  });
+
 
   const { data: plantaExistente } = useQuery({
     queryKey: ["planta", id],
@@ -130,6 +144,7 @@ export default function NovaPlanta() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["plantas"] });
+      if (!isEditing) void draft.clearDraft();
       toast.success(isEditing ? "Planta atualizada!" : "Planta cadastrada!");
       navigate("/plantas");
     },
@@ -175,6 +190,8 @@ export default function NovaPlanta() {
             <p className="text-sm">{formData.alerta_validacao}</p>
           </div>
         )}
+
+        {!isEditing && <DraftResumeBanner draft={draft} />}
 
         <form onSubmit={handleSubmit} className="rounded-lg border border-border bg-card p-6 space-y-6">
           <div className="grid gap-4 sm:grid-cols-2">
