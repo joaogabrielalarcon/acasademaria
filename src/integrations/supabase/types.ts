@@ -4349,6 +4349,7 @@ export type Database = {
       orcamentos: {
         Row: {
           aliquota_mes_pct: number | null
+          aliquota_produtos_pct: number
           aprovado_por: string | null
           area_m2: number | null
           cidade: string | null
@@ -4383,6 +4384,7 @@ export type Database = {
         }
         Insert: {
           aliquota_mes_pct?: number | null
+          aliquota_produtos_pct?: number
           aprovado_por?: string | null
           area_m2?: number | null
           cidade?: string | null
@@ -4417,6 +4419,7 @@ export type Database = {
         }
         Update: {
           aliquota_mes_pct?: number | null
+          aliquota_produtos_pct?: number
           aprovado_por?: string | null
           area_m2?: number | null
           cidade?: string | null
