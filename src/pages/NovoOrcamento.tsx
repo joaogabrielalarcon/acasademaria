@@ -5253,7 +5253,15 @@ export default function NovoOrcamento() {
                       const valor = (Number(ins.valor_unitario) || 0) * qtdOrcar;
                       const pickerOpen = insumoPickerOpen === idx;
                       return (
-                        <div key={idx} className="border rounded-md p-3 space-y-2">
+                        <div
+                          key={idx}
+                          className={cn(
+                            "border rounded-md p-3 space-y-2 transition-opacity",
+                            qtdEsp > 0
+                              ? "opacity-100 border-terracota/40 bg-terracota/5"
+                              : "opacity-60 hover:opacity-100",
+                          )}
+                        >
                           <div className="flex items-center justify-between gap-2">
                             <Popover
                               open={pickerOpen}
