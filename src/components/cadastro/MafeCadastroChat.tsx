@@ -740,13 +740,19 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
             {extraido && (
               <div className="border-t p-3 shrink-0 flex items-center justify-between gap-2 bg-background">
                 <div className="text-xs text-muted-foreground">
-                  {atualizarId
+                  {entidade === "preco_fornecedor"
+                    ? fornecedorSel && itemSel
+                      ? `Vai gravar no histórico de preços (data: hoje).`
+                      : "Selecione fornecedor e item."
+                    : atualizarId
                     ? "Vai atualizar o registro selecionado."
                     : "Vai criar um registro novo."}
                 </div>
                 <Button onClick={handleSalvar} disabled={!podeSalvar || saving} size="sm">
                   {saving ? (
                     <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Salvando</>
+                  ) : entidade === "preco_fornecedor" ? (
+                    "Confirmar novo preço"
                   ) : atualizarId ? (
                     "Confirmar atualização"
                   ) : (
