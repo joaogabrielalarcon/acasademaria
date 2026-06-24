@@ -3018,14 +3018,19 @@ export default function NovoOrcamento() {
 
                   {/* Local do cliente */}
                   <div className="space-y-2">
-                    <Label>Local do cliente<Req /></Label>
+                    <Label className={errCampo("local_id") ? "text-destructive" : ""}>
+                      Local do cliente<Req />
+                    </Label>
                     <div className="flex gap-2">
                       <Select
                         value={form.local_id}
                         onValueChange={(v) => setForm((c) => ({ ...c, local_id: v }))}
                         disabled={!form.cliente_id}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger
+                          data-campo-erro={errCampo("local_id") ? "true" : undefined}
+                          className={ringErr("local_id")}
+                        >
                           <SelectValue placeholder={form.cliente_id ? "Selecione o local..." : "Escolha um cliente primeiro"} />
                         </SelectTrigger>
                         <SelectContent>
@@ -3057,6 +3062,9 @@ export default function NovoOrcamento() {
                         <Plus className="w-4 h-4" />
                       </Button>
                     </div>
+                    {errCampo("local_id") && (
+                      <p className="text-xs text-destructive">Selecione o local do cliente.</p>
+                    )}
                     {(form.local_endereco || form.cidade || form.estado || form.tipo_cliente) ? (
                       <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs space-y-0.5">
                         {form.local_endereco && (
@@ -3079,18 +3087,34 @@ export default function NovoOrcamento() {
                         Selecione o local para puxar endereço, cidade, estado e tipo de cliente.
                       </p>
                     )}
+                    {form.local_id && (errCampo("cidade") || errCampo("estado") || errCampo("tipo_cliente")) && (
+                      <p className="text-xs text-destructive">
+                        O local selecionado está sem {[
+                          errCampo("cidade") && "cidade",
+                          errCampo("estado") && "estado",
+                          errCampo("tipo_cliente") && "tipo de cliente",
+                        ].filter(Boolean).join(", ")}. Edite o cadastro do local para completar.
+                      </p>
+                    )}
                   </div>
 
                   {/* Área + Perfil de markup (lado a lado) */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label>Área total (m²)<Req /></Label>
+                      <Label className={errCampo("area_m2") ? "text-destructive" : ""}>
+                        Área total (m²)<Req />
+                      </Label>
                       <Input
                         type="number"
                         step="0.01"
                         value={form.area_m2}
                         onChange={(e) => setForm((c) => ({ ...c, area_m2: e.target.value }))}
+                        data-campo-erro={errCampo("area_m2") ? "true" : undefined}
+                        className={ringErr("area_m2")}
                       />
+                      {errCampo("area_m2") && (
+                        <p className="text-xs text-destructive">Informe a área em m².</p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
