@@ -259,6 +259,8 @@ export default function NovoRegistro() {
         }
       }
 
+      await draft.clearDraft();
+
       toast({
         title: statusDiaria === "agendado" ? "Diária agendada!" : "Diária registrada!",
         description: statusDiaria === "agendado" 
