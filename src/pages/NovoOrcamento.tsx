@@ -6,6 +6,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { capitalizeWords } from "@/hooks/useInputMasks";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { useAutosaveDraft } from "@/hooks/useAutosaveDraft";
+import { DraftResumeBanner, DraftStatusBadge } from "@/components/DraftResumeBanner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
