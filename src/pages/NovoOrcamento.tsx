@@ -804,33 +804,10 @@ export default function NovoOrcamento() {
       ? (totaisResumo.margemBrutaVal / totaisResumo.totalVenda) * 100
       : 0;
 
-  const abrirEdicaoMarkup = (categoria: string) => {
-    setMarkupModal({
-      open: true,
-      categoria,
-      anterior: markupsCategoria[categoria] ?? 0,
-      novo: markupsCategoria[categoria] ?? 0,
-      motivo: "",
-    });
-  };
+  // Markup por categoria é gerenciado na Etapa 4 (Etapa4MarkupBlocoA).
+  // Esta tela (Etapa 6) consome o valor pronto via markupCategoriasQuery.
 
-  const confirmarMarkup = () => {
-    if (!markupModal.motivo.trim()) {
-      toast({ title: "Informe o motivo da alteração", variant: "destructive" });
-      return;
-    }
-    setMarkupsCategoria((p) => ({ ...p, [markupModal.categoria]: markupModal.novo }));
-    setVersoesPendentes((p) => [
-      ...p,
-      {
-        campo_alterado: `markup_${markupModal.categoria}`,
-        valor_anterior: String(markupModal.anterior),
-        valor_novo: String(markupModal.novo),
-        motivo: markupModal.motivo,
-      },
-    ]);
-    setMarkupModal((m) => ({ ...m, open: false }));
-  };
+
 
   const persistirOrcamentoCompleto = async (
     statusFinal: string,
