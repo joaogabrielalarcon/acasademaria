@@ -5245,257 +5245,248 @@ export default function NovoOrcamento() {
                 )}
 
                 {insumosAdicionais.length > 0 && (
-                  <div className="space-y-3 pt-2">
-                    {insumosAdicionais.map((ins, idx) => {
-                      const qtdEsp = Number(ins.quantidade_esperada) || 0;
-                      const margem = Number(ins.margem) || 0;
-                      const qtdOrcar = Math.ceil(qtdEsp * (1 + margem / 100));
-                      const valor = (Number(ins.valor_unitario) || 0) * qtdOrcar;
-                      const pickerOpen = insumoPickerOpen === idx;
-                      return (
-                        <div
-                          key={idx}
-                          className={cn(
-                            "border rounded-md p-3 space-y-2 transition-opacity",
-                            qtdEsp > 0
-                              ? "opacity-100 border-terracota/40 bg-terracota/5"
-                              : "opacity-60 hover:opacity-100",
-                          )}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <Popover
-                              open={pickerOpen}
-                              onOpenChange={(o) => setInsumoPickerOpen(o ? idx : null)}
+                  <div className="border rounded-md overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/50 text-xs">
+                        <tr>
+                          <th className="text-left p-2">Insumo</th>
+                          <th className="text-left p-2 w-48">Fornecedor</th>
+                          <th className="text-left p-2 w-28">Quantidade</th>
+                          <th className="text-left p-2 w-24">Unidade</th>
+                          <th className="text-left p-2 w-32">Valor unit. (R$)</th>
+                          <th className="text-left p-2 w-32">Total</th>
+                          <th className="w-20"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {insumosAdicionais.map((ins, idx) => {
+                          const qtdEsp = Number(ins.quantidade_esperada) || 0;
+                          const margem = Number(ins.margem) || 0;
+                          const qtdOrcar = Math.ceil(qtdEsp * (1 + margem / 100));
+                          const valor = (Number(ins.valor_unitario) || 0) * qtdOrcar;
+                          const pickerOpen = insumoPickerOpen === idx;
+                          const fornec = (fornecedoresLista as any[]).find((f) => f.id === ins.fornecedor_id);
+                          const ativo = qtdEsp > 0;
+                          return (
+                            <tr
+                              key={idx}
+                              className={cn(
+                                "border-t transition-opacity",
+                                ativo ? "bg-terracota/5" : "opacity-60 hover:opacity-100",
+                              )}
                             >
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  className={cn(
-                                    "justify-between font-medium max-w-md w-full",
-                                    !ins.nome && "text-muted-foreground",
-                                  )}
-                                >
-                                  {ins.nome || "Selecione um insumo do catálogo..."}
-                                  <ChevronDown className="w-4 h-4 opacity-60" />
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="p-0 w-[420px]" align="start">
-                                <Command>
-                                  <CommandInput placeholder="Buscar insumo no catálogo..." />
-                                  <CommandList>
-                                    <CommandEmpty>
-                                      <div className="p-2 text-center space-y-2">
-                                        <p className="text-xs text-muted-foreground">Nenhum insumo encontrado.</p>
-                                        <Button
-                                          size="sm"
-                                          variant="terracota"
-                                          onClick={() => {
-                                            setInsumoPickerOpen(null);
-                                            openQuickAdd("insumo", (id, label) => {
-                                              const it = (insumosCatalogo as any[]).find((c) => c.id === id);
-                                              updateInsumoAdic(idx, {
-                                                insumo_id: id,
-                                                nome: label,
-                                                unidade: it?.unidade || "unidade",
-                                                fornecedor_id: it?.fornecedor_id || "",
-                                                valor_unitario: it?.preco_unitario != null ? String(it.preco_unitario) : "",
-                                              });
-                                            });
-                                          }}
-                                        >
-                                          <Plus className="w-4 h-4" />
-                                          Cadastrar novo insumo
-                                        </Button>
+                              <td className="p-2">
+                                {ins.nome ? (
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-medium">{ins.nome}</span>
+                                    {!ins.insumo_id && (
+                                      <span title="Não vinculado ao catálogo" className="text-amber-600">⚠</span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <Popover open={pickerOpen} onOpenChange={(o) => setInsumoPickerOpen(o ? idx : null)}>
+                                    <PopoverTrigger asChild>
+                                      <Button variant="outline" size="sm" className="h-8 text-muted-foreground">
+                                        Selecionar insumo...
+                                        <ChevronDown className="w-3 h-3 opacity-60" />
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="p-0 w-[420px]" align="start">
+                                      <Command>
+                                        <CommandInput placeholder="Buscar insumo no catálogo..." />
+                                        <CommandList>
+                                          <CommandEmpty>
+                                            <div className="p-2 text-center">
+                                              <Button
+                                                size="sm"
+                                                variant="terracota"
+                                                onClick={() => {
+                                                  setInsumoPickerOpen(null);
+                                                  openQuickAdd("insumo", (id, label) => {
+                                                    const it = (insumosCatalogo as any[]).find((c) => c.id === id);
+                                                    updateInsumoAdic(idx, {
+                                                      insumo_id: id,
+                                                      nome: label,
+                                                      unidade: it?.unidade || "unidade",
+                                                      fornecedor_id: it?.fornecedor_id || "",
+                                                      valor_unitario: it?.preco_unitario != null ? String(it.preco_unitario) : "",
+                                                    });
+                                                  });
+                                                }}
+                                              >
+                                                <Plus className="w-4 h-4" /> Cadastrar novo
+                                              </Button>
+                                            </div>
+                                          </CommandEmpty>
+                                          <CommandGroup>
+                                            {(insumosCatalogo as any[]).map((c) => (
+                                              <CommandItem
+                                                key={c.id}
+                                                value={`${c.nome} ${c.categoria || ""}`}
+                                                onSelect={() => {
+                                                  updateInsumoAdic(idx, {
+                                                    insumo_id: c.id,
+                                                    nome: c.nome,
+                                                    unidade: c.unidade || "unidade",
+                                                    fornecedor_id: c.fornecedor_id || ins.fornecedor_id || "",
+                                                    valor_unitario:
+                                                      c.preco_unitario != null && !ins.valor_unitario
+                                                        ? String(c.preco_unitario)
+                                                        : ins.valor_unitario,
+                                                  });
+                                                  setInsumoPickerOpen(null);
+                                                }}
+                                              >
+                                                <div className="flex flex-col">
+                                                  <span className="font-medium">{c.nome}</span>
+                                                  {c.categoria && (
+                                                    <span className="text-[11px] text-muted-foreground">
+                                                      {c.categoria}{c.unidade ? ` · ${c.unidade}` : ""}
+                                                    </span>
+                                                  )}
+                                                </div>
+                                              </CommandItem>
+                                            ))}
+                                          </CommandGroup>
+                                        </CommandList>
+                                      </Command>
+                                    </PopoverContent>
+                                  </Popover>
+                                )}
+                              </td>
+                              <td className="p-2 text-xs text-muted-foreground">
+                                {fornec?.nome || <span className="italic">—</span>}
+                              </td>
+                              <td className="p-2">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={ins.quantidade_esperada}
+                                  onChange={(e) => updateInsumoAdic(idx, { quantidade_esperada: e.target.value })}
+                                  className="h-8"
+                                />
+                              </td>
+                              <td className="p-2 text-xs text-muted-foreground">{ins.unidade}</td>
+                              <td className="p-2">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={ins.valor_unitario}
+                                  onChange={(e) => updateInsumoAdic(idx, { valor_unitario: e.target.value })}
+                                  className="h-8"
+                                />
+                              </td>
+                              <td className="p-2 text-xs">
+                                {valor > 0 ? (
+                                  <strong>R$ {valor.toFixed(2).replace(".", ",")}</strong>
+                                ) : (
+                                  <span className="text-muted-foreground">—</span>
+                                )}
+                              </td>
+                              <td className="p-2">
+                                <div className="flex items-center gap-0.5">
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Editar detalhes">
+                                        <Pencil className="w-3.5 h-3.5" />
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-80 p-3 space-y-3" align="end">
+                                      <div className="space-y-1">
+                                        <Label className="text-xs">Fornecedor</Label>
+                                        <div className="flex gap-1">
+                                          <Select
+                                            value={ins.fornecedor_id}
+                                            onValueChange={(v) => updateInsumoAdic(idx, { fornecedor_id: v })}
+                                          >
+                                            <SelectTrigger className="h-9">
+                                              <SelectValue placeholder="Selecione" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              {(fornecedoresLista as any[]).map((f) => (
+                                                <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
+                                          <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-9 w-9 shrink-0"
+                                            title="Cadastrar novo fornecedor"
+                                            onClick={() =>
+                                              openQuickAdd("fornecedor_insumo", (id) =>
+                                                updateInsumoAdic(idx, { fornecedor_id: id }),
+                                              )
+                                            }
+                                          >
+                                            <Plus className="w-4 h-4" />
+                                          </Button>
+                                        </div>
                                       </div>
-                                    </CommandEmpty>
-                                    <CommandGroup>
-                                      {(insumosCatalogo as any[]).map((c) => (
-                                        <CommandItem
-                                          key={c.id}
-                                          value={`${c.nome} ${c.categoria || ""}`}
-                                          onSelect={() => {
-                                            updateInsumoAdic(idx, {
-                                              insumo_id: c.id,
-                                              nome: c.nome,
-                                              unidade: c.unidade || "unidade",
-                                              fornecedor_id: c.fornecedor_id || ins.fornecedor_id || "",
-                                              valor_unitario:
-                                                c.preco_unitario != null && !ins.valor_unitario
-                                                  ? String(c.preco_unitario)
-                                                  : ins.valor_unitario,
-                                            });
-                                            setInsumoPickerOpen(null);
-                                          }}
-                                        >
-                                          <div className="flex flex-col">
-                                            <span className="font-medium">{c.nome}</span>
-                                            {c.categoria && (
-                                              <span className="text-[11px] text-muted-foreground">
-                                                {c.categoria}{c.unidade ? ` · ${c.unidade}` : ""}
-                                              </span>
-                                            )}
-                                          </div>
-                                        </CommandItem>
-                                      ))}
-                                    </CommandGroup>
-                                  </CommandList>
-                                </Command>
-                                <div className="border-t p-2">
+                                      <div className="grid grid-cols-2 gap-2">
+                                        <div className="space-y-1">
+                                          <Label className="text-xs">Unidade</Label>
+                                          <Select
+                                            value={ins.unidade}
+                                            onValueChange={(v) => updateInsumoAdic(idx, { unidade: v })}
+                                          >
+                                            <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                              {UNIDADES_INSUMO.map((u) => (
+                                                <SelectItem key={u} value={u}>{u}</SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
+                                        </div>
+                                        <div className="space-y-1">
+                                          <Label className="text-xs">Margem (%)</Label>
+                                          <Input
+                                            type="number"
+                                            step="1"
+                                            value={ins.margem}
+                                            onChange={(e) => updateInsumoAdic(idx, { margem: e.target.value })}
+                                            className="h-9"
+                                          />
+                                        </div>
+                                      </div>
+                                      <div className="text-[11px] text-muted-foreground">
+                                        Qtd a orçar (com margem): <strong className="text-foreground">{qtdOrcar}</strong>
+                                      </div>
+                                      <div className="space-y-1">
+                                        <Label className="text-xs">Observação interna</Label>
+                                        <Input
+                                          value={ins.obs_interna}
+                                          onChange={(e) => updateInsumoAdic(idx, { obs_interna: e.target.value })}
+                                          className="h-9"
+                                        />
+                                      </div>
+                                      <div className="space-y-1">
+                                        <Label className="text-xs">Observação na proposta</Label>
+                                        <Input
+                                          value={ins.obs_proposta}
+                                          onChange={(e) => updateInsumoAdic(idx, { obs_proposta: e.target.value })}
+                                          className="h-9"
+                                        />
+                                      </div>
+                                    </PopoverContent>
+                                  </Popover>
                                   <Button
-                                    size="sm"
                                     variant="ghost"
-                                    className="w-full justify-start text-xs"
-                                    onClick={() => {
-                                      setInsumoPickerOpen(null);
-                                      openQuickAdd("insumo", (id, label) => {
-                                        const it = (insumosCatalogo as any[]).find((c) => c.id === id);
-                                        updateInsumoAdic(idx, {
-                                          insumo_id: id,
-                                          nome: label,
-                                          unidade: it?.unidade || "unidade",
-                                          fornecedor_id: it?.fornecedor_id || "",
-                                          valor_unitario: it?.preco_unitario != null ? String(it.preco_unitario) : "",
-                                        });
-                                      });
-                                    }}
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    onClick={() => setInsumosAdicionais((p) => p.filter((_, i) => i !== idx))}
+                                    title="Remover"
                                   >
-                                    <Plus className="w-3.5 h-3.5" />
-                                    Cadastrar novo insumo no catálogo
+                                    <X className="w-3.5 h-3.5" />
                                   </Button>
                                 </div>
-                              </PopoverContent>
-                            </Popover>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() =>
-                                setInsumosAdicionais((p) => p.filter((_, i) => i !== idx))
-                              }
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </div>
-                          {!ins.insumo_id && ins.nome && (
-                            <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
-                              Este insumo não está vinculado ao catálogo. Selecione um da lista ou cadastre.
-                            </p>
-                          )}
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                            <div className="space-y-1">
-                              <Label className="text-xs">Fornecedor</Label>
-                              <div className="flex gap-1">
-                                <Select
-                                  value={ins.fornecedor_id}
-                                  onValueChange={(v) => updateInsumoAdic(idx, { fornecedor_id: v })}
-                                >
-                                  <SelectTrigger className="h-9">
-                                    <SelectValue placeholder="Selecione" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {(fornecedoresLista as any[]).map((f) => (
-                                      <SelectItem key={f.id} value={f.id}>
-                                        {f.nome}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="icon"
-                                  className="h-9 w-9 shrink-0"
-                                  title="Cadastrar novo fornecedor"
-                                  onClick={() =>
-                                    openQuickAdd("fornecedor_insumo", (id) =>
-                                      updateInsumoAdic(idx, { fornecedor_id: id }),
-                                    )
-                                  }
-                                >
-                                  <Plus className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs">Quantidade esperada</Label>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={ins.quantidade_esperada}
-                                onChange={(e) =>
-                                  updateInsumoAdic(idx, { quantidade_esperada: e.target.value })
-                                }
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs">Unidade</Label>
-                              <Select
-                                value={ins.unidade}
-                                onValueChange={(v) => updateInsumoAdic(idx, { unidade: v })}
-                              >
-                                <SelectTrigger className="h-9">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {UNIDADES_INSUMO.map((u) => (
-                                    <SelectItem key={u} value={u}>
-                                      {u}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs">Margem segurança (%)</Label>
-                              <Input
-                                type="number"
-                                step="1"
-                                value={ins.margem}
-                                onChange={(e) => updateInsumoAdic(idx, { margem: e.target.value })}
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs">Quantidade a orçar</Label>
-                              <Input value={qtdOrcar} readOnly className="bg-muted/40" />
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs">Valor unitário (R$)</Label>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={ins.valor_unitario}
-                                onChange={(e) =>
-                                  updateInsumoAdic(idx, { valor_unitario: e.target.value })
-                                }
-                              />
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground pt-1">
-                            <span>
-                              Valor total:{" "}
-                              <strong className="text-foreground">
-                                R$ {valor.toFixed(2).replace(".", ",")}
-                              </strong>
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            <div className="space-y-1">
-                              <Label className="text-xs">Observação interna</Label>
-                              <Input
-                                value={ins.obs_interna}
-                                onChange={(e) => updateInsumoAdic(idx, { obs_interna: e.target.value })}
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs">Observação na proposta</Label>
-                              <Input
-                                value={ins.obs_proposta}
-                                onChange={(e) => updateInsumoAdic(idx, { obs_proposta: e.target.value })}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 )}
 
