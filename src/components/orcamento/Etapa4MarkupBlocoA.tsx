@@ -561,6 +561,7 @@ export function Etapa4MarkupBlocoA(props: Props) {
                           </span>
                         )}
                       </TableCell>
+                      <TableCell>
                         {podeGerenciar ? (
                           <Button
                             size="icon-sm"
