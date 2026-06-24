@@ -162,6 +162,7 @@ export default function NovoCliente() {
       </Link>
 
       <div className="max-w-2xl">
+        {!isEditing && <DraftResumeBanner draft={draft} />}
         <h1 className="font-display text-2xl lg:text-3xl font-bold text-foreground mb-2">
           {isEditing ? "Editar Cliente" : "Novo Cliente"}
         </h1>
