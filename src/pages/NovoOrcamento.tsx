@@ -699,6 +699,25 @@ export default function NovoOrcamento() {
     Array<{ campo_alterado: string; valor_anterior: string; valor_novo: string; motivo: string }>
   >([]);
 
+  const [comissaoOn, setComissaoOn] = useState(false);
+  const [comissaoTipo, setComissaoTipo] = useState<"vendas" | "indicacao">("vendas");
+  const [comissaoPct, setComissaoPct] = useState<string>("0");
+  const [comissaoBeneficiario, setComissaoBeneficiario] = useState("");
+  const [comissaoAberta, setComissaoAberta] = useState(false);
+
+  const [margemNegPct, setMargemNegPct] = useState<number>(0);
+
+  const [aprovarModal, setAprovarModal] = useState<{ open: boolean; valor: string; observacao: string }>({
+    open: false,
+    valor: "",
+    observacao: "",
+  });
+  const [naoAprovarModal, setNaoAprovarModal] = useState<{ open: boolean; motivo: string }>({
+    open: false,
+    motivo: "",
+  });
+  const [savingFinal, setSavingFinal] = useState(false);
+
   const custoPorCategoria = useMemo(() => {
     const acc: Record<string, number> = {};
     CATEGORIAS_PLANTAS.forEach((c) => (acc[c] = 0));
