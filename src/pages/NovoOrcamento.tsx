@@ -858,10 +858,17 @@ export default function NovoOrcamento() {
       for (const t of tabelas) {
         await (supabase as any).from(t).delete().eq("orcamento_id", orcId);
       }
+      // Preserve overrides item-a-item antes do delete/reinsert (chaveado por ordem).
       const { data: itensExistentes } = await (supabase as any)
         .from("orcamento_itens")
-        .select("id")
+        .select("id, ordem, markup_override_pct, preco_venda_override, ajuste_obs, ajustado_por, ajustado_em")
         .eq("orcamento_id", orcId);
+      const overridesPorOrdem = new Map<number, any>();
+      ((itensExistentes || []) as any[]).forEach((r) => {
+        if (r.markup_override_pct != null || r.preco_venda_override != null) {
+          overridesPorOrdem.set(Number(r.ordem), r);
+        }
+      });
       const idsItensExist = (itensExistentes || []).map((r: any) => r.id);
       if (idsItensExist.length > 0) {
         await (supabase as any).from("orcamento_cotacoes").delete().in("item_id", idsItensExist);
@@ -880,7 +887,11 @@ export default function NovoOrcamento() {
         const principalLinha = principal ? principal[1] : null;
         const custoUnit = principalLinha ? Number(principalLinha.valor_unitario) || 0 : 0;
         const markupCat = markupsCategoria[it.categoria] ?? 0;
-        const venda = custoUnit * (1 + markupCat / 100);
+        const ovr = overridesPorOrdem.get(idx);
+        const markupEf = ovr?.markup_override_pct != null ? Number(ovr.markup_override_pct) : markupCat;
+        const venda = ovr?.preco_venda_override != null
+          ? Number(ovr.preco_venda_override)
+          : custoUnit * (1 + markupEf / 100);
 
         const { data: itemRow, error: iErr } = await (supabase as any)
           .from("orcamento_itens")
@@ -903,7 +914,12 @@ export default function NovoOrcamento() {
               ? (principalLinha.porte_ofertado || "").toLowerCase() !==
                 (it.porte || "").toLowerCase()
               : false,
-            markup_pct: markupCat,
+            markup_pct: markupEf,
+            markup_override_pct: ovr?.markup_override_pct ?? null,
+            preco_venda_override: ovr?.preco_venda_override ?? null,
+            ajuste_obs: ovr?.ajuste_obs ?? null,
+            ajustado_por: ovr?.ajustado_por ?? null,
+            ajustado_em: ovr?.ajustado_em ?? null,
             preco_venda_unitario: venda,
             imposto_pct: 13.5,
             preco_venda_final: venda * 1.135,
@@ -912,6 +928,7 @@ export default function NovoOrcamento() {
           .select("id")
           .single();
         if (iErr) throw iErr;
+
 
         for (const [fornId, l] of Object.entries(itemCotacoes)) {
           await (supabase as any).from("orcamento_cotacoes").insert({
