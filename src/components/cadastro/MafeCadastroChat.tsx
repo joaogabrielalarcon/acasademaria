@@ -227,14 +227,14 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
       forId = data.id;
     }
     if (contato_nome && String(contato_nome).trim() && forId) {
-      await supabase.from("fornecedor_atendentes").insert({
+      await supabase.from("fornecedor_atendentes").insert([{
         fornecedor_id: forId,
         nome: String(contato_nome).trim(),
-        telefone: payload.telefone || payload.whatsapp || null,
-        email: payload.email || null,
+        telefone: (payload.telefone || payload.whatsapp || null) as any,
+        email: (payload.email || null) as any,
         ativo: true,
         created_by: user?.id,
-      });
+      }] as any);
     }
     return forId;
   }
