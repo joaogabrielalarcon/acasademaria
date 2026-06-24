@@ -156,11 +156,13 @@ export type ItemProjeto = {
   chave: string;                       // id estável (planta_id, insumo_id, ou prefixo+índice)
   origem: "memorial" | "base" | "manual";
   nome: string;
+  nome_cientifico?: string | null;
   categoria: string | null;
   quantidade: number;
   unidade: string;
   porte?: string | null;
   fornecedor_id?: string | null;
+  fornecedor_nome?: string | null;
   valor_unitario?: number | null;
   badges: string[];                    // ex.: "base", "extraordinário", "sem fornecedor", "baixa confiança"
   ref?: {
