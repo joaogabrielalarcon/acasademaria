@@ -66,6 +66,28 @@ export default function NovaSolicitacao() {
   const [trechoId, setTrechoId] = useState<string>("");
   const [isSaving, setIsSaving] = useState(false);
 
+  const draft = useAutosaveDraft({
+    formKey: "nova-solicitacao",
+    scopeKey: clienteIdFromUrl || "novo",
+    getSnapshot: () => ({
+      selectedCliente, dataRegistro, descricao, observacoesInternas,
+      prioridade, statusSolicitacao, solicitante, solicitanteOutro, trechoId,
+    }),
+    applySnapshot: (s: any) => {
+      if (!s) return;
+      if (typeof s.selectedCliente === "string") setSelectedCliente(s.selectedCliente);
+      if (typeof s.dataRegistro === "string") setDataRegistro(s.dataRegistro);
+      if (typeof s.descricao === "string") setDescricao(s.descricao);
+      if (typeof s.observacoesInternas === "string") setObservacoesInternas(s.observacoesInternas);
+      if (typeof s.prioridade === "string") setPrioridade(s.prioridade);
+      if (typeof s.statusSolicitacao === "string") setStatusSolicitacao(s.statusSolicitacao);
+      if (typeof s.solicitante === "string") setSolicitante(s.solicitante);
+      if (typeof s.solicitanteOutro === "string") setSolicitanteOutro(s.solicitanteOutro);
+      if (typeof s.trechoId === "string") setTrechoId(s.trechoId);
+    },
+  });
+
+
   // Trechos do cliente selecionado
   const { data: trechos = [] } = useTrechosCliente(selectedCliente || undefined);
 
