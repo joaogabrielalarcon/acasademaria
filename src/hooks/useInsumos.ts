@@ -16,6 +16,8 @@ export interface Insumo {
   ultima_compra: string | null;
   ativo: boolean;
   tipo_produto: TipoProduto;
+  is_base: boolean;
+  base_ordem: number | null;
 }
 
 export function useInsumos() {

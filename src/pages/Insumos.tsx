@@ -80,6 +80,8 @@ export function InsumosContent() {
     volume_apresentacao: "",
     observacoes: "",
     tipo_produto: "insumo" as "insumo" | "condicionador_solo",
+    is_base: false,
+    base_ordem: "",
   });
 
   const resetForm = () => {
@@ -87,6 +89,8 @@ export function InsumosContent() {
       nome: "", categoria: "", unidade: "", fornecedor_id: "",
       preco_unitario: "", descricao_produto: "", volume_apresentacao: "", observacoes: "",
       tipo_produto: tipoAba,
+      is_base: false,
+      base_ordem: "",
     });
     setEditingInsumo(null);
   };
@@ -103,6 +107,8 @@ export function InsumosContent() {
       volume_apresentacao: insumo.volume_apresentacao || "",
       observacoes: insumo.observacoes || "",
       tipo_produto: insumo.tipo_produto ?? "insumo",
+      is_base: insumo.is_base ?? false,
+      base_ordem: insumo.base_ordem != null ? String(insumo.base_ordem) : "",
     });
     setDialogOpen(true);
   };
@@ -123,6 +129,8 @@ export function InsumosContent() {
         volume_apresentacao: data.volume_apresentacao || null,
         observacoes: data.observacoes || null,
         tipo_produto: data.tipo_produto,
+        is_base: data.is_base,
+        base_ordem: data.is_base && data.base_ordem ? parseInt(data.base_ordem, 10) : null,
       };
 
       if (editingInsumo) {
