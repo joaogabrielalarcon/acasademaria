@@ -858,20 +858,73 @@ export default function NovoOrcamento() {
         "orcamento_fretes",
         "orcamento_insumos",
       ];
-      for (const t of tabelas) {
-        await (supabase as any).from(t).delete().eq("orcamento_id", orcId);
-      }
-      // Preserve overrides item-a-item antes do delete/reinsert (chaveado por ordem).
-      const { data: itensExistentes } = await (supabase as any)
-        .from("orcamento_itens")
-        .select("id, ordem, markup_override_pct, preco_venda_override, ajuste_obs, ajustado_por, ajustado_em")
-        .eq("orcamento_id", orcId);
-      const overridesPorOrdem = new Map<number, any>();
-      ((itensExistentes || []) as any[]).forEach((r) => {
-        if (r.markup_override_pct != null || r.preco_venda_override != null) {
-          overridesPorOrdem.set(Number(r.ordem), r);
-        }
+      // Preserva overrides item-a-item (markup/preço/observação/auditoria) usando CHAVES ESTÁVEIS,
+      // nunca a posição/ordem. Inserir, remover ou reordenar não troca override de lugar.
+      const ovrCols = "markup_override_pct, preco_venda_override, ajuste_obs, ajustado_por, ajustado_em";
+      const [
+        { data: itensExistentes },
+        { data: insumosExistentes },
+        { data: fretesExistentes },
+        { data: moExistentes },
+        { data: transporteExistentes },
+        { data: indiretosExistentes },
+      ] = await Promise.all([
+        (supabase as any).from("orcamento_itens")
+          .select(`id, planta_id, insumo_id, nome_cientifico, nome_popular, porte_solicitado, ${ovrCols}`)
+          .eq("orcamento_id", orcId),
+        (supabase as any).from("orcamento_insumos")
+          .select(`id, nome, fornecedor_id, ${ovrCols}`)
+          .eq("orcamento_id", orcId),
+        (supabase as any).from("orcamento_fretes")
+          .select(`id, percurso, transportador, fornecedor_id, ${ovrCols}`)
+          .eq("orcamento_id", orcId),
+        (supabase as any).from("orcamento_mo")
+          .select(`id, cargo_id, colaborador_id, ${ovrCols}`)
+          .eq("orcamento_id", orcId),
+        (supabase as any).from("orcamento_transporte")
+          .select(`id, tipo, ${ovrCols}`)
+          .eq("orcamento_id", orcId),
+        (supabase as any).from("orcamento_custos_indiretos")
+          .select(`id, tipo, descricao, ${ovrCols}`)
+          .eq("orcamento_id", orcId),
+      ]);
+
+      const hasOverride = (r: any) =>
+        r && (r.markup_override_pct != null || r.preco_venda_override != null);
+      const pickOvr = (r: any) => ({
+        markup_override_pct: r.markup_override_pct ?? null,
+        preco_venda_override: r.preco_venda_override ?? null,
+        ajuste_obs: r.ajuste_obs ?? null,
+        ajustado_por: r.ajustado_por ?? null,
+        ajustado_em: r.ajustado_em ?? null,
       });
+      const buildOvrMap = (rows: any[] | null, keyFn: (r: any) => string) => {
+        const m = new Map<string, any>();
+        (rows || []).forEach((r) => {
+          if (!hasOverride(r)) return;
+          m.set(keyFn(r), pickOvr(r));
+        });
+        return m;
+      };
+
+      const itemKey = (r: { planta_id?: any; insumo_id?: any; nome_cientifico?: any; nome_popular?: any; porte_solicitado?: any }) => {
+        if (r.planta_id) return `planta:${r.planta_id}`;
+        if (r.insumo_id) return `insumo:${r.insumo_id}`;
+        return `nome:${(r.nome_cientifico || r.nome_popular || "").toLowerCase().trim()}|${(r.porte_solicitado || "").toString().toLowerCase().trim()}`;
+      };
+      const insumoKey = (r: any) => `${(r.nome || "").toLowerCase().trim()}|${r.fornecedor_id || ""}`;
+      const freteKey = (r: any) => `${(r.percurso || "").toLowerCase().trim()}|${r.fornecedor_id || ""}|${(r.transportador || "").toLowerCase().trim()}`;
+      const moKey = (r: any) => `${r.cargo_id || ""}|${r.colaborador_id || ""}`;
+      const transporteKey = (r: any) => `${(r.tipo || "").toLowerCase().trim()}`;
+      const indiretoKey = (r: any) => `${(r.tipo || "").toLowerCase().trim()}|${(r.descricao || "").toLowerCase().trim()}`;
+
+      const overridesItens = buildOvrMap(itensExistentes, itemKey);
+      const overridesInsumos = buildOvrMap(insumosExistentes, insumoKey);
+      const overridesFretes = buildOvrMap(fretesExistentes, freteKey);
+      const overridesMo = buildOvrMap(moExistentes, moKey);
+      const overridesTransporte = buildOvrMap(transporteExistentes, transporteKey);
+      const overridesIndiretos = buildOvrMap(indiretosExistentes, indiretoKey);
+
       const idsItensExist = (itensExistentes || []).map((r: any) => r.id);
       if (idsItensExist.length > 0) {
         await (supabase as any).from("orcamento_cotacoes").delete().in("item_id", idsItensExist);
