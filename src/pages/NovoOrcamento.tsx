@@ -87,6 +87,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ResumoFornecedoresDialog, type ResumoItem } from "@/components/orcamento/ResumoFornecedoresDialog";
 import { ImportarRespostaFornecedorDialog } from "@/components/orcamento/ImportarRespostaFornecedorDialog";
+import { NovaVersaoDialog } from "@/components/orcamento/NovaVersaoDialog";
+import { VersoesDialog } from "@/components/orcamento/VersoesDialog";
+import { History, GitBranch } from "lucide-react";
 import { EnderecoFields, composeEndereco } from "@/components/EnderecoFields";
 import { Star, Filter, MessageCircle, Lock, Crown, ChevronsUp, ChevronsDown, Zap, Store, AlertCircle } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -278,6 +281,11 @@ export default function NovoOrcamento() {
   }>({ open: false, fornecedorId: null, fornecedorNome: null, mercadoAtual: null });
   // Modal de validação ao avançar para Etapa 4
   const [validacaoEtapa4Open, setValidacaoEtapa4Open] = useState(false);
+  // Validação inline da Etapa 1: só destaca campos depois que o usuário tenta avançar
+  const [mostrarErrosEtapa1, setMostrarErrosEtapa1] = useState(false);
+  // Versionamento
+  const [novaVersaoOpen, setNovaVersaoOpen] = useState(false);
+  const [versoesOpen, setVersoesOpen] = useState(false);
   const [mercadoModal, setMercadoModal] = useState<{
     open: boolean;
     fornecedorId: string | null;
@@ -1642,24 +1650,42 @@ export default function NovoOrcamento() {
     },
   });
 
-  // Geração automática do código
+  // Geração automática do código — atômica, sem duplicação.
+  // Usa RPC `gerar_codigo_orcamento(sigla)` que aplica advisory lock e calcula o próximo
+  // sequencial dentro do mesmo sigla+mes+ano. Em caso de colisão (insert simultâneo que
+  // venceu a corrida), re-tenta uma vez.
   const handleTipoPropostaChange = async (tipoId: string) => {
     const tipo = (tipos as TipoProposta[]).find((t) => t.id === tipoId);
     if (!tipo) return;
     const sigla = tipo.sigla;
-    const agora = new Date();
-    const mes = String(agora.getMonth() + 1).padStart(2, "0");
-    const ano = String(agora.getFullYear()).slice(-2);
     try {
-      const { count } = await (supabase as any)
-        .from("orcamentos")
-        .select("*", { count: "exact", head: true })
-        .like("codigo", `${sigla}%${mes}${ano}`);
-      const sequencial = String((count || 0) + 1).padStart(2, "0");
-      const codigo = `${sigla}${sequencial}${mes}${ano}`;
-      setForm((p) => ({ ...p, tipo_proposta_id: tipoId, tipo_proposta_sigla: sigla, codigo }));
-    } catch {
-      setForm((p) => ({ ...p, tipo_proposta_id: tipoId, tipo_proposta_sigla: sigla }));
+      const { data: codigoGerado, error } = await (supabase as any).rpc(
+        "gerar_codigo_orcamento",
+        { p_sigla: sigla },
+      );
+      if (error) throw error;
+      setForm((p) => ({
+        ...p,
+        tipo_proposta_id: tipoId,
+        tipo_proposta_sigla: sigla,
+        codigo: codigoGerado || "",
+      }));
+    } catch (e) {
+      // fallback: usa contagem (mesmo padrão antigo) só pra não travar a tela
+      const agora = new Date();
+      const mes = String(agora.getMonth() + 1).padStart(2, "0");
+      const ano = String(agora.getFullYear()).slice(-2);
+      try {
+        const { count } = await (supabase as any)
+          .from("orcamentos")
+          .select("*", { count: "exact", head: true })
+          .like("codigo", `${sigla}%${mes}${ano}`);
+        const sequencial = String((count || 0) + 1).padStart(2, "0");
+        const codigo = `${sigla}${sequencial}${mes}${ano}`;
+        setForm((p) => ({ ...p, tipo_proposta_id: tipoId, tipo_proposta_sigla: sigla, codigo }));
+      } catch {
+        setForm((p) => ({ ...p, tipo_proposta_id: tipoId, tipo_proposta_sigla: sigla }));
+      }
     }
   };
 
@@ -1694,15 +1720,33 @@ export default function NovoOrcamento() {
         const { error } = await (supabase as any).from("orcamentos").update(payload).eq("id", id);
         if (error) throw error;
         return id as string;
-      } else {
+      }
+      // Insert com retry contra duplicação de código (raça com outro orçamento).
+      const tryInsert = async (p: any) => {
         const { data, error } = await (supabase as any)
           .from("orcamentos")
-          .insert(payload)
+          .insert(p)
           .select("id")
           .single();
-        if (error) throw error;
-        return data.id as string;
+        return { data, error };
+      };
+      let { data, error } = await tryInsert(payload);
+      if (error && (error.code === "23505" || /duplic/i.test(error.message || ""))) {
+        // re-gera código atomicamente e tenta de novo
+        try {
+          const { data: novo } = await (supabase as any).rpc("gerar_codigo_orcamento", {
+            p_sigla: form.tipo_proposta_sigla,
+          });
+          if (novo) {
+            setForm((c) => ({ ...c, codigo: novo }));
+            const r2 = await tryInsert({ ...payload, codigo: novo });
+            data = r2.data;
+            error = r2.error;
+          }
+        } catch {}
       }
+      if (error) throw error;
+      return data.id as string;
     },
     onSuccess: (newId) => {
       queryClient.invalidateQueries({ queryKey: ["orcamentos"] });
@@ -2658,7 +2702,27 @@ export default function NovoOrcamento() {
 
   const { data: validacaoEtapa4 } = useEtapa4Validacao(id);
 
+  // assim que o usuário preenche tudo, paramos de destacar erros
+  useEffect(() => {
+    if (mostrarErrosEtapa1 && camposObrigatoriosOk) setMostrarErrosEtapa1(false);
+  }, [mostrarErrosEtapa1, camposObrigatoriosOk]);
+
   const handleProxima = () => {
+    // Validação inline ao sair da Etapa 1: destaca cada campo obrigatório que estiver vazio
+    if (etapaAtual === 1 && !camposObrigatoriosOk) {
+      setMostrarErrosEtapa1(true);
+      toast({
+        title: "Preencha os campos destacados",
+        description: `Faltam: ${camposFaltando.join(", ")}.`,
+        variant: "destructive",
+      });
+      // foca no primeiro campo com erro
+      requestAnimationFrame(() => {
+        const el = document.querySelector('[data-campo-erro="true"]') as HTMLElement | null;
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+      return;
+    }
     // Validação ao sair da Etapa 3 (Fornecedores) para Etapa 4 (Markup)
     if (etapaAtual === 3 && pendenciasEtapa3.bloqueia) {
       setValidacaoEtapa4Open(true);
@@ -2675,6 +2739,12 @@ export default function NovoOrcamento() {
     }
     irParaEtapa(etapaAtual + 1);
   };
+
+  // helpers de erro por campo (Etapa 1)
+  const errCampo = (k: string) =>
+    mostrarErrosEtapa1 && String((form as any)[k] ?? "").trim() === "";
+  const ringErr = (k: string) =>
+    errCampo(k) ? "ring-2 ring-destructive/60 border-destructive" : "";
 
   const copiarCodigo = async () => {
     if (!form.codigo) return;
@@ -2814,7 +2884,7 @@ export default function NovoOrcamento() {
     <AppLayout>
       <TooltipProvider>
         <div className="w-full px-2 py-4 space-y-6">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="icon" onClick={() => navigate("/orcamentos")}>
                 <ArrowLeft className="w-4 h-4" />
@@ -2825,9 +2895,32 @@ export default function NovoOrcamento() {
                 </h1>
                 <p className="text-sm text-muted-foreground">
                   Etapa {etapaAtual} de {ETAPAS.length}
+                  {form.codigo && (
+                    <>
+                      {" · "}
+                      <span className="font-mono">{form.codigo}</span>
+                      {(form as any).versao_sufixo || (orcamento as any)?.versao_sufixo ? (
+                        <span className="font-mono text-primary">
+                          {(form as any).versao_sufixo || (orcamento as any)?.versao_sufixo}
+                        </span>
+                      ) : null}
+                    </>
+                  )}
                 </p>
               </div>
             </div>
+            {isEdit && id && (
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => setVersoesOpen(true)}>
+                  <History className="w-4 h-4" />
+                  Histórico
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setNovaVersaoOpen(true)}>
+                  <GitBranch className="w-4 h-4" />
+                  Nova versão
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Barra de etapas (navegação livre) */}
@@ -2885,9 +2978,16 @@ export default function NovoOrcamento() {
                 <div className="space-y-4">
                   {/* Tipo de Proposta */}
                   <div className="space-y-2">
-                    <Label>Tipo de Proposta<Req /></Label>
+                    <Label className={errCampo("tipo_proposta_id") ? "text-destructive" : ""}>
+                      Tipo de Proposta<Req />
+                    </Label>
                     <Select value={form.tipo_proposta_id} onValueChange={handleTipoPropostaChange}>
-                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectTrigger
+                        data-campo-erro={errCampo("tipo_proposta_id") ? "true" : undefined}
+                        className={ringErr("tipo_proposta_id")}
+                      >
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
                       <SelectContent>
                         {(tipos as TipoProposta[]).map((t) => (
                           <SelectItem key={t.id} value={t.id}>
@@ -2896,6 +2996,9 @@ export default function NovoOrcamento() {
                         ))}
                       </SelectContent>
                     </Select>
+                    {errCampo("tipo_proposta_id") && (
+                      <p className="text-xs text-destructive">Escolha o tipo de proposta.</p>
+                    )}
                   </div>
 
                   {/* Código gerado */}
@@ -2915,13 +3018,20 @@ export default function NovoOrcamento() {
 
                   {/* Cliente */}
                   <div className="space-y-2">
-                    <Label>Cliente<Req /></Label>
+                    <Label className={errCampo("cliente_id") ? "text-destructive" : ""}>
+                      Cliente<Req />
+                    </Label>
                     <div className="flex gap-2">
                       <Select
                         value={form.cliente_id}
                         onValueChange={(v) => setForm((c) => ({ ...c, cliente_id: v }))}
                       >
-                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                        <SelectTrigger
+                          data-campo-erro={errCampo("cliente_id") ? "true" : undefined}
+                          className={ringErr("cliente_id")}
+                        >
+                          <SelectValue placeholder="Selecione..." />
+                        </SelectTrigger>
                         <SelectContent>
                           {(clientes as any[]).map((cl) => (
                             <SelectItem key={cl.id} value={cl.id}>{cl.nome}</SelectItem>
@@ -2942,18 +3052,26 @@ export default function NovoOrcamento() {
                         <Plus className="w-4 h-4" />
                       </Button>
                     </div>
+                    {errCampo("cliente_id") && (
+                      <p className="text-xs text-destructive">Selecione um cliente.</p>
+                    )}
                   </div>
 
                   {/* Local do cliente */}
                   <div className="space-y-2">
-                    <Label>Local do cliente<Req /></Label>
+                    <Label className={errCampo("local_id") ? "text-destructive" : ""}>
+                      Local do cliente<Req />
+                    </Label>
                     <div className="flex gap-2">
                       <Select
                         value={form.local_id}
                         onValueChange={(v) => setForm((c) => ({ ...c, local_id: v }))}
                         disabled={!form.cliente_id}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger
+                          data-campo-erro={errCampo("local_id") ? "true" : undefined}
+                          className={ringErr("local_id")}
+                        >
                           <SelectValue placeholder={form.cliente_id ? "Selecione o local..." : "Escolha um cliente primeiro"} />
                         </SelectTrigger>
                         <SelectContent>
@@ -2985,6 +3103,9 @@ export default function NovoOrcamento() {
                         <Plus className="w-4 h-4" />
                       </Button>
                     </div>
+                    {errCampo("local_id") && (
+                      <p className="text-xs text-destructive">Selecione o local do cliente.</p>
+                    )}
                     {(form.local_endereco || form.cidade || form.estado || form.tipo_cliente) ? (
                       <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs space-y-0.5">
                         {form.local_endereco && (
@@ -3007,18 +3128,34 @@ export default function NovoOrcamento() {
                         Selecione o local para puxar endereço, cidade, estado e tipo de cliente.
                       </p>
                     )}
+                    {form.local_id && (errCampo("cidade") || errCampo("estado") || errCampo("tipo_cliente")) && (
+                      <p className="text-xs text-destructive">
+                        O local selecionado está sem {[
+                          errCampo("cidade") && "cidade",
+                          errCampo("estado") && "estado",
+                          errCampo("tipo_cliente") && "tipo de cliente",
+                        ].filter(Boolean).join(", ")}. Edite o cadastro do local para completar.
+                      </p>
+                    )}
                   </div>
 
                   {/* Área + Perfil de markup (lado a lado) */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label>Área total (m²)<Req /></Label>
+                      <Label className={errCampo("area_m2") ? "text-destructive" : ""}>
+                        Área total (m²)<Req />
+                      </Label>
                       <Input
                         type="number"
                         step="0.01"
                         value={form.area_m2}
                         onChange={(e) => setForm((c) => ({ ...c, area_m2: e.target.value }))}
+                        data-campo-erro={errCampo("area_m2") ? "true" : undefined}
+                        className={ringErr("area_m2")}
                       />
+                      {errCampo("area_m2") && (
+                        <p className="text-xs text-destructive">Informe a área em m².</p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -6192,6 +6329,41 @@ export default function NovoOrcamento() {
           </div>
         </div>
       </TooltipProvider>
+
+      {/* Versionamento — diálogos */}
+      {isEdit && id && (
+        <>
+          <NovaVersaoDialog
+            open={novaVersaoOpen}
+            onOpenChange={setNovaVersaoOpen}
+            orcamentoId={id}
+            codigo={form.codigo || ""}
+            snapshotAtual={{
+              itensMaterial,
+              totais: {
+                totalCusto: totaisResumo.totalCusto,
+                totalVenda: totaisResumo.totalVenda,
+                totalCliente,
+                markupMedio: totaisResumo.markupMedio,
+                margemBrutaVal: margemBrutaValFinal,
+              },
+              financeiroPorCategoria: linhasResumo.reduce<Record<string, number>>(
+                (acc, l) => ({ ...acc, [l.categoria]: l.venda }),
+                {},
+              ),
+            }}
+            onSalvo={() => {
+              queryClient.invalidateQueries({ queryKey: ["orcamento-hidratacao", id] });
+            }}
+          />
+          <VersoesDialog
+            open={versoesOpen}
+            onOpenChange={setVersoesOpen}
+            orcamentoId={id}
+            codigo={form.codigo || ""}
+          />
+        </>
+      )}
 
       {/* Resumo agrupado para WhatsApp */}
       <ResumoFornecedoresDialog
