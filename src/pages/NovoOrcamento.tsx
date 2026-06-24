@@ -930,6 +930,9 @@ export default function NovoOrcamento() {
         await (supabase as any).from("orcamento_cotacoes").delete().in("item_id", idsItensExist);
         await (supabase as any).from("orcamento_itens").delete().eq("orcamento_id", orcId);
       }
+      for (const t of tabelas) {
+        await (supabase as any).from(t).delete().eq("orcamento_id", orcId);
+      }
 
       for (let idx = 0; idx < itensMaterial.length; idx++) {
         const it = itensMaterial[idx];
