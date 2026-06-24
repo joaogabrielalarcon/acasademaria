@@ -1454,6 +1454,7 @@ export default function NovoOrcamento() {
       if ((orcamento as any).aliquota_produtos_pct != null) setAliquotaProdutos(Number((orcamento as any).aliquota_produtos_pct));
       if (orcamento.tipo_nf) setTipoNf(orcamento.tipo_nf);
       if (orcamento.margem_negociacao_pct != null) setMargemNegPct(Number(orcamento.margem_negociacao_pct));
+      if ((orcamento as any).negociacao_valor != null) setNegociacaoValor(Number((orcamento as any).negociacao_valor));
     }
   }, [orcamento, tipos]);
 
