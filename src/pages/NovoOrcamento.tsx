@@ -245,6 +245,8 @@ export default function NovoOrcamento() {
   const [pdfCarregado, setPdfCarregado] = useState(false);
   const [processandoPdf, setProcessandoPdf] = useState(false);
   const [itensMaterial, setItensMaterial] = useState<ItemMemorial[]>([]);
+  // Insumos extraordinários extraídos do memorial (alimenta a tabela única — Sub-fase 3A).
+  const [itensInsumoExtra, setItensInsumoExtra] = useState<InsumoMemorial[]>([]);
   const [extracaoErro, setExtracaoErro] = useState<string | null>(null);
   const [extracaoElapsed, setExtracaoElapsed] = useState(0);
   const [filtroBaixaConfianca, setFiltroBaixaConfianca] = useState(false);
