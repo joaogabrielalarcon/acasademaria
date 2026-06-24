@@ -20,6 +20,8 @@ import { useClientesSimples } from "@/hooks/useClientes";
 import { useColaboradoresAtivos } from "@/hooks/useColaboradores";
 import { useCreateCrmCard, type CrmCardTipo } from "@/hooks/useCRM";
 import { toast } from "@/hooks/use-toast";
+import { useAutosaveDraft } from "@/hooks/useAutosaveDraft";
+import { DraftResumeBanner } from "@/components/DraftResumeBanner";
 
 interface Props {
   open: boolean;
