@@ -4525,33 +4525,42 @@ export default function NovoOrcamento() {
                 )}
               </Card>
 
-              {/* Bloco E — Margem de negociação */}
+              {/* Bloco E — Valor de negociação (diluição proporcional) */}
               <Card className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="font-display text-base text-foreground">
-                    Margem de negociação disponível
+                    Valor de negociação (diluído)
                   </h3>
-                  <span className="text-sm font-medium">{margemNegPct}%</span>
+                  <span className={`text-sm font-medium ${negociacaoValor < 0 ? "text-destructive" : "text-primary"}`}>
+                    {fmtBRL(negociacaoValor)}
+                  </span>
                 </div>
-                <Slider
-                  value={[margemNegPct]}
-                  min={0}
-                  max={30}
-                  step={1}
-                  onValueChange={(v) => setMargemNegPct(v[0])}
-                />
-                <div className="text-sm text-muted-foreground flex flex-wrap gap-4">
-                  <span>
-                    Desconto máximo:{" "}
-                    <strong className="text-foreground">{fmtBRL(descontoMaximo)}</strong>
-                  </span>
-                  <span>
-                    Valor mínimo aceitável:{" "}
-                    <strong className="text-foreground">{fmtBRL(valorMinimo)}</strong>
-                  </span>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Valor em R$ (positivo embute margem, negativo absorve desconto)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={negociacaoValor}
+                      onChange={(e) => setNegociacaoValor(Number(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div className="text-sm">
+                    <p className="text-muted-foreground">Produtos absorvem ({(shareProdutos * 100).toFixed(1)}%):</p>
+                    <strong className="text-foreground">{fmtBRL(negociacaoProdutos)}</strong>
+                  </div>
+                  <div className="text-sm">
+                    <p className="text-muted-foreground">Mão de Obra absorve ({(shareMo * 100).toFixed(1)}%):</p>
+                    <strong className="text-foreground">{fmtBRL(negociacaoMo)}</strong>
+                  </div>
+                </div>
+                <div className="rounded-md bg-muted/40 p-3 text-sm flex flex-wrap gap-x-6 gap-y-1">
+                  <span>Total venda original: <strong>{fmtBRL(totaisResumo.totalVenda)}</strong></span>
+                  <span>Total c/ negociação: <strong>{fmtBRL(totalClienteSemComissao)}</strong></span>
+                  <span>Margem bruta final: <strong>{fmtBRL(margemBrutaValFinal)} ({margemBrutaPctTotal.toFixed(1)}%)</strong></span>
                 </div>
                 <p className="text-[11px] text-muted-foreground">
-                  Define o desconto máximo que a equipe comercial pode conceder sem nova aprovação.
+                  A diluição é proporcional ao valor de venda de cada bloco. Não precisa ratear na mão: o sistema ajusta os preços finais automaticamente.
                 </p>
               </Card>
             </div>
