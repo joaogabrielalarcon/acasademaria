@@ -204,6 +204,9 @@ export default function NovoOrcamento() {
   const [pdfCarregado, setPdfCarregado] = useState(false);
   const [processandoPdf, setProcessandoPdf] = useState(false);
   const [itensMaterial, setItensMaterial] = useState<ItemMemorial[]>([]);
+  const [extracaoErro, setExtracaoErro] = useState<string | null>(null);
+  const [extracaoElapsed, setExtracaoElapsed] = useState(0);
+  const [filtroBaixaConfianca, setFiltroBaixaConfianca] = useState(false);
 
   // Etapa 3 — Fornecedores
   const [fornecedoresSelecionados, setFornecedoresSelecionados] = useState<
