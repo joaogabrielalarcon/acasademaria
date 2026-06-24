@@ -796,7 +796,8 @@ export default function NovoOrcamento() {
   const valorComissao = comissaoOn
     ? ((Number(comissaoPct) || 0) * totaisResumo.totalVenda) / 100
     : 0;
-  const totalCliente = totaisResumo.totalVenda - valorComissao;
+  // Comissão é ACRESCIDA ao preço final (repasse ao cliente), preservando a margem da empresa.
+  const totalCliente = totaisResumo.totalVenda + valorComissao;
   const descontoMaximo = totalCliente * (margemNegPct / 100);
   const valorMinimo = totalCliente - descontoMaximo;
   const areaM2 = Number(form.area_m2) || 0;
