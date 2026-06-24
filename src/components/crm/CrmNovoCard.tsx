@@ -99,6 +99,7 @@ export function CrmNovoCard({ open, onClose }: Props) {
         </SheetHeader>
 
         <div className="flex flex-col gap-4 mt-4">
+          <DraftResumeBanner draft={draft} />
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Tipo *</Label>
