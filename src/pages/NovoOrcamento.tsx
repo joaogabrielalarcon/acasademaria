@@ -2965,9 +2965,24 @@ export default function NovoOrcamento() {
       }
       firstAutoSaveRef.current = false;
       setItensMaterial(itens);
+      // Captura insumos extraordinários (novo formato da edge function ler-memorial-pdf).
+      const insumosRaw = Array.isArray((data as any)?.insumos) ? (data as any).insumos : [];
+      const insumosNorm: InsumoMemorial[] = insumosRaw
+        .filter((r: any) => r && typeof r.nome === "string" && r.nome.trim())
+        .map((r: any) => ({
+          nome: String(r.nome).trim(),
+          quantidade: typeof r.quantidade === "number" ? r.quantidade : (r.quantidade ? Number(r.quantidade) || null : null),
+          unidade: String(r.unidade || "unidade"),
+          categoria: r.categoria ? String(r.categoria) : null,
+          observacao: r.observacao ? String(r.observacao) : null,
+          confianca: (["alta", "media", "baixa"].includes(r.confianca) ? r.confianca : "media") as InsumoMemorial["confianca"],
+        }));
+      setItensInsumoExtra(insumosNorm);
       setPdfCarregado(true);
       setFiltroBaixaConfianca(false);
-      toast({ title: `${itens.length} itens extraídos` });
+      const partes = [`${itens.length} plantas`];
+      if (insumosNorm.length) partes.push(`${insumosNorm.length} insumos`);
+      toast({ title: `${partes.join(" + ")} extraídos` });
     } catch (e: any) {
       const msg = e?.message || `Erro inesperado ao processar o ${tipoLabel}`;
       setExtracaoErro(msg);
