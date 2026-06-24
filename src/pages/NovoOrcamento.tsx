@@ -5110,7 +5110,7 @@ export default function NovoOrcamento() {
                 <div>
                   <h2 className="font-display text-lg text-foreground">Insumos Adicionais</h2>
                   <p className="text-xs text-muted-foreground">
-                    Selecione os insumos extras necessários para este projeto.
+                    Selecione os insumos extras necessários para este projeto. Adubos e itens variáveis (ex.: pedrisco, seixo) entram em "Adicionar insumo do catálogo".
                   </p>
                 </div>
 
@@ -5142,15 +5142,112 @@ export default function NovoOrcamento() {
                       const margem = Number(ins.margem) || 0;
                       const qtdOrcar = Math.ceil(qtdEsp * (1 + margem / 100));
                       const valor = (Number(ins.valor_unitario) || 0) * qtdOrcar;
+                      const pickerOpen = insumoPickerOpen === idx;
                       return (
                         <div key={idx} className="border rounded-md p-3 space-y-2">
                           <div className="flex items-center justify-between gap-2">
-                            <Input
-                              value={ins.nome}
-                              onChange={(e) => updateInsumoAdic(idx, { nome: e.target.value })}
-                              placeholder="Nome do insumo"
-                              className="font-medium max-w-md"
-                            />
+                            <Popover
+                              open={pickerOpen}
+                              onOpenChange={(o) => setInsumoPickerOpen(o ? idx : null)}
+                            >
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className={cn(
+                                    "justify-between font-medium max-w-md w-full",
+                                    !ins.nome && "text-muted-foreground",
+                                  )}
+                                >
+                                  {ins.nome || "Selecione um insumo do catálogo..."}
+                                  <ChevronDown className="w-4 h-4 opacity-60" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="p-0 w-[420px]" align="start">
+                                <Command>
+                                  <CommandInput placeholder="Buscar insumo no catálogo..." />
+                                  <CommandList>
+                                    <CommandEmpty>
+                                      <div className="p-2 text-center space-y-2">
+                                        <p className="text-xs text-muted-foreground">Nenhum insumo encontrado.</p>
+                                        <Button
+                                          size="sm"
+                                          variant="terracota"
+                                          onClick={() => {
+                                            setInsumoPickerOpen(null);
+                                            openQuickAdd("insumo", (id, label) => {
+                                              const it = (insumosCatalogo as any[]).find((c) => c.id === id);
+                                              updateInsumoAdic(idx, {
+                                                insumo_id: id,
+                                                nome: label,
+                                                unidade: it?.unidade || "unidade",
+                                                fornecedor_id: it?.fornecedor_id || "",
+                                                valor_unitario: it?.preco_unitario != null ? String(it.preco_unitario) : "",
+                                              });
+                                            });
+                                          }}
+                                        >
+                                          <Plus className="w-4 h-4" />
+                                          Cadastrar novo insumo
+                                        </Button>
+                                      </div>
+                                    </CommandEmpty>
+                                    <CommandGroup>
+                                      {(insumosCatalogo as any[]).map((c) => (
+                                        <CommandItem
+                                          key={c.id}
+                                          value={`${c.nome} ${c.categoria || ""}`}
+                                          onSelect={() => {
+                                            updateInsumoAdic(idx, {
+                                              insumo_id: c.id,
+                                              nome: c.nome,
+                                              unidade: c.unidade || "unidade",
+                                              fornecedor_id: c.fornecedor_id || ins.fornecedor_id || "",
+                                              valor_unitario:
+                                                c.preco_unitario != null && !ins.valor_unitario
+                                                  ? String(c.preco_unitario)
+                                                  : ins.valor_unitario,
+                                            });
+                                            setInsumoPickerOpen(null);
+                                          }}
+                                        >
+                                          <div className="flex flex-col">
+                                            <span className="font-medium">{c.nome}</span>
+                                            {c.categoria && (
+                                              <span className="text-[11px] text-muted-foreground">
+                                                {c.categoria}{c.unidade ? ` · ${c.unidade}` : ""}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                                <div className="border-t p-2">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="w-full justify-start text-xs"
+                                    onClick={() => {
+                                      setInsumoPickerOpen(null);
+                                      openQuickAdd("insumo", (id, label) => {
+                                        const it = (insumosCatalogo as any[]).find((c) => c.id === id);
+                                        updateInsumoAdic(idx, {
+                                          insumo_id: id,
+                                          nome: label,
+                                          unidade: it?.unidade || "unidade",
+                                          fornecedor_id: it?.fornecedor_id || "",
+                                          valor_unitario: it?.preco_unitario != null ? String(it.preco_unitario) : "",
+                                        });
+                                      });
+                                    }}
+                                  >
+                                    <Plus className="w-3.5 h-3.5" />
+                                    Cadastrar novo insumo no catálogo
+                                  </Button>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
                             <Button
                               variant="ghost"
                               size="icon"
@@ -5161,6 +5258,11 @@ export default function NovoOrcamento() {
                               <X className="w-4 h-4" />
                             </Button>
                           </div>
+                          {!ins.insumo_id && ins.nome && (
+                            <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                              Este insumo não está vinculado ao catálogo. Selecione um da lista ou cadastre.
+                            </p>
+                          )}
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                             <div className="space-y-1">
                               <Label className="text-xs">Fornecedor</Label>
