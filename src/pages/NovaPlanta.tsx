@@ -144,6 +144,7 @@ export default function NovaPlanta() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["plantas"] });
+      if (!isEditing) void draft.clearDraft();
       toast.success(isEditing ? "Planta atualizada!" : "Planta cadastrada!");
       navigate("/plantas");
     },
