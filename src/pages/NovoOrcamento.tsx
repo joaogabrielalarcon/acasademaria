@@ -3075,7 +3075,15 @@ export default function NovoOrcamento() {
             )}
           </div>
 
+          {!isEdit && (
+            <>
+              <DraftResumeBanner draft={draft} hint="Os arquivos anexados (PDF, fotos) precisam ser selecionados de novo." />
+              <div className="flex justify-end -mt-2"><DraftStatusBadge draft={draft} /></div>
+            </>
+          )}
+
           {/* Barra de etapas (navegação livre) */}
+
           <Card className="p-4 sticky top-0 z-20 bg-card border-border/50">
             <div className="flex items-center justify-between gap-2 overflow-x-auto">
               {ETAPAS.map((nome, idx) => {
