@@ -2685,6 +2685,21 @@ export default function NovoOrcamento() {
   const { data: validacaoEtapa4 } = useEtapa4Validacao(id);
 
   const handleProxima = () => {
+    // Validação inline ao sair da Etapa 1: destaca cada campo obrigatório que estiver vazio
+    if (etapaAtual === 1 && !camposObrigatoriosOk) {
+      setMostrarErrosEtapa1(true);
+      toast({
+        title: "Preencha os campos destacados",
+        description: `Faltam: ${camposFaltando.join(", ")}.`,
+        variant: "destructive",
+      });
+      // foca no primeiro campo com erro
+      requestAnimationFrame(() => {
+        const el = document.querySelector('[data-campo-erro="true"]') as HTMLElement | null;
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+      return;
+    }
     // Validação ao sair da Etapa 3 (Fornecedores) para Etapa 4 (Markup)
     if (etapaAtual === 3 && pendenciasEtapa3.bloqueia) {
       setValidacaoEtapa4Open(true);
@@ -2701,6 +2716,12 @@ export default function NovoOrcamento() {
     }
     irParaEtapa(etapaAtual + 1);
   };
+
+  // helpers de erro por campo (Etapa 1)
+  const errCampo = (k: string) =>
+    mostrarErrosEtapa1 && String((form as any)[k] ?? "").trim() === "";
+  const ringErr = (k: string) =>
+    errCampo(k) ? "ring-2 ring-destructive/60 border-destructive" : "";
 
   const copiarCodigo = async () => {
     if (!form.codigo) return;
