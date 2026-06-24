@@ -946,7 +946,15 @@ export default function NovoOrcamento() {
         const principalLinha = principal ? principal[1] : null;
         const custoUnit = principalLinha ? Number(principalLinha.valor_unitario) || 0 : 0;
         const markupCat = markupsCategoria[it.categoria] ?? 0;
-        const ovr = overridesPorOrdem.get(idx);
+        const dbInfo = itemDbInfoByIdx[idx];
+        const itKey = itemKey({
+          planta_id: dbInfo?.item_tipo === "planta" ? dbInfo.item_id : null,
+          insumo_id: dbInfo?.item_tipo === "insumo" ? dbInfo.item_id : null,
+          nome_cientifico: it.nome_cientifico,
+          nome_popular: it.nome_popular,
+          porte_solicitado: it.porte,
+        });
+        const ovr = overridesItens.get(itKey);
         const markupEf = ovr?.markup_override_pct != null ? Number(ovr.markup_override_pct) : markupCat;
         const venda = ovr?.preco_venda_override != null
           ? Number(ovr.preco_venda_override)
