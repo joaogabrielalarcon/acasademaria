@@ -349,6 +349,22 @@ export default function NovoOrcamento() {
     },
   });
 
+  const { data: insumosCatalogo = [] } = useQuery({
+    queryKey: ["insumos-catalogo-ativos"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("insumos")
+        .select("id, nome, unidade, categoria, fornecedor_id, preco_unitario")
+        .eq("ativo", true)
+        .order("nome");
+      if (error) {
+        console.warn("[insumos] erro:", error);
+        return [];
+      }
+      return data || [];
+    },
+  });
+
   const tipoCoefDoItem = (it: ItemMemorial): string | null => {
     const cat = (it.categoria || "").toLowerCase();
     const porte = (it.porte || "").toLowerCase();
@@ -387,9 +403,7 @@ export default function NovoOrcamento() {
     });
 
     const linhas: InsumoCalc[] = [
-      { tipo: "mo", nome: "MO (Mão de obra plantio)", quantidade: +acc.mo.toFixed(2), unidade: "dias" },
       { tipo: "terra", nome: "Terra", quantidade: +acc.terra.toFixed(2), unidade: "m³" },
-      { tipo: "adubo", nome: "Adubo", quantidade: +acc.adubo.toFixed(2), unidade: "kits" },
       { tipo: "munck", nome: "Munck", quantidade: +acc.munck.toFixed(2), unidade: "dias" },
       { tipo: "corda", nome: "Corda", quantidade: +acc.corda.toFixed(2), unidade: "m" },
     ].filter((l) => l.quantidade > 0);
@@ -401,8 +415,7 @@ export default function NovoOrcamento() {
   const INSUMOS_SUGERIDOS = [
     "Torta de mamona", "Yoorin", "K-forte", "Algen (Lithothamnium)",
     "Bokashi", "Terra preta", "Substrato", "Adubo preparado",
-    "Pedrisco Palha nº3", "Seixo Bege", "Corda (10mm)", "Bidin",
-    "Limitador", "Lona",
+    "Corda (10mm)", "Bidin", "Limitador", "Lona",
   ];
   const UNIDADES_INSUMO = ["m³", "saco", "tonelada", "metro", "rolo", "unidade", "kg"];
 
@@ -410,15 +423,20 @@ export default function NovoOrcamento() {
     setInsumosAdicionais((prev) => {
       const idx = prev.findIndex((i) => i.nome === nome);
       if (idx >= 0) return prev.filter((_, i) => i !== idx);
+      // Tenta casar com cadastro (catalogo) por nome
+      const match = (insumosCatalogo as any[]).find(
+        (c) => String(c.nome).trim().toLowerCase() === nome.trim().toLowerCase(),
+      );
       return [
         ...prev,
         {
-          nome,
-          fornecedor_id: "",
+          insumo_id: match?.id || undefined,
+          nome: match?.nome || nome,
+          fornecedor_id: match?.fornecedor_id || "",
           quantidade_esperada: "",
-          unidade: "unidade",
+          unidade: match?.unidade || "unidade",
           margem: "0",
-          valor_unitario: "",
+          valor_unitario: match?.preco_unitario != null ? String(match.preco_unitario) : "",
           obs_interna: "",
           obs_proposta: "",
         },
@@ -431,19 +449,22 @@ export default function NovoOrcamento() {
   };
 
   const addInsumoCustom = () => {
-    setInsumosAdicionais((prev) => [
-      ...prev,
-      {
-        nome: "",
-        fornecedor_id: "",
-        quantidade_esperada: "",
-        unidade: "unidade",
-        margem: "0",
-        valor_unitario: "",
-        obs_interna: "",
-        obs_proposta: "",
-      },
-    ]);
+    setInsumosAdicionais((prev) => {
+      setInsumoPickerOpen(prev.length); // abre o picker da nova linha
+      return [
+        ...prev,
+        {
+          nome: "",
+          fornecedor_id: "",
+          quantidade_esperada: "",
+          unidade: "unidade",
+          margem: "0",
+          valor_unitario: "",
+          obs_interna: "",
+          obs_proposta: "",
+        },
+      ];
+    });
   };
 
   const insumosSemQtd = insumosAdicionais.filter(
