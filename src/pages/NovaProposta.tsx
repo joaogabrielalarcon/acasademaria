@@ -48,6 +48,13 @@ export default function NovaProposta() {
   });
   const [isSaving, setIsSaving] = useState(false);
 
+  const draft = useAutosaveDraft({
+    formKey: "nova-proposta",
+    scopeKey: clienteIdFromUrl || "novo",
+    getSnapshot: () => formData,
+    applySnapshot: (s: any) => { if (s) setFormData((f) => ({ ...f, ...s })); },
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
