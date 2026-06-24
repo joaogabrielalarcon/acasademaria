@@ -4465,8 +4465,23 @@ export default function NovoOrcamento() {
                       </CollapsibleContent>
                     </Collapsible>
                   </Card>
+                  );
+                };
+
+                if (visiveisIdx.length <= 30) {
+                  return visiveisIdx.map((idx) => (
+                    <div key={idx}>{renderCard(idx)}</div>
+                  ));
+                }
+                return (
+                  <VirtualWindowList
+                    count={visiveisIdx.length}
+                    estimateSize={360}
+                    getKey={(i) => visiveisIdx[i]}
+                    renderItem={(i) => renderCard(visiveisIdx[i])}
+                  />
                 );
-              })}
+              })()}
 
               <div className="sticky bottom-0 bg-background/95 backdrop-blur border rounded-lg p-3 flex justify-end">
                 <Button
