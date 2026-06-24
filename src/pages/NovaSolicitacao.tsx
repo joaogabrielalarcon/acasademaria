@@ -138,6 +138,8 @@ export default function NovaSolicitacao() {
 
       if (error) throw error;
 
+      await draft.clearDraft();
+
       toast({
         title: "Solicitação registrada!",
         description: "A solicitação foi salva com sucesso.",
