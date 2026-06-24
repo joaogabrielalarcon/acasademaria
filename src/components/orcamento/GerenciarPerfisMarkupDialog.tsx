@@ -27,6 +27,10 @@ export const CATEGORIAS_MARKUP = [
   "Condicionadores de Solo",
   "Vasos/Decoração",
   "Materiais Construtivos",
+  "Mão de Obra",
+  "Fretes",
+  "Transporte",
+  "Custos Indiretos",
 ];
 
 // Conversões bidirecionais markup <-> margem (em %)
