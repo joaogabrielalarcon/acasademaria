@@ -822,6 +822,7 @@ export default function NovoOrcamento() {
         ...buildPayload(),
         status: statusFinal,
         aliquota_mes_pct: aliquotaMes,
+        aliquota_produtos_pct: aliquotaProdutos,
         tipo_nf: tipoNf,
         margem_negociacao_pct: margemNegPct,
         ...(extras || {}),
