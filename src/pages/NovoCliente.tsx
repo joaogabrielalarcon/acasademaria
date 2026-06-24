@@ -40,6 +40,23 @@ export default function NovoCliente() {
   const [datasImportantes, setDatasImportantes] = useState<DataImportante[]>([]);
   const [notas, setNotas] = useState("");
 
+  const draft = useAutosaveDraft({
+    formKey: "novo-cliente",
+    scopeKey: "novo",
+    enabled: !isEditing,
+    getSnapshot: () => ({ nome, status, telefone, email, cpfCnpj, datasImportantes, notas }),
+    applySnapshot: (s: any) => {
+      if (!s) return;
+      if (typeof s.nome === "string") setNome(s.nome);
+      if (typeof s.status === "string") setStatus(s.status);
+      if (typeof s.telefone === "string") setTelefone(s.telefone);
+      if (typeof s.email === "string") setEmail(s.email);
+      if (typeof s.cpfCnpj === "string") setCpfCnpj(s.cpfCnpj);
+      if (Array.isArray(s.datasImportantes)) setDatasImportantes(s.datasImportantes);
+      if (typeof s.notas === "string") setNotas(s.notas);
+    },
+  });
+
   const { data: clienteExistente, isLoading: loadingCliente } = useCliente(id);
 
   useEffect(() => {
