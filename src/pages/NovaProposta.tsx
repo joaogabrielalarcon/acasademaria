@@ -83,6 +83,8 @@ export default function NovaProposta() {
 
       if (error) throw error;
 
+      await draft.clearDraft();
+
       toast({
         title: "Proposta salva!",
         description: "A proposta foi criada com sucesso.",
