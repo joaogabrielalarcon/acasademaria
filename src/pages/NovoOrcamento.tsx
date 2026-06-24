@@ -2580,7 +2580,7 @@ export default function NovoOrcamento() {
   };
 
   // ===== QuickAdd: cadastro rápido inline para correlações =====
-  type QuickKind = "cliente" | "fornecedor_insumo" | "cargo" | "transportadora" | "perfil_markup" | "local_cliente";
+  type QuickKind = "cliente" | "fornecedor_insumo" | "cargo" | "transportadora" | "perfil_markup" | "local_cliente" | "insumo";
   const [quickAdd, setQuickAdd] = useState<{
     open: boolean;
     kind: QuickKind | null;
