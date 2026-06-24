@@ -1393,19 +1393,14 @@ export default function NovoOrcamento() {
         confianca: "alta",
       }));
       const novasMargens: Record<number, number> = {};
-      const novosMarkups: Record<string, number> = {};
       itensList.forEach((i: any, idx: number) => {
         novasMargens[idx] = Number(i.margem_seguranca_pct) || 0;
-        if (i.categoria && i.markup_pct != null) {
-          novosMarkups[i.categoria] = Number(i.markup_pct);
-        }
       });
       setItensMaterial(novosItens);
       setMargensSeg(novasMargens);
-      if (Object.keys(novosMarkups).length > 0) {
-        setMarkupsCategoria((p) => ({ ...novosMarkups, ...p }));
-      }
+      // markup vem de orcamento_categorias_markup via markupCategoriasQuery
       if (novosItens.length > 0) setPdfCarregado(true);
+
 
       // cotacoes + fornecedoresSelecionados (por idx)
       const novasCot: Record<number, Record<string, CotacaoLinha>> = {};
