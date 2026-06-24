@@ -2043,14 +2043,31 @@ export default function NovoOrcamento() {
       .replace(/\s+/g, " ")
       .trim();
 
-  const fornecedoresDoItem = (item: ItemMemorial) =>
-    (historicoPorItem as Record<string, any[]>)[normNome(item.nome_popular)] || [];
+  // Une linhas de histórico encontradas tanto pelo nome popular quanto pelo científico,
+  // deduplicando por (fornecedor_id + item_id).
+  const fornecedoresDoItem = (item: ItemMemorial) => {
+    const hist = historicoPorItem as Record<string, any[]>;
+    const pop = normNome(item.nome_popular);
+    const sci = normNome(item.nome_cientifico || "");
+    const rowsA = pop ? hist[pop] || [] : [];
+    const rowsB = sci && sci !== pop ? hist[sci] || [] : [];
+    if (rowsB.length === 0) return rowsA;
+    const seen = new Set<string>();
+    const out: any[] = [];
+    for (const r of [...rowsA, ...rowsB]) {
+      const k = `${r.fornecedor_id || ""}::${r.item_id || ""}::${r.porte || ""}`;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(r);
+    }
+    return out;
+  };
 
   // Mapeia ItemMemorial (por idx) -> { item_id, item_tipo } usando histórico carregado
   const itemDbInfoByIdx = useMemo(() => {
     const map: Record<number, { item_id: string; item_tipo: "planta" | "insumo" }> = {};
     itensMaterial.forEach((it, idx) => {
-      const rows = (historicoPorItem as Record<string, any[]>)[normNome(it.nome_popular)] || [];
+      const rows = fornecedoresDoItem(it);
       const r = rows[0];
       if (r?.item_id && r?.item_tipo) {
         map[idx] = { item_id: r.item_id, item_tipo: r.item_tipo };
