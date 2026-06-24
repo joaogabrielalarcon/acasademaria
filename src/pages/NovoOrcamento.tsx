@@ -5876,19 +5876,31 @@ export default function NovoOrcamento() {
                     ) : (
                       <p className="text-xs text-muted-foreground italic">Sem comissão configurada.</p>
                     )}
-                    {margemNegPct > 0 ? (
+                    {negociacaoValor !== 0 ? (
                       <>
                         <div className="flex items-baseline justify-between">
-                          <span className="text-muted-foreground">Desconto máximo ({margemNegPct}%):</span>
-                          <strong>{fmtBRL(descontoMaximo)}</strong>
+                          <span className="text-muted-foreground">
+                            Negociação diluída ({negociacaoValor > 0 ? "embutida" : "absorvida"}):
+                          </span>
+                          <strong className={negociacaoValor < 0 ? "text-destructive" : "text-primary"}>
+                            {fmtBRL(negociacaoValor)}
+                          </strong>
                         </div>
-                        <div className="flex items-baseline justify-between">
-                          <span className="text-muted-foreground">Valor mínimo aceitável:</span>
-                          <strong className="text-primary">{fmtBRL(valorMinimo)}</strong>
+                        <div className="flex items-baseline justify-between text-xs text-muted-foreground">
+                          <span>→ Produtos ({(shareProdutos * 100).toFixed(1)}%):</span>
+                          <span>{fmtBRL(negociacaoProdutos)}</span>
+                        </div>
+                        <div className="flex items-baseline justify-between text-xs text-muted-foreground">
+                          <span>→ Mão de Obra ({(shareMo * 100).toFixed(1)}%):</span>
+                          <span>{fmtBRL(negociacaoMo)}</span>
+                        </div>
+                        <div className="flex items-baseline justify-between border-t pt-1 mt-1">
+                          <span className="text-muted-foreground">Margem bruta final:</span>
+                          <strong>{fmtBRL(margemBrutaValFinal)} ({margemBrutaPctTotal.toFixed(1)}%)</strong>
                         </div>
                       </>
                     ) : (
-                      <p className="text-xs text-muted-foreground italic">Sem margem de negociação configurada.</p>
+                      <p className="text-xs text-muted-foreground italic">Sem valor de negociação informado.</p>
                     )}
                   </div>
                 </Card>
