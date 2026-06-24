@@ -318,6 +318,9 @@ export function Etapa4MarkupBlocoA(props: Props) {
       qc.invalidateQueries({ queryKey: ["orcamento-categorias-markup", orcamentoId] });
       qc.invalidateQueries({ queryKey: ["orcamento-categorias-markup-resumo", orcamentoId] });
     },
+    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
 
   const abrirEdicao = (categoria: string) => {
     if (!podeGerenciar) return;
