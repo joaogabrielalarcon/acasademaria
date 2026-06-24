@@ -87,6 +87,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ResumoFornecedoresDialog, type ResumoItem } from "@/components/orcamento/ResumoFornecedoresDialog";
 import { ImportarRespostaFornecedorDialog } from "@/components/orcamento/ImportarRespostaFornecedorDialog";
+import { NovaVersaoDialog } from "@/components/orcamento/NovaVersaoDialog";
+import { VersoesDialog } from "@/components/orcamento/VersoesDialog";
+import { History, GitBranch } from "lucide-react";
 import { EnderecoFields, composeEndereco } from "@/components/EnderecoFields";
 import { Star, Filter, MessageCircle, Lock, Crown, ChevronsUp, ChevronsDown, Zap, Store, AlertCircle } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
