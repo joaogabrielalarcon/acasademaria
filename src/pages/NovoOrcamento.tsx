@@ -60,6 +60,7 @@ import { MercadoInlineEditor, parseMercados } from "@/components/orcamento/Merca
 import { AtualizarCotacaoPopover } from "@/components/orcamento/AtualizarCotacaoPopover";
 import { MafeFAB } from "@/components/orcamento/MafeFAB";
 import { Etapa4MarkupBlocoA, useEtapa4Validacao } from "@/components/orcamento/Etapa4MarkupBlocoA";
+import { Etapa6AjustesItem } from "@/components/orcamento/Etapa6AjustesItem";
 import { EditarMercadoDialog } from "@/components/orcamento/EditarMercadoDialog";
 import {
   IndisponibilidadeDialog,
@@ -673,14 +674,28 @@ export default function NovoOrcamento() {
   const CATEGORIAS_OUTROS = ["Insumos", "Fretes", "Mão de Obra", "Transporte", "Custos Indiretos"];
   const CATEGORIAS_RESUMO = [...CATEGORIAS_PLANTAS, ...CATEGORIAS_OUTROS];
 
-  const [markupsCategoria, setMarkupsCategoria] = useState<Record<string, number>>({});
-  const [markupModal, setMarkupModal] = useState<{
-    open: boolean;
-    categoria: string;
-    anterior: number;
-    novo: number;
-    motivo: string;
-  }>({ open: false, categoria: "", anterior: 0, novo: 0, motivo: "" });
+  // Markup vem do banco (orcamento_categorias_markup), gravado na Etapa 4.
+  // Esta é a ÚNICA fonte de markup do orçamento.
+  const markupCategoriasQuery = useQuery({
+    queryKey: ["orcamento-categorias-markup-resumo", id],
+    queryFn: async () => {
+      if (!id) return [] as any[];
+      const { data, error } = await (supabase as any)
+        .from("orcamento_categorias_markup")
+        .select("categoria, markup_pct, margem_pct, ajustado_manualmente, perfil_id_aplicado")
+        .eq("orcamento_id", id);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!id,
+  });
+  const markupsCategoria = useMemo<Record<string, number>>(() => {
+    const out: Record<string, number> = {};
+    ((markupCategoriasQuery.data as any[]) || []).forEach((r) => {
+      out[r.categoria] = Number(r.markup_pct) || 0;
+    });
+    return out;
+  }, [markupCategoriasQuery.data]);
   const [versoesPendentes, setVersoesPendentes] = useState<
     Array<{ campo_alterado: string; valor_anterior: string; valor_novo: string; motivo: string }>
   >([]);
@@ -703,22 +718,6 @@ export default function NovoOrcamento() {
     motivo: "",
   });
   const [savingFinal, setSavingFinal] = useState(false);
-
-  useEffect(() => {
-    if (etapaAtual !== 6) return;
-    setMarkupsCategoria((prev) => {
-      const next = { ...prev };
-      CATEGORIAS_RESUMO.forEach((c) => {
-        if (next[c] === undefined) {
-          // Categorias da Etapa 5 são repasse direto ao cliente (sem markup adicional)
-          const repasseDireto = c === "Fretes" || c === "Mão de Obra" || c === "Transporte" || c === "Custos Indiretos";
-          next[c] = repasseDireto ? 0 : 100;
-        }
-      });
-      return next;
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [etapaAtual]);
 
   const custoPorCategoria = useMemo(() => {
     const acc: Record<string, number> = {};
@@ -806,33 +805,10 @@ export default function NovoOrcamento() {
       ? (totaisResumo.margemBrutaVal / totaisResumo.totalVenda) * 100
       : 0;
 
-  const abrirEdicaoMarkup = (categoria: string) => {
-    setMarkupModal({
-      open: true,
-      categoria,
-      anterior: markupsCategoria[categoria] ?? 0,
-      novo: markupsCategoria[categoria] ?? 0,
-      motivo: "",
-    });
-  };
+  // Markup por categoria é gerenciado na Etapa 4 (Etapa4MarkupBlocoA).
+  // Esta tela (Etapa 6) consome o valor pronto via markupCategoriasQuery.
 
-  const confirmarMarkup = () => {
-    if (!markupModal.motivo.trim()) {
-      toast({ title: "Informe o motivo da alteração", variant: "destructive" });
-      return;
-    }
-    setMarkupsCategoria((p) => ({ ...p, [markupModal.categoria]: markupModal.novo }));
-    setVersoesPendentes((p) => [
-      ...p,
-      {
-        campo_alterado: `markup_${markupModal.categoria}`,
-        valor_anterior: String(markupModal.anterior),
-        valor_novo: String(markupModal.novo),
-        motivo: markupModal.motivo,
-      },
-    ]);
-    setMarkupModal((m) => ({ ...m, open: false }));
-  };
+
 
   const persistirOrcamentoCompleto = async (
     statusFinal: string,
@@ -882,10 +858,17 @@ export default function NovoOrcamento() {
       for (const t of tabelas) {
         await (supabase as any).from(t).delete().eq("orcamento_id", orcId);
       }
+      // Preserve overrides item-a-item antes do delete/reinsert (chaveado por ordem).
       const { data: itensExistentes } = await (supabase as any)
         .from("orcamento_itens")
-        .select("id")
+        .select("id, ordem, markup_override_pct, preco_venda_override, ajuste_obs, ajustado_por, ajustado_em")
         .eq("orcamento_id", orcId);
+      const overridesPorOrdem = new Map<number, any>();
+      ((itensExistentes || []) as any[]).forEach((r) => {
+        if (r.markup_override_pct != null || r.preco_venda_override != null) {
+          overridesPorOrdem.set(Number(r.ordem), r);
+        }
+      });
       const idsItensExist = (itensExistentes || []).map((r: any) => r.id);
       if (idsItensExist.length > 0) {
         await (supabase as any).from("orcamento_cotacoes").delete().in("item_id", idsItensExist);
@@ -904,7 +887,11 @@ export default function NovoOrcamento() {
         const principalLinha = principal ? principal[1] : null;
         const custoUnit = principalLinha ? Number(principalLinha.valor_unitario) || 0 : 0;
         const markupCat = markupsCategoria[it.categoria] ?? 0;
-        const venda = custoUnit * (1 + markupCat / 100);
+        const ovr = overridesPorOrdem.get(idx);
+        const markupEf = ovr?.markup_override_pct != null ? Number(ovr.markup_override_pct) : markupCat;
+        const venda = ovr?.preco_venda_override != null
+          ? Number(ovr.preco_venda_override)
+          : custoUnit * (1 + markupEf / 100);
 
         const { data: itemRow, error: iErr } = await (supabase as any)
           .from("orcamento_itens")
@@ -927,7 +914,12 @@ export default function NovoOrcamento() {
               ? (principalLinha.porte_ofertado || "").toLowerCase() !==
                 (it.porte || "").toLowerCase()
               : false,
-            markup_pct: markupCat,
+            markup_pct: markupEf,
+            markup_override_pct: ovr?.markup_override_pct ?? null,
+            preco_venda_override: ovr?.preco_venda_override ?? null,
+            ajuste_obs: ovr?.ajuste_obs ?? null,
+            ajustado_por: ovr?.ajustado_por ?? null,
+            ajustado_em: ovr?.ajustado_em ?? null,
             preco_venda_unitario: venda,
             imposto_pct: 13.5,
             preco_venda_final: venda * 1.135,
@@ -936,6 +928,7 @@ export default function NovoOrcamento() {
           .select("id")
           .single();
         if (iErr) throw iErr;
+
 
         for (const [fornId, l] of Object.entries(itemCotacoes)) {
           await (supabase as any).from("orcamento_cotacoes").insert({
@@ -1418,19 +1411,14 @@ export default function NovoOrcamento() {
         confianca: "alta",
       }));
       const novasMargens: Record<number, number> = {};
-      const novosMarkups: Record<string, number> = {};
       itensList.forEach((i: any, idx: number) => {
         novasMargens[idx] = Number(i.margem_seguranca_pct) || 0;
-        if (i.categoria && i.markup_pct != null) {
-          novosMarkups[i.categoria] = Number(i.markup_pct);
-        }
       });
       setItensMaterial(novosItens);
       setMargensSeg(novasMargens);
-      if (Object.keys(novosMarkups).length > 0) {
-        setMarkupsCategoria((p) => ({ ...novosMarkups, ...p }));
-      }
+      // markup vem de orcamento_categorias_markup via markupCategoriasQuery
       if (novosItens.length > 0) setPdfCarregado(true);
+
 
       // cotacoes + fornecedoresSelecionados (por idx)
       const novasCot: Record<number, Record<string, CotacaoLinha>> = {};
@@ -5594,50 +5582,17 @@ export default function NovoOrcamento() {
           {/* Etapa 6 - Resumo Final */}
           {etapaAtual === 6 && (
             <div className="space-y-6 pb-32">
-              {/* Perfil de Markup (opcional) */}
-              <Card className="p-4">
-                <div className="flex flex-col md:flex-row md:items-end gap-3">
-                  <div className="flex-1 space-y-1">
-                    <Label>Perfil de markup</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Selecione um perfil para aplicar markups padrão por categoria, ou edite manualmente abaixo.
-                    </p>
-                  </div>
-                  <div className="flex gap-2 md:w-80">
-                    <Select
-                      value={form.perfil_markup_id}
-                      onValueChange={(v) => setForm((c) => ({ ...c, perfil_markup_id: v }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={
-                            (perfisMarkup as any[]).length === 0
-                              ? "Nenhum perfil cadastrado"
-                              : "Selecione..."
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(perfisMarkup as any[]).map((p) => (
-                          <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      title="Cadastrar novo perfil de markup"
-                      onClick={() =>
-                        openQuickAdd("perfil_markup", (id) =>
-                          setForm((c) => ({ ...c, perfil_markup_id: id })),
-                        )
-                      }
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
+              {/* Markup vem da Etapa 4 — link de edição rápido */}
+              <Card className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                <div>
+                  <h3 className="font-display text-base text-foreground">Markup por categoria</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Definido na Etapa 4 (única fonte). Para alterar o padrão de uma categoria, volte à Etapa 4.
+                  </p>
                 </div>
+                <Button variant="outline" size="sm" onClick={() => setEtapaAtual(4)}>
+                  Editar markup na Etapa 4
+                </Button>
               </Card>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -5646,7 +5601,7 @@ export default function NovoOrcamento() {
                   <div>
                     <h2 className="font-display text-lg text-foreground">Resumo por categoria</h2>
                     <p className="text-xs text-muted-foreground">
-                      Edite o markup de cada categoria. Alterações exigem motivo.
+                      Markup vem da Etapa 4. Ajustes finos por item ficam no bloco abaixo.
                     </p>
                   </div>
                   <div className="border rounded-md overflow-hidden">
@@ -5665,14 +5620,8 @@ export default function NovoOrcamento() {
                           <tr key={l.categoria} className="border-t">
                             <td className="p-2 font-medium">{l.categoria}</td>
                             <td className="p-2 text-right">{fmtBRL(l.custo)}</td>
-                            <td className="p-2 text-right">
-                              <button
-                                className="text-primary underline-offset-2 hover:underline"
-                                onClick={() => abrirEdicaoMarkup(l.categoria)}
-                              >
-                                {l.markup.toFixed(1)}%
-                              </button>
-                            </td>
+                            <td className="p-2 text-right tabular-nums">{l.markup.toFixed(1)}%</td>
+
                             <td className="p-2 text-right">{fmtBRL(l.venda)}</td>
                             <td className="p-2 text-right">{l.margemBruta.toFixed(1)}%</td>
                           </tr>
@@ -5737,6 +5686,9 @@ export default function NovoOrcamento() {
                   </div>
                 </div>
               </div>
+
+              {/* Ajuste item a item (bidirecional, com rastro de auditoria) */}
+              <Etapa6AjustesItem orcamentoId={id} />
 
               {/* Read-only: Adicionais (Etapa 5) e Comissão/Margem (Etapa 4) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -5831,55 +5783,9 @@ export default function NovoOrcamento() {
             </div>
           )}
 
-          {/* Modal: editar markup */}
-          <Dialog
-            open={markupModal.open}
-            onOpenChange={(o) => setMarkupModal((m) => ({ ...m, open: o }))}
-          >
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Alterar markup — {markupModal.categoria}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label>Markup anterior</Label>
-                    <Input value={`${markupModal.anterior}%`} readOnly className="bg-muted/40" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Novo markup (%)</Label>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      value={markupModal.novo}
-                      onChange={(e) =>
-                        setMarkupModal((m) => ({ ...m, novo: Number(e.target.value) || 0 }))
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Motivo da alteração *</Label>
-                  <Textarea
-                    value={markupModal.motivo}
-                    onChange={(e) => setMarkupModal((m) => ({ ...m, motivo: e.target.value }))}
-                    rows={3}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setMarkupModal((m) => ({ ...m, open: false }))}
-                >
-                  Cancelar
-                </Button>
-                <Button variant="terracota" onClick={confirmarMarkup}>
-                  Salvar alteração
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          {/* Modal de markup por categoria removido — markup é gerenciado na Etapa 4. */}
+
+
 
           {/* Modal: aprovar */}
           <Dialog
