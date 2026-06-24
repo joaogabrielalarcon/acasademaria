@@ -62,6 +62,7 @@ import {
 import { cn } from "@/lib/utils";
 import { FornecedorPopover } from "@/components/orcamento/FornecedorPopover";
 import { TabelaItensProjeto } from "@/components/orcamento/TabelaItensProjeto";
+import { Badge } from "@/components/ui/badge";
 import { MercadoInlineEditor, parseMercados } from "@/components/orcamento/MercadoInlineEditor";
 import { AtualizarCotacaoPopover } from "@/components/orcamento/AtualizarCotacaoPopover";
 import { MafeFAB } from "@/components/orcamento/MafeFAB";
