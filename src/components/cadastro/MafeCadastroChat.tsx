@@ -111,17 +111,26 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
   const [modo, setModo] = useState<"criar" | "atualizar">("criar");
   const [atualizarId, setAtualizarId] = useState<string | null>(null);
 
+  // Estado específico para preco_fornecedor
+  const [lookup, setLookup] = useState<{ fornecedores: any[]; itens: any[]; ultimo_preco: any | null } | null>(null);
+  const [fornecedorSel, setFornecedorSel] = useState<any | null>(null);
+  const [itemSel, setItemSel] = useState<any | null>(null);
+  const [confirmaSalto, setConfirmaSalto] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const introMsg = (() => {
+    if (entidade === "fornecedores")
+      return "Olá! Me conte sobre o fornecedor que você quer cadastrar ou atualizar. Pode escrever livre, mandar uma foto ou um print. Eu organizo os dados e te mostro o que falta antes de gravar.";
+    if (entidade === "plantas")
+      return "Olá! Me conte sobre a planta. Pode escrever livre, mandar uma foto ou um print. Eu organizo os dados e te mostro o que falta antes de gravar.";
+    return "Olá! Me diga qual fornecedor tem qual item por qual preço. Ex: \"Adubos Jarinu tem Ipê amarelo porte 1,80 por R$ 45\". Pode mandar foto ou print. Eu busco no catálogo inteiro, confirmo com você e gravo no histórico de preços.";
+  })();
+
   useEffect(() => {
     if (open) {
-      setMessages([
-        {
-          role: "assistant",
-          content: `Olá! Me conte ${entidade === "fornecedores" ? "sobre o fornecedor" : "sobre a planta"} que você quer cadastrar ou atualizar. Pode escrever livre, mandar uma foto ou um print. Eu organizo os dados e te mostro o que falta antes de gravar.`,
-        },
-      ]);
+      setMessages([{ role: "assistant", content: introMsg }]);
       setInput("");
       setImage(null);
       setExtraido(null);
@@ -129,8 +138,12 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
       setDuplicados([]);
       setModo("criar");
       setAtualizarId(null);
+      setLookup(null);
+      setFornecedorSel(null);
+      setItemSel(null);
+      setConfirmaSalto(false);
     }
-  }, [open, entidade]);
+  }, [open, entidade, introMsg]);
 
   useEffect(() => {
     if (scrollRef.current) {
