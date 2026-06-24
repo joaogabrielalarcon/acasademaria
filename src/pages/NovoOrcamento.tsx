@@ -510,19 +510,35 @@ export default function NovoOrcamento() {
     const norm = (s: string) =>
       (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 
+    const fornecedoresMap = new Map<string, any>(
+      ((fornecedoresLista as any[]) || []).map((f) => [f.id, f]),
+    );
+
     // 1) Plantas vindas do memorial
     itensMaterial.forEach((it, idx) => {
       const badges: string[] = [];
       if (it.confianca === "baixa") badges.push("baixa confiança");
+      const sel = fornecedoresSelecionados[idx] || [];
+      const linhas = cotacoes[idx] || {};
+      const principalId =
+        sel.find((fid) => linhas[fid]?.status_selecao === "principal") || sel[0] || null;
+      const principalLinha = principalId ? linhas[principalId] : null;
+      const fornNome = principalId ? fornecedoresMap.get(principalId)?.nome || null : null;
       out.push({
         tipo: "planta",
         chave: it.planta_id || `planta-mem-${idx}`,
         origem: "memorial",
         nome: it.nome_popular,
+        nome_cientifico: it.nome_cientifico || null,
         categoria: it.categoria || null,
         quantidade: Number(it.quantidade) || 0,
         unidade: it.unidade || "UNID",
         porte: it.porte || null,
+        fornecedor_id: principalId,
+        fornecedor_nome: fornNome,
+        valor_unitario: principalLinha?.valor_unitario
+          ? Number(principalLinha.valor_unitario)
+          : null,
         badges,
         ref: { itemMemorialIdx: idx },
       });
