@@ -707,7 +707,8 @@ export default function NovoOrcamento() {
   const [comissaoBeneficiario, setComissaoBeneficiario] = useState("");
   const [comissaoAberta, setComissaoAberta] = useState(false);
 
-  const [margemNegPct, setMargemNegPct] = useState<number>(0);
+  const [margemNegPct, setMargemNegPct] = useState<number>(0); // legado, mantido para compat
+  const [negociacaoValor, setNegociacaoValor] = useState<number>(0);
 
   const [aprovarModal, setAprovarModal] = useState<{ open: boolean; valor: string; observacao: string }>({
     open: false,
