@@ -1093,6 +1093,7 @@ export default function NovoOrcamento() {
           custosIndiretos,
           markupsCategoria,
           aliquotaMes,
+          aliquotaProdutos,
           tipoNf,
           comissao: comissaoOn
             ? { tipo: comissaoTipo, percentual: Number(comissaoPct) || 0, beneficiario: comissaoBeneficiario, valor: valorComissao }
