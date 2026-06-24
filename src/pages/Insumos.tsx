@@ -357,6 +357,41 @@ export function InsumosContent() {
                   />
                 </div>
 
+                {podeMesclar && (
+                  <div className="rounded-md border border-primary/20 bg-muted/30 p-3 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <input
+                        id="is_base_toggle"
+                        type="checkbox"
+                        checked={formData.is_base}
+                        onChange={(e) => setFormData({ ...formData, is_base: e.target.checked })}
+                        className="mt-1 h-4 w-4 accent-primary"
+                      />
+                      <div className="flex-1">
+                        <Label htmlFor="is_base_toggle" className="cursor-pointer">
+                          Item base do projeto
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          Entra automaticamente na lista de insumos de todo orçamento (etapa Fornecedores). Use para itens recorrentes (terra, adubos fixos, corda, lona, bidim).
+                        </p>
+                      </div>
+                    </div>
+                    {formData.is_base && (
+                      <div className="space-y-1 pl-7">
+                        <Label className="text-xs">Ordem na lista (menor primeiro)</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={formData.base_ordem}
+                          onChange={(e) => setFormData({ ...formData, base_ordem: e.target.value })}
+                          placeholder="Ex.: 1"
+                          className="h-9 max-w-[140px]"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex justify-end gap-3 pt-4">
                   <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
                   <Button type="submit" disabled={saveMutation.isPending}>
