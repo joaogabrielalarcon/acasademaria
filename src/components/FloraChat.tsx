@@ -86,6 +86,7 @@ export function MafeChat() {
   const [projectPickerSearch, setProjectPickerSearch] = useState("");
   const [selectedProject, setSelectedProject] = useState<MafeProjetoOption | null>(null);
   const [diarioChatOpen, setDiarioChatOpen] = useState(false);
+  const [cadastroEntidade, setCadastroEntidade] = useState<EntidadeCadastro | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastMsgStartRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
