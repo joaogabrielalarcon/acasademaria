@@ -1094,6 +1094,7 @@ export default function NovoOrcamento() {
         const ovrIns = overridesInsumos.get(insumoKey({ nome: i.nome, fornecedor_id: i.fornecedor_id || null }));
         await (supabase as any).from("orcamento_insumos").insert({
           orcamento_id: orcId,
+          insumo_id: i.insumo_id || null,
           nome: i.nome,
           fornecedor_id: i.fornecedor_id || null,
           quantidade_esperada: qtdEsp,
@@ -1603,6 +1604,7 @@ export default function NovoOrcamento() {
           });
         } else {
           insAdic.push({
+            insumo_id: i.insumo_id || undefined,
             nome: i.nome || "",
             fornecedor_id: i.fornecedor_id || "",
             quantidade_esperada: i.quantidade_esperada != null ? String(i.quantidade_esperada) : "",
