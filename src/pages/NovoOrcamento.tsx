@@ -683,7 +683,7 @@ export default function NovoOrcamento() {
       if (!id) return [] as any[];
       const { data, error } = await (supabase as any)
         .from("orcamento_categorias_markup")
-        .select("categoria, markup_pct, margem_pct, ajustado_manualmente, perfil_id_aplicado")
+        .select("categoria, markup_pct, margem_pct, piso_margem_pct, ajustado_manualmente, perfil_id_aplicado")
         .eq("orcamento_id", id);
       if (error) throw error;
       return data || [];
@@ -694,6 +694,13 @@ export default function NovoOrcamento() {
     const out: Record<string, number> = {};
     ((markupCategoriasQuery.data as any[]) || []).forEach((r) => {
       out[r.categoria] = Number(r.markup_pct) || 0;
+    });
+    return out;
+  }, [markupCategoriasQuery.data]);
+  const pisosCategoria = useMemo<Record<string, number>>(() => {
+    const out: Record<string, number> = {};
+    ((markupCategoriasQuery.data as any[]) || []).forEach((r) => {
+      if (r.piso_margem_pct != null) out[r.categoria] = Number(r.piso_margem_pct);
     });
     return out;
   }, [markupCategoriasQuery.data]);
