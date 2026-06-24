@@ -1126,67 +1126,6 @@ export default function NovoOrcamento() {
         });
       }
 
-      for (const f of fretes) {
-        const qtd = Math.ceil((Number(f.qtd_esperada) || 0) * (1 + (Number(f.margem) || 0) / 100));
-        await (supabase as any).from("orcamento_fretes").insert({
-          orcamento_id: orcId,
-          fornecedor_id: f.modo_transp === "cad" ? (f.transportador_id || null) : null,
-          transportador: f.transportador_nome || null,
-          percurso: f.percurso || null,
-          descricao_percurso: f.percurso || null,
-          valor_unitario: Number(f.valor_unitario) || 0,
-          qtd_esperada: Number(f.qtd_esperada) || 0,
-          margem_seguranca_pct: Number(f.margem) || 0,
-          qtd_orcar: qtd,
-          valor_total: qtd * (Number(f.valor_unitario) || 0),
-        });
-      }
-
-      for (const m of moLinhas) {
-        const bruto =
-          (Number(m.qtd) || 0) * (Number(m.dias) || 0) * (Number(m.salario_diario) || 0);
-        const aliq = (aliquotaMes || 0) + (tipoNf === "pj" ? 11 : 0);
-        const denom = (100 - aliq) / 100;
-        const valNf = denom > 0 ? bruto / denom : 0;
-        await (supabase as any).from("orcamento_mo").insert({
-          orcamento_id: orcId,
-          colaborador_id: m.colaborador_id || null,
-          cargo_id: m.cargo_id || null,
-          qtd_funcionarios: Number(m.qtd) || 0,
-          qtd_dias: Number(m.dias) || 0,
-          salario_diario: Number(m.salario_diario) || 0,
-          custo_total: bruto,
-          aliquota_mes_pct: aliquotaMes,
-          tipo_nf: tipoNf,
-          valor_com_imposto: valNf,
-        });
-      }
-
-      for (const t of transporte) {
-        const sub =
-          (Number(t.valor_km) || 0) * (Number(t.dias) || 0) * (Number(t.km) || 0);
-        await (supabase as any).from("orcamento_transporte").insert({
-          orcamento_id: orcId,
-          tipo: t.tipo,
-          valor_km: Number(t.valor_km) || 0,
-          qtd_dias: Number(t.dias) || 0,
-          qtd_km: Number(t.km) || 0,
-          subtotal: sub,
-        });
-      }
-
-      for (const c of custosIndiretos) {
-        const total = (Number(c.valor_unitario) || 0) * (Number(c.quantidade) || 0);
-        await (supabase as any).from("orcamento_custos_indiretos").insert({
-          orcamento_id: orcId,
-          tipo: c.tipo,
-          descricao: c.descricao || null,
-          valor_unitario: Number(c.valor_unitario) || 0,
-          quantidade: Number(c.quantidade) || 0,
-          total,
-        });
-      }
-
       if (comissaoOn && Number(comissaoPct) > 0) {
         await (supabase as any).from("orcamento_comissoes").insert({
           orcamento_id: orcId,
