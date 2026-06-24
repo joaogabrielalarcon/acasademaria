@@ -156,11 +156,13 @@ export type ItemProjeto = {
   chave: string;                       // id estável (planta_id, insumo_id, ou prefixo+índice)
   origem: "memorial" | "base" | "manual";
   nome: string;
+  nome_cientifico?: string | null;
   categoria: string | null;
   quantidade: number;
   unidade: string;
   porte?: string | null;
   fornecedor_id?: string | null;
+  fornecedor_nome?: string | null;
   valor_unitario?: number | null;
   badges: string[];                    // ex.: "base", "extraordinário", "sem fornecedor", "baixa confiança"
   ref?: {
@@ -508,19 +510,35 @@ export default function NovoOrcamento() {
     const norm = (s: string) =>
       (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 
+    const fornecedoresMap = new Map<string, any>(
+      ((fornecedoresLista as any[]) || []).map((f) => [f.id, f]),
+    );
+
     // 1) Plantas vindas do memorial
     itensMaterial.forEach((it, idx) => {
       const badges: string[] = [];
       if (it.confianca === "baixa") badges.push("baixa confiança");
+      const sel = fornecedoresSelecionados[idx] || [];
+      const linhas = cotacoes[idx] || {};
+      const principalId =
+        sel.find((fid) => linhas[fid]?.status_selecao === "principal") || sel[0] || null;
+      const principalLinha = principalId ? linhas[principalId] : null;
+      const fornNome = principalId ? fornecedoresMap.get(principalId)?.nome || null : null;
       out.push({
         tipo: "planta",
         chave: it.planta_id || `planta-mem-${idx}`,
         origem: "memorial",
         nome: it.nome_popular,
+        nome_cientifico: it.nome_cientifico || null,
         categoria: it.categoria || null,
         quantidade: Number(it.quantidade) || 0,
         unidade: it.unidade || "UNID",
         porte: it.porte || null,
+        fornecedor_id: principalId,
+        fornecedor_nome: fornNome,
+        valor_unitario: principalLinha?.valor_unitario
+          ? Number(principalLinha.valor_unitario)
+          : null,
         badges,
         ref: { itemMemorialIdx: idx },
       });
@@ -614,7 +632,7 @@ export default function NovoOrcamento() {
     });
 
     return out;
-  }, [itensMaterial, itensInsumoExtra, insumosAdicionais, insumosFull, coeficientes, margensSeg]);
+  }, [itensMaterial, itensInsumoExtra, insumosAdicionais, insumosFull, coeficientes, margensSeg, fornecedoresSelecionados, cotacoes, fornecedoresLista]);
 
   // Log de verificação para a Sub-fase 3A (sem mudança visual).
   useEffect(() => {
@@ -4018,848 +4036,63 @@ export default function NovoOrcamento() {
               )}
 
               {tabEtapa3 === "comparativo" && (<>
-              {/* Sub-fase 3B — Preview da nova tabela única de itens do projeto */}
-              {itensProjeto.length > 0 && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-display text-lg text-foreground">Itens do projeto</h3>
-                    <Badge variant="outline" className="text-[10px]">preview 3B</Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Visão unificada de plantas e insumos. A seleção de fornecedor continua disponível nos cards abaixo enquanto esta tabela é validada.
-                  </p>
-                  <TabelaItensProjeto
-                    itens={itensProjeto}
-                    getAlternativas={(item) => {
-                      const idx = item.ref?.itemMemorialIdx;
-                      if (idx == null || !itensMaterial[idx]) return [];
-                      const rows = fornecedoresDoItem(itensMaterial[idx]) as any[];
-                      const sel = new Set(fornecedoresSelecionados[idx] || []);
-                      return rows.map((r: any) => ({
-                        fornecedor_id: r.fornecedor_id,
-                        fornecedor_nome: r.fornecedores?.nome || "Fornecedor",
-                        porte: r.porte,
-                        preco: r.preco != null ? Number(r.preco) : null,
-                        data: r.data_orcamento,
-                        estrelas: r.fornecedores?.nota_media != null ? Number(r.fornecedores.nota_media) : null,
-                        mercado: r.fornecedores?.mercado || null,
-                        selecionado: sel.has(r.fornecedor_id),
-                      }));
-                    }}
-                  />
-                </div>
-              )}
-
-              {itensMaterial.length === 0 && (
+              {itensProjeto.length === 0 ? (
                 <EmptyState
-                  title="Sem itens no memorial"
-                  description="Volte à Etapa 2 para adicionar plantas, insumos ou condicionadores antes de selecionar fornecedores."
+                  title="Sem itens no projeto"
+                  description="Volte à Etapa 2 para adicionar plantas e insumos antes de selecionar fornecedores."
                   action={
                     <Button variant="outline" size="sm" onClick={() => irParaEtapa(2)}>
                       <ArrowLeft className="w-4 h-4" /> Voltar à Etapa 2
                     </Button>
                   }
                 />
+              ) : (
+                <TabelaItensProjeto
+                  itens={itensProjeto}
+                  getAlternativas={(item) => {
+                    const idx = item.ref?.itemMemorialIdx;
+                    if (idx == null || !itensMaterial[idx]) return [];
+                    const rows = fornecedoresDoItem(itensMaterial[idx]) as any[];
+                    const sel = new Set(fornecedoresSelecionados[idx] || []);
+                    return rows.map((r: any) => ({
+                      fornecedor_id: r.fornecedor_id,
+                      fornecedor_nome: r.fornecedores?.nome || "Fornecedor",
+                      porte: r.porte,
+                      preco: r.preco != null ? Number(r.preco) : null,
+                      unidade: r.unidade || itensMaterial[idx].unidade || null,
+                      data: r.data_orcamento,
+                      estrelas:
+                        r.fornecedores?.nota_media != null
+                          ? Number(r.fornecedores.nota_media)
+                          : null,
+                      mercado: r.fornecedores?.mercado || null,
+                      selecionado: sel.has(r.fornecedor_id),
+                    }));
+                  }}
+                  onSelecionarFornecedor={(item, alt) => {
+                    const idx = item.ref?.itemMemorialIdx;
+                    if (idx == null) {
+                      toast({
+                        title: "Seleção de insumo em breve",
+                        description: "A escolha de fornecedor de insumo será habilitada na próxima entrega.",
+                      });
+                      return;
+                    }
+                    setFornecedoresSelecionados((prev) => ({ ...prev, [idx]: [alt.fornecedor_id] }));
+                    setCotacao(idx, alt.fornecedor_id, {
+                      status_selecao: "principal",
+                      valor_unitario: alt.preco != null ? String(alt.preco) : "",
+                      porte_ofertado: alt.porte || item.porte || "",
+                    });
+                  }}
+                  onAdicionarItem={() => {
+                    toast({
+                      title: "Adicionar item",
+                      description: "Picker do catálogo entra na próxima entrega.",
+                    });
+                  }}
+                />
               )}
-
-              {(() => {
-                const visiveisIdx = itensMaterial
-                  .map((_, i) => i)
-                  .filter((i) => !soSemFornecedor || (fornecedoresSelecionados[i]?.length ?? 0) === 0);
-
-                if (itensMaterial.length > 0 && soSemFornecedor && visiveisIdx.length === 0) {
-                  return (
-                    <Card className="p-6 text-center text-sm text-muted-foreground">
-                      Todos os itens já têm pelo menos um fornecedor selecionado.
-                      <div className="mt-2">
-                        <Button variant="ghost" size="sm" onClick={() => setSoSemFornecedor(false)}>
-                          Mostrar todos
-                        </Button>
-                      </div>
-                    </Card>
-                  );
-                }
-
-                const renderCard = (idx: number) => {
-                  const item = itensMaterial[idx];
-                  if (!item) return null;
-                const fornsBruto = fornecedoresDoItem(item) as any[];
-                const filtros = filtrosTab3[idx] || filtroPadraoTab3;
-                const mercadosUnicos = Array.from(
-                  new Set(
-                    fornsBruto.flatMap((r: any) =>
-                      String(r.fornecedores?.mercado || "")
-                        .split(/[,;|]/)
-                        .map((s: string) => s.trim())
-                        .filter((s: string) => !!s),
-                    ),
-                  ),
-                ).sort((a, b) => a.localeCompare(b, "pt-BR"));
-                const temSemMercado = fornsBruto.some(
-                  (r: any) => !String(r.fornecedores?.mercado || "").trim(),
-                );
-
-                // Classifica por porte (exato/maior/menor) e considera outros_portes embutidos
-                const expandeRowsPorPorte = (r: any): { row: any; portClass: "exato" | "maior" | "menor" | "indef"; portUsado: string | null; precoUsado: number | null; dataUsada: string | null }[] => {
-                  // se item.porte vazio, tudo conta como exato
-                  if (!item.porte) {
-                    return [{ row: r, portClass: "exato", portUsado: r.porte, precoUsado: r.preco != null ? Number(r.preco) : null, dataUsada: r.data_orcamento }];
-                  }
-                  const variantes = [{ porte: r.porte, preco: r.preco, data: r.data_orcamento }, ...((r.outros_portes || []) as any[]).map((o) => ({ porte: o.porte, preco: o.preco, data: o.data_orcamento }))];
-                  // Mantém apenas a melhor variante por classe (usa a de menor preço)
-                  const porClasse: Record<string, any> = {};
-                  variantes.forEach((v) => {
-                    const c = compararPorte(v.porte, item.porte);
-                    if (!porClasse[c] || (v.preco != null && porClasse[c].preco != null && Number(v.preco) < Number(porClasse[c].preco))) {
-                      porClasse[c] = v;
-                    } else if (!porClasse[c]) {
-                      porClasse[c] = v;
-                    }
-                  });
-                  return (Object.entries(porClasse) as [any, any][]).map(([cls, v]) => ({
-                    row: r,
-                    portClass: cls,
-                    portUsado: v.porte,
-                    precoUsado: v.preco != null ? Number(v.preco) : null,
-                    dataUsada: v.data,
-                  }));
-                };
-
-                const todasLinhas = fornsBruto.flatMap(expandeRowsPorPorte);
-                const exatas = todasLinhas.filter((l) => l.portClass === "exato");
-                const indefinidas = todasLinhas.filter((l) => l.portClass === "indef");
-                const maiores = todasLinhas.filter((l) => l.portClass === "maior");
-                const menores = todasLinhas.filter((l) => l.portClass === "menor");
-
-                const cmpPor = (chave: OrdemTab3Chave, a: typeof todasLinhas[number], b: typeof todasLinhas[number]) => {
-                  if (chave === "preco") return (a.precoUsado ?? Infinity) - (b.precoUsado ?? Infinity);
-                  if (chave === "data") return new Date(b.dataUsada || 0).getTime() - new Date(a.dataUsada || 0).getTime();
-                  if (chave === "mercado") {
-                    const ma = (a.row.fornecedores?.mercado || "zzz").toLowerCase();
-                    const mb = (b.row.fornecedores?.mercado || "zzz").toLowerCase();
-                    return ma.localeCompare(mb);
-                  }
-                  if (chave === "nota") {
-                    const na = Number(a.row.fornecedores?.nota_media ?? 0);
-                    const nb = Number(b.row.fornecedores?.nota_media ?? 0);
-                    return nb - na;
-                  }
-                  if (chave === "porte_asc" || chave === "porte_desc") {
-                    const pa = parsePorteMetros(a.portUsado).value;
-                    const pb = parsePorteMetros(b.portUsado).value;
-                    const va = pa == null ? Infinity : pa;
-                    const vb = pb == null ? Infinity : pb;
-                    return chave === "porte_asc" ? va - vb : vb - va;
-                  }
-                  return 0;
-                };
-                const aplicaFiltros = (arr: typeof todasLinhas) => {
-                  let out = arr;
-                  if (filtros.mercados.length > 0) {
-                    out = out.filter((l) => {
-                      const ms = String(l.row.fornecedores?.mercado || "")
-                        .split(/[,;|]/)
-                        .map((s: string) => s.trim())
-                        .filter((s: string) => !!s);
-                      // Fornecedores sem mercado aparecem em todos os filtros (forçar preenchimento)
-                      if (ms.length === 0) return true;
-                      return ms.some((m) => filtros.mercados.includes(m));
-                    });
-                  }
-                  if (filtros.somenteRecentes) {
-                    out = out.filter((l) => {
-                      const m = mesesDesde(l.dataUsada);
-                      return m !== Infinity && m < 6;
-                    });
-                  }
-                  return out;
-                };
-                const ordenar = (arr: typeof todasLinhas) =>
-                  aplicaFiltros(arr).slice().sort((a, b) => {
-                    const p = cmpPor(filtros.primaria, a, b);
-                    if (p !== 0) return p;
-                    if (filtros.secundaria !== "nenhuma" && filtros.secundaria !== filtros.primaria) {
-                      return cmpPor(filtros.secundaria, a, b);
-                    }
-                    return 0;
-                  });
-
-                const exatasOrd = ordenar(exatas);
-                const semExato = exatasOrd.length === 0;
-                const expMaior = !!expandirMaiores[idx] || semExato;
-                const expMenor = !!expandirMenores[idx] || semExato;
-                const maioresOrd = expMaior ? ordenar(maiores) : [];
-                const menoresOrd = expMenor ? ordenar(menores) : [];
-                const indefOrd = ordenar(indefinidas);
-
-                const exibidasCount = exatasOrd.length + maioresOrd.length + menoresOrd.length + indefOrd.length;
-                const totalCount = todasLinhas.length;
-
-                // Faixas de preço (top5, intermediário, mais caro) — calculadas só sobre o grupo "exato"
-                const precosOrdenados = exatas
-                  .map((l) => l.precoUsado)
-                  .filter((p): p is number => p != null && !isNaN(p))
-                  .sort((a, b) => a - b);
-                const limiteBest = precosOrdenados[Math.min(4, precosOrdenados.length - 1)];
-                const limiteIntermed = precosOrdenados[Math.max(0, Math.floor(precosOrdenados.length * 0.66) - 1)];
-                const classificarPreco = (p: number | null): "best" | "mid" | "high" => {
-                  if (p == null || isNaN(p)) return "mid";
-                  if (limiteBest != null && p <= limiteBest) return "best";
-                  if (limiteIntermed != null && p <= limiteIntermed) return "mid";
-                  return "high";
-                };
-
-                // Header status badge
-                const selecionadosCount = (fornecedoresSelecionados[idx] || []).length;
-                let badge = { cls: "bg-primary/15 text-primary", label: "OK" };
-                if (selecionadosCount === 0) badge = { cls: "bg-destructive/15 text-destructive", label: "⚠ Sem fornecedor" };
-                else if (selecionadosCount === 1) badge = { cls: "bg-amber-500/15 text-amber-700", label: "Risco alto" };
-                else if (selecionadosCount === 2) badge = { cls: "bg-amber-500/10 text-amber-700", label: "Atenção" };
-
-                const renderTableRow = (l: typeof todasLinhas[number], grupo: "exato" | "maior" | "menor" | "indef") => {
-                  const r = l.row;
-                  const f = r.fornecedores || {};
-                  const papel = papelAtual(idx, r.fornecedor_id);
-                  const checked = !!papel;
-                  const tier = grupo === "exato" ? classificarPreco(l.precoUsado) : "mid";
-                  const precoCls =
-                    tier === "best"
-                      ? "text-primary font-semibold"
-                      : tier === "high"
-                        ? "text-destructive"
-                        : "text-foreground";
-                  const meses = mesesDesde(l.dataUsada);
-                  const dataBadge =
-                    meses === Infinity
-                      ? null
-                      : meses < 6
-                        ? null
-                        : meses < 12
-                          ? { cls: "bg-amber-500/15 text-amber-700 border-amber-500/30", label: "desatualizado" }
-                          : { cls: "bg-destructive/15 text-destructive border-destructive/30", label: "+1 ano" };
-                  const mercadoOk = !!(f.mercado && String(f.mercado).trim());
-
-                  return (
-                    <TableRow
-                      key={`${r.fornecedor_id}-${grupo}-${l.portUsado || "x"}`}
-                      className={cn(checked && "bg-primary/5")}
-                    >
-                      <TableCell className="p-2 w-8">
-                        <Checkbox
-                          checked={checked}
-                          onCheckedChange={(v) => {
-                            if (!v) {
-                              definirPapel(idx, r.fornecedor_id, "remover", f);
-                            } else {
-                              const livre = proximoPapelLivre(idx);
-                              if (!livre) {
-                                toast({ title: "Limite de 3 fornecedores por item (1 principal + 2 reservas)", variant: "destructive" });
-                                return;
-                              }
-                              definirPapel(idx, r.fornecedor_id, livre, f);
-                            }
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell className="p-2">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-foreground">{f.nome || "Fornecedor"}</span>
-                          {papel && (
-                            <span className={cn(
-                              "text-[10px] px-1.5 py-0.5 rounded-full border font-medium",
-                              papel === "principal" ? "bg-primary text-primary-foreground border-primary" : "bg-secondary text-secondary-foreground border-secondary",
-                            )}>
-                              {papel === "principal" && <Crown className="w-3 h-3 inline -mt-0.5 mr-0.5" />}
-                              {papelLabel[papel]}
-                            </span>
-                          )}
-                          <FornecedorPopover
-                            fornecedorId={r.fornecedor_id}
-                            nome={f.nome}
-                            itemId={r.item_id}
-                            itemTipo={r.item_tipo}
-                            onAvaliacaoSalva={() => refetchHistorico?.()}
-                          />
-                        </div>
-                      </TableCell>
-                      <TableCell className="p-2">
-                        <MercadoInlineEditor
-                          fornecedorId={f.id}
-                          fornecedorNome={f.nome}
-                          valorAtual={f.mercado}
-                          sugestoes={(fornecedoresLista || [])
-                            .map((x: any) => x.mercado)
-                            .filter((m: any) => m && String(m).trim())}
-                        />
-                      </TableCell>
-                      {(() => {
-                        const podeEditar = !!(r.item_id && r.item_tipo);
-                        const portesExistentes = [
-                          r.porte,
-                          ...((r.outros_portes || []) as any[]).map((o: any) => o.porte),
-                        ].filter(Boolean) as string[];
-                        const indispKey = r.item_id ? `${r.item_id}::${r.fornecedor_id}` : "";
-                        const indispRow = indispKey ? (indispMap as Map<string, any>).get(indispKey) : null;
-                        const wrap = (node: React.ReactNode, label: string) =>
-                          podeEditar ? (
-                            <AtualizarCotacaoPopover
-                              itemId={r.item_id}
-                              itemTipo={r.item_tipo}
-                              fornecedorId={r.fornecedor_id}
-                              fornecedorNome={f.nome}
-                              itemNome={item.nome_popular}
-                              precoAtual={l.precoUsado}
-                              porteAtual={l.portUsado || null}
-                              unidadeAtual={r.unidade || null}
-                              ultimaAtualizacao={l.dataUsada}
-                              atualizadoPorNome={r.colaboradores?.nome}
-                              portesExistentes={portesExistentes}
-                              jaIndisponivel={!!indispRow}
-                              onSaved={() => refetchHistorico?.()}
-                            >
-                              <button
-                                type="button"
-                                aria-label={`Atualizar ${label} de ${f.nome || "fornecedor"}`}
-                                className="text-left w-full -mx-1 px-1 py-0.5 rounded hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-                              >
-                                {node}
-                              </button>
-                            </AtualizarCotacaoPopover>
-                          ) : (
-                            node
-                          );
-                        return (
-                          <>
-                            <TableCell className="p-2">
-                              {wrap(
-                                l.portUsado ? (
-                                  <span className={cn(
-                                    "text-xs",
-                                    grupo === "maior" && "text-amber-700",
-                                    grupo === "menor" && "text-amber-700",
-                                    grupo === "indef" && "text-muted-foreground italic",
-                                  )}>
-                                    {l.portUsado}
-                                  </span>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground italic">—</span>
-                                ),
-                                "porte",
-                              )}
-                            </TableCell>
-                            <TableCell className={cn("p-2 text-sm whitespace-nowrap", precoCls)}>
-                              {wrap(
-                                <span>
-                                  {l.precoUsado != null
-                                    ? `R$ ${l.precoUsado.toFixed(2)}`
-                                    : <span className="text-muted-foreground italic">—</span>}
-                                </span>,
-                                "preço",
-                              )}
-                            </TableCell>
-                            <TableCell className="p-2 text-xs text-muted-foreground">
-                              {wrap(
-                                <span>{r.unidade || "—"}</span>,
-                                "unidade",
-                              )}
-                            </TableCell>
-                          </>
-                        );
-                      })()}
-                      <TableCell className="p-2 whitespace-nowrap">
-                        {l.dataUsada ? (
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs text-foreground">
-                              {new Date(l.dataUsada).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" })}
-                            </span>
-                            {dataBadge && (
-                              <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full border", dataBadge.cls)}>
-                                {dataBadge.label}
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-xs text-muted-foreground italic">sem data</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="p-2">
-                        {r.nota_media != null ? (
-                          <span className="text-[11px] inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 font-medium" title={`Nota ${r.nota_media.toFixed(1)} de 5 — ${r.nota_qtd} avaliação(ões)`}>
-                            <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                            {r.nota_media.toFixed(1)}
-                          </span>
-                        ) : (
-                          <span className="text-[10px] text-muted-foreground/70 italic">sem avaliação</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="p-2">
-                        {(() => {
-                          const indispKey = r.item_id ? `${r.item_id}::${r.fornecedor_id}` : "";
-                          const indisp = indispKey ? (indispMap as Map<string, any>).get(indispKey) : null;
-                          if (indisp) {
-                            return (
-                              <div className="flex flex-col gap-0.5">
-                                <span
-                                  className="text-[10px] inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border bg-muted text-muted-foreground border-muted-foreground/30 w-fit"
-                                  title={indisp.observacao || "Marcado como indisponível"}
-                                >
-                                  <PackageX className="w-3 h-3" />
-                                  Não tinha · {new Date(indisp.data_marcacao).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
-                                </span>
-                                {indisp.registrado_por_nome && (
-                                  <span className="text-[10px] text-muted-foreground/70">por {indisp.registrado_por_nome}</span>
-                                )}
-                              </div>
-                            );
-                          }
-                          return (
-                            <span className="text-[11px] text-muted-foreground">
-                              {r.colaboradores?.nome || <span className="italic text-muted-foreground/60">—</span>}
-                            </span>
-                          );
-                        })()}
-                      </TableCell>
-                      <TableCell className="p-2">
-                        <div className="flex items-center gap-1">
-                          {checked ? (
-                            <Select
-                              value={papel || ""}
-                              onValueChange={(v) => definirPapel(idx, r.fornecedor_id, v as any, f)}
-                            >
-                              <SelectTrigger className="h-7 text-xs w-28"><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="principal">Principal</SelectItem>
-                                <SelectItem value="backup1">Reserva 1</SelectItem>
-                                <SelectItem value="backup2">Reserva 2</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 text-xs"
-                              onClick={() => {
-                                const livre = proximoPapelLivre(idx);
-                                if (!livre) {
-                                  toast({ title: "Limite de 3 fornecedores por item", variant: "destructive" });
-                                  return;
-                                }
-                                definirPapel(idx, r.fornecedor_id, livre, f);
-                              }}
-                            >
-                              Selecionar
-                            </Button>
-                          )}
-                          {(() => {
-                            const indispKey = r.item_id ? `${r.item_id}::${r.fornecedor_id}` : "";
-                            const indisp = indispKey ? (indispMap as Map<string, any>).get(indispKey) : null;
-                            if (indisp) {
-                              return (
-                                <DesfazerIndisponibilidadeButton
-                                  marcacaoId={indisp.id}
-                                  fornecedorNome={f.nome}
-                                />
-                              );
-                            }
-                            return null;
-                          })()}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                };
-
-                return (
-                  <Card key={idx} className="p-4 space-y-3">
-                    <Collapsible
-                      open={!blocosColapsados[idx]}
-                      onOpenChange={(o) =>
-                        setBlocosColapsados((p) => ({ ...p, [idx]: !o }))
-                      }
-                    >
-                      <CollapsibleTrigger asChild>
-                        <button
-                          type="button"
-                          className="w-full flex items-start justify-between gap-3 flex-wrap text-left rounded-md hover:bg-muted/40 px-1 py-1 -mx-1"
-                          aria-label={`Expandir ou recolher ${item.nome_popular || "item"}`}
-                        >
-                          <div className="flex items-start gap-2">
-                            {blocosColapsados[idx] ? (
-                              <ChevronDown className="w-4 h-4 mt-0.5 text-muted-foreground" />
-                            ) : (
-                              <ChevronUp className="w-4 h-4 mt-0.5 text-muted-foreground" />
-                            )}
-                            <div>
-                              <p className="font-semibold text-foreground">
-                                {item.nome_popular || "(sem nome)"}
-                                {item.nome_cientifico && (
-                                  <span className="ml-2 italic font-normal text-muted-foreground">{item.nome_cientifico}</span>
-                                )}
-                              </p>
-                              <p className="text-xs text-muted-foreground mt-0.5">
-                                {item.porte && <>Porte solicitado: <strong>{item.porte}</strong> · </>}
-                                {item.quantidade} {item.unidade}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground">{exibidasCount} de {totalCount} fornecedores</span>
-                            <span className={cn("px-2 py-1 rounded-md text-xs font-medium", badge.cls)}>{badge.label}</span>
-                          </div>
-                        </button>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent className="space-y-3 pt-3">
-
-                    {/* Ordenação e filtragem múltipla */}
-                    {fornsBruto.length > 0 && (
-                      <div className="flex flex-col gap-2 text-xs">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <div className="flex items-center gap-1">
-                            <Filter className="w-3.5 h-3.5 text-muted-foreground" />
-                            <span className="text-muted-foreground">Ordenar:</span>
-                          </div>
-                          {([
-                            { v: "data", l: "Mais recentes" },
-                            { v: "preco", l: "Menor preço" },
-                            { v: "nota", l: "Melhor nota" },
-                            { v: "mercado", l: "Mercado" },
-                            { v: "porte_desc", l: "Porte ↓" },
-                            { v: "porte_asc", l: "Porte ↑" },
-                          ] as { v: OrdemTab3Chave; l: string }[]).map((opt) => (
-                            <Button
-                              key={opt.v}
-                              variant={filtros.primaria === opt.v ? "default" : "ghost"}
-                              size="sm"
-                              className="h-7 px-2 text-xs"
-                              onClick={() =>
-                                setFiltrosTab3((p) => ({
-                                  ...p,
-                                  [idx]: { ...(p[idx] || filtroPadraoTab3), primaria: opt.v },
-                                }))
-                              }
-                            >
-                              {opt.l}
-                            </Button>
-                          ))}
-                          <span className="text-muted-foreground ml-2">·</span>
-                          <span className="text-muted-foreground">depois:</span>
-                          <Select
-                            value={filtros.secundaria}
-                            onValueChange={(v) =>
-                              setFiltrosTab3((p) => ({
-                                ...p,
-                                [idx]: { ...(p[idx] || filtroPadraoTab3), secundaria: v as any },
-                              }))
-                            }
-                          >
-                            <SelectTrigger className="h-7 w-[150px] text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="nenhuma">— nenhum —</SelectItem>
-                              <SelectItem value="preco">Menor preço</SelectItem>
-                              <SelectItem value="data">Mais recentes</SelectItem>
-                              <SelectItem value="nota">Melhor nota</SelectItem>
-                              <SelectItem value="mercado">Mercado</SelectItem>
-                              <SelectItem value="porte_desc">Porte ↓ (maior → menor)</SelectItem>
-                              <SelectItem value="porte_asc">Porte ↑ (menor → maior)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Button
-                            variant={filtros.somenteRecentes ? "default" : "ghost"}
-                            size="sm"
-                            className="h-7 px-2 text-xs ml-auto"
-                            onClick={() =>
-                              setFiltrosTab3((p) => ({
-                                ...p,
-                                [idx]: {
-                                  ...(p[idx] || filtroPadraoTab3),
-                                  somenteRecentes: !(p[idx]?.somenteRecentes ?? false),
-                                },
-                              }))
-                            }
-                          >
-                            Só últimos 6 meses
-                          </Button>
-                          {(filtros.mercados.length > 0 ||
-                            filtros.somenteRecentes ||
-                            filtros.secundaria !== "nenhuma" ||
-                            filtros.primaria !== "data") && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 px-2 text-xs text-muted-foreground"
-                              onClick={() =>
-                                setFiltrosTab3((p) => ({ ...p, [idx]: filtroPadraoTab3 }))
-                              }
-                            >
-                              Limpar
-                            </Button>
-                          )}
-                        </div>
-                        {(mercadosUnicos.length > 0 || temSemMercado) && (
-                          <div className="flex flex-wrap items-center gap-1">
-                            <span className="text-muted-foreground mr-1">Mercados:</span>
-                            {mercadosUnicos.map((m) => {
-                              const ativo = filtros.mercados.includes(m);
-                              return (
-                                <button
-                                  key={m}
-                                  type="button"
-                                  onClick={() =>
-                                    setFiltrosTab3((p) => {
-                                      const cur = p[idx] || filtroPadraoTab3;
-                                      const novos = ativo
-                                        ? cur.mercados.filter((x) => x !== m)
-                                        : [...cur.mercados, m];
-                                      return { ...p, [idx]: { ...cur, mercados: novos } };
-                                    })
-                                  }
-                                  className={cn(
-                                    "text-[11px] px-2 py-0.5 rounded-md border transition-colors",
-                                    ativo
-                                      ? "bg-primary text-primary-foreground border-primary"
-                                      : "bg-secondary text-secondary-foreground border-transparent hover:border-primary/40"
-                                  )}
-                                >
-                                  {m}
-                                </button>
-                              );
-                            })}
-                            {temSemMercado && (
-                              <span
-                                title="Fornecedores sem mercado cadastrado aparecem em todos os filtros até serem preenchidos"
-                                className="text-[11px] px-2 py-0.5 rounded-md border bg-amber-500/10 text-amber-800 border-amber-500/40"
-                              >
-                                Sem mercado
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {fornsBruto.length === 0 ? (
-                      <EmptyState
-                        title="Nenhum fornecedor cadastrado"
-                        description="Cadastre um fornecedor para este item ou volte à Etapa 2 para revisar o nome."
-                        action={
-                          <Button variant="outline" size="sm" onClick={() => abrirNovoFornecedor(idx)}>
-                            <UserPlus className="w-4 h-4" /> Cadastrar fornecedor
-                          </Button>
-                        }
-                      />
-                    ) : (
-                      <>
-                        {semExato && item.porte && (
-                          <div className="text-xs px-3 py-2 rounded-md bg-amber-500/10 text-amber-800 border border-amber-500/30">
-                            Nenhum fornecedor encontrado para o porte <strong>{item.porte}</strong>. Exibindo portes disponíveis abaixo.
-                          </div>
-                        )}
-
-                        <div className="border rounded-md overflow-hidden hidden md:block">
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead className="w-8 px-2"></TableHead>
-                                <TableHead className="px-2">Fornecedor</TableHead>
-                                <TableHead className="px-2">Mercado</TableHead>
-                                <TableHead className="px-2">Porte</TableHead>
-                                <TableHead className="px-2">Preço</TableHead>
-                                <TableHead className="px-2">Un.</TableHead>
-                                <TableHead className="px-2">Última cotação</TableHead>
-                                <TableHead className="px-2">Nota</TableHead>
-                                <TableHead className="px-2">Atualizado por</TableHead>
-                                <TableHead className="px-2"></TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {exatasOrd.map((l) => renderTableRow(l, "exato"))}
-                              {exatasOrd.length === 0 && indefOrd.length > 0 && indefOrd.map((l) => renderTableRow(l, "indef"))}
-
-                              {/* Botão expandir maiores */}
-                              {maiores.length > 0 && (
-                                <TableRow>
-                                  <TableCell colSpan={10} className="p-2 bg-muted/30">
-                                    <button
-                                      type="button"
-                                      onClick={() => setExpandirMaiores((p) => ({ ...p, [idx]: !p[idx] }))}
-                                      className="text-xs text-primary hover:underline inline-flex items-center gap-1"
-                                    >
-                                      <ChevronsUp className="w-3.5 h-3.5" />
-                                      {expMaior ? "Ocultar" : "+ Ver"} portes maiores ({maiores.length})
-                                    </button>
-                                  </TableCell>
-                                </TableRow>
-                              )}
-                              {expMaior && maioresOrd.map((l) => renderTableRow(l, "maior"))}
-
-                              {/* Botão expandir menores */}
-                              {menores.length > 0 && (
-                                <TableRow>
-                                  <TableCell colSpan={10} className="p-2 bg-muted/30">
-                                    <button
-                                      type="button"
-                                      onClick={() => setExpandirMenores((p) => ({ ...p, [idx]: !p[idx] }))}
-                                      className="text-xs text-primary hover:underline inline-flex items-center gap-1"
-                                    >
-                                      <ChevronsDown className="w-3.5 h-3.5" />
-                                      {expMenor ? "Ocultar" : "+ Ver"} portes menores ({menores.length})
-                                    </button>
-                                  </TableCell>
-                                </TableRow>
-                              )}
-                              {expMenor && menoresOrd.map((l) => renderTableRow(l, "menor"))}
-                            </TableBody>
-                          </Table>
-                        </div>
-
-                        {/* Mobile cards (≤md) — uso de campo */}
-                        <MobileCardList
-                          items={[...exatasOrd, ...(exatasOrd.length === 0 ? indefOrd : []), ...(expMaior ? maioresOrd : []), ...(expMenor ? menoresOrd : [])].map((l) => {
-                            const r = l.row;
-                            const f = r.fornecedores || {};
-                            const papel = papelAtual(idx, r.fornecedor_id);
-                            const indispKey = r.item_id ? `${r.item_id}::${r.fornecedor_id}` : "";
-                            const indisp = indispKey ? (indispMap as Map<string, any>).get(indispKey) : null;
-                            return {
-                              key: `${r.fornecedor_id}-${l.portUsado || "x"}`,
-                              title: f.nome || "Fornecedor",
-                              subtitle: f.mercado ? `Mercado: ${f.mercado}` : (
-                                <button
-                                  type="button"
-                                  className="text-amber-700 underline-offset-2 hover:underline text-xs"
-                                  onClick={() =>
-                                    setMercadoInlineDialog({
-                                      open: true,
-                                      fornecedorId: f.id,
-                                      fornecedorNome: f.nome,
-                                      mercadoAtual: f.mercado || null,
-                                    })
-                                  }
-                                >
-                                  Definir mercado
-                                </button>
-                              ),
-                              badges: papel ? (
-                                <span className={cn(
-                                  "text-[10px] px-1.5 py-0.5 rounded-full border font-medium",
-                                  papel === "principal" ? "bg-primary text-primary-foreground border-primary" : "bg-secondary text-secondary-foreground border-secondary",
-                                )}>{papelLabel[papel]}</span>
-                              ) : indisp ? (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground border">Não tinha</span>
-                              ) : null,
-                              fields: [
-                                { label: "Preço", value: l.precoUsado != null ? `R$ ${l.precoUsado.toFixed(2)}` : "—" },
-                                { label: "Porte", value: l.portUsado || "—" },
-                                { label: "Última", value: l.dataUsada ? new Date(l.dataUsada).toLocaleDateString("pt-BR") : "—" },
-                                { label: "Un.", value: r.unidade || "—" },
-                              ],
-                              actions: (
-                                <>
-                                  <Button
-                                    size="sm"
-                                    variant={papel ? "secondary" : "default"}
-                                    className="flex-1"
-                                    onClick={() => {
-                                      if (papel) {
-                                        definirPapel(idx, r.fornecedor_id, "remover", f);
-                                      } else {
-                                        const livre = proximoPapelLivre(idx);
-                                        if (!livre) {
-                                          toast({ title: "Limite de 3 fornecedores", variant: "destructive" });
-                                          return;
-                                        }
-                                        definirPapel(idx, r.fornecedor_id, livre, f);
-                                      }
-                                    }}
-                                  >
-                                    {papel ? "Remover" : "Selecionar"}
-                                  </Button>
-                                  {!indisp && r.item_id && r.item_tipo && (
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() =>
-                                        setIndispTarget({
-                                          itemId: r.item_id,
-                                          itemTipo: r.item_tipo,
-                                          fornecedorId: r.fornecedor_id,
-                                          fornecedorNome: f.nome,
-                                          itemNome: item.nome_popular,
-                                        })
-                                      }
-                                    >
-                                      <PackageX className="w-4 h-4" /> Não tinha
-                                    </Button>
-                                  )}
-                                  {indisp && (
-                                    <DesfazerIndisponibilidadeButton
-                                      marcacaoId={indisp.id}
-                                      fornecedorNome={f.nome}
-                                    />
-                                  )}
-                                </>
-                              ),
-                            };
-                          })}
-                          emptyTitle="Sem fornecedores para exibir"
-                        />
-
-                        {/* Toggle expandir maiores/menores no mobile */}
-                        <div className="md:hidden flex flex-wrap gap-2">
-                          {maiores.length > 0 && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setExpandirMaiores((p) => ({ ...p, [idx]: !p[idx] }))}
-                            >
-                              <ChevronsUp className="w-3.5 h-3.5" />
-                              {expMaior ? "Ocultar" : "Ver"} portes maiores ({maiores.length})
-                            </Button>
-                          )}
-                          {menores.length > 0 && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setExpandirMenores((p) => ({ ...p, [idx]: !p[idx] }))}
-                            >
-                              <ChevronsDown className="w-3.5 h-3.5" />
-                              {expMenor ? "Ocultar" : "Ver"} portes menores ({menores.length})
-                            </Button>
-                          )}
-                        </div>
-                      </>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={() => abrirNovoFornecedor(idx)}
-                      className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary underline-offset-2 hover:underline mt-1"
-                    >
-                      <UserPlus className="w-3.5 h-3.5" />
-                      Adicionar fornecedor não cadastrado
-                    </button>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  </Card>
-                  );
-                };
-
-                if (visiveisIdx.length <= 30) {
-                  return visiveisIdx.map((idx) => (
-                    <div key={idx}>{renderCard(idx)}</div>
-                  ));
-                }
-                return (
-                  <VirtualWindowList
-                    count={visiveisIdx.length}
-                    estimateSize={360}
-                    getKey={(i) => visiveisIdx[i]}
-                    renderItem={(i) => renderCard(visiveisIdx[i])}
-                  />
-                );
-              })()}
 
               <div className="sticky bottom-0 bg-background/95 backdrop-blur border rounded-lg p-3 flex justify-end">
                 <Button
@@ -5400,325 +4633,8 @@ export default function NovoOrcamento() {
             </div>
           )}
 
-          {/* Insumos (fundidos na etapa Fornecedores no novo fluxo de 6 etapas) */}
-          {etapaAtual === 3 && tabEtapa3 === "comparativo" && (
-            <div className="space-y-6">
-              {/* Insumos de Plantio — lista única (calculados + adicionais) */}
-              <Card className="p-4 space-y-4">
-                <div className="flex items-start justify-between gap-3 flex-wrap">
-                  <div>
-                    <h2 className="font-display text-lg text-foreground">Insumos de Plantio</h2>
-                    <p className="text-xs text-muted-foreground">
-                      Lista única de insumos do projeto. Terra, Munck e Corda são calculados pelos coeficientes (edite se necessário). Os adubos e demais itens entram como linhas individuais do catálogo, com a quantidade definida pelo operador. Mão de obra é lançada apenas na Etapa 5.
-                    </p>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={addInsumoCustom}>
-                    <Plus className="w-4 h-4" />
-                    Adicionar insumo
-                  </Button>
-                </div>
 
-                {insumosCalc.length === 0 && insumosAdicionais.length === 0 && (
-                  <p className="text-sm text-muted-foreground italic">
-                    Nenhum insumo no projeto. Clique em "Adicionar insumo" para incluir um item do catálogo.
-                  </p>
-                )}
 
-                {insumosCalc.length > 0 && (
-                  <div className="border rounded-md overflow-hidden">
-                    <table className="w-full text-sm">
-                      <thead className="bg-muted/50 text-xs">
-                        <tr>
-                          <th className="text-left p-2">Insumo (calculado)</th>
-                          <th className="text-left p-2 w-40">Quantidade</th>
-                          <th className="text-left p-2 w-24">Unidade</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {insumosCalc.map((linha, idx) => (
-                          <tr key={linha.tipo} className="border-t">
-                            <td className="p-2 font-medium">{linha.nome}</td>
-                            <td className="p-2">
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={linha.quantidade}
-                                onChange={(e) =>
-                                  setInsumosCalc((prev) =>
-                                    prev.map((l, i) =>
-                                      i === idx ? { ...l, quantidade: Number(e.target.value) || 0 } : l,
-                                    ),
-                                  )
-                                }
-                                className="h-8"
-                              />
-                            </td>
-                            <td className="p-2 text-muted-foreground">{linha.unidade}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-
-                {insumosAdicionais.length > 0 && (
-                  <div className="border rounded-md overflow-hidden">
-                    <table className="w-full text-sm">
-                      <thead className="bg-muted/50 text-xs">
-                        <tr>
-                          <th className="text-left p-2">Insumo</th>
-                          <th className="text-left p-2 w-48">Fornecedor</th>
-                          <th className="text-left p-2 w-28">Quantidade</th>
-                          <th className="text-left p-2 w-24">Unidade</th>
-                          <th className="text-left p-2 w-32">Valor unit. (R$)</th>
-                          <th className="text-left p-2 w-32">Total</th>
-                          <th className="w-20"></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {insumosAdicionais.map((ins, idx) => {
-                          const qtdEsp = Number(ins.quantidade_esperada) || 0;
-                          const margem = Number(ins.margem) || 0;
-                          const qtdOrcar = Math.ceil(qtdEsp * (1 + margem / 100));
-                          const valor = (Number(ins.valor_unitario) || 0) * qtdOrcar;
-                          const pickerOpen = insumoPickerOpen === idx;
-                          const fornec = (fornecedoresLista as any[]).find((f) => f.id === ins.fornecedor_id);
-                          const ativo = qtdEsp > 0;
-                          return (
-                            <tr
-                              key={idx}
-                              className={cn(
-                                "border-t transition-opacity",
-                                ativo ? "bg-terracota/5" : "opacity-60 hover:opacity-100",
-                              )}
-                            >
-                              <td className="p-2">
-                                {ins.nome ? (
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="font-medium">{ins.nome}</span>
-                                    {!ins.insumo_id && (
-                                      <span title="Não vinculado ao catálogo" className="text-amber-600">⚠</span>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <Popover open={pickerOpen} onOpenChange={(o) => setInsumoPickerOpen(o ? idx : null)}>
-                                    <PopoverTrigger asChild>
-                                      <Button variant="outline" size="sm" className="h-8 text-muted-foreground">
-                                        Selecionar insumo...
-                                        <ChevronDown className="w-3 h-3 opacity-60" />
-                                      </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="p-0 w-[420px]" align="start">
-                                      <Command>
-                                        <CommandInput placeholder="Buscar insumo no catálogo..." />
-                                        <CommandList>
-                                          <CommandEmpty>
-                                            <div className="p-2 text-center">
-                                              <Button
-                                                size="sm"
-                                                variant="terracota"
-                                                onClick={() => {
-                                                  setInsumoPickerOpen(null);
-                                                  openQuickAdd("insumo", (id, label) => {
-                                                    const it = (insumosCatalogo as any[]).find((c) => c.id === id);
-                                                    updateInsumoAdic(idx, {
-                                                      insumo_id: id,
-                                                      nome: label,
-                                                      unidade: it?.unidade || "unidade",
-                                                      fornecedor_id: it?.fornecedor_id || "",
-                                                      valor_unitario: it?.preco_unitario != null ? String(it.preco_unitario) : "",
-                                                    });
-                                                  });
-                                                }}
-                                              >
-                                                <Plus className="w-4 h-4" /> Cadastrar novo
-                                              </Button>
-                                            </div>
-                                          </CommandEmpty>
-                                          <CommandGroup>
-                                            {(insumosCatalogo as any[]).map((c) => (
-                                              <CommandItem
-                                                key={c.id}
-                                                value={`${c.nome} ${c.categoria || ""}`}
-                                                onSelect={() => {
-                                                  updateInsumoAdic(idx, {
-                                                    insumo_id: c.id,
-                                                    nome: c.nome,
-                                                    unidade: c.unidade || "unidade",
-                                                    fornecedor_id: c.fornecedor_id || ins.fornecedor_id || "",
-                                                    valor_unitario:
-                                                      c.preco_unitario != null && !ins.valor_unitario
-                                                        ? String(c.preco_unitario)
-                                                        : ins.valor_unitario,
-                                                  });
-                                                  setInsumoPickerOpen(null);
-                                                }}
-                                              >
-                                                <div className="flex flex-col">
-                                                  <span className="font-medium">{c.nome}</span>
-                                                  {c.categoria && (
-                                                    <span className="text-[11px] text-muted-foreground">
-                                                      {c.categoria}{c.unidade ? ` · ${c.unidade}` : ""}
-                                                    </span>
-                                                  )}
-                                                </div>
-                                              </CommandItem>
-                                            ))}
-                                          </CommandGroup>
-                                        </CommandList>
-                                      </Command>
-                                    </PopoverContent>
-                                  </Popover>
-                                )}
-                              </td>
-                              <td className="p-2 text-xs text-muted-foreground">
-                                {fornec?.nome || <span className="italic">—</span>}
-                              </td>
-                              <td className="p-2">
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  value={ins.quantidade_esperada}
-                                  onChange={(e) => updateInsumoAdic(idx, { quantidade_esperada: e.target.value })}
-                                  className="h-8"
-                                />
-                              </td>
-                              <td className="p-2 text-xs text-muted-foreground">{ins.unidade}</td>
-                              <td className="p-2">
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  value={ins.valor_unitario}
-                                  onChange={(e) => updateInsumoAdic(idx, { valor_unitario: e.target.value })}
-                                  className="h-8"
-                                />
-                              </td>
-                              <td className="p-2 text-xs">
-                                {valor > 0 ? (
-                                  <strong>R$ {valor.toFixed(2).replace(".", ",")}</strong>
-                                ) : (
-                                  <span className="text-muted-foreground">—</span>
-                                )}
-                              </td>
-                              <td className="p-2">
-                                <div className="flex items-center gap-0.5">
-                                  <Popover>
-                                    <PopoverTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Editar detalhes">
-                                        <Pencil className="w-3.5 h-3.5" />
-                                      </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-80 p-3 space-y-3" align="end">
-                                      <div className="space-y-1">
-                                        <Label className="text-xs">Fornecedor</Label>
-                                        <div className="flex gap-1">
-                                          <Select
-                                            value={ins.fornecedor_id}
-                                            onValueChange={(v) => updateInsumoAdic(idx, { fornecedor_id: v })}
-                                          >
-                                            <SelectTrigger className="h-9">
-                                              <SelectValue placeholder="Selecione" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                              {(fornecedoresLista as any[]).map((f) => (
-                                                <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>
-                                              ))}
-                                            </SelectContent>
-                                          </Select>
-                                          <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="icon"
-                                            className="h-9 w-9 shrink-0"
-                                            title="Cadastrar novo fornecedor"
-                                            onClick={() =>
-                                              openQuickAdd("fornecedor_insumo", (id) =>
-                                                updateInsumoAdic(idx, { fornecedor_id: id }),
-                                              )
-                                            }
-                                          >
-                                            <Plus className="w-4 h-4" />
-                                          </Button>
-                                        </div>
-                                      </div>
-                                      <div className="grid grid-cols-2 gap-2">
-                                        <div className="space-y-1">
-                                          <Label className="text-xs">Unidade</Label>
-                                          <Select
-                                            value={ins.unidade}
-                                            onValueChange={(v) => updateInsumoAdic(idx, { unidade: v })}
-                                          >
-                                            <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                                            <SelectContent>
-                                              {UNIDADES_INSUMO.map((u) => (
-                                                <SelectItem key={u} value={u}>{u}</SelectItem>
-                                              ))}
-                                            </SelectContent>
-                                          </Select>
-                                        </div>
-                                        <div className="space-y-1">
-                                          <Label className="text-xs">Margem (%)</Label>
-                                          <Input
-                                            type="number"
-                                            step="1"
-                                            value={ins.margem}
-                                            onChange={(e) => updateInsumoAdic(idx, { margem: e.target.value })}
-                                            className="h-9"
-                                          />
-                                        </div>
-                                      </div>
-                                      <div className="text-[11px] text-muted-foreground">
-                                        Qtd a orçar (com margem): <strong className="text-foreground">{qtdOrcar}</strong>
-                                      </div>
-                                      <div className="space-y-1">
-                                        <Label className="text-xs">Observação interna</Label>
-                                        <Input
-                                          value={ins.obs_interna}
-                                          onChange={(e) => updateInsumoAdic(idx, { obs_interna: e.target.value })}
-                                          className="h-9"
-                                        />
-                                      </div>
-                                      <div className="space-y-1">
-                                        <Label className="text-xs">Observação na proposta</Label>
-                                        <Input
-                                          value={ins.obs_proposta}
-                                          onChange={(e) => updateInsumoAdic(idx, { obs_proposta: e.target.value })}
-                                          className="h-9"
-                                        />
-                                      </div>
-                                    </PopoverContent>
-                                  </Popover>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7"
-                                    onClick={() => setInsumosAdicionais((p) => p.filter((_, i) => i !== idx))}
-                                    title="Remover"
-                                  >
-                                    <X className="w-3.5 h-3.5" />
-                                  </Button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-
-                {insumosSemQtd.length > 0 && (
-                  <div className="rounded-md border border-yellow-300 bg-yellow-50 text-yellow-800 p-3 text-sm">
-                    ⚠️ {insumosSemQtd.length} insumo(s) sem quantidade:{" "}
-                    <strong>{insumosSemQtd.map((i) => i.nome).join(", ")}</strong>
-                    <div className="text-xs mt-1">
-                      Você pode avançar, mas eles não entrarão no orçamento.
-                    </div>
-                  </div>
-                )}
-              </Card>
-            </div>
-          )}
 
           {/* Etapa 5 - Mão de Obra, Fretes e Transporte */}
           {etapaAtual === 5 && (
