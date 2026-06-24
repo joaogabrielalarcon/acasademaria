@@ -144,6 +144,7 @@ export default function NovaProposta() {
           </div>
         </div>
 
+        <DraftResumeBanner draft={draft} />
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Cliente e Código */}
           <div className="bg-card border border-border rounded-xl p-6 space-y-4">
