@@ -2937,9 +2937,16 @@ export default function NovoOrcamento() {
                 <div className="space-y-4">
                   {/* Tipo de Proposta */}
                   <div className="space-y-2">
-                    <Label>Tipo de Proposta<Req /></Label>
+                    <Label className={errCampo("tipo_proposta_id") ? "text-destructive" : ""}>
+                      Tipo de Proposta<Req />
+                    </Label>
                     <Select value={form.tipo_proposta_id} onValueChange={handleTipoPropostaChange}>
-                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectTrigger
+                        data-campo-erro={errCampo("tipo_proposta_id") ? "true" : undefined}
+                        className={ringErr("tipo_proposta_id")}
+                      >
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
                       <SelectContent>
                         {(tipos as TipoProposta[]).map((t) => (
                           <SelectItem key={t.id} value={t.id}>
@@ -2948,6 +2955,9 @@ export default function NovoOrcamento() {
                         ))}
                       </SelectContent>
                     </Select>
+                    {errCampo("tipo_proposta_id") && (
+                      <p className="text-xs text-destructive">Escolha o tipo de proposta.</p>
+                    )}
                   </div>
 
                   {/* Código gerado */}
