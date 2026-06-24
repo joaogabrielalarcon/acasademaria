@@ -4465,6 +4465,21 @@ export default function NovoOrcamento() {
           {/* Etapa 4 - Markup e Margens */}
           {etapaAtual === 4 && (
             <div className="space-y-4">
+              <ResumoCorrenteRail
+                etapa={4}
+                custo={totaisResumo.totalCusto}
+                venda={totaisResumo.totalVenda}
+                margemPct={margemBrutaPctTotal}
+                totalCliente={totalCliente}
+                custoPorM2={custoPorM2}
+                areaM2={areaM2}
+              />
+              <div>
+                <h1 className="font-display text-2xl text-foreground">Markup, margens e comissão</h1>
+                <p className="text-sm text-muted-foreground">
+                  Defina o markup por categoria, o piso de margem aceitável e (se houver) a comissão. Tudo se reflete no total à direita em tempo real.
+                </p>
+              </div>
               <Etapa4MarkupBlocoA
                 orcamentoId={id}
                 perfilSelecionadoId={form.perfil_markup_id}
