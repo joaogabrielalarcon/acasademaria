@@ -739,13 +739,23 @@ export function useEtapa4Validacao(orcamentoId: string | undefined) {
     queryKey: ["etapa4-validacao", orcamentoId],
     queryFn: async () => {
       if (!orcamentoId) return { ok: false, motivo: "Orçamento não salvo" };
-      const [{ data: orc }, { data: marks }, { data: itens }] = await Promise.all([
+      const [{ data: orc }, { data: marks }, { data: itens }, { data: insumos }, { data: mo }, { data: fretes }, { data: transp }, { data: ind }] = await Promise.all([
         (supabase as any).from("orcamentos").select("aliquota_mes_pct, tipo_nf").eq("id", orcamentoId).maybeSingle(),
         (supabase as any).from("orcamento_categorias_markup").select("categoria, markup_pct").eq("orcamento_id", orcamentoId),
         (supabase as any).from("orcamento_itens").select("categoria").eq("orcamento_id", orcamentoId),
+        (supabase as any).from("orcamento_insumos").select("id, calculado_automaticamente").eq("orcamento_id", orcamentoId),
+        (supabase as any).from("orcamento_mo").select("id").eq("orcamento_id", orcamentoId),
+        (supabase as any).from("orcamento_fretes").select("id").eq("orcamento_id", orcamentoId),
+        (supabase as any).from("orcamento_transporte").select("id").eq("orcamento_id", orcamentoId),
+        (supabase as any).from("orcamento_custos_indiretos").select("id").eq("orcamento_id", orcamentoId),
       ]);
       if (!orc?.aliquota_mes_pct) return { ok: false, motivo: "Defina a empresa de faturamento na Etapa 1." };
-      const cats = new Set((itens || []).map((i: any) => i.categoria).filter(Boolean));
+      const cats = new Set<string>((itens || []).map((i: any) => i.categoria).filter(Boolean));
+      if ((insumos || []).some((i: any) => !i.calculado_automaticamente)) cats.add("Insumos");
+      if ((mo || []).length > 0) cats.add("Mão de Obra");
+      if ((fretes || []).length > 0) cats.add("Fretes");
+      if ((transp || []).length > 0) cats.add("Transporte");
+      if ((ind || []).length > 0) cats.add("Custos Indiretos");
       const comMarkup = new Set((marks || []).filter((m: any) => m.markup_pct != null).map((m: any) => m.categoria));
       const faltando = Array.from(cats).filter((c) => !comMarkup.has(c));
       if (faltando.length > 0) return { ok: false, motivo: `Defina markup para: ${faltando.join(", ")}` };
