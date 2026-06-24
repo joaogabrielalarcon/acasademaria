@@ -43,6 +43,18 @@ export default function NovoProjeto() {
     { valor: "", data_vencimento: "" },
   ]);
 
+  const draft = useAutosaveDraft({
+    formKey: "novo-projeto",
+    scopeKey: "novo",
+    enabled: !isEditing,
+    getSnapshot: () => ({ form, parcelas }),
+    applySnapshot: (s: any) => {
+      if (s?.form) setForm((f) => ({ ...f, ...s.form }));
+      if (Array.isArray(s?.parcelas)) setParcelas(s.parcelas);
+    },
+  });
+
+
   useEffect(() => {
     if (projeto) {
       setForm({
