@@ -1645,24 +1645,42 @@ export default function NovoOrcamento() {
     },
   });
 
-  // Geração automática do código
+  // Geração automática do código — atômica, sem duplicação.
+  // Usa RPC `gerar_codigo_orcamento(sigla)` que aplica advisory lock e calcula o próximo
+  // sequencial dentro do mesmo sigla+mes+ano. Em caso de colisão (insert simultâneo que
+  // venceu a corrida), re-tenta uma vez.
   const handleTipoPropostaChange = async (tipoId: string) => {
     const tipo = (tipos as TipoProposta[]).find((t) => t.id === tipoId);
     if (!tipo) return;
     const sigla = tipo.sigla;
-    const agora = new Date();
-    const mes = String(agora.getMonth() + 1).padStart(2, "0");
-    const ano = String(agora.getFullYear()).slice(-2);
     try {
-      const { count } = await (supabase as any)
-        .from("orcamentos")
-        .select("*", { count: "exact", head: true })
-        .like("codigo", `${sigla}%${mes}${ano}`);
-      const sequencial = String((count || 0) + 1).padStart(2, "0");
-      const codigo = `${sigla}${sequencial}${mes}${ano}`;
-      setForm((p) => ({ ...p, tipo_proposta_id: tipoId, tipo_proposta_sigla: sigla, codigo }));
-    } catch {
-      setForm((p) => ({ ...p, tipo_proposta_id: tipoId, tipo_proposta_sigla: sigla }));
+      const { data: codigoGerado, error } = await (supabase as any).rpc(
+        "gerar_codigo_orcamento",
+        { p_sigla: sigla },
+      );
+      if (error) throw error;
+      setForm((p) => ({
+        ...p,
+        tipo_proposta_id: tipoId,
+        tipo_proposta_sigla: sigla,
+        codigo: codigoGerado || "",
+      }));
+    } catch (e) {
+      // fallback: usa contagem (mesmo padrão antigo) só pra não travar a tela
+      const agora = new Date();
+      const mes = String(agora.getMonth() + 1).padStart(2, "0");
+      const ano = String(agora.getFullYear()).slice(-2);
+      try {
+        const { count } = await (supabase as any)
+          .from("orcamentos")
+          .select("*", { count: "exact", head: true })
+          .like("codigo", `${sigla}%${mes}${ano}`);
+        const sequencial = String((count || 0) + 1).padStart(2, "0");
+        const codigo = `${sigla}${sequencial}${mes}${ano}`;
+        setForm((p) => ({ ...p, tipo_proposta_id: tipoId, tipo_proposta_sigla: sigla, codigo }));
+      } catch {
+        setForm((p) => ({ ...p, tipo_proposta_id: tipoId, tipo_proposta_sigla: sigla }));
+      }
     }
   };
 
