@@ -383,13 +383,15 @@ export default function NovoOrcamento() {
     return null;
   };
 
-  // Calcular insumos automaticamente ao entrar na Etapa 5 (uma vez, permitindo edição)
+  // Calcular insumos automaticamente ao entrar na Etapa 3 (Fornecedores).
+  // OBS: mão de obra NÃO é calculada aqui — toda MO fica concentrada na Etapa 5.
+  // Adubo também NÃO entra como linha fechada: os adubos são escolhidos como itens
+  // individuais do catálogo na lista de insumos abaixo.
   useEffect(() => {
-    // Insumos foram fundidos na etapa Fornecedores (etapa 3 no novo fluxo).
     if (etapaAtual !== 3 || insumosCalculados) return;
     if (!coeficientes || coeficientes.length === 0) return;
 
-    const acc = { mo: 0, terra: 0, adubo: 0, munck: 0, corda: 0 };
+    const acc = { terra: 0, munck: 0, corda: 0 };
     itensMaterial.forEach((it, idx) => {
       const tipo = tipoCoefDoItem(it);
       if (!tipo) return;
@@ -397,9 +399,7 @@ export default function NovoOrcamento() {
       if (!coef) return;
       const margem = margensSeg[idx] ?? 0;
       const qtdOrcar = Math.ceil((Number(it.quantidade) || 0) * (1 + margem / 100));
-      acc.mo += qtdOrcar * Number(coef.mo_por_unidade || 0);
       acc.terra += qtdOrcar * Number(coef.terra_por_unidade || 0);
-      acc.adubo += qtdOrcar * Number(coef.adubo_por_unidade || 0);
       acc.munck += qtdOrcar * Number(coef.munck_por_unidade || 0);
       acc.corda += qtdOrcar * Number(coef.corda_por_unidade || 0);
     });
@@ -451,7 +451,7 @@ export default function NovoOrcamento() {
 
   const INSUMOS_SUGERIDOS = [
     "Torta de mamona", "Yoorin", "K-forte", "Algen (Lithothamnium)",
-    "Bokashi", "Terra preta", "Substrato", "Adubo preparado",
+    "Bokashi", "Terra preta", "Substrato",
     "Corda (10mm)", "Bidin", "Limitador", "Lona",
   ];
   const UNIDADES_INSUMO = ["m³", "saco", "tonelada", "metro", "rolo", "unidade", "kg"];
@@ -5193,7 +5193,7 @@ export default function NovoOrcamento() {
                   <div>
                     <h2 className="font-display text-lg text-foreground">Insumos de Plantio</h2>
                     <p className="text-xs text-muted-foreground">
-                      Lista única de insumos do projeto. Os primeiros são calculados automaticamente pelos coeficientes; ajuste se necessário. Use "Adicionar insumo" para incluir itens extras do catálogo.
+                      Lista única de insumos do projeto. Terra, Munck e Corda são calculados pelos coeficientes (edite se necessário). Os adubos e demais itens entram como linhas individuais do catálogo, com a quantidade definida pelo operador. Mão de obra é lançada apenas na Etapa 5.
                     </p>
                   </div>
                   <Button variant="outline" size="sm" onClick={addInsumoCustom}>
