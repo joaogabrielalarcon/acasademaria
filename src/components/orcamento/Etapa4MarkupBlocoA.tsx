@@ -537,7 +537,30 @@ export function Etapa4MarkupBlocoA(props: Props) {
                       <TableCell className="text-right tabular-nums text-primary">
                         {fmtBRL(l.venda - l.custo)}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-right">
+                        {podeGerenciar ? (
+                          <Input
+                            type="number"
+                            min={0}
+                            step="0.5"
+                            placeholder="—"
+                            defaultValue={m?.piso_margem_pct ?? ""}
+                            onBlur={(e) => {
+                              const raw = e.target.value.trim();
+                              const piso = raw === "" ? null : Number(raw);
+                              const atual = m?.piso_margem_pct ?? null;
+                              if (piso === atual) return;
+                              if (piso != null && (!isFinite(piso) || piso < 0)) return;
+                              salvarPiso.mutate({ categoria: l.categoria, piso });
+                            }}
+                            className="h-7 w-20 text-right ml-auto"
+                          />
+                        ) : (
+                          <span className="text-xs text-muted-foreground tabular-nums">
+                            {m?.piso_margem_pct != null ? fmtPct(Number(m.piso_margem_pct)) : "—"}
+                          </span>
+                        )}
+                      </TableCell>
                         {podeGerenciar ? (
                           <Button
                             size="icon-sm"
