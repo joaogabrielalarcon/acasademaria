@@ -1,0 +1,1 @@
+ALTER TABLE public.orcamentos ADD COLUMN IF NOT EXISTS negociacao_valor numeric NOT NULL DEFAULT 0;
