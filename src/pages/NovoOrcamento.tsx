@@ -448,12 +448,13 @@ export default function NovoOrcamento() {
 
   // ============ Etapa 6 — Mão de obra, fretes, transporte, indiretos ============
   type MoLinha = {
-    colaborador_id: string;
-    colaborador_nome: string;
+    colaborador_id?: string;
+    colaborador_nome?: string;
     cargo_id: string;
     cargo_nome: string;
     qtd: string;
     dias: string;
+    salario_mensal: string;
     salario_diario: string;
   };
   type FreteLinha = {
@@ -507,7 +508,7 @@ export default function NovoOrcamento() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("cargos_mo")
-        .select("id, nome, salario_diario")
+        .select("id, nome, salario_mensal, salario_diario")
         .eq("ativo", true)
         .order("nome");
       if (error) {
@@ -554,7 +555,7 @@ export default function NovoOrcamento() {
   const addMoLinha = () =>
     setMoLinhas((p) => [
       ...p,
-      { colaborador_id: "", colaborador_nome: "", cargo_id: "", cargo_nome: "", qtd: "1", dias: "", salario_diario: "0" },
+      { cargo_id: "", cargo_nome: "", qtd: "1", dias: "", salario_mensal: "0", salario_diario: "0" },
     ]);
   const updateMoLinha = (idx: number, patch: Partial<MoLinha>) =>
     setMoLinhas((p) => p.map((l, i) => (i === idx ? { ...l, ...patch } : l)));
@@ -1596,15 +1597,17 @@ export default function NovoOrcamento() {
 
       // MO
       setMoLinhas(
-        (moDb || []).map((m: any) => ({
-          colaborador_id: m.colaborador_id || "",
-          colaborador_nome: "",
-          cargo_id: m.cargo_id || "",
-          cargo_nome: "",
-          qtd: m.qtd_funcionarios != null ? String(m.qtd_funcionarios) : "1",
-          dias: m.qtd_dias != null ? String(m.qtd_dias) : "",
-          salario_diario: m.salario_diario != null ? String(m.salario_diario) : "0",
-        })),
+        (moDb || []).map((m: any) => {
+          const diario = m.salario_diario != null ? Number(m.salario_diario) : 0;
+          return {
+            cargo_id: m.cargo_id || "",
+            cargo_nome: "",
+            qtd: m.qtd_funcionarios != null ? String(m.qtd_funcionarios) : "1",
+            dias: m.qtd_dias != null ? String(m.qtd_dias) : "",
+            salario_mensal: String(diario * 21),
+            salario_diario: String(diario),
+          };
+        }),
       );
 
       // Fretes
