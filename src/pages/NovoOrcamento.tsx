@@ -412,30 +412,42 @@ export default function NovoOrcamento() {
 
     setInsumosCalc(linhas);
 
-    // Pré-popula a lista de insumos adicionais com os sugeridos (Adubo, Pedrisco, Seixo etc.)
-    // tentando casar com o catálogo. Só executa se ainda não houver itens adicionados.
-    setInsumosAdicionais((prev) => {
-      if (prev.length > 0) return prev;
-      return INSUMOS_SUGERIDOS.map((nome) => {
-        const match = (insumosCatalogo as any[]).find(
-          (c) => String(c.nome).trim().toLowerCase() === nome.trim().toLowerCase(),
-        );
-        return {
-          insumo_id: match?.id || undefined,
-          nome: match?.nome || nome,
-          fornecedor_id: match?.fornecedor_id || "",
-          quantidade_esperada: "",
-          unidade: match?.unidade || "unidade",
-          margem: "0",
-          valor_unitario: match?.preco_unitario != null ? String(match.preco_unitario) : "",
-          obs_interna: "",
-          obs_proposta: "",
-        } as InsumoAdicional;
-      });
-    });
-
     setInsumosCalculados(true);
   }, [etapaAtual, coeficientes, itensMaterial, margensSeg, insumosCalculados]);
+
+  // Injeta a base de insumos sugeridos na lista única (Torta de mamona, Yoorin, K-forte etc.).
+  // Roda uma vez por orçamento: se o usuário excluir uma linha, ela só volta se for adicionada manualmente.
+  useEffect(() => {
+    if (etapaAtual !== 3) return;
+    const key = `orc-sugeridos-injetados:${id || "novo"}`;
+    if (typeof window === "undefined") return;
+    if (localStorage.getItem(key)) return;
+
+    setInsumosAdicionais((prev) => {
+      const existentes = new Set(prev.map((p) => p.nome.trim().toLowerCase()));
+      const novos = INSUMOS_SUGERIDOS
+        .filter((nome) => !existentes.has(nome.trim().toLowerCase()))
+        .map((nome) => {
+          const match = (insumosCatalogo as any[]).find(
+            (c) => String(c.nome).trim().toLowerCase() === nome.trim().toLowerCase(),
+          );
+          return {
+            insumo_id: match?.id || undefined,
+            nome: match?.nome || nome,
+            fornecedor_id: match?.fornecedor_id || "",
+            quantidade_esperada: "",
+            unidade: match?.unidade || "unidade",
+            margem: "0",
+            valor_unitario: match?.preco_unitario != null ? String(match.preco_unitario) : "",
+            obs_interna: "",
+            obs_proposta: "",
+          } as InsumoAdicional;
+        });
+      if (novos.length === 0) return prev;
+      return [...prev, ...novos];
+    });
+    localStorage.setItem(key, "1");
+  }, [etapaAtual, id, insumosCatalogo]);
 
   const INSUMOS_SUGERIDOS = [
     "Torta de mamona", "Yoorin", "K-forte", "Algen (Lithothamnium)",
@@ -5241,7 +5253,15 @@ export default function NovoOrcamento() {
                       const valor = (Number(ins.valor_unitario) || 0) * qtdOrcar;
                       const pickerOpen = insumoPickerOpen === idx;
                       return (
-                        <div key={idx} className="border rounded-md p-3 space-y-2">
+                        <div
+                          key={idx}
+                          className={cn(
+                            "border rounded-md p-3 space-y-2 transition-opacity",
+                            qtdEsp > 0
+                              ? "opacity-100 border-terracota/40 bg-terracota/5"
+                              : "opacity-60 hover:opacity-100",
+                          )}
+                        >
                           <div className="flex items-center justify-between gap-2">
                             <Popover
                               open={pickerOpen}
