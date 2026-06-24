@@ -193,7 +193,23 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
 
       setExtraido(data.extraido || {});
       setFaltantes(Array.isArray(data.faltantes) ? data.faltantes : []);
-      setDuplicados(Array.isArray(data.duplicados) ? data.duplicados : []);
+
+      if (entidade === "preco_fornecedor" && data.duplicados && !Array.isArray(data.duplicados)) {
+        const lk = data.duplicados as { fornecedores?: any[]; itens?: any[]; ultimo_preco?: any };
+        const normLk = {
+          fornecedores: Array.isArray(lk.fornecedores) ? lk.fornecedores : [],
+          itens: Array.isArray(lk.itens) ? lk.itens : [],
+          ultimo_preco: lk.ultimo_preco ?? null,
+        };
+        setLookup(normLk);
+        // auto-seleciona top quando score alto
+        if (normLk.fornecedores[0]?._score >= 3 && !fornecedorSel) setFornecedorSel(normLk.fornecedores[0]);
+        if (normLk.itens[0]?._score >= 3 && !itemSel) setItemSel(normLk.itens[0]);
+        setDuplicados([]);
+      } else {
+        setDuplicados(Array.isArray(data.duplicados) ? data.duplicados : []);
+      }
+
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: String(data.assistant_message || "Anotado.") },
