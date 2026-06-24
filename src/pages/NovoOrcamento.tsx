@@ -2775,82 +2775,85 @@ export default function NovoOrcamento() {
     setItensMaterial([]);
   };
 
-  const extrairItens = async () => {
-    if (!pdfFile) return;
+  const normalizarItensIA = (raw: unknown): ItemMemorial[] => {
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .map((it: any) => {
+        if (!it || typeof it !== "object") return null;
+        const nome = String(it?.nome_popular ?? "").trim();
+        const qtd = Number(it?.quantidade ?? 0);
+        const cat = String(it?.categoria ?? "");
+        return {
+          nome_popular: nome,
+          nome_cientifico: it?.nome_cientifico ? String(it.nome_cientifico).trim() : null,
+          porte: String(it?.porte ?? "").trim(),
+          quantidade: Number.isFinite(qtd) ? qtd : 0,
+          unidade: String(it?.unidade ?? "UNID").toUpperCase().trim() || "UNID",
+          categoria: CATEGORIAS_ITEM.includes(cat) ? cat : CATEGORIAS_ITEM[0],
+          confianca: (["alta", "media", "baixa"].includes(String(it?.confianca))
+            ? it.confianca
+            : "media") as ItemMemorial["confianca"],
+        } as ItemMemorial;
+      })
+      .filter((it): it is ItemMemorial => !!it && it.nome_popular.length > 0);
+  };
+
+  const rodarExtracao = async (fn: () => Promise<{ data: any; error: any }>, tipoLabel: string) => {
     setProcessandoPdf(true);
+    setExtracaoErro(null);
+    setExtracaoElapsed(0);
+    const t0 = Date.now();
+    const timer = setInterval(() => {
+      setExtracaoElapsed(Math.floor((Date.now() - t0) / 1000));
+    }, 500);
     try {
-      const fd = new FormData();
-      fd.append("arquivo", pdfFile);
-      const { data, error } = await (supabase.functions as any).invoke("ler-memorial-pdf", {
-        body: fd,
-      });
-      if (error) throw error;
-      const arr = Array.isArray(data?.itens) ? data.itens : [];
-      const normalizados: ItemMemorial[] = arr.map((it: any) => ({
-        nome_popular: String(it?.nome_popular ?? "").trim(),
-        nome_cientifico: it?.nome_cientifico ?? null,
-        porte: String(it?.porte ?? "").trim(),
-        quantidade: Number(it?.quantidade ?? 0) || 0,
-        unidade: String(it?.unidade ?? "UNID").toUpperCase(),
-        categoria: String(it?.categoria ?? CATEGORIAS_ITEM[0]),
-        confianca:
-          ["alta", "media", "baixa"].includes(String(it?.confianca))
-            ? (it.confianca as ItemMemorial["confianca"])
-            : "media",
-      }));
+      const { data, error } = await fn();
+      if (error) throw new Error(error.message || `Falha na leitura do ${tipoLabel}`);
+      const itens = normalizarItensIA((data as any)?.itens);
+      if (itens.length === 0) {
+        setExtracaoErro(
+          `A IA não conseguiu identificar itens neste ${tipoLabel}. Verifique se o conteúdo está legível e tente de novo, ou cole o texto manualmente.`,
+        );
+        return;
+      }
       firstAutoSaveRef.current = false;
-      setItensMaterial(normalizados);
+      setItensMaterial(itens);
       setPdfCarregado(true);
-      toast({ title: `${normalizados.length} itens extraídos` });
+      setFiltroBaixaConfianca(false);
+      toast({ title: `${itens.length} itens extraídos` });
     } catch (e: any) {
-      toast({
-        title: "Erro ao extrair itens",
-        description: e?.message || "Tente novamente",
-        variant: "destructive",
-      });
+      const msg = e?.message || `Erro inesperado ao processar o ${tipoLabel}`;
+      setExtracaoErro(msg);
+      toast({ title: "Falha na extração", description: msg, variant: "destructive" });
     } finally {
+      clearInterval(timer);
       setProcessandoPdf(false);
     }
   };
 
-  const extrairItensTexto = async () => {
+  const extrairItens = () =>
+    pdfFile
+      ? rodarExtracao(() => {
+          const fd = new FormData();
+          fd.append("arquivo", pdfFile);
+          return (supabase.functions as any).invoke("ler-memorial-pdf", { body: fd });
+        }, "arquivo")
+      : Promise.resolve();
+
+  const extrairItensTexto = () => {
     if (!memorialTexto.trim()) {
       toast({ title: "Cole o texto do memorial primeiro", variant: "destructive" });
-      return;
+      return Promise.resolve();
     }
-    setProcessandoPdf(true);
-    try {
-      const { data, error } = await (supabase.functions as any).invoke("ler-memorial-texto", {
-        body: { texto: memorialTexto },
-      });
-      if (error) throw error;
-      const arr = Array.isArray(data?.itens) ? data.itens : [];
-      const normalizados: ItemMemorial[] = arr.map((it: any) => ({
-        nome_popular: String(it?.nome_popular ?? "").trim(),
-        nome_cientifico: it?.nome_cientifico ?? null,
-        porte: String(it?.porte ?? "").trim(),
-        quantidade: Number(it?.quantidade ?? 0) || 0,
-        unidade: String(it?.unidade ?? "UNID").toUpperCase(),
-        categoria: String(it?.categoria ?? CATEGORIAS_ITEM[0]),
-        confianca:
-          ["alta", "media", "baixa"].includes(String(it?.confianca))
-            ? (it.confianca as ItemMemorial["confianca"])
-            : "media",
-      }));
-      firstAutoSaveRef.current = false;
-      setItensMaterial(normalizados);
-      setPdfCarregado(true);
-      toast({ title: `${normalizados.length} itens extraídos` });
-    } catch (e: any) {
-      toast({
-        title: "Erro ao interpretar texto",
-        description: e?.message || "Tente novamente",
-        variant: "destructive",
-      });
-    } finally {
-      setProcessandoPdf(false);
-    }
+    return rodarExtracao(
+      () =>
+        (supabase.functions as any).invoke("ler-memorial-texto", {
+          body: { texto: memorialTexto },
+        }),
+      "texto",
+    );
   };
+
 
   const updateItem = (idx: number, patch: Partial<ItemMemorial>) => {
     setItensMaterial((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
