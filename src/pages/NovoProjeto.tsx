@@ -131,6 +131,7 @@ export default function NovoProjeto() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projetos"] });
+      if (!isEditing) void draft.clearDraft();
       toast({ title: isEditing ? "Projeto atualizado" : "Projeto criado" });
       navigate(form.cliente_id ? `/clientes/${form.cliente_id}?tab=projetos` : "/");
     },
