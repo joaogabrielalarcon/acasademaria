@@ -61,6 +61,8 @@ import { AtualizarCotacaoPopover } from "@/components/orcamento/AtualizarCotacao
 import { MafeFAB } from "@/components/orcamento/MafeFAB";
 import { Etapa4MarkupBlocoA, useEtapa4Validacao } from "@/components/orcamento/Etapa4MarkupBlocoA";
 import { Etapa6AjustesItem } from "@/components/orcamento/Etapa6AjustesItem";
+import { Etapa6ResumoDRE } from "@/components/orcamento/Etapa6ResumoDRE";
+import { ResumoCorrenteRail } from "@/components/orcamento/ResumoCorrenteRail";
 import { EditarMercadoDialog } from "@/components/orcamento/EditarMercadoDialog";
 import {
   IndisponibilidadeDialog,
