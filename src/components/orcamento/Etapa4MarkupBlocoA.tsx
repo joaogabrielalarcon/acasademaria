@@ -488,6 +488,17 @@ export function Etapa4MarkupBlocoA(props: Props) {
                   <TableHead className="text-right w-28">Margem %</TableHead>
                   <TableHead className="text-right">Valor de venda</TableHead>
                   <TableHead className="text-right">Impacto</TableHead>
+                  <TableHead className="text-right w-24">
+                    Piso margem %
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="inline size-3 ml-1 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        Margem mínima desejada para a categoria. Só alerta no Resumo Final, não bloqueia.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TableHead>
                   <TableHead className="w-12"></TableHead>
                 </TableRow>
               </TableHeader>
