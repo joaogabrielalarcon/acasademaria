@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useProjeto } from "@/hooks/useProjetos";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAutosaveDraft } from "@/hooks/useAutosaveDraft";
+import { DraftResumeBanner } from "@/components/DraftResumeBanner";
 
 interface ParcelaConfig {
   valor: string;
