@@ -1828,10 +1828,17 @@ export default function NovoOrcamento() {
   );
 
   // === ETAPA 3 — Histórico de fornecedores por item ===
-  const nomesItens = useMemo(
-    () => Array.from(new Set(itensMaterial.map((i) => i.nome_popular.trim()).filter(Boolean))),
-    [itensMaterial],
-  );
+  // Considera nome popular + nome científico para o matching com catálogo
+  const nomesItens = useMemo(() => {
+    const set = new Set<string>();
+    itensMaterial.forEach((i) => {
+      const pop = (i.nome_popular || "").trim();
+      const sci = (i.nome_cientifico || "").trim();
+      if (pop) set.add(pop);
+      if (sci) set.add(sci);
+    });
+    return Array.from(set);
+  }, [itensMaterial]);
 
   const fetchCatalogoPaginado = async (table: "plantas" | "insumos") => {
     const pageSize = 1000;
