@@ -219,16 +219,28 @@ export function IAChatPanel({
         setErro(resp.message || resp.error);
         return;
       }
+      const conteudoIA = (resp.assistant_message || "").trim();
+      const propostasIA = Array.isArray(resp.propostas) ? resp.propostas : [];
+      if (!conteudoIA && propostasIA.length === 0) {
+        setErro(
+          "A Mafe não conseguiu interpretar a cotação. Reformule a mensagem ou envie uma imagem mais nítida da tabela.",
+        );
+        return;
+      }
       const assistant: ChatMessage = {
         role: "assistant",
-        content: resp.assistant_message || "",
+        content:
+          conteudoIA ||
+          (propostasIA.length > 0
+            ? `Identifiquei ${propostasIA.length} ${propostasIA.length === 1 ? "atualização" : "atualizações"} de preço. Revise abaixo antes de aplicar.`
+            : ""),
         ts: Date.now(),
       };
       const finalMessages = [...nextMessages, assistant];
       setMessages(finalMessages);
       let nextPropostas = propostas;
-      if (resp.propostas && resp.propostas.length > 0) {
-        nextPropostas = resp.propostas.map((p) => ({ ...p, selecionada: true }));
+      if (propostasIA.length > 0) {
+        nextPropostas = propostasIA.map((p) => ({ ...p, selecionada: true }));
         setPropostas(nextPropostas);
       }
       await persistConversa(finalMessages, nextPropostas);

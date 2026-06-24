@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -93,6 +94,7 @@ import { History, GitBranch } from "lucide-react";
 import { EnderecoFields, composeEndereco } from "@/components/EnderecoFields";
 import { Star, Filter, MessageCircle, Lock, Crown, ChevronsUp, ChevronsDown, Zap, Store, AlertCircle, RotateCcw } from "lucide-react";
 import { MemorialItensTable } from "@/components/orcamento/MemorialItensTable";
+import { VirtualWindowList } from "@/components/orcamento/VirtualWindowList";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatPorteMetros, parsePorteMetros } from "@/lib/porte";
 
@@ -249,6 +251,7 @@ export default function NovoOrcamento() {
   };
   const filtroPadraoTab3: FiltrosTab3 = { primaria: "data", secundaria: "nenhuma", mercados: [], somenteRecentes: false };
   const [filtrosTab3, setFiltrosTab3] = useState<Record<number, FiltrosTab3>>({});
+  const [soSemFornecedor, setSoSemFornecedor] = useState(false);
   // Colapso por bloco de item na Etapa 3 (persistido na sessão por orçamento)
   const blocosStorageKey = `orc:${id || "novo"}:blocosColapsados`;
   const [blocosColapsados, setBlocosColapsados] = useState<Record<number, boolean>>(() => {
@@ -1828,10 +1831,17 @@ export default function NovoOrcamento() {
   );
 
   // === ETAPA 3 — Histórico de fornecedores por item ===
-  const nomesItens = useMemo(
-    () => Array.from(new Set(itensMaterial.map((i) => i.nome_popular.trim()).filter(Boolean))),
-    [itensMaterial],
-  );
+  // Considera nome popular + nome científico para o matching com catálogo
+  const nomesItens = useMemo(() => {
+    const set = new Set<string>();
+    itensMaterial.forEach((i) => {
+      const pop = (i.nome_popular || "").trim();
+      const sci = (i.nome_cientifico || "").trim();
+      if (pop) set.add(pop);
+      if (sci) set.add(sci);
+    });
+    return Array.from(set);
+  }, [itensMaterial]);
 
   const fetchCatalogoPaginado = async (table: "plantas" | "insumos") => {
     const pageSize = 1000;
@@ -2036,14 +2046,31 @@ export default function NovoOrcamento() {
       .replace(/\s+/g, " ")
       .trim();
 
-  const fornecedoresDoItem = (item: ItemMemorial) =>
-    (historicoPorItem as Record<string, any[]>)[normNome(item.nome_popular)] || [];
+  // Une linhas de histórico encontradas tanto pelo nome popular quanto pelo científico,
+  // deduplicando por (fornecedor_id + item_id).
+  const fornecedoresDoItem = (item: ItemMemorial) => {
+    const hist = historicoPorItem as Record<string, any[]>;
+    const pop = normNome(item.nome_popular);
+    const sci = normNome(item.nome_cientifico || "");
+    const rowsA = pop ? hist[pop] || [] : [];
+    const rowsB = sci && sci !== pop ? hist[sci] || [] : [];
+    if (rowsB.length === 0) return rowsA;
+    const seen = new Set<string>();
+    const out: any[] = [];
+    for (const r of [...rowsA, ...rowsB]) {
+      const k = `${r.fornecedor_id || ""}::${r.item_id || ""}::${r.porte || ""}`;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(r);
+    }
+    return out;
+  };
 
   // Mapeia ItemMemorial (por idx) -> { item_id, item_tipo } usando histórico carregado
   const itemDbInfoByIdx = useMemo(() => {
     const map: Record<number, { item_id: string; item_tipo: "planta" | "insumo" }> = {};
     itensMaterial.forEach((it, idx) => {
-      const rows = (historicoPorItem as Record<string, any[]>)[normNome(it.nome_popular)] || [];
+      const rows = fornecedoresDoItem(it);
       const r = rows[0];
       if (r?.item_id && r?.item_tipo) {
         map[idx] = { item_id: r.item_id, item_tipo: r.item_tipo };
@@ -3533,12 +3560,52 @@ export default function NovoOrcamento() {
           {etapaAtual === 3 && (
             <div className="space-y-4">
               <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border rounded-lg p-3 flex flex-wrap gap-3 items-center text-sm">
-                <span className="text-destructive font-medium">{resumoFornecedores.semForn} sem fornecedor</span>
+                <button
+                  type="button"
+                  onClick={() => setSoSemFornecedor((v) => !v)}
+                  className={cn(
+                    "font-medium px-2 py-0.5 rounded-md border transition-colors",
+                    resumoFornecedores.semForn > 0
+                      ? "text-destructive border-destructive/30 hover:bg-destructive/10"
+                      : "text-muted-foreground border-transparent",
+                    soSemFornecedor && "bg-destructive/15 border-destructive/40",
+                  )}
+                  title={
+                    resumoFornecedores.semForn > 0
+                      ? "Clique para ver só os itens sem fornecedor"
+                      : "Nenhum item está sem fornecedor"
+                  }
+                  disabled={resumoFornecedores.semForn === 0}
+                >
+                  {resumoFornecedores.semForn} sem fornecedor
+                </button>
                 <span className="text-muted-foreground">|</span>
                 <span className="text-amber-700 font-medium">{resumoFornecedores.risco} com risco alto</span>
                 <span className="text-muted-foreground">|</span>
                 <span className="text-primary font-medium">{resumoFornecedores.ok} OK</span>
-                <div className="ml-auto flex gap-2">
+
+                {soSemFornecedor && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => setSoSemFornecedor(false)}
+                  >
+                    <X className="w-3.5 h-3.5" /> Mostrar todos
+                  </Button>
+                )}
+
+                <div className="ml-auto flex gap-2 flex-wrap">
+                  {Object.keys(filtrosTab3).length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setFiltrosTab3({})}
+                      title="Remove ordenação e filtros de mercado de todos os itens"
+                    >
+                      <Filter className="w-4 h-4" /> Limpar filtros de todos
+                    </Button>
+                  )}
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -3571,6 +3638,7 @@ export default function NovoOrcamento() {
                   </TooltipProvider>
                 </div>
               </div>
+
 
               {/* Sub-PR 2B/2C — Sub-aba dentro da Etapa 3 */}
               <Tabs value={tabEtapa3} onValueChange={(v) => setTabEtapa3(v as "comparativo" | "atualizar")} className="w-full">
@@ -3616,7 +3684,27 @@ export default function NovoOrcamento() {
                 />
               )}
 
-              {itensMaterial.map((item, idx) => {
+              {(() => {
+                const visiveisIdx = itensMaterial
+                  .map((_, i) => i)
+                  .filter((i) => !soSemFornecedor || (fornecedoresSelecionados[i]?.length ?? 0) === 0);
+
+                if (itensMaterial.length > 0 && soSemFornecedor && visiveisIdx.length === 0) {
+                  return (
+                    <Card className="p-6 text-center text-sm text-muted-foreground">
+                      Todos os itens já têm pelo menos um fornecedor selecionado.
+                      <div className="mt-2">
+                        <Button variant="ghost" size="sm" onClick={() => setSoSemFornecedor(false)}>
+                          Mostrar todos
+                        </Button>
+                      </div>
+                    </Card>
+                  );
+                }
+
+                const renderCard = (idx: number) => {
+                  const item = itensMaterial[idx];
+                  if (!item) return null;
                 const fornsBruto = fornecedoresDoItem(item) as any[];
                 const filtros = filtrosTab3[idx] || filtroPadraoTab3;
                 const mercadosUnicos = Array.from(
@@ -4377,8 +4465,23 @@ export default function NovoOrcamento() {
                       </CollapsibleContent>
                     </Collapsible>
                   </Card>
+                  );
+                };
+
+                if (visiveisIdx.length <= 30) {
+                  return visiveisIdx.map((idx) => (
+                    <div key={idx}>{renderCard(idx)}</div>
+                  ));
+                }
+                return (
+                  <VirtualWindowList
+                    count={visiveisIdx.length}
+                    estimateSize={360}
+                    getKey={(i) => visiveisIdx[i]}
+                    renderItem={(i) => renderCard(visiveisIdx[i])}
+                  />
                 );
-              })}
+              })()}
 
               <div className="sticky bottom-0 bg-background/95 backdrop-blur border rounded-lg p-3 flex justify-end">
                 <Button
