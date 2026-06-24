@@ -2684,6 +2684,11 @@ export default function NovoOrcamento() {
 
   const { data: validacaoEtapa4 } = useEtapa4Validacao(id);
 
+  // assim que o usuário preenche tudo, paramos de destacar erros
+  useEffect(() => {
+    if (mostrarErrosEtapa1 && camposObrigatoriosOk) setMostrarErrosEtapa1(false);
+  }, [mostrarErrosEtapa1, camposObrigatoriosOk]);
+
   const handleProxima = () => {
     // Validação inline ao sair da Etapa 1: destaca cada campo obrigatório que estiver vazio
     if (etapaAtual === 1 && !camposObrigatoriosOk) {
