@@ -3418,160 +3418,106 @@ export default function NovoOrcamento() {
                 </div>
               )}
 
-              {/* Loading */}
+              {/* Loading com progresso */}
               {processandoPdf && (
-                <div className="flex flex-col items-center justify-center gap-3 py-8 border rounded-lg bg-muted/30">
+                <div className="flex flex-col items-center justify-center gap-2 py-8 border rounded-lg bg-muted/30">
                   <Loader2 className="w-8 h-8 text-primary animate-spin" />
                   <p className="text-foreground font-medium">Mafe está lendo o memorial...</p>
+                  <p className="text-xs text-muted-foreground tabular-nums">
+                    {extracaoElapsed}s decorridos {extracaoElapsed > 20 && "(quase lá, memoriais grandes demoram mais)"}
+                  </p>
+                </div>
+              )}
+
+              {/* Erro persistente com retry */}
+              {!processandoPdf && extracaoErro && (
+                <div className="flex items-start gap-3 p-4 border border-destructive/40 bg-destructive/5 rounded-lg">
+                  <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+                  <div className="flex-1 space-y-2">
+                    <p className="font-medium text-foreground">Não foi possível extrair os itens</p>
+                    <p className="text-sm text-muted-foreground">{extracaoErro}</p>
+                    <div className="flex gap-2 pt-1">
+                      <Button
+                        variant="terracota"
+                        size="sm"
+                        onClick={() => (memorialModo === "pdf" ? extrairItens() : extrairItensTexto())}
+                        disabled={memorialModo === "pdf" ? !pdfFile : !memorialTexto.trim()}
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                        Tentar de novo
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => setExtracaoErro(null)}>
+                        Fechar
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               )}
 
               {/* Tabela */}
               {pdfCarregado && itensMaterial.length > 0 && (
                 <div className="space-y-3">
-                  {itensBaixaConfianca > 0 && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full bg-destructive text-destructive-foreground font-semibold">
-                        {itensBaixaConfianca}
+                  <div className="flex flex-wrap items-center gap-3 text-sm">
+                    {itensBaixaConfianca > 0 ? (
+                      <>
+                        <span className="inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full bg-yellow-500 text-white font-semibold">
+                          {itensBaixaConfianca}
+                        </span>
+                        <span className="text-foreground">
+                          {itensBaixaConfianca === 1 ? "item precisa" : "itens precisam"} de verificação — revise antes de continuar
+                        </span>
+                        <Button
+                          variant={filtroBaixaConfianca ? "terracota" : "outline"}
+                          size="sm"
+                          onClick={() => setFiltroBaixaConfianca((v) => !v)}
+                        >
+                          <Filter className="w-3.5 h-3.5" />
+                          {filtroBaixaConfianca ? "Mostrar todos" : "Ver só baixa confiança"}
+                        </Button>
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground">
+                        Todos os {itensMaterial.length} itens com confiança alta ou média.
                       </span>
-                      <span className="text-foreground">
-                        ⚠️ {itensBaixaConfianca === 1 ? "item precisa" : "itens precisam"} de
-                        verificação — revise antes de continuar
-                      </span>
-                    </div>
-                  )}
-
-                  <p className="text-xs text-muted-foreground">
-                    As colunas se ajustam automaticamente ao maior conteúdo. Role horizontalmente se necessário.
-                  </p>
-                  <div className="border rounded-lg overflow-x-auto max-w-full">
-                    <table className="text-sm w-auto" style={{ tableLayout: "auto" }}>
-                      <thead className="bg-muted/50 text-muted-foreground">
-                        <tr>
-                          <th className="px-2 py-2 text-left whitespace-nowrap" title="Número da linha no memorial.">#</th>
-                          <th className="px-2 py-2 text-left whitespace-nowrap" title="Categoria do item — agrupa plantas por tipo (Árvores, Arbustos, Forrações, etc.) ou define se é insumo/serviço.">Categoria</th>
-                          <th className="px-2 py-2 text-left whitespace-nowrap" title="Nome popular da planta, como conhecida no dia a dia (ex.: Manacá de Cheiro).">Nome Popular</th>
-                          <th className="px-2 py-2 text-left whitespace-nowrap" title="Nome científico (botânico) — usado para identificação precisa no catálogo.">Nome Científico</th>
-                          <th className="px-2 py-2 text-left whitespace-nowrap" title="Porte / tamanho do item (ex.: 0,40 m, 1,80 m a 2,00 m). Define qual variante será cotada.">Porte</th>
-                          <th className="px-2 py-2 text-left whitespace-nowrap" title="Quantidade do item neste projeto. Aceita decimais (ex.: 12,5).">Qtd</th>
-                          <th className="px-2 py-2 text-left whitespace-nowrap" title="Unidade de medida (UNID, CX, M², L etc.).">Unidade</th>
-                          <th className="px-2 py-2 text-center whitespace-nowrap" title="Confiança do casamento com o catálogo: ✓ alta = bateu no catálogo, − média = bateu parcial, ⚠ baixa = não encontrou ou ambíguo (precisa revisar antes de cotar).">Confiança</th>
-                          <th className="px-2 py-2 text-center whitespace-nowrap" title="Remover esta linha do memorial.">Excluir</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {itensMaterial.map((it, idx) => (
-                          <tr
-                            key={idx}
-                            data-memorial-row
-                            className={cn(
-                              "border-t",
-                              it.confianca === "baixa" && "bg-yellow-50",
-                            )}
-                          >
-                            <td className="px-2 py-1 text-muted-foreground">{idx + 1}</td>
-                            <td className="px-2 py-1">
-                              <Select
-                                value={it.categoria}
-                                onValueChange={(v) => updateItem(idx, { categoria: v })}
-                              >
-                                <SelectTrigger className="h-8 w-auto min-w-[10ch] gap-2">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {CATEGORIAS_ITEM.map((c) => (
-                                    <SelectItem key={c} value={c}>
-                                      {c}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </td>
-                            <td className="px-2 py-1">
-                              <Input
-                                data-field="nome_popular"
-                                value={it.nome_popular}
-                                onChange={(e) =>
-                                  updateItem(idx, { nome_popular: e.target.value })
-                                }
-                                className="h-8 min-w-[14ch] [field-sizing:content]"
-                              />
-                            </td>
-                            <td className="px-2 py-1">
-                              <Input
-                                value={it.nome_cientifico ?? ""}
-                                onChange={(e) =>
-                                  updateItem(idx, {
-                                    nome_cientifico: e.target.value || null,
-                                  })
-                                }
-                                className="h-8 italic min-w-[14ch] [field-sizing:content]"
-                              />
-                            </td>
-                            <td className="px-2 py-1">
-                              <Input
-                                value={it.porte}
-                                onChange={(e) => updateItem(idx, { porte: e.target.value })}
-                                className="h-8 min-w-[8ch] [field-sizing:content]"
-                              />
-                            </td>
-                            <td className="px-2 py-1">
-                              <Input
-                                type="number"
-                                step="0.01"
-                                inputMode="decimal"
-                                value={it.quantidade}
-                                onChange={(e) =>
-                                  updateItem(idx, {
-                                    quantidade: parseFloat(e.target.value) || 0,
-                                  })
-                                }
-                                className="h-8 pr-6 min-w-[7ch] tabular-nums [field-sizing:content]"
-                              />
-                            </td>
-                            <td className="px-2 py-1">
-                              <Select
-                                value={it.unidade}
-                                onValueChange={(v) => updateItem(idx, { unidade: v })}
-                              >
-                                <SelectTrigger className="h-8 w-auto min-w-[7ch] gap-2">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {UNIDADES_ITEM.map((u) => (
-                                    <SelectItem key={u} value={u}>
-                                      {u}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </td>
-                            <td className="px-2 py-1 text-center">
-                              {it.confianca === "alta" && (
-                                <Check className="w-4 h-4 text-primary inline" />
-                              )}
-                              {it.confianca === "media" && (
-                                <Minus className="w-4 h-4 text-muted-foreground inline" />
-                              )}
-                              {it.confianca === "baixa" && (
-                                <AlertTriangle className="w-4 h-4 text-yellow-600 inline" />
-                              )}
-                            </td>
-                            <td className="px-2 py-1 text-center">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7"
-                                onClick={() => removeItem(idx)}
-                              >
-                                <X className="w-4 h-4" />
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    )}
+                    <span className="ml-auto text-xs text-muted-foreground">
+                      {itensMaterial.length} {itensMaterial.length === 1 ? "item" : "itens"}
+                      {itensMaterial.length > 80 && " · lista virtualizada"}
+                    </span>
                   </div>
+
+                  <MemorialItensTable
+                    itens={
+                      filtroBaixaConfianca
+                        ? itensMaterial.filter((i) => i.confianca === "baixa")
+                        : itensMaterial
+                    }
+                    categorias={CATEGORIAS_ITEM}
+                    unidades={UNIDADES_ITEM}
+                    onUpdate={(idx, patch) => {
+                      // Quando filtrado, idx vem do array filtrado; precisamos do índice real
+                      if (filtroBaixaConfianca) {
+                        const baixas = itensMaterial
+                          .map((it, i) => ({ it, i }))
+                          .filter((x) => x.it.confianca === "baixa");
+                        const realIdx = baixas[idx]?.i;
+                        if (realIdx != null) updateItem(realIdx, patch);
+                      } else {
+                        updateItem(idx, patch);
+                      }
+                    }}
+                    onRemove={(idx) => {
+                      if (filtroBaixaConfianca) {
+                        const baixas = itensMaterial
+                          .map((it, i) => ({ it, i }))
+                          .filter((x) => x.it.confianca === "baixa");
+                        const realIdx = baixas[idx]?.i;
+                        if (realIdx != null) removeItem(realIdx);
+                      } else {
+                        removeItem(idx);
+                      }
+                    }}
+                  />
 
                   <Button variant="outline" onClick={addItem}>
                     <Plus className="w-4 h-4" />
@@ -3579,6 +3525,7 @@ export default function NovoOrcamento() {
                   </Button>
                 </div>
               )}
+
             </Card>
           )}
 
