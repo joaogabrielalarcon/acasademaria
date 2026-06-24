@@ -188,6 +188,7 @@ export default function NovaSolicitacao() {
           Registre solicitações do cliente ou observações importantes
         </p>
 
+        <DraftResumeBanner draft={draft} />
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Cliente */}
           <div className="space-y-2">
