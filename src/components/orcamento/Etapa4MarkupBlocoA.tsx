@@ -110,11 +110,14 @@ export function Etapa4MarkupBlocoA(props: Props) {
     enabled: !!orcamentoId,
   });
 
-  // Custo por categoria (itens + cotação principal)
+  // Custo por categoria — agora cobre todas as fontes de custo do orçamento
   const custosQuery = useQuery({
     queryKey: ["orcamento-custos-categoria", orcamentoId],
     queryFn: async () => {
       if (!orcamentoId) return {} as Record<string, number>;
+      const out: Record<string, number> = {};
+
+      // Material (plantas e similares) — soma por categoria via cotação principal
       const { data: itens } = await (supabase as any)
         .from("orcamento_itens")
         .select("id, categoria, quantidade_esperada")
@@ -131,13 +134,58 @@ export function Etapa4MarkupBlocoA(props: Props) {
         cotacoes = cot || [];
       }
       const cotMap = new Map(cotacoes.map((c) => [c.item_id, Number(c.valor_unitario_cotado) || 0]));
-      const out: Record<string, number> = {};
       lista.forEach((i: any) => {
         const cat = i.categoria || "Sem categoria";
         const qtd = Number(i.quantidade_esperada) || 0;
         const preco = cotMap.get(i.id) || 0;
         out[cat] = (out[cat] || 0) + qtd * preco;
       });
+
+      // Insumos adicionais (não calculados)
+      const { data: insumos } = await (supabase as any)
+        .from("orcamento_insumos")
+        .select("valor_total, calculado_automaticamente")
+        .eq("orcamento_id", orcamentoId);
+      const totIns = (insumos || [])
+        .filter((i: any) => !i.calculado_automaticamente)
+        .reduce((s: number, i: any) => s + (Number(i.valor_total) || 0), 0);
+      if (totIns > 0) out["Insumos"] = (out["Insumos"] || 0) + totIns;
+
+      // Mão de Obra
+      const { data: mo } = await (supabase as any)
+        .from("orcamento_mo")
+        .select("valor_com_imposto, custo_total")
+        .eq("orcamento_id", orcamentoId);
+      const totMo = (mo || []).reduce(
+        (s: number, m: any) => s + (Number(m.valor_com_imposto) || Number(m.custo_total) || 0),
+        0,
+      );
+      if (totMo > 0) out["Mão de Obra"] = (out["Mão de Obra"] || 0) + totMo;
+
+      // Fretes
+      const { data: fretes } = await (supabase as any)
+        .from("orcamento_fretes")
+        .select("valor_total")
+        .eq("orcamento_id", orcamentoId);
+      const totFr = (fretes || []).reduce((s: number, f: any) => s + (Number(f.valor_total) || 0), 0);
+      if (totFr > 0) out["Fretes"] = (out["Fretes"] || 0) + totFr;
+
+      // Transporte
+      const { data: transp } = await (supabase as any)
+        .from("orcamento_transporte")
+        .select("subtotal")
+        .eq("orcamento_id", orcamentoId);
+      const totTr = (transp || []).reduce((s: number, t: any) => s + (Number(t.subtotal) || 0), 0);
+      if (totTr > 0) out["Transporte"] = (out["Transporte"] || 0) + totTr;
+
+      // Custos indiretos
+      const { data: ind } = await (supabase as any)
+        .from("orcamento_custos_indiretos")
+        .select("total")
+        .eq("orcamento_id", orcamentoId);
+      const totInd = (ind || []).reduce((s: number, c: any) => s + (Number(c.total) || 0), 0);
+      if (totInd > 0) out["Custos Indiretos"] = (out["Custos Indiretos"] || 0) + totInd;
+
       return out;
     },
     enabled: !!orcamentoId,
