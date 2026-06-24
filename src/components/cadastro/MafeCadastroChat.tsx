@@ -267,7 +267,7 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
     }
     const { data, error } = await supabase
       .from("plantas")
-      .insert({ ...limpo, ativo: true, created_by: user?.id })
+      .insert([{ ...(limpo as any), ativo: true, created_by: user?.id }])
       .select("id")
       .single();
     if (error) throw error;
