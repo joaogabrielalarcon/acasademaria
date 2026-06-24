@@ -20,8 +20,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Send, ImagePlus, X, AlertCircle, CheckCircle2, Sparkles, TrendingUp } from "lucide-react";
+import { Loader2, Send, ImagePlus, X, AlertCircle, CheckCircle2, Sparkles, TrendingUp, FileSpreadsheet } from "lucide-react";
 import mafeAvatar from "@/assets/flora-avatar.webp";
+import { MafeCadastroPlanilha } from "./MafeCadastroPlanilha";
 
 export type EntidadeCadastro = "fornecedores" | "plantas" | "preco_fornecedor";
 
@@ -116,6 +117,7 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
   const [fornecedorSel, setFornecedorSel] = useState<any | null>(null);
   const [itemSel, setItemSel] = useState<any | null>(null);
   const [confirmaSalto, setConfirmaSalto] = useState(false);
+  const [planilhaOpen, setPlanilhaOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -420,18 +422,35 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl h-[85vh] flex flex-col p-0 gap-0">
         <DialogHeader className="px-5 py-3 border-b shrink-0">
-          <DialogTitle className="flex items-center gap-2 font-display text-xl">
-            <img src={mafeAvatar} alt="Mafe" className="w-7 h-7 rounded-full object-cover object-top" />
-            {entidade === "preco_fornecedor"
-              ? "Atualizar preço com a Mafe"
-              : `Cadastrar ${ENTIDADE_LABEL[entidade]} com a Mafe`}
-          </DialogTitle>
-          <DialogDescription className="text-xs">
-            {entidade === "preco_fornecedor"
-              ? "Diga qual fornecedor tem qual item por qual preço. A Mafe casa com o catálogo inteiro e grava no histórico após sua confirmação."
-              : "Escreva livre ou envie uma imagem. A Mafe organiza os campos, mostra duplicados e só grava após sua confirmação."}
-          </DialogDescription>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <DialogTitle className="flex items-center gap-2 font-display text-xl">
+                <img src={mafeAvatar} alt="Mafe" className="w-7 h-7 rounded-full object-cover object-top" />
+                {entidade === "preco_fornecedor"
+                  ? "Atualizar preço com a Mafe"
+                  : `Cadastrar ${ENTIDADE_LABEL[entidade]} com a Mafe`}
+              </DialogTitle>
+              <DialogDescription className="text-xs mt-1">
+                {entidade === "preco_fornecedor"
+                  ? "Diga qual fornecedor tem qual item por qual preço. A Mafe casa com o catálogo inteiro e grava no histórico após sua confirmação."
+                  : "Escreva livre ou envie uma imagem. A Mafe organiza os campos, mostra duplicados e só grava após sua confirmação."}
+              </DialogDescription>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5 shrink-0"
+              onClick={() => setPlanilhaOpen(true)}
+              title="Importar várias linhas de uma planilha"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              Planilha
+            </Button>
+          </div>
         </DialogHeader>
+        <MafeCadastroPlanilha open={planilhaOpen} onOpenChange={setPlanilhaOpen} entidade={entidade} />
+
 
         <div className="flex-1 grid md:grid-cols-2 min-h-0">
           {/* Lado conversa */}
