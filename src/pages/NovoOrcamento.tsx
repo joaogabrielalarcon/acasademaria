@@ -3559,12 +3559,52 @@ export default function NovoOrcamento() {
           {etapaAtual === 3 && (
             <div className="space-y-4">
               <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border rounded-lg p-3 flex flex-wrap gap-3 items-center text-sm">
-                <span className="text-destructive font-medium">{resumoFornecedores.semForn} sem fornecedor</span>
+                <button
+                  type="button"
+                  onClick={() => setSoSemFornecedor((v) => !v)}
+                  className={cn(
+                    "font-medium px-2 py-0.5 rounded-md border transition-colors",
+                    resumoFornecedores.semForn > 0
+                      ? "text-destructive border-destructive/30 hover:bg-destructive/10"
+                      : "text-muted-foreground border-transparent",
+                    soSemFornecedor && "bg-destructive/15 border-destructive/40",
+                  )}
+                  title={
+                    resumoFornecedores.semForn > 0
+                      ? "Clique para ver só os itens sem fornecedor"
+                      : "Nenhum item está sem fornecedor"
+                  }
+                  disabled={resumoFornecedores.semForn === 0}
+                >
+                  {resumoFornecedores.semForn} sem fornecedor
+                </button>
                 <span className="text-muted-foreground">|</span>
                 <span className="text-amber-700 font-medium">{resumoFornecedores.risco} com risco alto</span>
                 <span className="text-muted-foreground">|</span>
                 <span className="text-primary font-medium">{resumoFornecedores.ok} OK</span>
-                <div className="ml-auto flex gap-2">
+
+                {soSemFornecedor && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => setSoSemFornecedor(false)}
+                  >
+                    <X className="w-3.5 h-3.5" /> Mostrar todos
+                  </Button>
+                )}
+
+                <div className="ml-auto flex gap-2 flex-wrap">
+                  {Object.keys(filtrosTab3).length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setFiltrosTab3({})}
+                      title="Remove ordenação e filtros de mercado de todos os itens"
+                    >
+                      <Filter className="w-4 h-4" /> Limpar filtros de todos
+                    </Button>
+                  )}
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -3597,6 +3637,7 @@ export default function NovoOrcamento() {
                   </TooltipProvider>
                 </div>
               </div>
+
 
               {/* Sub-PR 2B/2C — Sub-aba dentro da Etapa 3 */}
               <Tabs value={tabEtapa3} onValueChange={(v) => setTabEtapa3(v as "comparativo" | "atualizar")} className="w-full">
