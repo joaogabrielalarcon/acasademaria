@@ -835,6 +835,7 @@ export default function NovoOrcamento() {
         aliquota_produtos_pct: aliquotaProdutos,
         tipo_nf: tipoNf,
         margem_negociacao_pct: margemNegPct,
+        negociacao_valor: negociacaoValor,
         ...(extras || {}),
       };
       if (statusFinal === "aguardando_aprovacao") {
