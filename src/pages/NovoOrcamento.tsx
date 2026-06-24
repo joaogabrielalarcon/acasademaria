@@ -5795,55 +5795,9 @@ export default function NovoOrcamento() {
             </div>
           )}
 
-          {/* Modal: editar markup */}
-          <Dialog
-            open={markupModal.open}
-            onOpenChange={(o) => setMarkupModal((m) => ({ ...m, open: o }))}
-          >
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Alterar markup — {markupModal.categoria}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label>Markup anterior</Label>
-                    <Input value={`${markupModal.anterior}%`} readOnly className="bg-muted/40" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Novo markup (%)</Label>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      value={markupModal.novo}
-                      onChange={(e) =>
-                        setMarkupModal((m) => ({ ...m, novo: Number(e.target.value) || 0 }))
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Motivo da alteração *</Label>
-                  <Textarea
-                    value={markupModal.motivo}
-                    onChange={(e) => setMarkupModal((m) => ({ ...m, motivo: e.target.value }))}
-                    rows={3}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setMarkupModal((m) => ({ ...m, open: false }))}
-                >
-                  Cancelar
-                </Button>
-                <Button variant="terracota" onClick={confirmarMarkup}>
-                  Salvar alteração
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          {/* Modal de markup por categoria removido — markup é gerenciado na Etapa 4. */}
+
+
 
           {/* Modal: aprovar */}
           <Dialog
