@@ -5635,14 +5635,8 @@ export default function NovoOrcamento() {
                           <tr key={l.categoria} className="border-t">
                             <td className="p-2 font-medium">{l.categoria}</td>
                             <td className="p-2 text-right">{fmtBRL(l.custo)}</td>
-                            <td className="p-2 text-right">
-                              <button
-                                className="text-primary underline-offset-2 hover:underline"
-                                onClick={() => abrirEdicaoMarkup(l.categoria)}
-                              >
-                                {l.markup.toFixed(1)}%
-                              </button>
-                            </td>
+                            <td className="p-2 text-right tabular-nums">{l.markup.toFixed(1)}%</td>
+
                             <td className="p-2 text-right">{fmtBRL(l.venda)}</td>
                             <td className="p-2 text-right">{l.margemBruta.toFixed(1)}%</td>
                           </tr>
