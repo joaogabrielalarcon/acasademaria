@@ -734,14 +734,14 @@ function PropostaCard({
   );
 }
 
-function PickList<T extends { id: string }>({
+function PickList({
   label, options, value, getLabel, onChange,
 }: {
   label: string;
-  options: T[];
+  options: any[];
   value: string | null;
-  getLabel: (o: T) => string;
-  onChange: (o: T | null) => void;
+  getLabel: (o: any) => string;
+  onChange: (o: any | null) => void;
 }) {
   return (
     <div className="space-y-0.5">
