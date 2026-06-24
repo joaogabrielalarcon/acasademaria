@@ -17,6 +17,8 @@ import { useToast } from "@/hooks/use-toast";
 import { formatCPFCNPJ, formatPhone, capitalizeWords } from "@/hooks/useInputMasks";
 import { supabase } from "@/integrations/supabase/client";
 import { useCliente } from "@/hooks/useCliente";
+import { useAutosaveDraft } from "@/hooks/useAutosaveDraft";
+import { DraftResumeBanner } from "@/components/DraftResumeBanner";
 
 interface DataImportante {
   data: string;
