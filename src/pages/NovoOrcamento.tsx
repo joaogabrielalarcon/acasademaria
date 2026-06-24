@@ -35,6 +35,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import {
   ArrowLeft,
   ArrowRight,
@@ -307,6 +309,7 @@ export default function NovoOrcamento() {
   // Etapa 5 — Insumos
   type InsumoCalc = { tipo: string; nome: string; quantidade: number; unidade: string };
   type InsumoAdicional = {
+    insumo_id?: string;
     nome: string;
     fornecedor_id: string;
     quantidade_esperada: string;
@@ -319,6 +322,7 @@ export default function NovoOrcamento() {
   const [insumosCalc, setInsumosCalc] = useState<InsumoCalc[]>([]);
   const [insumosAdicionais, setInsumosAdicionais] = useState<InsumoAdicional[]>([]);
   const [insumosCalculados, setInsumosCalculados] = useState(false);
+  const [insumoPickerOpen, setInsumoPickerOpen] = useState<number | null>(null);
 
   const { data: coeficientes = [] } = useQuery({
     queryKey: ["coeficientes-insumos-vigentes"],
