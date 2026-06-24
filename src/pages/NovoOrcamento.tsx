@@ -559,10 +559,18 @@ export default function NovoOrcamento() {
       acc.corda += qtdOrcar * Number(coef.corda_por_unidade || 0);
     });
 
-    const baseSorted = (insumosFull || [])
+    const baseSortedRaw = (insumosFull || [])
       .filter((i) => i.is_base)
       .slice()
       .sort((a, b) => (a.base_ordem ?? 999) - (b.base_ordem ?? 999) || a.nome.localeCompare(b.nome));
+    // Dedupe por nome normalizado (catálogo pode ter múltiplas linhas mesmo nome).
+    const baseVistos = new Set<string>();
+    const baseSorted = baseSortedRaw.filter((i) => {
+      const k = norm(i.nome);
+      if (baseVistos.has(k)) return false;
+      baseVistos.add(k);
+      return true;
+    });
 
     const qtdSugeridaBase = (nome: string): number => {
       const n = norm(nome);
@@ -571,64 +579,90 @@ export default function NovoOrcamento() {
       return 0;
     };
 
+    // Mapa do que já existe na lista para dedup global por nome
+    const nomesNaLista = new Set<string>();
+
     baseSorted.forEach((ins) => {
-      // Se já veio do memorial com mesmo nome, não duplica (memorial prevalece).
       const jaNoMemorial = itensInsumoExtra.some((e) => norm(e.nome) === norm(ins.nome));
       if (jaNoMemorial) return;
+      if (nomesNaLista.has(norm(ins.nome))) return;
+      // procura insumoAdicional já lançado com esse insumo_id (selecionado pelo operador)
+      const adicMatch = insumosAdicionais.find(
+        (a) => a.insumo_id === ins.id || norm(a.nome) === norm(ins.nome),
+      );
       out.push({
         tipo: "insumo",
-        chave: `base-${ins.id}`,
+        chave: `insumo-${ins.id}`,
         origem: "base",
         nome: ins.nome,
         categoria: ins.categoria,
-        quantidade: qtdSugeridaBase(ins.nome),
-        unidade: ins.unidade || "unidade",
-        fornecedor_id: ins.fornecedor_id,
-        valor_unitario: ins.preco_unitario,
+        quantidade: adicMatch
+          ? Number(adicMatch.quantidade_esperada) || qtdSugeridaBase(ins.nome)
+          : qtdSugeridaBase(ins.nome),
+        unidade: adicMatch?.unidade || ins.unidade || "unidade",
+        fornecedor_id: adicMatch?.fornecedor_id || null,
+        fornecedor_nome: adicMatch?.fornecedor_id
+          ? fornecedoresMap.get(adicMatch.fornecedor_id)?.nome || null
+          : null,
+        valor_unitario: adicMatch?.valor_unitario ? Number(adicMatch.valor_unitario) : null,
         badges: ["base"],
         ref: { insumoCatalogoId: ins.id },
       });
+      nomesNaLista.add(norm(ins.nome));
     });
 
-    // 3) Insumos extraordinários do memorial
+    // 3) Insumos extraordinários do memorial — dedup por nome
     itensInsumoExtra.forEach((e, idx) => {
+      if (nomesNaLista.has(norm(e.nome))) return;
       const match = (insumosFull || []).find((i) => norm(i.nome) === norm(e.nome));
+      const adicMatch = insumosAdicionais.find(
+        (a) => (match?.id && a.insumo_id === match.id) || norm(a.nome) === norm(e.nome),
+      );
       const badges = ["extraordinário"];
       if (!match) badges.push("sem cadastro");
       if (e.confianca === "baixa") badges.push("baixa confiança");
       out.push({
         tipo: "insumo",
-        chave: match ? `mem-${match.id}` : `mem-extra-${idx}`,
+        chave: match ? `insumo-${match.id}` : `mem-extra-${idx}`,
         origem: "memorial",
         nome: e.nome,
         categoria: e.categoria || match?.categoria || null,
-        quantidade: Number(e.quantidade) || 0,
-        unidade: e.unidade || match?.unidade || "unidade",
-        fornecedor_id: match?.fornecedor_id || null,
-        valor_unitario: match?.preco_unitario ?? null,
+        quantidade: adicMatch
+          ? Number(adicMatch.quantidade_esperada) || Number(e.quantidade) || 0
+          : Number(e.quantidade) || 0,
+        unidade: adicMatch?.unidade || e.unidade || match?.unidade || "unidade",
+        fornecedor_id: adicMatch?.fornecedor_id || null,
+        fornecedor_nome: adicMatch?.fornecedor_id
+          ? fornecedoresMap.get(adicMatch.fornecedor_id)?.nome || null
+          : null,
+        valor_unitario: adicMatch?.valor_unitario ? Number(adicMatch.valor_unitario) : null,
         badges,
         ref: { insumoCatalogoId: match?.id },
       });
+      nomesNaLista.add(norm(e.nome));
     });
 
-    // 4) Insumos adicionais (manuais já lançados via UI antiga). Não duplica com base/memorial.
+    // 4) Insumos adicionais manuais (que não casam com base nem memorial) — dedup por nome
     insumosAdicionais.forEach((ad, idx) => {
-      const chaveBase = ad.insumo_id ? `base-${ad.insumo_id}` : null;
-      const chaveMem = ad.insumo_id ? `mem-${ad.insumo_id}` : null;
-      if (out.some((o) => o.chave === chaveBase || o.chave === chaveMem)) return;
+      if (!ad.nome) return;
+      if (nomesNaLista.has(norm(ad.nome))) return;
       out.push({
         tipo: "insumo",
-        chave: ad.insumo_id ? `manual-${ad.insumo_id}` : `manual-idx-${idx}`,
+        chave: ad.insumo_id ? `insumo-${ad.insumo_id}` : `manual-idx-${idx}`,
         origem: "manual",
         nome: ad.nome,
         categoria: null,
         quantidade: Number(ad.quantidade_esperada) || 0,
         unidade: ad.unidade || "unidade",
         fornecedor_id: ad.fornecedor_id || null,
+        fornecedor_nome: ad.fornecedor_id
+          ? fornecedoresMap.get(ad.fornecedor_id)?.nome || null
+          : null,
         valor_unitario: ad.valor_unitario ? Number(ad.valor_unitario) : null,
         badges: ["manual"],
         ref: { insumoAdicionalIdx: idx, insumoCatalogoId: ad.insumo_id },
       });
+      nomesNaLista.add(norm(ad.nome));
     });
 
     return out;
