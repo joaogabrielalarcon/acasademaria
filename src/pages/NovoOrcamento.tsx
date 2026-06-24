@@ -5079,6 +5079,21 @@ export default function NovoOrcamento() {
           {/* Etapa 5 - Mão de Obra, Fretes e Transporte */}
           {etapaAtual === 5 && (
             <div className="space-y-6 pb-24">
+              <ResumoCorrenteRail
+                etapa={5}
+                custo={totaisResumo.totalCusto}
+                venda={totaisResumo.totalVenda}
+                margemPct={margemBrutaPctTotal}
+                totalCliente={totalCliente}
+                custoPorM2={custoPorM2}
+                areaM2={areaM2}
+              />
+              <div>
+                <h1 className="font-display text-2xl text-foreground">Mão de Obra, Fretes e Transporte</h1>
+                <p className="text-sm text-muted-foreground">
+                  Lance os custos diretos de execução. A alíquota da MO e o tipo de NF (PJ/CPF) já se aplicam só aqui.
+                </p>
+              </div>
               {moLinhas.length > 0 && (!form.tipo_proposta_id || !aliquotaMes || aliquotaMes <= 0) && (
                 <div className="rounded-md border border-primary/40 bg-primary/10 p-3 flex items-start gap-2">
                   <AlertTriangle className="w-4 h-4 text-primary shrink-0 mt-0.5" />
