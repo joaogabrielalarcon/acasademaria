@@ -135,6 +135,39 @@ interface ItemMemorial {
   confianca: "alta" | "media" | "baixa";
 }
 
+// Insumos extraordinários extraídos do memorial (formato novo retornado pela edge function).
+interface InsumoMemorial {
+  nome: string;
+  quantidade: number | null;
+  unidade: string;
+  categoria: string | null;
+  observacao: string | null;
+  confianca: "alta" | "media" | "baixa";
+  insumo_id?: string | null;       // preenchido se casar com o catálogo
+  match_status?: "alta" | "media" | "baixa" | "sem_match";
+}
+
+// Modelo unificado para a tabela única da Etapa 3 (Sub-fase 3A).
+// Não substitui ainda a UI; é o derivado consumido pela Sub-fase 3B.
+export type ItemProjeto = {
+  tipo: "planta" | "insumo";
+  chave: string;                       // id estável (planta_id, insumo_id, ou prefixo+índice)
+  origem: "memorial" | "base" | "manual";
+  nome: string;
+  categoria: string | null;
+  quantidade: number;
+  unidade: string;
+  porte?: string | null;
+  fornecedor_id?: string | null;
+  valor_unitario?: number | null;
+  badges: string[];                    // ex.: "base", "extraordinário", "sem fornecedor", "baixa confiança"
+  ref?: {
+    itemMemorialIdx?: number;
+    insumoCatalogoId?: string;
+    insumoAdicionalIdx?: number;
+  };
+};
+
 interface TipoProposta {
   id: string;
   sigla: string;
