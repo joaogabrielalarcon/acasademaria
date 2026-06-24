@@ -5334,79 +5334,40 @@ export default function NovoOrcamento() {
                     <table className="w-full text-sm">
                       <thead className="bg-muted/50 text-xs">
                         <tr>
-                          <th className="text-left p-2">Colaborador</th>
                           <th className="text-left p-2">Cargo</th>
+                          <th className="text-left p-2 w-36">Custo mensal</th>
+                          <th className="text-left p-2 w-32">Custo/dia<br /><span className="text-[10px] font-normal text-muted-foreground">(mensal ÷ 21)</span></th>
                           <th className="text-left p-2 w-24">Qtd func.</th>
                           <th className="text-left p-2 w-24">Dias</th>
-                          <th className="text-left p-2 w-32">Salário/dia</th>
                           <th className="text-left p-2 w-32">Custo bruto</th>
                           <th className="w-12"></th>
                         </tr>
                       </thead>
                       <tbody>
                         {moLinhas.map((l, idx) => {
+                          const mensal = Number(l.salario_mensal) || 0;
+                          const diario = mensal > 0 ? mensal / 21 : Number(l.salario_diario) || 0;
                           const bruto =
-                            (Number(l.qtd) || 0) * (Number(l.dias) || 0) * (Number(l.salario_diario) || 0);
+                            (Number(l.qtd) || 0) * (Number(l.dias) || 0) * diario;
                           return (
                             <tr key={idx} className="border-t">
-                              <td className="p-2">
-                                <Select
-                                  value={l.colaborador_id || "__none__"}
-                                  onValueChange={(v) => {
-                                    if (v === "__none__") {
-                                      updateMoLinha(idx, { colaborador_id: "", colaborador_nome: "" });
-                                      return;
-                                    }
-                                    const co = (colaboradoresAtivos as any[]).find((x) => x.id === v);
-                                    const patch: Partial<MoLinha> = {
-                                      colaborador_id: v,
-                                      colaborador_nome: co?.nome || "",
-                                    };
-                                    // Se cargo ainda vazio e colaborador tem cargo, tenta auto-vincular
-                                    if (!l.cargo_id && co?.cargo) {
-                                      const match = (cargosMo as any[]).find(
-                                        (c) => String(c.nome).toLowerCase() === String(co.cargo).toLowerCase(),
-                                      );
-                                      if (match) {
-                                        patch.cargo_id = match.id;
-                                        patch.cargo_nome = match.nome;
-                                        patch.salario_diario = String(match.salario_diario ?? "0");
-                                      }
-                                    }
-                                    updateMoLinha(idx, patch);
-                                  }}
-                                >
-                                  <SelectTrigger className="h-8">
-                                    <SelectValue placeholder="Genérico" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="__none__">Genérico (sem nome)</SelectItem>
-                                    {(colaboradoresAtivos as any[]).map((co) => (
-                                      <SelectItem key={co.id} value={co.id}>
-                                        {co.nome}
-                                        {co.cargo && (
-                                          <span className="text-xs text-muted-foreground"> · {co.cargo}</span>
-                                        )}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </td>
                               <td className="p-2">
                                 <div className="flex gap-1">
                                   <Select
                                     value={l.cargo_id}
                                     onValueChange={(v) => {
                                       const c = (cargosMo as any[]).find((x) => x.id === v);
+                                      const m = Number(c?.salario_mensal) || (Number(c?.salario_diario) || 0) * 21;
                                       updateMoLinha(idx, {
                                         cargo_id: v,
                                         cargo_nome: c?.nome || "",
-                                        salario_diario: String(c?.salario_diario ?? "0"),
+                                        salario_mensal: String(m),
+                                        salario_diario: String(m / 21),
                                       });
                                     }}
                                   >
                                     <SelectTrigger className="h-8">
-                                      <SelectValue placeholder="Selecione" />
+                                      <SelectValue placeholder="Selecione um cargo" />
                                     </SelectTrigger>
                                     <SelectContent>
                                       {(cargosMo as any[]).map((c) => (
@@ -5437,6 +5398,21 @@ export default function NovoOrcamento() {
                               </td>
                               <td className="p-2">
                                 <Input
+                                  value={fmtBRL(mensal)}
+                                  readOnly
+                                  className="h-8 bg-muted/40"
+                                  title="Custo mensal carregado vem do cadastro do cargo"
+                                />
+                              </td>
+                              <td className="p-2">
+                                <Input
+                                  value={fmtBRL(diario)}
+                                  readOnly
+                                  className="h-8 bg-muted/40"
+                                />
+                              </td>
+                              <td className="p-2">
+                                <Input
                                   type="number"
                                   min="1"
                                   value={l.qtd}
@@ -5451,13 +5427,6 @@ export default function NovoOrcamento() {
                                   value={l.dias}
                                   onChange={(e) => updateMoLinha(idx, { dias: e.target.value })}
                                   className="h-8"
-                                />
-                              </td>
-                              <td className="p-2">
-                                <Input
-                                  value={Number(l.salario_diario || 0).toFixed(2)}
-                                  readOnly
-                                  className="h-8 bg-muted/40"
                                 />
                               </td>
                               <td className="p-2 text-foreground font-medium">{fmtBRL(bruto)}</td>
