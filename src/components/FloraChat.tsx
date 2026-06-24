@@ -407,6 +407,27 @@ export function MafeChat() {
           </div>
         </div>
 
+        <div className="flex flex-wrap gap-1.5 px-3 pt-2 shrink-0">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-7 text-[11px] gap-1.5"
+            onClick={() => setCadastroEntidade("fornecedores")}
+          >
+            <Truck className="w-3 h-3" /> Cadastrar fornecedor
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-7 text-[11px] gap-1.5"
+            onClick={() => setCadastroEntidade("plantas")}
+          >
+            <Leaf className="w-3 h-3" /> Cadastrar planta
+          </Button>
+        </div>
+
         <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
           {messages.filter(msg => !msg.content.startsWith("[Naveguei para:")).map((msg, i, arr) => {
             const isLastAssistant = msg.role === "assistant" && 
