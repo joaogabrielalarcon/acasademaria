@@ -2866,7 +2866,7 @@ export default function NovoOrcamento() {
     <AppLayout>
       <TooltipProvider>
         <div className="w-full px-2 py-4 space-y-6">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="icon" onClick={() => navigate("/orcamentos")}>
                 <ArrowLeft className="w-4 h-4" />
@@ -2877,9 +2877,32 @@ export default function NovoOrcamento() {
                 </h1>
                 <p className="text-sm text-muted-foreground">
                   Etapa {etapaAtual} de {ETAPAS.length}
+                  {form.codigo && (
+                    <>
+                      {" · "}
+                      <span className="font-mono">{form.codigo}</span>
+                      {(form as any).versao_sufixo || (orcamento as any)?.versao_sufixo ? (
+                        <span className="font-mono text-primary">
+                          {(form as any).versao_sufixo || (orcamento as any)?.versao_sufixo}
+                        </span>
+                      ) : null}
+                    </>
+                  )}
                 </p>
               </div>
             </div>
+            {isEdit && id && (
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => setVersoesOpen(true)}>
+                  <History className="w-4 h-4" />
+                  Histórico
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setNovaVersaoOpen(true)}>
+                  <GitBranch className="w-4 h-4" />
+                  Nova versão
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Barra de etapas (navegação livre) */}
