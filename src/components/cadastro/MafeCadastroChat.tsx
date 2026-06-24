@@ -587,6 +587,106 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
                       </div>
                     )}
 
+                    {entidade === "preco_fornecedor" && lookup && (
+                      <div className="space-y-3">
+                        {/* Fornecedor */}
+                        <div className="space-y-1.5">
+                          <h4 className="text-sm font-semibold">Fornecedor</h4>
+                          {lookup.fornecedores.length === 0 ? (
+                            <p className="text-xs text-muted-foreground">Nenhum fornecedor encontrado. Tente outro nome ou cadastre antes.</p>
+                          ) : (
+                            <div className="space-y-1">
+                              {lookup.fornecedores.map((f) => (
+                                <button
+                                  key={f.id}
+                                  type="button"
+                                  onClick={() => setFornecedorSel(f)}
+                                  className={`w-full text-left text-xs rounded border p-2 transition ${
+                                    fornecedorSel?.id === f.id
+                                      ? "border-primary ring-1 ring-primary bg-background"
+                                      : "border-border bg-background hover:bg-muted"
+                                  }`}
+                                >
+                                  <div className="font-medium">{f.nome}</div>
+                                  <div className="text-muted-foreground">
+                                    {[f.cidade, f.estado, f.mercado].filter(Boolean).join(" · ") || "sem detalhes"}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Item */}
+                        <div className="space-y-1.5">
+                          <h4 className="text-sm font-semibold">Item do catálogo</h4>
+                          {lookup.itens.length === 0 ? (
+                            <p className="text-xs text-muted-foreground">Nenhum item encontrado. Refine o nome ou cadastre antes.</p>
+                          ) : (
+                            <div className="space-y-1">
+                              {lookup.itens.map((it) => (
+                                <button
+                                  key={`${it.tipo}-${it.id}`}
+                                  type="button"
+                                  onClick={() => setItemSel(it)}
+                                  className={`w-full text-left text-xs rounded border p-2 transition ${
+                                    itemSel?.id === it.id && itemSel?.tipo === it.tipo
+                                      ? "border-primary ring-1 ring-primary bg-background"
+                                      : "border-border bg-background hover:bg-muted"
+                                  }`}
+                                >
+                                  <div className="font-medium">
+                                    {it.nome}{" "}
+                                    <span className="text-[10px] uppercase text-muted-foreground">({it.tipo})</span>
+                                  </div>
+                                  <div className="text-muted-foreground">
+                                    {[it.nome_cientifico, it.porte && `porte ${it.porte}`, it.unidade]
+                                      .filter(Boolean)
+                                      .join(" · ") || "sem detalhes"}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Preço comparativo */}
+                        {lookup.ultimo_preco && (
+                          <div className="rounded-md border bg-background p-2 text-xs flex items-center gap-2">
+                            <TrendingUp className="w-3.5 h-3.5 text-muted-foreground" />
+                            <span className="text-muted-foreground">Último preço gravado:</span>
+                            <span className="font-medium">
+                              R$ {Number(lookup.ultimo_preco.preco).toFixed(2).replace(".", ",")}
+                            </span>
+                            <span className="text-muted-foreground">
+                              em {new Date(lookup.ultimo_preco.data_orcamento).toLocaleDateString("pt-BR")}
+                            </span>
+                          </div>
+                        )}
+
+                        {saltoGrande && (
+                          <div className="rounded-md border border-amber-400/60 bg-amber-50/60 dark:bg-amber-950/20 p-3 space-y-2">
+                            <div className="flex items-center gap-2 text-sm font-medium text-amber-900 dark:text-amber-200">
+                              <AlertCircle className="w-4 h-4" />
+                              Salto de preço maior que 50%
+                            </div>
+                            <p className="text-xs text-amber-900/80 dark:text-amber-200/80">
+                              De R$ {precoAntigoNum.toFixed(2).replace(".", ",")} para R$ {precoNovoNum.toFixed(2).replace(".", ",")}. Confirme que está correto.
+                            </p>
+                            <label className="flex items-center gap-2 text-xs text-amber-900 dark:text-amber-200">
+                              <input
+                                type="checkbox"
+                                checked={confirmaSalto}
+                                onChange={(e) => setConfirmaSalto(e.target.checked)}
+                              />
+                              Confirmo o novo preço mesmo com salto grande.
+                            </label>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <h4 className="text-sm font-semibold">Revisar dados</h4>
