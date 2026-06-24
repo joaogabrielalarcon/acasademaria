@@ -497,6 +497,132 @@ export default function NovoOrcamento() {
   ];
   const UNIDADES_INSUMO = ["m³", "saco", "tonelada", "metro", "rolo", "unidade", "kg"];
 
+  // ============================================================
+  // Sub-fase 3A — Modelo unificado da Etapa 3 (Tabela de Itens do Projeto).
+  // Derivado puro; ainda não troca a UI. Alimenta a Sub-fase 3B.
+  // ============================================================
+  const itensProjeto = useMemo<ItemProjeto[]>(() => {
+    const out: ItemProjeto[] = [];
+    const norm = (s: string) =>
+      (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+
+    // 1) Plantas vindas do memorial
+    itensMaterial.forEach((it, idx) => {
+      const badges: string[] = [];
+      if (it.confianca === "baixa") badges.push("baixa confiança");
+      out.push({
+        tipo: "planta",
+        chave: it.planta_id || `planta-mem-${idx}`,
+        origem: "memorial",
+        nome: it.nome_popular,
+        categoria: it.categoria || null,
+        quantidade: Number(it.quantidade) || 0,
+        unidade: it.unidade || "UNID",
+        porte: it.porte || null,
+        badges,
+        ref: { itemMemorialIdx: idx },
+      });
+    });
+
+    // 2) Insumos base (is_base = true) com quantidade calculada via coeficientes (terra/munck/corda).
+    //    Os outros base entram com quantidade 0 (operador edita depois).
+    const acc = { terra: 0, munck: 0, corda: 0 };
+    itensMaterial.forEach((it, idx) => {
+      const tipo = tipoCoefDoItem(it);
+      if (!tipo) return;
+      const coef = (coeficientes as any[]).find((c) => c.tipo_planta === tipo);
+      if (!coef) return;
+      const margem = margensSeg[idx] ?? 0;
+      const qtdOrcar = Math.ceil((Number(it.quantidade) || 0) * (1 + margem / 100));
+      acc.terra += qtdOrcar * Number(coef.terra_por_unidade || 0);
+      acc.munck += qtdOrcar * Number(coef.munck_por_unidade || 0);
+      acc.corda += qtdOrcar * Number(coef.corda_por_unidade || 0);
+    });
+
+    const baseSorted = (insumosFull || [])
+      .filter((i) => i.is_base)
+      .slice()
+      .sort((a, b) => (a.base_ordem ?? 999) - (b.base_ordem ?? 999) || a.nome.localeCompare(b.nome));
+
+    const qtdSugeridaBase = (nome: string): number => {
+      const n = norm(nome);
+      if (n.startsWith("terra")) return +acc.terra.toFixed(2);
+      if (n.includes("corda")) return +acc.corda.toFixed(2);
+      return 0;
+    };
+
+    baseSorted.forEach((ins) => {
+      // Se já veio do memorial com mesmo nome, não duplica (memorial prevalece).
+      const jaNoMemorial = itensInsumoExtra.some((e) => norm(e.nome) === norm(ins.nome));
+      if (jaNoMemorial) return;
+      out.push({
+        tipo: "insumo",
+        chave: `base-${ins.id}`,
+        origem: "base",
+        nome: ins.nome,
+        categoria: ins.categoria,
+        quantidade: qtdSugeridaBase(ins.nome),
+        unidade: ins.unidade || "unidade",
+        fornecedor_id: ins.fornecedor_id,
+        valor_unitario: ins.preco_unitario,
+        badges: ["base"],
+        ref: { insumoCatalogoId: ins.id },
+      });
+    });
+
+    // 3) Insumos extraordinários do memorial
+    itensInsumoExtra.forEach((e, idx) => {
+      const match = (insumosFull || []).find((i) => norm(i.nome) === norm(e.nome));
+      const badges = ["extraordinário"];
+      if (!match) badges.push("sem cadastro");
+      if (e.confianca === "baixa") badges.push("baixa confiança");
+      out.push({
+        tipo: "insumo",
+        chave: match ? `mem-${match.id}` : `mem-extra-${idx}`,
+        origem: "memorial",
+        nome: e.nome,
+        categoria: e.categoria || match?.categoria || null,
+        quantidade: Number(e.quantidade) || 0,
+        unidade: e.unidade || match?.unidade || "unidade",
+        fornecedor_id: match?.fornecedor_id || null,
+        valor_unitario: match?.preco_unitario ?? null,
+        badges,
+        ref: { insumoCatalogoId: match?.id },
+      });
+    });
+
+    // 4) Insumos adicionais (manuais já lançados via UI antiga). Não duplica com base/memorial.
+    insumosAdicionais.forEach((ad, idx) => {
+      const chaveBase = ad.insumo_id ? `base-${ad.insumo_id}` : null;
+      const chaveMem = ad.insumo_id ? `mem-${ad.insumo_id}` : null;
+      if (out.some((o) => o.chave === chaveBase || o.chave === chaveMem)) return;
+      out.push({
+        tipo: "insumo",
+        chave: ad.insumo_id ? `manual-${ad.insumo_id}` : `manual-idx-${idx}`,
+        origem: "manual",
+        nome: ad.nome,
+        categoria: null,
+        quantidade: Number(ad.quantidade_esperada) || 0,
+        unidade: ad.unidade || "unidade",
+        fornecedor_id: ad.fornecedor_id || null,
+        valor_unitario: ad.valor_unitario ? Number(ad.valor_unitario) : null,
+        badges: ["manual"],
+        ref: { insumoAdicionalIdx: idx, insumoCatalogoId: ad.insumo_id },
+      });
+    });
+
+    return out;
+  }, [itensMaterial, itensInsumoExtra, insumosAdicionais, insumosFull, coeficientes, margensSeg]);
+
+  // Log de verificação para a Sub-fase 3A (sem mudança visual).
+  useEffect(() => {
+    if (etapaAtual !== 3) return;
+    // eslint-disable-next-line no-console
+    console.log("[Etapa3/Sub-fase 3A] itensProjeto:", itensProjeto);
+  }, [etapaAtual, itensProjeto]);
+
+
+
   const toggleInsumoSugerido = (nome: string) => {
     setInsumosAdicionais((prev) => {
       const idx = prev.findIndex((i) => i.nome === nome);
