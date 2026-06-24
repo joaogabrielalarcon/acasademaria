@@ -1,13 +1,16 @@
+import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Truck, Package, Leaf, Warehouse, Copy } from "lucide-react";
+import { Truck, Package, Leaf, Warehouse, Copy, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { FornecedoresContent } from "./Fornecedores";
 import { InsumosContent } from "./Insumos";
 import { PlantasContent } from "./Plantas";
 import { EstoqueTab } from "@/components/estoque/EstoqueTab";
 import { DuplicadosTab } from "@/components/fornecedores/DuplicadosTab";
 import { useAuth, useIsAdminOrAdministrativo } from "@/hooks/useAuth";
+import { MafeCadastroChat, type EntidadeCadastro } from "@/components/cadastro/MafeCadastroChat";
 
 export default function Compras() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -15,6 +18,8 @@ export default function Compras() {
 
   const { user } = useAuth();
   const podeMesclar = useIsAdminOrAdministrativo(user?.id);
+
+  const [cadastroEntidade, setCadastroEntidade] = useState<EntidadeCadastro | null>(null);
 
   const tabs = [
     { value: "fornecedores", label: "Fornecedores", icon: Truck },
@@ -27,6 +32,9 @@ export default function Compras() {
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value }, { replace: true });
   };
+
+  const mafeEntidade: EntidadeCadastro | null =
+    activeTab === "fornecedores" ? "fornecedores" : activeTab === "plantas" ? "plantas" : null;
 
   return (
     <AppLayout>
