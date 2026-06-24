@@ -5564,50 +5564,17 @@ export default function NovoOrcamento() {
           {/* Etapa 6 - Resumo Final */}
           {etapaAtual === 6 && (
             <div className="space-y-6 pb-32">
-              {/* Perfil de Markup (opcional) */}
-              <Card className="p-4">
-                <div className="flex flex-col md:flex-row md:items-end gap-3">
-                  <div className="flex-1 space-y-1">
-                    <Label>Perfil de markup</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Selecione um perfil para aplicar markups padrão por categoria, ou edite manualmente abaixo.
-                    </p>
-                  </div>
-                  <div className="flex gap-2 md:w-80">
-                    <Select
-                      value={form.perfil_markup_id}
-                      onValueChange={(v) => setForm((c) => ({ ...c, perfil_markup_id: v }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={
-                            (perfisMarkup as any[]).length === 0
-                              ? "Nenhum perfil cadastrado"
-                              : "Selecione..."
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(perfisMarkup as any[]).map((p) => (
-                          <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      title="Cadastrar novo perfil de markup"
-                      onClick={() =>
-                        openQuickAdd("perfil_markup", (id) =>
-                          setForm((c) => ({ ...c, perfil_markup_id: id })),
-                        )
-                      }
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
+              {/* Markup vem da Etapa 4 — link de edição rápido */}
+              <Card className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                <div>
+                  <h3 className="font-display text-base text-foreground">Markup por categoria</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Definido na Etapa 4 (única fonte). Para alterar o padrão de uma categoria, volte à Etapa 4.
+                  </p>
                 </div>
+                <Button variant="outline" size="sm" onClick={() => setEtapaAtual(4)}>
+                  Editar markup na Etapa 4
+                </Button>
               </Card>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -5616,7 +5583,7 @@ export default function NovoOrcamento() {
                   <div>
                     <h2 className="font-display text-lg text-foreground">Resumo por categoria</h2>
                     <p className="text-xs text-muted-foreground">
-                      Edite o markup de cada categoria. Alterações exigem motivo.
+                      Markup vem da Etapa 4. Ajustes finos por item ficam no bloco abaixo.
                     </p>
                   </div>
                   <div className="border rounded-md overflow-hidden">
