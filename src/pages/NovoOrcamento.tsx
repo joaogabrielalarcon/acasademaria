@@ -707,7 +707,8 @@ export default function NovoOrcamento() {
   const [comissaoBeneficiario, setComissaoBeneficiario] = useState("");
   const [comissaoAberta, setComissaoAberta] = useState(false);
 
-  const [margemNegPct, setMargemNegPct] = useState<number>(0);
+  const [margemNegPct, setMargemNegPct] = useState<number>(0); // legado, mantido para compat
+  const [negociacaoValor, setNegociacaoValor] = useState<number>(0);
 
   const [aprovarModal, setAprovarModal] = useState<{ open: boolean; valor: string; observacao: string }>({
     open: false,
@@ -797,15 +798,24 @@ export default function NovoOrcamento() {
     ? ((Number(comissaoPct) || 0) * totaisResumo.totalVenda) / 100
     : 0;
   // Comissão é ACRESCIDA ao preço final (repasse ao cliente), preservando a margem da empresa.
-  const totalCliente = totaisResumo.totalVenda + valorComissao;
-  const descontoMaximo = totalCliente * (margemNegPct / 100);
-  const valorMinimo = totalCliente - descontoMaximo;
+  // Negociação é DILUÍDA proporcionalmente entre Produtos e Mão de Obra (com base no valor de venda).
+  const vendaMo = useMemo(
+    () => linhasResumo.filter((l) => l.categoria === "Mão de Obra").reduce((s, l) => s + l.venda, 0),
+    [linhasResumo],
+  );
+  const vendaProdutos = Math.max(0, totaisResumo.totalVenda - vendaMo);
+  const baseDiluicao = vendaProdutos + vendaMo;
+  const shareProdutos = baseDiluicao > 0 ? vendaProdutos / baseDiluicao : 0;
+  const shareMo = baseDiluicao > 0 ? vendaMo / baseDiluicao : 0;
+  const negociacaoProdutos = (Number(negociacaoValor) || 0) * shareProdutos;
+  const negociacaoMo = (Number(negociacaoValor) || 0) * shareMo;
+  const totalClienteSemComissao = totaisResumo.totalVenda + (Number(negociacaoValor) || 0);
+  const totalCliente = totalClienteSemComissao + valorComissao;
+  const margemBrutaValFinal = totalClienteSemComissao - totaisResumo.totalCusto;
   const areaM2 = Number(form.area_m2) || 0;
   const custoPorM2 = areaM2 > 0 ? totaisResumo.totalCusto / areaM2 : 0;
   const margemBrutaPctTotal =
-    totaisResumo.totalVenda > 0
-      ? (totaisResumo.margemBrutaVal / totaisResumo.totalVenda) * 100
-      : 0;
+    totalClienteSemComissao > 0 ? (margemBrutaValFinal / totalClienteSemComissao) * 100 : 0;
 
   // Markup por categoria é gerenciado na Etapa 4 (Etapa4MarkupBlocoA).
   // Esta tela (Etapa 6) consome o valor pronto via markupCategoriasQuery.
@@ -825,6 +835,7 @@ export default function NovoOrcamento() {
         aliquota_produtos_pct: aliquotaProdutos,
         tipo_nf: tipoNf,
         margem_negociacao_pct: margemNegPct,
+        negociacao_valor: negociacaoValor,
         ...(extras || {}),
       };
       if (statusFinal === "aguardando_aprovacao") {
@@ -1177,14 +1188,14 @@ export default function NovoOrcamento() {
             ? { tipo: comissaoTipo, percentual: Number(comissaoPct) || 0, beneficiario: comissaoBeneficiario, valor: valorComissao }
             : null,
           margemNegPct,
+          negociacaoValor,
+          negociacaoDistribuicao: { produtos: negociacaoProdutos, mo: negociacaoMo },
           totais: {
             totalCusto: totaisResumo.totalCusto,
             totalVenda: totaisResumo.totalVenda,
             totalCliente,
-            descontoMaximo,
-            valorMinimo,
             impostoProdutos,
-            margemBrutaVal: totaisResumo.margemBrutaVal,
+            margemBrutaVal: margemBrutaValFinal,
             markupMedio: totaisResumo.markupMedio,
           },
           extras: extras || null,
@@ -1443,6 +1454,7 @@ export default function NovoOrcamento() {
       if ((orcamento as any).aliquota_produtos_pct != null) setAliquotaProdutos(Number((orcamento as any).aliquota_produtos_pct));
       if (orcamento.tipo_nf) setTipoNf(orcamento.tipo_nf);
       if (orcamento.margem_negociacao_pct != null) setMargemNegPct(Number(orcamento.margem_negociacao_pct));
+      if ((orcamento as any).negociacao_valor != null) setNegociacaoValor(Number((orcamento as any).negociacao_valor));
     }
   }, [orcamento, tipos]);
 
@@ -1750,6 +1762,7 @@ export default function NovoOrcamento() {
     aliquotaProdutos,
     tipoNf,
     margemNegPct,
+    negociacaoValor,
   ]);
 
   const itensBaixaConfianca = useMemo(
@@ -4513,33 +4526,42 @@ export default function NovoOrcamento() {
                 )}
               </Card>
 
-              {/* Bloco E — Margem de negociação */}
+              {/* Bloco E — Valor de negociação (diluição proporcional) */}
               <Card className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="font-display text-base text-foreground">
-                    Margem de negociação disponível
+                    Valor de negociação (diluído)
                   </h3>
-                  <span className="text-sm font-medium">{margemNegPct}%</span>
+                  <span className={`text-sm font-medium ${negociacaoValor < 0 ? "text-destructive" : "text-primary"}`}>
+                    {fmtBRL(negociacaoValor)}
+                  </span>
                 </div>
-                <Slider
-                  value={[margemNegPct]}
-                  min={0}
-                  max={30}
-                  step={1}
-                  onValueChange={(v) => setMargemNegPct(v[0])}
-                />
-                <div className="text-sm text-muted-foreground flex flex-wrap gap-4">
-                  <span>
-                    Desconto máximo:{" "}
-                    <strong className="text-foreground">{fmtBRL(descontoMaximo)}</strong>
-                  </span>
-                  <span>
-                    Valor mínimo aceitável:{" "}
-                    <strong className="text-foreground">{fmtBRL(valorMinimo)}</strong>
-                  </span>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Valor em R$ (positivo embute margem, negativo absorve desconto)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={negociacaoValor}
+                      onChange={(e) => setNegociacaoValor(Number(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div className="text-sm">
+                    <p className="text-muted-foreground">Produtos absorvem ({(shareProdutos * 100).toFixed(1)}%):</p>
+                    <strong className="text-foreground">{fmtBRL(negociacaoProdutos)}</strong>
+                  </div>
+                  <div className="text-sm">
+                    <p className="text-muted-foreground">Mão de Obra absorve ({(shareMo * 100).toFixed(1)}%):</p>
+                    <strong className="text-foreground">{fmtBRL(negociacaoMo)}</strong>
+                  </div>
+                </div>
+                <div className="rounded-md bg-muted/40 p-3 text-sm flex flex-wrap gap-x-6 gap-y-1">
+                  <span>Total venda original: <strong>{fmtBRL(totaisResumo.totalVenda)}</strong></span>
+                  <span>Total c/ negociação: <strong>{fmtBRL(totalClienteSemComissao)}</strong></span>
+                  <span>Margem bruta final: <strong>{fmtBRL(margemBrutaValFinal)} ({margemBrutaPctTotal.toFixed(1)}%)</strong></span>
                 </div>
                 <p className="text-[11px] text-muted-foreground">
-                  Define o desconto máximo que a equipe comercial pode conceder sem nova aprovação.
+                  A diluição é proporcional ao valor de venda de cada bloco. Não precisa ratear na mão: o sistema ajusta os preços finais automaticamente.
                 </p>
               </Card>
             </div>
@@ -5855,19 +5877,31 @@ export default function NovoOrcamento() {
                     ) : (
                       <p className="text-xs text-muted-foreground italic">Sem comissão configurada.</p>
                     )}
-                    {margemNegPct > 0 ? (
+                    {negociacaoValor !== 0 ? (
                       <>
                         <div className="flex items-baseline justify-between">
-                          <span className="text-muted-foreground">Desconto máximo ({margemNegPct}%):</span>
-                          <strong>{fmtBRL(descontoMaximo)}</strong>
+                          <span className="text-muted-foreground">
+                            Negociação diluída ({negociacaoValor > 0 ? "embutida" : "absorvida"}):
+                          </span>
+                          <strong className={negociacaoValor < 0 ? "text-destructive" : "text-primary"}>
+                            {fmtBRL(negociacaoValor)}
+                          </strong>
                         </div>
-                        <div className="flex items-baseline justify-between">
-                          <span className="text-muted-foreground">Valor mínimo aceitável:</span>
-                          <strong className="text-primary">{fmtBRL(valorMinimo)}</strong>
+                        <div className="flex items-baseline justify-between text-xs text-muted-foreground">
+                          <span>→ Produtos ({(shareProdutos * 100).toFixed(1)}%):</span>
+                          <span>{fmtBRL(negociacaoProdutos)}</span>
+                        </div>
+                        <div className="flex items-baseline justify-between text-xs text-muted-foreground">
+                          <span>→ Mão de Obra ({(shareMo * 100).toFixed(1)}%):</span>
+                          <span>{fmtBRL(negociacaoMo)}</span>
+                        </div>
+                        <div className="flex items-baseline justify-between border-t pt-1 mt-1">
+                          <span className="text-muted-foreground">Margem bruta final:</span>
+                          <strong>{fmtBRL(margemBrutaValFinal)} ({margemBrutaPctTotal.toFixed(1)}%)</strong>
                         </div>
                       </>
                     ) : (
-                      <p className="text-xs text-muted-foreground italic">Sem margem de negociação configurada.</p>
+                      <p className="text-xs text-muted-foreground italic">Sem valor de negociação informado.</p>
                     )}
                   </div>
                 </Card>
