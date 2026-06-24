@@ -5399,7 +5399,7 @@ export default function NovoOrcamento() {
 
                 <Button variant="outline" size="sm" onClick={addInsumoCustom}>
                   <Plus className="w-4 h-4" />
-                  Adicionar insumo personalizado
+                  Adicionar insumo do catálogo
                 </Button>
 
                 {insumosSemQtd.length > 0 && (
@@ -6427,6 +6427,33 @@ export default function NovoOrcamento() {
                         }))
                       }
                     />
+                  </>
+                )}
+
+                {quickAdd.kind === "insumo" && (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label>Unidade</Label>
+                      <Select
+                        value={quickAdd.fields.unidade || "unidade"}
+                        onValueChange={(v) => updateQuickField("unidade", v)}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {UNIDADES_INSUMO.map((u) => (
+                            <SelectItem key={u} value={u}>{u}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Categoria</Label>
+                      <Input
+                        value={quickAdd.fields.categoria || ""}
+                        placeholder="Ex.: Insumos, Adubo, Substrato..."
+                        onChange={(e) => updateQuickField("categoria", e.target.value)}
+                      />
+                    </div>
                   </>
                 )}
 
