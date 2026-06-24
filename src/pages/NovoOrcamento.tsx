@@ -281,6 +281,11 @@ export default function NovoOrcamento() {
   }>({ open: false, fornecedorId: null, fornecedorNome: null, mercadoAtual: null });
   // Modal de validação ao avançar para Etapa 4
   const [validacaoEtapa4Open, setValidacaoEtapa4Open] = useState(false);
+  // Validação inline da Etapa 1: só destaca campos depois que o usuário tenta avançar
+  const [mostrarErrosEtapa1, setMostrarErrosEtapa1] = useState(false);
+  // Versionamento
+  const [novaVersaoOpen, setNovaVersaoOpen] = useState(false);
+  const [versoesOpen, setVersoesOpen] = useState(false);
   const [mercadoModal, setMercadoModal] = useState<{
     open: boolean;
     fornecedorId: string | null;
