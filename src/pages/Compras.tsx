@@ -39,13 +39,26 @@ export default function Compras() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="font-display text-2xl lg:text-3xl font-bold text-foreground">
-            Compras
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Fornecedores, produtos, plantas e estoque
-          </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="font-display text-2xl lg:text-3xl font-bold text-foreground">
+              Compras
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Fornecedores, produtos, plantas e estoque
+            </p>
+          </div>
+          {mafeEntidade && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setCadastroEntidade(mafeEntidade)}
+            >
+              <Sparkles className="w-4 h-4" />
+              Cadastrar com a Mafe
+            </Button>
+          )}
         </div>
 
         <Tabs value={activeTab} onValueChange={handleTabChange}>
