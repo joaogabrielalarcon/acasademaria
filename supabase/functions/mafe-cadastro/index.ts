@@ -144,6 +144,110 @@ const ENTIDADES: Record<string, EntidadeCfg> = {
     systemHint:
       "Extraia dados de uma planta de catálogo. Porte em metros com vírgula decimal (0,40 / 1,20 / 5,00). Não invente nome científico.",
   },
+
+  preco_fornecedor: {
+    label: "Preço de fornecedor",
+    tabela: "historico_precos",
+    campos: [
+      { name: "fornecedor_nome", tipo: "text", obrigatorio: true, descricao: "Nome do fornecedor que cotou" },
+      { name: "item_nome", tipo: "text", obrigatorio: true, descricao: "Nome popular ou científico do item (planta ou insumo)" },
+      { name: "item_tipo", tipo: "enum", enumValores: ["planta", "insumo", "auto"], descricao: "planta ou insumo. Use 'auto' quando não tiver certeza." },
+      { name: "porte", tipo: "text", descricao: "Porte em metros com vírgula (ex: 0,40 ou 1,20). Só para planta." },
+      { name: "unidade", tipo: "text", descricao: "Unidade do preço (Unid, Muda, Cuia, kg, m³ etc.). Se não dito, deixe null para usar a do catálogo." },
+      { name: "preco", tipo: "number", obrigatorio: true, descricao: "Preço unitário em R$ (use ponto decimal)" },
+      { name: "observacoes", tipo: "text" },
+    ],
+    buscarDuplicados: async (supabase, extraido) => {
+      const forNome = String(extraido.fornecedor_nome ?? "").trim();
+      const itemNome = String(extraido.item_nome ?? "").trim();
+      const porte = normaliza(extraido.porte);
+      const tipoHint = String(extraido.item_tipo ?? "auto").toLowerCase();
+
+      const result: any = { fornecedores: [], itens: [], ultimo_preco: null };
+
+      // ---- Fornecedores ----
+      if (forNome) {
+        const tokens = normaliza(forNome).split(/\s+/).filter((t) => t.length >= 3).slice(0, 3);
+        let q = supabase
+          .from("fornecedores")
+          .select("id,nome,cidade,estado,mercado")
+          .eq("status", "ativo")
+          .limit(15);
+        if (tokens.length > 0) q = q.or(tokens.map((t) => `nome.ilike.%${t}%`).join(","));
+        else q = q.ilike("nome", `%${forNome}%`);
+        const { data } = await q;
+        result.fornecedores = ((data ?? []) as any[])
+          .map((r) => ({
+            ...r,
+            _score: normaliza(r.nome) === normaliza(forNome) ? 3
+              : normaliza(r.nome).includes(normaliza(forNome)) ? 2 : 1,
+          }))
+          .sort((a, b) => b._score - a._score)
+          .slice(0, 5);
+      }
+
+      // ---- Itens (plantas + insumos do catálogo INTEIRO) ----
+      if (itemNome) {
+        const buscarTipo = async (tipo: "planta" | "insumo") => {
+          const tabela = tipo === "planta" ? "plantas" : "insumos";
+          let q = supabase
+            .from(tabela)
+            .select(tipo === "planta"
+              ? "id,nome_popular,nome_cientifico,porte,unidade,preco_unitario"
+              : "id,nome,unidade,preco_unitario")
+            .eq("ativo", true)
+            .limit(10);
+          if (tipo === "planta") {
+            q = q.or(`nome_popular.ilike.%${itemNome}%,nome_cientifico.ilike.%${itemNome}%`);
+          } else {
+            q = q.ilike("nome", `%${itemNome}%`);
+          }
+          const { data } = await q;
+          return ((data ?? []) as any[]).map((r) => ({
+            id: r.id,
+            tipo,
+            nome: tipo === "planta" ? r.nome_popular : r.nome,
+            nome_cientifico: r.nome_cientifico ?? null,
+            porte: r.porte ?? null,
+            unidade: r.unidade ?? null,
+            preco_unitario: r.preco_unitario ?? null,
+          }));
+        };
+        const lista: any[] = [];
+        if (tipoHint === "planta" || tipoHint === "auto") lista.push(...(await buscarTipo("planta")));
+        if (tipoHint === "insumo" || tipoHint === "auto") lista.push(...(await buscarTipo("insumo")));
+        result.itens = lista
+          .map((r) => ({
+            ...r,
+            _score:
+              (normaliza(r.nome) === normaliza(itemNome) ? 3 : normaliza(r.nome).includes(normaliza(itemNome)) ? 2 : 1) +
+              (porte && normaliza(r.porte) === porte ? 1 : 0),
+          }))
+          .sort((a, b) => b._score - a._score)
+          .slice(0, 8);
+      }
+
+      // ---- Último preço (se top 1 fornecedor + top 1 item óbvios) ----
+      const forTop = result.fornecedores[0];
+      const itemTop = result.itens[0];
+      if (forTop && itemTop && forTop._score >= 2 && itemTop._score >= 2) {
+        const { data: ult } = await supabase
+          .from("historico_precos")
+          .select("preco,data_orcamento,porte,unidade")
+          .eq("fornecedor_id", forTop.id)
+          .eq("item_id", itemTop.id)
+          .eq("item_tipo", itemTop.tipo)
+          .order("data_orcamento", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (ult) result.ultimo_preco = ult;
+      }
+
+      return result;
+    },
+    systemHint:
+      "Extraia uma atualização de preço de fornecedor para um item do catálogo. Preço em número decimal (use ponto). Se o operador não disser porte/unidade, deixe null que o sistema completa do catálogo.",
+  },
 };
 
 // ---------- Tool definition (dinâmica por entidade) ----------
