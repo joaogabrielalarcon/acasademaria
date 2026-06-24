@@ -2709,6 +2709,20 @@ export default function NovoOrcamento() {
         inserted = { id: data.id, label: data.nome };
         queryClient.invalidateQueries({ queryKey: ["orc-locais-cliente", form.cliente_id] });
         queryClient.invalidateQueries({ queryKey: ["locais", form.cliente_id] });
+      } else if (quickAdd.kind === "insumo") {
+        const { data, error } = await (supabase as any)
+          .from("insumos")
+          .insert({
+            nome: f.nome.trim(),
+            unidade: f.unidade || "unidade",
+            categoria: f.categoria || "Insumos",
+            ativo: true,
+          })
+          .select("id, nome")
+          .single();
+        if (error) throw error;
+        inserted = { id: data.id, label: data.nome };
+        queryClient.invalidateQueries({ queryKey: ["insumos-catalogo-ativos"] });
       }
       if (inserted) {
         toast({ title: "Cadastrado com sucesso" });
