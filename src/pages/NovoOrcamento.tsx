@@ -101,6 +101,7 @@ import { MemorialItensTable } from "@/components/orcamento/MemorialItensTable";
 import { VirtualWindowList } from "@/components/orcamento/VirtualWindowList";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatPorteMetros, parsePorteMetros } from "@/lib/porte";
+import { useInsumos } from "@/hooks/useInsumos";
 
 const CATEGORIAS_ITEM = [
   "Árvores",
