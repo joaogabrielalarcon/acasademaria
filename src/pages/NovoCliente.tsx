@@ -97,6 +97,7 @@ export default function NovoCliente() {
       } else {
         const { error } = await supabase.from("clientes").insert(clienteData);
         if (error) throw error;
+        await draft.clearDraft();
         toast({ title: "Cliente cadastrado!" });
         navigate("/clientes");
       }
