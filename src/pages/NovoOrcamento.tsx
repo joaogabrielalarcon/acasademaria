@@ -6312,6 +6312,41 @@ export default function NovoOrcamento() {
         </div>
       </TooltipProvider>
 
+      {/* Versionamento — diálogos */}
+      {isEdit && id && (
+        <>
+          <NovaVersaoDialog
+            open={novaVersaoOpen}
+            onOpenChange={setNovaVersaoOpen}
+            orcamentoId={id}
+            codigo={form.codigo || ""}
+            snapshotAtual={{
+              itensMaterial,
+              totais: {
+                totalCusto: totaisResumo.totalCusto,
+                totalVenda: totaisResumo.totalVenda,
+                totalCliente,
+                markupMedio: totaisResumo.markupMedio,
+                margemBrutaVal: margemBrutaValFinal,
+              },
+              financeiroPorCategoria: linhasResumo.reduce<Record<string, number>>(
+                (acc, l) => ({ ...acc, [l.categoria]: l.venda }),
+                {},
+              ),
+            }}
+            onSalvo={() => {
+              queryClient.invalidateQueries({ queryKey: ["orcamento-hidratacao", id] });
+            }}
+          />
+          <VersoesDialog
+            open={versoesOpen}
+            onOpenChange={setVersoesOpen}
+            orcamentoId={id}
+            codigo={form.codigo || ""}
+          />
+        </>
+      )}
+
       {/* Resumo agrupado para WhatsApp */}
       <ResumoFornecedoresDialog
         open={resumoOpen}
