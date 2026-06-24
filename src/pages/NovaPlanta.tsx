@@ -191,6 +191,8 @@ export default function NovaPlanta() {
           </div>
         )}
 
+        {!isEditing && <DraftResumeBanner draft={draft} />}
+
         <form onSubmit={handleSubmit} className="rounded-lg border border-border bg-card p-6 space-y-6">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
