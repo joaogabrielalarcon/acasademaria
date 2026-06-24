@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, ComponentType } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,48 +9,82 @@ import { RealtimeInvalidationBridge } from "@/hooks/useRealtimeInvalidation";
 import Login from "./pages/Login";
 import MenuCentral from "./pages/MenuCentral";
 
-const MafeChat = lazy(() =>
+// Wrap dynamic imports so a stale chunk (after a new deploy) doesn't crash
+// the app with "Importing a module script failed". We retry once, then force
+// a hard reload to fetch the new index manifest.
+const RELOAD_KEY = "__lovable_chunk_reload__";
+function lazyWithRetry<T extends ComponentType<any>>(
+  factory: () => Promise<{ default: T }>
+) {
+  return lazy(async () => {
+    try {
+      return await factory();
+    } catch (err: any) {
+      const msg = String(err?.message || err || "");
+      const isChunkError =
+        /Importing a module script failed|Failed to fetch dynamically imported module|Loading chunk|ChunkLoadError/i.test(
+          msg
+        );
+      if (isChunkError) {
+        try {
+          return await factory();
+        } catch {
+          if (typeof window !== "undefined" && !sessionStorage.getItem(RELOAD_KEY)) {
+            sessionStorage.setItem(RELOAD_KEY, "1");
+            window.location.reload();
+            // Return a never-resolving promise while the page reloads.
+            return new Promise(() => {}) as any;
+          }
+        }
+      }
+      throw err;
+    }
+  });
+}
+
+const MafeChat = lazyWithRetry(() =>
   import("@/components/FloraChat").then((m) => ({ default: m.MafeChat }))
 );
 
 // Lazy-loaded routes for better initial load performance
-const Clientes = lazy(() => import("./pages/Clientes"));
-const ClientePerfil = lazy(() => import("./pages/ClientePerfil"));
-const NovoCliente = lazy(() => import("./pages/NovoCliente"));
-const Equipe = lazy(() => import("./pages/Equipe"));
-const NovoRegistro = lazy(() => import("./pages/NovoRegistro"));
-const RegistroDetalhe = lazy(() => import("./pages/RegistroDetalhe"));
-const NovaProposta = lazy(() => import("./pages/NovaProposta"));
-const NovoRecebimento = lazy(() => import("./pages/NovoRecebimento"));
-const NovaSolicitacao = lazy(() => import("./pages/NovaSolicitacao"));
-const Fornecedores = lazy(() => import("./pages/Fornecedores"));
-const Plantas = lazy(() => import("./pages/Plantas"));
-const NovaPlanta = lazy(() => import("./pages/NovaPlanta"));
-const NovoProjeto = lazy(() => import("./pages/NovoProjeto"));
-const ProjetoDetalhe = lazy(() => import("./pages/ProjetoDetalhe"));
-const Insumos = lazy(() => import("./pages/Insumos"));
-const Compras = lazy(() => import("./pages/Compras"));
-const CustosEquipe = lazy(() => import("./pages/CustosEquipe"));
-const Maquinas = lazy(() => import("./pages/Maquinas"));
-const AlterarSenha = lazy(() => import("./pages/AlterarSenha"));
-const EsqueciSenha = lazy(() => import("./pages/EsqueciSenha"));
-const ResetPassword = lazy(() => import("./pages/ResetPassword"));
-const Areas = lazy(() => import("./pages/Areas"));
-const ControleAcessos = lazy(() => import("./pages/ControleAcessos"));
-const BootstrapAdmin = lazy(() => import("./pages/BootstrapAdmin"));
-const NotFound = lazy(() => import("./pages/NotFound"));
-const ProcessosInternos = lazy(() => import("./pages/ProcessosInternos"));
-const Calendario = lazy(() => import("./pages/Calendario"));
-const CRM = lazy(() => import("./pages/CRM"));
-const MinhaAgenda = lazy(() => import("./pages/MinhaAgenda"));
-const Conciliacao = lazy(() => import("./pages/Conciliacao"));
-const AReceber = lazy(() => import("./pages/AReceber"));
-const CategoriasPlantas = lazy(() => import("./pages/CategoriasPlantas"));
-const Movimentacoes = lazy(() => import("./pages/Movimentacoes"));
-const Orcamentos = lazy(() => import("./pages/Orcamentos"));
-const NovoOrcamento = lazy(() => import("./pages/NovoOrcamento"));
-const Indicadores = lazy(() => import("./pages/Indicadores"));
-const SolicitacoesCompras = lazy(() => import("./pages/SolicitacoesCompras"));
+const Clientes = lazyWithRetry(() => import("./pages/Clientes"));
+const ClientePerfil = lazyWithRetry(() => import("./pages/ClientePerfil"));
+const NovoCliente = lazyWithRetry(() => import("./pages/NovoCliente"));
+const Equipe = lazyWithRetry(() => import("./pages/Equipe"));
+const NovoRegistro = lazyWithRetry(() => import("./pages/NovoRegistro"));
+const RegistroDetalhe = lazyWithRetry(() => import("./pages/RegistroDetalhe"));
+const NovaProposta = lazyWithRetry(() => import("./pages/NovaProposta"));
+const NovoRecebimento = lazyWithRetry(() => import("./pages/NovoRecebimento"));
+const NovaSolicitacao = lazyWithRetry(() => import("./pages/NovaSolicitacao"));
+const Fornecedores = lazyWithRetry(() => import("./pages/Fornecedores"));
+const Plantas = lazyWithRetry(() => import("./pages/Plantas"));
+const NovaPlanta = lazyWithRetry(() => import("./pages/NovaPlanta"));
+const NovoProjeto = lazyWithRetry(() => import("./pages/NovoProjeto"));
+const ProjetoDetalhe = lazyWithRetry(() => import("./pages/ProjetoDetalhe"));
+const Insumos = lazyWithRetry(() => import("./pages/Insumos"));
+const Compras = lazyWithRetry(() => import("./pages/Compras"));
+const CustosEquipe = lazyWithRetry(() => import("./pages/CustosEquipe"));
+const Maquinas = lazyWithRetry(() => import("./pages/Maquinas"));
+const AlterarSenha = lazyWithRetry(() => import("./pages/AlterarSenha"));
+const EsqueciSenha = lazyWithRetry(() => import("./pages/EsqueciSenha"));
+const ResetPassword = lazyWithRetry(() => import("./pages/ResetPassword"));
+const Areas = lazyWithRetry(() => import("./pages/Areas"));
+const ControleAcessos = lazyWithRetry(() => import("./pages/ControleAcessos"));
+const BootstrapAdmin = lazyWithRetry(() => import("./pages/BootstrapAdmin"));
+const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
+const ProcessosInternos = lazyWithRetry(() => import("./pages/ProcessosInternos"));
+const Calendario = lazyWithRetry(() => import("./pages/Calendario"));
+const CRM = lazyWithRetry(() => import("./pages/CRM"));
+const MinhaAgenda = lazyWithRetry(() => import("./pages/MinhaAgenda"));
+const Conciliacao = lazyWithRetry(() => import("./pages/Conciliacao"));
+const AReceber = lazyWithRetry(() => import("./pages/AReceber"));
+const CategoriasPlantas = lazyWithRetry(() => import("./pages/CategoriasPlantas"));
+const Movimentacoes = lazyWithRetry(() => import("./pages/Movimentacoes"));
+const Orcamentos = lazyWithRetry(() => import("./pages/Orcamentos"));
+const NovoOrcamento = lazyWithRetry(() => import("./pages/NovoOrcamento"));
+const Indicadores = lazyWithRetry(() => import("./pages/Indicadores"));
+const SolicitacoesCompras = lazyWithRetry(() => import("./pages/SolicitacoesCompras"));
+
 
 const queryClient = new QueryClient();
 
