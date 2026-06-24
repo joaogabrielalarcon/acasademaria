@@ -1,53 +1,42 @@
-# Salvamento automático de rascunhos
+## Fase 3 — Tabela unificada da Etapa 3 (em 3 sub-entregas)
 
-A pessoa começa a preencher, fecha o navegador, vai pra outro dispositivo, abre de novo e volta exatamente onde parou. Vale para qualquer formulário longo da app.
+A Etapa 3 atual ocupa ~1.500 linhas em `NovoOrcamento.tsx` (fornecedores das plantas + bloco de Insumos de Plantio + checkboxes de adicionais). Refatorar tudo de uma vez é arriscado. Proponho 3 sub-entregas com revisão entre elas.
 
-## Como vai funcionar pra quem usa
+### Sub-fase 3A — Modelo unificado e carga dos insumos base
+- Criar tipo `ItemProjeto = { tipo: "planta" | "insumo", id, nome, categoria, quantidade, unidade, fornecedorSelecionadoId, valorUnit, badges }`.
+- Hook/derivado `itensProjeto` que une:
+  - plantas vindas do memorial (`itensMaterial`)
+  - insumos extraordinários do memorial (novo `insumos[]` da Fase 2)
+  - insumos `is_base = true` (pré-carregados com quantidade calculada via coeficientes existentes — terra, corda, bidim etc.)
+- Persistência: nenhuma mudança em `orcamento_itens`/`orcamento_insumos`/`orcamento_cotacoes`. Adapter de leitura/escrita mantém o formato atual.
+- UI: ainda não troca a tela. Sub-fase 3A só prepara os dados. Resultado verificado por console/log para a sub-fase seguinte ter base sólida.
 
-- Conforme a pessoa digita, o sistema salva sozinho a cada poucos segundos. Não tem botão de "salvar rascunho".
-- Quando ela volta naquela tela, aparece um aviso discreto no topo: "Você tem um rascunho salvo de [data/hora]. Retomar ou começar do zero?" Se ela escolhe retomar, todos os campos voltam preenchidos, na mesma etapa em que ela parou.
-- Quando ela conclui de verdade (salvar/enviar), o rascunho é apagado sozinho.
-- Funciona mesmo offline: o navegador guarda local na hora e sincroniza pro servidor quando volta a conexão. Se ela trocar de dispositivo, o servidor manda o rascunho mais recente.
+### Sub-fase 3B — Nova tabela única (substitui as 3 seções atuais)
+- Componente `TabelaItensProjeto` com:
+  - filtros (tipo, categoria, status de fornecedor, busca)
+  - colunas: Item, Categoria, Qtd, Un, Fornecedor (selecionado), Valor unit, badges
+  - linha clicável → expansão inline (colSpan) com todas as cotações do item: porte, preço, data, ★, mercado, botão "Selecionar".
+  - botão "+ Adicionar item" → Command picker do catálogo (plantas + insumos), com "Cadastrar novo" caindo no mesmo motor do Mafe de cadastro.
+- Backups: só "Selecionado" + alternativas listadas no expansor (sem Backup 1/Backup 2 separados). Histórico continua salvo.
+- Mobile: expansão vira card full-width.
+- Tokens de cor exclusivamente via variáveis CSS (terracota, nude, creme).
+- Cálculo de custo preserva os mesmos somatórios que alimentam o mini-DRE da Etapa 6.
 
-## Cobertura
+### Sub-fase 3C — Remoção das seções antigas e limpeza
+- Apagar: bloco "Insumos de Plantio (calculados)", lista de checkboxes "Insumos Adicionais", cards de fornecedores por item antigo.
+- Manter intactas: sub-aba "Atualizar Cotações", FAB Mafe, validação de saída da etapa, persistência.
+- Conferir build e fluxo end-to-end (memorial → tabela → salvar → Etapa 6).
 
-Começa pelo **Novo Orçamento** (6 etapas, é onde dá mais prejuízo perder). No mesmo PR, liga em todos os outros formulários longos do sistema:
+### Detalhes técnicos
+- Arquivo principal: `src/pages/NovoOrcamento.tsx`
+- Novo componente: `src/components/orcamento/TabelaItensProjeto.tsx`
+- Coeficientes já existem em `coeficientes_insumos` (consumidos hoje na seção de Insumos de Plantio).
+- Nada de hex hardcoded; usar `--terracota`, `--nude`, `--creme`, `--primary` etc.
+- Sem mudanças em RLS ou migrations nesta fase.
 
-- Novo Projeto, Novo Cliente, Nova Planta, Novo Fornecedor, Nova Proposta, Novo Registro/Recebimento, Nova Solicitação de Compras
-- Diário (Nova Visita, Manutenção)
-- CRM Novo Card
-- Chats da Mafe (cadastro, diário, orçamento) — preserva a conversa em andamento
+### Critério de aceite por sub-fase
+- 3A: `itensProjeto` derivado bate com o que aparece hoje (plantas + insumos base + extras do memorial), sem mudança visual.
+- 3B: tela nova funciona em paralelo (feature visível); usuário aprova UX antes de remover a antiga.
+- 3C: somatórios na Etapa 6 idênticos aos atuais para um orçamento de teste; nenhuma seção duplicada.
 
-Telas curtas (login, filtros, modais de confirmação) ficam fora — não fazem sentido.
-
-## O que não entra no rascunho
-
-- Arquivos/fotos em upload (o navegador não consegue guardar arquivos selecionados de forma confiável). A pessoa precisa reanexar ao retomar — fica avisado no banner.
-- Telas de edição de registro já existente. Rascunho é só pra novo cadastro/lançamento; em edição, o próprio registro já é o "save".
-
-## Parte técnica
-
-**Tabela `form_drafts`** (nova): `user_id`, `form_key` (ex.: `novo-orcamento`, `nova-visita`), `scope_key` (opcional, pra diferenciar rascunhos por contexto, ex.: orçamento por `cliente_id`), `data jsonb`, `updated_at`. PK composta `(user_id, form_key, scope_key)`. RLS: usuário só lê/escreve os próprios rascunhos.
-
-**Hook `useAutosaveDraft(formKey, state, setState, opts)`**:
-- Na montagem: lê localStorage na hora (instantâneo) + busca do banco em paralelo; usa o mais recente por `updated_at`. Mostra banner "Retomar rascunho" antes de aplicar.
-- Em cada mudança: debounce de ~1,5s, grava em localStorage imediatamente e faz upsert no banco.
-- Serialização defensiva: ignora campos `File`, `FileList`, refs e funções. Só JSON puro.
-- Versão do schema do form (`schemaVersion`) embutida; se mudar, rascunho antigo é descartado com aviso.
-- `clearDraft()` chamado no submit bem-sucedido e no botão "começar do zero".
-
-**Componente `DraftResumeBanner`** reutilizável: aparece quando há rascunho, mostra hora + dispositivo, botões Retomar / Descartar.
-
-**Integração no Novo Orçamento**: o hook serializa todo o `formData` + `etapaAtual` + arrays (itens, insumos, MO, fretes, markup). Retomar coloca a pessoa de volta na etapa exata. Em modo edição (id na URL), o autosave fica desligado.
-
-**Integração nas outras telas**: cada página passa a chamar `useAutosaveDraft("nome-do-form", state, setState)`. O hook cuida do resto.
-
-**Limpeza**: rascunho com mais de 30 dias é apagado automaticamente por um job de limpeza simples (trigger no select, ou cron leve). Tamanho máximo por rascunho: 500 KB (corta antes de gravar com aviso no console).
-
-## Ordem de entrega
-
-1. Tabela `form_drafts` + RLS + grants.
-2. Hook `useAutosaveDraft` + `DraftResumeBanner`.
-3. Ligar no Novo Orçamento (validar de ponta a ponta).
-4. Ligar em todos os outros formulários longos listados acima.
-5. Limpeza de rascunhos antigos.
+Começo pela **Sub-fase 3A** assim que aprovado.
