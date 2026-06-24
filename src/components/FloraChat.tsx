@@ -522,6 +522,14 @@ export function MafeChat() {
         projetoNome={selectedProject?.titulo || "Projeto"}
         clienteNome={selectedProject?.clientes?.nome || "Cliente"}
       />
+
+      {cadastroEntidade && (
+        <MafeCadastroChat
+          open={!!cadastroEntidade}
+          onOpenChange={(v) => { if (!v) setCadastroEntidade(null); }}
+          entidade={cadastroEntidade}
+        />
+      )}
     </>
   );
 }
