@@ -117,6 +117,7 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
   const [fornecedorSel, setFornecedorSel] = useState<any | null>(null);
   const [itemSel, setItemSel] = useState<any | null>(null);
   const [confirmaSalto, setConfirmaSalto] = useState(false);
+  const [planilhaOpen, setPlanilhaOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
