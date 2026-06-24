@@ -262,6 +262,7 @@ export default function NovoRecebimento() {
           </div>
         </div>
 
+        <DraftResumeBanner draft={draft} />
         <div className="space-y-6">
           {/* Dados do Recebimento */}
           <section className="card-botanical p-6 space-y-4">
