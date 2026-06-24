@@ -1762,6 +1762,7 @@ export default function NovoOrcamento() {
     aliquotaProdutos,
     tipoNf,
     margemNegPct,
+    negociacaoValor,
   ]);
 
   const itensBaixaConfianca = useMemo(
