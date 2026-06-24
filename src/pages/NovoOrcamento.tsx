@@ -5633,7 +5633,7 @@ export default function NovoOrcamento() {
                           </tr>
                         ))}
                         <tr className="border-t bg-muted/30 font-semibold">
-                          <td className="p-2">Imposto produtos (13.5%)</td>
+                          <td className="p-2">Imposto produtos ({Number(aliquotaProdutos).toFixed(2)}%)</td>
                           <td className="p-2 text-right">—</td>
                           <td className="p-2 text-right">—</td>
                           <td className="p-2 text-right">{fmtBRL(impostoProdutos)}</td>
