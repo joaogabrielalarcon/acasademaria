@@ -19,6 +19,8 @@ import { parseISO, isAfter, startOfDay } from "date-fns";
 import { useClientesSimples } from "@/hooks/useClientes";
 import { useTrechosCliente } from "@/hooks/useCliente";
 import { supabase } from "@/integrations/supabase/client";
+import { useAutosaveDraft } from "@/hooks/useAutosaveDraft";
+import { DraftResumeBanner } from "@/components/DraftResumeBanner";
 
 const prioridadeOptions = [
   { value: "baixa", label: "Baixa", className: "text-muted-foreground" },
