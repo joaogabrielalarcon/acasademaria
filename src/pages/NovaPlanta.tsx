@@ -22,6 +22,8 @@ import { toast } from "sonner";
 import { capitalizeWords } from "@/hooks/useInputMasks";
 import { MidiaUpload } from "@/components/MidiaUpload";
 import { parsePorteMetros } from "@/lib/porte";
+import { useAutosaveDraft } from "@/hooks/useAutosaveDraft";
+import { DraftResumeBanner } from "@/components/DraftResumeBanner";
 
 const UNIDADES_PLANTAS = [
   '1/2 Cuia','Bag','Bdj','Cuia','Cx','Cx com 15','Muda',
