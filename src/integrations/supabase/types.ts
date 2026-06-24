@@ -2791,6 +2791,7 @@ export type Database = {
       insumos: {
         Row: {
           ativo: boolean
+          base_ordem: number | null
           categoria: string | null
           created_at: string
           created_by: string | null
@@ -2798,6 +2799,7 @@ export type Database = {
           fornecedor_id: string | null
           fundido_em: string | null
           id: string
+          is_base: boolean
           nome: string
           observacoes: string | null
           preco_unitario: number | null
@@ -2810,6 +2812,7 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          base_ordem?: number | null
           categoria?: string | null
           created_at?: string
           created_by?: string | null
@@ -2817,6 +2820,7 @@ export type Database = {
           fornecedor_id?: string | null
           fundido_em?: string | null
           id?: string
+          is_base?: boolean
           nome: string
           observacoes?: string | null
           preco_unitario?: number | null
@@ -2829,6 +2833,7 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          base_ordem?: number | null
           categoria?: string | null
           created_at?: string
           created_by?: string | null
@@ -2836,6 +2841,7 @@ export type Database = {
           fornecedor_id?: string | null
           fundido_em?: string | null
           id?: string
+          is_base?: boolean
           nome?: string
           observacoes?: string | null
           preco_unitario?: number | null

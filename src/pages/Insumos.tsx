@@ -80,6 +80,8 @@ export function InsumosContent() {
     volume_apresentacao: "",
     observacoes: "",
     tipo_produto: "insumo" as "insumo" | "condicionador_solo",
+    is_base: false,
+    base_ordem: "",
   });
 
   const resetForm = () => {
@@ -87,6 +89,8 @@ export function InsumosContent() {
       nome: "", categoria: "", unidade: "", fornecedor_id: "",
       preco_unitario: "", descricao_produto: "", volume_apresentacao: "", observacoes: "",
       tipo_produto: tipoAba,
+      is_base: false,
+      base_ordem: "",
     });
     setEditingInsumo(null);
   };
@@ -103,6 +107,8 @@ export function InsumosContent() {
       volume_apresentacao: insumo.volume_apresentacao || "",
       observacoes: insumo.observacoes || "",
       tipo_produto: insumo.tipo_produto ?? "insumo",
+      is_base: insumo.is_base ?? false,
+      base_ordem: insumo.base_ordem != null ? String(insumo.base_ordem) : "",
     });
     setDialogOpen(true);
   };
@@ -123,6 +129,8 @@ export function InsumosContent() {
         volume_apresentacao: data.volume_apresentacao || null,
         observacoes: data.observacoes || null,
         tipo_produto: data.tipo_produto,
+        is_base: data.is_base,
+        base_ordem: data.is_base && data.base_ordem ? parseInt(data.base_ordem, 10) : null,
       };
 
       if (editingInsumo) {
@@ -348,6 +356,41 @@ export function InsumosContent() {
                     rows={2}
                   />
                 </div>
+
+                {podeMesclar && (
+                  <div className="rounded-md border border-primary/20 bg-muted/30 p-3 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <input
+                        id="is_base_toggle"
+                        type="checkbox"
+                        checked={formData.is_base}
+                        onChange={(e) => setFormData({ ...formData, is_base: e.target.checked })}
+                        className="mt-1 h-4 w-4 accent-primary"
+                      />
+                      <div className="flex-1">
+                        <Label htmlFor="is_base_toggle" className="cursor-pointer">
+                          Item base do projeto
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          Entra automaticamente na lista de insumos de todo orçamento (etapa Fornecedores). Use para itens recorrentes (terra, adubos fixos, corda, lona, bidim).
+                        </p>
+                      </div>
+                    </div>
+                    {formData.is_base && (
+                      <div className="space-y-1 pl-7">
+                        <Label className="text-xs">Ordem na lista (menor primeiro)</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={formData.base_ordem}
+                          onChange={(e) => setFormData({ ...formData, base_ordem: e.target.value })}
+                          placeholder="Ex.: 1"
+                          className="h-9 max-w-[140px]"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="flex justify-end gap-3 pt-4">
                   <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
