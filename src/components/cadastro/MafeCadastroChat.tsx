@@ -20,8 +20,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Send, ImagePlus, X, AlertCircle, CheckCircle2, Sparkles, TrendingUp } from "lucide-react";
+import { Loader2, Send, ImagePlus, X, AlertCircle, CheckCircle2, Sparkles, TrendingUp, FileSpreadsheet } from "lucide-react";
 import mafeAvatar from "@/assets/flora-avatar.webp";
+import { MafeCadastroPlanilha } from "./MafeCadastroPlanilha";
 
 export type EntidadeCadastro = "fornecedores" | "plantas" | "preco_fornecedor";
 
