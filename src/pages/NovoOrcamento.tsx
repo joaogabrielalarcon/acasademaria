@@ -5670,6 +5670,9 @@ export default function NovoOrcamento() {
                 </div>
               </div>
 
+              {/* Ajuste item a item (bidirecional, com rastro de auditoria) */}
+              <Etapa6AjustesItem orcamentoId={id} />
+
               {/* Read-only: Adicionais (Etapa 5) e Comissão/Margem (Etapa 4) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card className="p-4 space-y-2">
