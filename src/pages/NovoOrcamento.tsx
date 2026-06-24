@@ -478,6 +478,7 @@ export default function NovoOrcamento() {
   ]);
   const [custosIndiretos, setCustosIndiretos] = useState<CustoIndiretoLinha[]>([]);
   const [aliquotaMes, setAliquotaMes] = useState<number>(8.09);
+  const [aliquotaProdutos, setAliquotaProdutos] = useState<number>(13.5);
   const [tipoNf, setTipoNf] = useState<"pj" | "cpf">("pj");
   const [openBlocoMo, setOpenBlocoMo] = useState(true);
   const [openBlocoFretes, setOpenBlocoFretes] = useState(true);
@@ -754,7 +755,7 @@ export default function NovoOrcamento() {
     [insumosAdicionais],
   );
 
-  const impostoProdutos = (totalCustoPlantas + totalCustoInsumos) * 0.135;
+  const impostoProdutos = (totalCustoPlantas + totalCustoInsumos) * ((Number(aliquotaProdutos) || 0) / 100);
 
   const custoLinha = (cat: string) => {
     if (cat === "Insumos") return totalCustoInsumos;
@@ -795,7 +796,8 @@ export default function NovoOrcamento() {
   const valorComissao = comissaoOn
     ? ((Number(comissaoPct) || 0) * totaisResumo.totalVenda) / 100
     : 0;
-  const totalCliente = totaisResumo.totalVenda - valorComissao;
+  // Comissão é ACRESCIDA ao preço final (repasse ao cliente), preservando a margem da empresa.
+  const totalCliente = totaisResumo.totalVenda + valorComissao;
   const descontoMaximo = totalCliente * (margemNegPct / 100);
   const valorMinimo = totalCliente - descontoMaximo;
   const areaM2 = Number(form.area_m2) || 0;
@@ -820,6 +822,7 @@ export default function NovoOrcamento() {
         ...buildPayload(),
         status: statusFinal,
         aliquota_mes_pct: aliquotaMes,
+        aliquota_produtos_pct: aliquotaProdutos,
         tipo_nf: tipoNf,
         margem_negociacao_pct: margemNegPct,
         ...(extras || {}),
@@ -1090,6 +1093,7 @@ export default function NovoOrcamento() {
           custosIndiretos,
           markupsCategoria,
           aliquotaMes,
+          aliquotaProdutos,
           tipoNf,
           comissao: comissaoOn
             ? { tipo: comissaoTipo, percentual: Number(comissaoPct) || 0, beneficiario: comissaoBeneficiario, valor: valorComissao }
@@ -1358,6 +1362,7 @@ export default function NovoOrcamento() {
         responsavel_id: orcamento.responsavel_id || "",
       });
       if (orcamento.aliquota_mes_pct != null) setAliquotaMes(Number(orcamento.aliquota_mes_pct));
+      if ((orcamento as any).aliquota_produtos_pct != null) setAliquotaProdutos(Number((orcamento as any).aliquota_produtos_pct));
       if (orcamento.tipo_nf) setTipoNf(orcamento.tipo_nf);
       if (orcamento.margem_negociacao_pct != null) setMargemNegPct(Number(orcamento.margem_negociacao_pct));
     }
@@ -1664,6 +1669,7 @@ export default function NovoOrcamento() {
     JSON.stringify(margensSeg),
     JSON.stringify(markupsCategoria),
     aliquotaMes,
+    aliquotaProdutos,
     tipoNf,
     margemNegPct,
   ]);
@@ -5141,7 +5147,7 @@ export default function NovoOrcamento() {
                 <div className="border-t pt-3 space-y-3">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <Label className="text-xs">Alíquota do mês (%)</Label>
+                      <Label className="text-xs">Alíquota do mês — Mão de Obra (%)</Label>
                       <Input
                         type="number"
                         step="0.01"
@@ -5149,7 +5155,7 @@ export default function NovoOrcamento() {
                         onChange={(e) => setAliquotaMes(Number(e.target.value) || 0)}
                       />
                       <p className="text-[11px] text-muted-foreground">
-                        Informar conforme orientação da contabilidade.
+                        Aplica somente sobre a mão de obra. A alíquota de produtos (plantas + insumos) é ajustada no Resumo Final.
                       </p>
                     </div>
                     <div className="space-y-1">
@@ -5627,22 +5633,58 @@ export default function NovoOrcamento() {
                           </tr>
                         ))}
                         <tr className="border-t bg-muted/30 font-semibold">
-                          <td className="p-2">Imposto produtos (13.5%)</td>
+                          <td className="p-2">
+                            <div className="flex items-center gap-2">
+                              <span>Imposto produtos</span>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min={0}
+                                value={aliquotaProdutos}
+                                onChange={(e) => setAliquotaProdutos(Number(e.target.value) || 0)}
+                                className="h-7 w-20 text-right"
+                                aria-label="Alíquota de imposto sobre produtos (%)"
+                              />
+                              <span className="text-xs text-muted-foreground">% sobre plantas + insumos</span>
+                            </div>
+                          </td>
                           <td className="p-2 text-right">—</td>
                           <td className="p-2 text-right">—</td>
                           <td className="p-2 text-right">{fmtBRL(impostoProdutos)}</td>
                           <td className="p-2 text-right">—</td>
                         </tr>
                         <tr className="border-t bg-primary/5 font-bold">
-                          <td className="p-2">Totais</td>
+                          <td className="p-2">Totais (venda)</td>
                           <td className="p-2 text-right">{fmtBRL(totaisResumo.totalCusto)}</td>
                           <td className="p-2 text-right">{totaisResumo.markupMedio.toFixed(1)}%</td>
                           <td className="p-2 text-right">{fmtBRL(totaisResumo.totalVenda)}</td>
                           <td className="p-2 text-right">{margemBrutaPctTotal.toFixed(1)}%</td>
                         </tr>
+                        {comissaoOn && valorComissao > 0 && (
+                          <tr className="border-t">
+                            <td className="p-2 text-muted-foreground">
+                              + Comissão {comissaoTipo === "vendas" ? "(vendas)" : "(indicação)"} {Number(comissaoPct).toFixed(1)}%
+                              <span className="block text-[11px]">Repassada ao cliente, não reduz a margem da empresa.</span>
+                            </td>
+                            <td className="p-2 text-right">—</td>
+                            <td className="p-2 text-right">—</td>
+                            <td className="p-2 text-right">{fmtBRL(valorComissao)}</td>
+                            <td className="p-2 text-right">—</td>
+                          </tr>
+                        )}
+                        <tr className="border-t bg-primary/10 font-bold">
+                          <td className="p-2">Total ao cliente</td>
+                          <td className="p-2 text-right">—</td>
+                          <td className="p-2 text-right">—</td>
+                          <td className="p-2 text-right text-primary">{fmtBRL(totalCliente)}</td>
+                          <td className="p-2 text-right">—</td>
+                        </tr>
                       </tbody>
                     </table>
                   </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Alíquota de produtos aplicada sobre plantas + insumos. Alíquota da mão de obra ({Number(aliquotaMes).toFixed(2)}%) é editada na Etapa 5 (bloco fiscal).
+                  </p>
                 </Card>
 
                 {/* Coluna direita — Cards de indicadores */}

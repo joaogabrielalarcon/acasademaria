@@ -1,0 +1,1 @@
+ALTER TABLE public.orcamentos ADD COLUMN IF NOT EXISTS aliquota_produtos_pct numeric NOT NULL DEFAULT 13.5;
