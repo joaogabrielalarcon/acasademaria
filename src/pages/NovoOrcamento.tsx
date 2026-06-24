@@ -403,6 +403,11 @@ export default function NovoOrcamento() {
     },
   });
 
+  // Insumos completos (com is_base/base_ordem) — usado pela tabela única da Etapa 3.
+  const { data: insumosFull = [] } = useInsumos();
+
+
+
   const tipoCoefDoItem = (it: ItemMemorial): string | null => {
     const cat = (it.categoria || "").toLowerCase();
     const porte = (it.porte || "").toLowerCase();
