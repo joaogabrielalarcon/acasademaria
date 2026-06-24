@@ -72,6 +72,28 @@ export default function NovoRegistro() {
   // === SEÇÃO 2: Serviços ===
   const [servicos, setServicos] = useState<ServicoData[]>([createEmptyServico()]);
 
+  const draft = useAutosaveDraft({
+    formKey: "novo-registro",
+    scopeKey: clienteIdFromUrl || "novo",
+    getSnapshot: () => ({
+      selectedCliente, dataVisita, periodo, equipePresente,
+      comentariosJardim, observacoesGerais, statusDiaria, alertaOpcao, servicos,
+    }),
+    applySnapshot: (s: any) => {
+      if (!s) return;
+      if (typeof s.selectedCliente === "string") setSelectedCliente(s.selectedCliente);
+      if (typeof s.dataVisita === "string") setDataVisita(s.dataVisita);
+      if (typeof s.periodo === "string") setPeriodo(s.periodo);
+      if (Array.isArray(s.equipePresente)) setEquipePresente(s.equipePresente);
+      if (typeof s.comentariosJardim === "string") setComentariosJardim(s.comentariosJardim);
+      if (typeof s.observacoesGerais === "string") setObservacoesGerais(s.observacoesGerais);
+      if (typeof s.statusDiaria === "string") setStatusDiaria(s.statusDiaria);
+      if (typeof s.alertaOpcao === "string") setAlertaOpcao(s.alertaOpcao);
+      if (Array.isArray(s.servicos)) setServicos(s.servicos);
+    },
+  });
+
+
   // Atualizar status baseado na data selecionada
   useEffect(() => {
     const today = startOfDay(new Date());
