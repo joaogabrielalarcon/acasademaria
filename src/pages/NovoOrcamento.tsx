@@ -673,52 +673,31 @@ export default function NovoOrcamento() {
   const CATEGORIAS_OUTROS = ["Insumos", "Fretes", "Mão de Obra", "Transporte", "Custos Indiretos"];
   const CATEGORIAS_RESUMO = [...CATEGORIAS_PLANTAS, ...CATEGORIAS_OUTROS];
 
-  const [markupsCategoria, setMarkupsCategoria] = useState<Record<string, number>>({});
-  const [markupModal, setMarkupModal] = useState<{
-    open: boolean;
-    categoria: string;
-    anterior: number;
-    novo: number;
-    motivo: string;
-  }>({ open: false, categoria: "", anterior: 0, novo: 0, motivo: "" });
+  // Markup vem do banco (orcamento_categorias_markup), gravado na Etapa 4.
+  // Esta é a ÚNICA fonte de markup do orçamento.
+  const markupCategoriasQuery = useQuery({
+    queryKey: ["orcamento-categorias-markup-resumo", id],
+    queryFn: async () => {
+      if (!id) return [] as any[];
+      const { data, error } = await (supabase as any)
+        .from("orcamento_categorias_markup")
+        .select("categoria, markup_pct, margem_pct, ajustado_manualmente, perfil_id_aplicado")
+        .eq("orcamento_id", id);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!id,
+  });
+  const markupsCategoria = useMemo<Record<string, number>>(() => {
+    const out: Record<string, number> = {};
+    ((markupCategoriasQuery.data as any[]) || []).forEach((r) => {
+      out[r.categoria] = Number(r.markup_pct) || 0;
+    });
+    return out;
+  }, [markupCategoriasQuery.data]);
   const [versoesPendentes, setVersoesPendentes] = useState<
     Array<{ campo_alterado: string; valor_anterior: string; valor_novo: string; motivo: string }>
   >([]);
-
-  const [comissaoOn, setComissaoOn] = useState(false);
-  const [comissaoTipo, setComissaoTipo] = useState<"vendas" | "indicacao">("vendas");
-  const [comissaoPct, setComissaoPct] = useState<string>("0");
-  const [comissaoBeneficiario, setComissaoBeneficiario] = useState("");
-  const [comissaoAberta, setComissaoAberta] = useState(false);
-
-  const [margemNegPct, setMargemNegPct] = useState<number>(0);
-
-  const [aprovarModal, setAprovarModal] = useState<{ open: boolean; valor: string; observacao: string }>({
-    open: false,
-    valor: "",
-    observacao: "",
-  });
-  const [naoAprovarModal, setNaoAprovarModal] = useState<{ open: boolean; motivo: string }>({
-    open: false,
-    motivo: "",
-  });
-  const [savingFinal, setSavingFinal] = useState(false);
-
-  useEffect(() => {
-    if (etapaAtual !== 6) return;
-    setMarkupsCategoria((prev) => {
-      const next = { ...prev };
-      CATEGORIAS_RESUMO.forEach((c) => {
-        if (next[c] === undefined) {
-          // Categorias da Etapa 5 são repasse direto ao cliente (sem markup adicional)
-          const repasseDireto = c === "Fretes" || c === "Mão de Obra" || c === "Transporte" || c === "Custos Indiretos";
-          next[c] = repasseDireto ? 0 : 100;
-        }
-      });
-      return next;
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [etapaAtual]);
 
   const custoPorCategoria = useMemo(() => {
     const acc: Record<string, number> = {};
