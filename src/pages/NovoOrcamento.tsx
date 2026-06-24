@@ -559,10 +559,18 @@ export default function NovoOrcamento() {
       acc.corda += qtdOrcar * Number(coef.corda_por_unidade || 0);
     });
 
-    const baseSorted = (insumosFull || [])
+    const baseSortedRaw = (insumosFull || [])
       .filter((i) => i.is_base)
       .slice()
       .sort((a, b) => (a.base_ordem ?? 999) - (b.base_ordem ?? 999) || a.nome.localeCompare(b.nome));
+    // Dedupe por nome normalizado (catálogo pode ter múltiplas linhas mesmo nome).
+    const baseVistos = new Set<string>();
+    const baseSorted = baseSortedRaw.filter((i) => {
+      const k = norm(i.nome);
+      if (baseVistos.has(k)) return false;
+      baseVistos.add(k);
+      return true;
+    });
 
     const qtdSugeridaBase = (nome: string): number => {
       const n = norm(nome);
@@ -571,64 +579,90 @@ export default function NovoOrcamento() {
       return 0;
     };
 
+    // Mapa do que já existe na lista para dedup global por nome
+    const nomesNaLista = new Set<string>();
+
     baseSorted.forEach((ins) => {
-      // Se já veio do memorial com mesmo nome, não duplica (memorial prevalece).
       const jaNoMemorial = itensInsumoExtra.some((e) => norm(e.nome) === norm(ins.nome));
       if (jaNoMemorial) return;
+      if (nomesNaLista.has(norm(ins.nome))) return;
+      // procura insumoAdicional já lançado com esse insumo_id (selecionado pelo operador)
+      const adicMatch = insumosAdicionais.find(
+        (a) => a.insumo_id === ins.id || norm(a.nome) === norm(ins.nome),
+      );
       out.push({
         tipo: "insumo",
-        chave: `base-${ins.id}`,
+        chave: `insumo-${ins.id}`,
         origem: "base",
         nome: ins.nome,
         categoria: ins.categoria,
-        quantidade: qtdSugeridaBase(ins.nome),
-        unidade: ins.unidade || "unidade",
-        fornecedor_id: ins.fornecedor_id,
-        valor_unitario: ins.preco_unitario,
+        quantidade: adicMatch
+          ? Number(adicMatch.quantidade_esperada) || qtdSugeridaBase(ins.nome)
+          : qtdSugeridaBase(ins.nome),
+        unidade: adicMatch?.unidade || ins.unidade || "unidade",
+        fornecedor_id: adicMatch?.fornecedor_id || null,
+        fornecedor_nome: adicMatch?.fornecedor_id
+          ? fornecedoresMap.get(adicMatch.fornecedor_id)?.nome || null
+          : null,
+        valor_unitario: adicMatch?.valor_unitario ? Number(adicMatch.valor_unitario) : null,
         badges: ["base"],
         ref: { insumoCatalogoId: ins.id },
       });
+      nomesNaLista.add(norm(ins.nome));
     });
 
-    // 3) Insumos extraordinários do memorial
+    // 3) Insumos extraordinários do memorial — dedup por nome
     itensInsumoExtra.forEach((e, idx) => {
+      if (nomesNaLista.has(norm(e.nome))) return;
       const match = (insumosFull || []).find((i) => norm(i.nome) === norm(e.nome));
+      const adicMatch = insumosAdicionais.find(
+        (a) => (match?.id && a.insumo_id === match.id) || norm(a.nome) === norm(e.nome),
+      );
       const badges = ["extraordinário"];
       if (!match) badges.push("sem cadastro");
       if (e.confianca === "baixa") badges.push("baixa confiança");
       out.push({
         tipo: "insumo",
-        chave: match ? `mem-${match.id}` : `mem-extra-${idx}`,
+        chave: match ? `insumo-${match.id}` : `mem-extra-${idx}`,
         origem: "memorial",
         nome: e.nome,
         categoria: e.categoria || match?.categoria || null,
-        quantidade: Number(e.quantidade) || 0,
-        unidade: e.unidade || match?.unidade || "unidade",
-        fornecedor_id: match?.fornecedor_id || null,
-        valor_unitario: match?.preco_unitario ?? null,
+        quantidade: adicMatch
+          ? Number(adicMatch.quantidade_esperada) || Number(e.quantidade) || 0
+          : Number(e.quantidade) || 0,
+        unidade: adicMatch?.unidade || e.unidade || match?.unidade || "unidade",
+        fornecedor_id: adicMatch?.fornecedor_id || null,
+        fornecedor_nome: adicMatch?.fornecedor_id
+          ? fornecedoresMap.get(adicMatch.fornecedor_id)?.nome || null
+          : null,
+        valor_unitario: adicMatch?.valor_unitario ? Number(adicMatch.valor_unitario) : null,
         badges,
         ref: { insumoCatalogoId: match?.id },
       });
+      nomesNaLista.add(norm(e.nome));
     });
 
-    // 4) Insumos adicionais (manuais já lançados via UI antiga). Não duplica com base/memorial.
+    // 4) Insumos adicionais manuais (que não casam com base nem memorial) — dedup por nome
     insumosAdicionais.forEach((ad, idx) => {
-      const chaveBase = ad.insumo_id ? `base-${ad.insumo_id}` : null;
-      const chaveMem = ad.insumo_id ? `mem-${ad.insumo_id}` : null;
-      if (out.some((o) => o.chave === chaveBase || o.chave === chaveMem)) return;
+      if (!ad.nome) return;
+      if (nomesNaLista.has(norm(ad.nome))) return;
       out.push({
         tipo: "insumo",
-        chave: ad.insumo_id ? `manual-${ad.insumo_id}` : `manual-idx-${idx}`,
+        chave: ad.insumo_id ? `insumo-${ad.insumo_id}` : `manual-idx-${idx}`,
         origem: "manual",
         nome: ad.nome,
         categoria: null,
         quantidade: Number(ad.quantidade_esperada) || 0,
         unidade: ad.unidade || "unidade",
         fornecedor_id: ad.fornecedor_id || null,
+        fornecedor_nome: ad.fornecedor_id
+          ? fornecedoresMap.get(ad.fornecedor_id)?.nome || null
+          : null,
         valor_unitario: ad.valor_unitario ? Number(ad.valor_unitario) : null,
         badges: ["manual"],
         ref: { insumoAdicionalIdx: idx, insumoCatalogoId: ad.insumo_id },
       });
+      nomesNaLista.add(norm(ad.nome));
     });
 
     return out;
@@ -2095,8 +2129,18 @@ export default function NovoOrcamento() {
       if (pop) set.add(pop);
       if (sci) set.add(sci);
     });
+    // Insumos também precisam buscar cotações no histórico
+    (insumosFull || []).forEach((ins: any) => {
+      if (ins?.is_base && ins?.nome) set.add(String(ins.nome).trim());
+    });
+    itensInsumoExtra.forEach((e) => {
+      if (e?.nome) set.add(String(e.nome).trim());
+    });
+    insumosAdicionais.forEach((a) => {
+      if (a?.nome) set.add(String(a.nome).trim());
+    });
     return Array.from(set);
-  }, [itensMaterial]);
+  }, [itensMaterial, insumosFull, itensInsumoExtra, insumosAdicionais]);
 
   const fetchCatalogoPaginado = async (table: "plantas" | "insumos") => {
     const pageSize = 1000;
@@ -4050,39 +4094,116 @@ export default function NovoOrcamento() {
                 <TabelaItensProjeto
                   itens={itensProjeto}
                   getAlternativas={(item) => {
-                    const idx = item.ref?.itemMemorialIdx;
-                    if (idx == null || !itensMaterial[idx]) return [];
-                    const rows = fornecedoresDoItem(itensMaterial[idx]) as any[];
-                    const sel = new Set(fornecedoresSelecionados[idx] || []);
+                    // PLANTA — fluxo existente via fornecedoresDoItem
+                    if (item.tipo === "planta") {
+                      const idx = item.ref?.itemMemorialIdx;
+                      if (idx == null || !itensMaterial[idx]) return [];
+                      const rows = fornecedoresDoItem(itensMaterial[idx]) as any[];
+                      const sel = new Set(fornecedoresSelecionados[idx] || []);
+                      return rows.map((r: any) => ({
+                        fornecedor_id: r.fornecedor_id,
+                        fornecedor_nome: r.fornecedores?.nome || "Fornecedor",
+                        porte: r.porte,
+                        preco: r.preco != null ? Number(r.preco) : null,
+                        unidade: r.unidade || itensMaterial[idx].unidade || null,
+                        data: r.data_orcamento,
+                        estrelas:
+                          r.nota_media != null
+                            ? Number(r.nota_media)
+                            : r.fornecedores?.nota_media != null
+                            ? Number(r.fornecedores.nota_media)
+                            : null,
+                        mercado: r.fornecedores?.mercado || null,
+                        selecionado: sel.has(r.fornecedor_id),
+                      }));
+                    }
+                    // INSUMO — busca em historicoPorItem pelo nome normalizado
+                    const hist = historicoPorItem as Record<string, any[]>;
+                    const k = normNome(item.nome);
+                    const rows = (hist[k] || []) as any[];
                     return rows.map((r: any) => ({
                       fornecedor_id: r.fornecedor_id,
                       fornecedor_nome: r.fornecedores?.nome || "Fornecedor",
                       porte: r.porte,
                       preco: r.preco != null ? Number(r.preco) : null,
-                      unidade: r.unidade || itensMaterial[idx].unidade || null,
+                      unidade: r.unidade || item.unidade || null,
                       data: r.data_orcamento,
                       estrelas:
-                        r.fornecedores?.nota_media != null
+                        r.nota_media != null
+                          ? Number(r.nota_media)
+                          : r.fornecedores?.nota_media != null
                           ? Number(r.fornecedores.nota_media)
                           : null,
                       mercado: r.fornecedores?.mercado || null,
-                      selecionado: sel.has(r.fornecedor_id),
+                      selecionado: item.fornecedor_id === r.fornecedor_id,
                     }));
                   }}
                   onSelecionarFornecedor={(item, alt) => {
-                    const idx = item.ref?.itemMemorialIdx;
-                    if (idx == null) {
-                      toast({
-                        title: "Seleção de insumo em breve",
-                        description: "A escolha de fornecedor de insumo será habilitada na próxima entrega.",
+                    if (item.tipo === "planta") {
+                      const idx = item.ref?.itemMemorialIdx;
+                      if (idx == null) return;
+                      setFornecedoresSelecionados((prev) => ({ ...prev, [idx]: [alt.fornecedor_id] }));
+                      setCotacao(idx, alt.fornecedor_id, {
+                        status_selecao: "principal",
+                        valor_unitario: alt.preco != null ? String(alt.preco) : "",
+                        porte_ofertado: alt.porte || item.porte || "",
                       });
+                      toast({ title: "Fornecedor selecionado", description: `${item.nome}: ${alt.fornecedor_nome}` });
                       return;
                     }
-                    setFornecedoresSelecionados((prev) => ({ ...prev, [idx]: [alt.fornecedor_id] }));
-                    setCotacao(idx, alt.fornecedor_id, {
-                      status_selecao: "principal",
-                      valor_unitario: alt.preco != null ? String(alt.preco) : "",
-                      porte_ofertado: alt.porte || item.porte || "",
+                    // INSUMO — upsert em insumosAdicionais
+                    const insumoId = item.ref?.insumoCatalogoId || null;
+                    setInsumosAdicionais((prev) => {
+                      const next = [...prev];
+                      const idxExistente = next.findIndex((a) =>
+                        (insumoId && a.insumo_id === insumoId) ||
+                        a.nome.trim().toLowerCase() === item.nome.trim().toLowerCase(),
+                      );
+                      const linha = {
+                        insumo_id: insumoId || undefined,
+                        nome: item.nome,
+                        fornecedor_id: alt.fornecedor_id,
+                        quantidade_esperada: String(item.quantidade ?? 0),
+                        unidade: alt.unidade || item.unidade || "unidade",
+                        margem: "0",
+                        valor_unitario: alt.preco != null ? String(alt.preco) : "",
+                        obs_interna: "",
+                        obs_proposta: "",
+                      };
+                      if (idxExistente >= 0) {
+                        next[idxExistente] = { ...next[idxExistente], ...linha };
+                      } else {
+                        next.push(linha);
+                      }
+                      return next;
+                    });
+                    toast({ title: "Fornecedor selecionado", description: `${item.nome}: ${alt.fornecedor_nome}` });
+                  }}
+                  onAtualizarQuantidade={(item, quantidade) => {
+                    if (item.tipo !== "insumo") return;
+                    const insumoId = item.ref?.insumoCatalogoId || null;
+                    setInsumosAdicionais((prev) => {
+                      const next = [...prev];
+                      const i = next.findIndex((a) =>
+                        (insumoId && a.insumo_id === insumoId) ||
+                        a.nome.trim().toLowerCase() === item.nome.trim().toLowerCase(),
+                      );
+                      if (i >= 0) {
+                        next[i] = { ...next[i], quantidade_esperada: String(quantidade) };
+                      } else {
+                        next.push({
+                          insumo_id: insumoId || undefined,
+                          nome: item.nome,
+                          fornecedor_id: item.fornecedor_id || "",
+                          quantidade_esperada: String(quantidade),
+                          unidade: item.unidade || "unidade",
+                          margem: "0",
+                          valor_unitario: item.valor_unitario != null ? String(item.valor_unitario) : "",
+                          obs_interna: "",
+                          obs_proposta: "",
+                        });
+                      }
+                      return next;
                     });
                   }}
                   onAdicionarItem={() => {
