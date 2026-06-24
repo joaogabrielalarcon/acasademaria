@@ -20,6 +20,8 @@ import { parseISO, isAfter, startOfDay, format, subDays, addWeeks } from "date-f
 import { useClientesSimples } from "@/hooks/useClientes";
 import { useColaboradoresAtivosBasico } from "@/hooks/useColaboradores";
 import { supabase } from "@/integrations/supabase/client";
+import { useAutosaveDraft } from "@/hooks/useAutosaveDraft";
+import { DraftResumeBanner } from "@/components/DraftResumeBanner";
 
 const periodoOptions = [
   { value: "manha", label: "Manhã" },
