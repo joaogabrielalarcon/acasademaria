@@ -422,10 +422,14 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
         <DialogHeader className="px-5 py-3 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2 font-display text-xl">
             <img src={mafeAvatar} alt="Mafe" className="w-7 h-7 rounded-full object-cover object-top" />
-            Cadastrar {ENTIDADE_LABEL[entidade]} com a Mafe
+            {entidade === "preco_fornecedor"
+              ? "Atualizar preço com a Mafe"
+              : `Cadastrar ${ENTIDADE_LABEL[entidade]} com a Mafe`}
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Escreva livre ou envie uma imagem. A Mafe organiza os campos, mostra duplicados e só grava após sua confirmação.
+            {entidade === "preco_fornecedor"
+              ? "Diga qual fornecedor tem qual item por qual preço. A Mafe casa com o catálogo inteiro e grava no histórico após sua confirmação."
+              : "Escreva livre ou envie uma imagem. A Mafe organiza os campos, mostra duplicados e só grava após sua confirmação."}
           </DialogDescription>
         </DialogHeader>
 
