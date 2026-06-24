@@ -294,6 +294,31 @@ export function Etapa4MarkupBlocoA(props: Props) {
     onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
 
+  const salvarPiso = useMutation({
+    mutationFn: async ({ categoria, piso }: { categoria: string; piso: number | null }) => {
+      if (!orcamentoId) throw new Error("Salve o orçamento primeiro.");
+      const atual = markupMap.get(categoria);
+      if (!atual) {
+        await (supabase as any).from("orcamento_categorias_markup").insert({
+          orcamento_id: orcamentoId,
+          categoria,
+          markup_pct: 0,
+          margem_pct: 0,
+          piso_margem_pct: piso,
+        });
+      } else {
+        await (supabase as any)
+          .from("orcamento_categorias_markup")
+          .update({ piso_margem_pct: piso })
+          .eq("orcamento_id", orcamentoId)
+          .eq("categoria", categoria);
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["orcamento-categorias-markup", orcamentoId] });
+      qc.invalidateQueries({ queryKey: ["orcamento-categorias-markup-resumo", orcamentoId] });
+    },
+
   const abrirEdicao = (categoria: string) => {
     if (!podeGerenciar) return;
     const atual = markupMap.get(categoria);
