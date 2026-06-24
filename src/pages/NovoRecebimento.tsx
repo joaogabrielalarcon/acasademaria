@@ -24,6 +24,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { useAutosaveDraft } from "@/hooks/useAutosaveDraft";
+import { DraftResumeBanner } from "@/components/DraftResumeBanner";
 import { usePlantas } from "@/hooks/usePlantas";
 import { useInsumos } from "@/hooks/useInsumos";
 import { useFornecedores } from "@/hooks/useFornecedores";
