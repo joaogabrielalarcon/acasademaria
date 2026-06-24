@@ -426,6 +426,15 @@ export function MafeChat() {
           >
             <Leaf className="w-3 h-3" /> Cadastrar planta
           </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-7 text-[11px] gap-1.5"
+            onClick={() => setCadastroEntidade("preco_fornecedor")}
+          >
+            <DollarSign className="w-3 h-3" /> Atualizar preço
+          </Button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
