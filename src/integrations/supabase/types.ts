@@ -3516,6 +3516,7 @@ export type Database = {
           markup_pct: number
           orcamento_id: string
           perfil_id_aplicado: string | null
+          piso_margem_pct: number | null
           updated_at: string
           updated_by: string | null
         }
@@ -3529,6 +3530,7 @@ export type Database = {
           markup_pct: number
           orcamento_id: string
           perfil_id_aplicado?: string | null
+          piso_margem_pct?: number | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -3542,6 +3544,7 @@ export type Database = {
           markup_pct?: number
           orcamento_id?: string
           perfil_id_aplicado?: string | null
+          piso_margem_pct?: number | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -4571,6 +4574,7 @@ export type Database = {
           margem_pct: number | null
           markup_pct: number
           perfil_id: string | null
+          piso_margem_pct: number | null
         }
         Insert: {
           categoria: string
@@ -4580,6 +4584,7 @@ export type Database = {
           margem_pct?: number | null
           markup_pct: number
           perfil_id?: string | null
+          piso_margem_pct?: number | null
         }
         Update: {
           categoria?: string
@@ -4589,6 +4594,7 @@ export type Database = {
           margem_pct?: number | null
           markup_pct?: number
           perfil_id?: string | null
+          piso_margem_pct?: number | null
         }
         Relationships: [
           {

@@ -294,6 +294,34 @@ export function Etapa4MarkupBlocoA(props: Props) {
     onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
 
+  const salvarPiso = useMutation({
+    mutationFn: async ({ categoria, piso }: { categoria: string; piso: number | null }) => {
+      if (!orcamentoId) throw new Error("Salve o orçamento primeiro.");
+      const atual = markupMap.get(categoria);
+      if (!atual) {
+        await (supabase as any).from("orcamento_categorias_markup").insert({
+          orcamento_id: orcamentoId,
+          categoria,
+          markup_pct: 0,
+          margem_pct: 0,
+          piso_margem_pct: piso,
+        });
+      } else {
+        await (supabase as any)
+          .from("orcamento_categorias_markup")
+          .update({ piso_margem_pct: piso })
+          .eq("orcamento_id", orcamentoId)
+          .eq("categoria", categoria);
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["orcamento-categorias-markup", orcamentoId] });
+      qc.invalidateQueries({ queryKey: ["orcamento-categorias-markup-resumo", orcamentoId] });
+    },
+    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
+
   const abrirEdicao = (categoria: string) => {
     if (!podeGerenciar) return;
     const atual = markupMap.get(categoria);
@@ -460,6 +488,17 @@ export function Etapa4MarkupBlocoA(props: Props) {
                   <TableHead className="text-right w-28">Margem %</TableHead>
                   <TableHead className="text-right">Valor de venda</TableHead>
                   <TableHead className="text-right">Impacto</TableHead>
+                  <TableHead className="text-right w-24">
+                    Piso margem %
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="inline size-3 ml-1 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        Margem mínima desejada para a categoria. Só alerta no Resumo Final, não bloqueia.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TableHead>
                   <TableHead className="w-12"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -497,6 +536,30 @@ export function Etapa4MarkupBlocoA(props: Props) {
                       <TableCell className="text-right tabular-nums">{fmtBRL(l.venda)}</TableCell>
                       <TableCell className="text-right tabular-nums text-primary">
                         {fmtBRL(l.venda - l.custo)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {podeGerenciar ? (
+                          <Input
+                            type="number"
+                            min={0}
+                            step="0.5"
+                            placeholder="—"
+                            defaultValue={m?.piso_margem_pct ?? ""}
+                            onBlur={(e) => {
+                              const raw = e.target.value.trim();
+                              const piso = raw === "" ? null : Number(raw);
+                              const atual = m?.piso_margem_pct ?? null;
+                              if (piso === atual) return;
+                              if (piso != null && (!isFinite(piso) || piso < 0)) return;
+                              salvarPiso.mutate({ categoria: l.categoria, piso });
+                            }}
+                            className="h-7 w-20 text-right ml-auto"
+                          />
+                        ) : (
+                          <span className="text-xs text-muted-foreground tabular-nums">
+                            {m?.piso_margem_pct != null ? fmtPct(Number(m.piso_margem_pct)) : "—"}
+                          </span>
+                        )}
                       </TableCell>
                       <TableCell>
                         {podeGerenciar ? (
