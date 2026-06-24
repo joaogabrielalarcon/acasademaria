@@ -225,6 +225,7 @@ export default function NovoRecebimento() {
 
       if (itensError) throw itensError;
 
+      await draft.clearDraft();
       toast.success("Recebimento registrado com sucesso!");
       navigate(`/clientes/${clienteId}`);
     } catch (error) {
