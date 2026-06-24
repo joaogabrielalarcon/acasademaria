@@ -5147,7 +5147,7 @@ export default function NovoOrcamento() {
                 <div className="border-t pt-3 space-y-3">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <Label className="text-xs">Alíquota do mês (%)</Label>
+                      <Label className="text-xs">Alíquota do mês — Mão de Obra (%)</Label>
                       <Input
                         type="number"
                         step="0.01"
@@ -5155,7 +5155,7 @@ export default function NovoOrcamento() {
                         onChange={(e) => setAliquotaMes(Number(e.target.value) || 0)}
                       />
                       <p className="text-[11px] text-muted-foreground">
-                        Informar conforme orientação da contabilidade.
+                        Aplica somente sobre a mão de obra. A alíquota de produtos (plantas + insumos) é ajustada no Resumo Final.
                       </p>
                     </div>
                     <div className="space-y-1">
