@@ -2977,13 +2977,20 @@ export default function NovoOrcamento() {
 
                   {/* Cliente */}
                   <div className="space-y-2">
-                    <Label>Cliente<Req /></Label>
+                    <Label className={errCampo("cliente_id") ? "text-destructive" : ""}>
+                      Cliente<Req />
+                    </Label>
                     <div className="flex gap-2">
                       <Select
                         value={form.cliente_id}
                         onValueChange={(v) => setForm((c) => ({ ...c, cliente_id: v }))}
                       >
-                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                        <SelectTrigger
+                          data-campo-erro={errCampo("cliente_id") ? "true" : undefined}
+                          className={ringErr("cliente_id")}
+                        >
+                          <SelectValue placeholder="Selecione..." />
+                        </SelectTrigger>
                         <SelectContent>
                           {(clientes as any[]).map((cl) => (
                             <SelectItem key={cl.id} value={cl.id}>{cl.nome}</SelectItem>
@@ -3004,6 +3011,9 @@ export default function NovoOrcamento() {
                         <Plus className="w-4 h-4" />
                       </Button>
                     </div>
+                    {errCampo("cliente_id") && (
+                      <p className="text-xs text-destructive">Selecione um cliente.</p>
+                    )}
                   </div>
 
                   {/* Local do cliente */}
