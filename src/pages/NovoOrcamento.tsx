@@ -60,6 +60,7 @@ import { MercadoInlineEditor, parseMercados } from "@/components/orcamento/Merca
 import { AtualizarCotacaoPopover } from "@/components/orcamento/AtualizarCotacaoPopover";
 import { MafeFAB } from "@/components/orcamento/MafeFAB";
 import { Etapa4MarkupBlocoA, useEtapa4Validacao } from "@/components/orcamento/Etapa4MarkupBlocoA";
+import { Etapa6AjustesItem } from "@/components/orcamento/Etapa6AjustesItem";
 import { EditarMercadoDialog } from "@/components/orcamento/EditarMercadoDialog";
 import {
   IndisponibilidadeDialog,
