@@ -3751,9 +3751,13 @@ export type Database = {
       }
       orcamento_custos_indiretos: {
         Row: {
+          ajustado_em: string | null
+          ajustado_por: string | null
+          ajuste_obs: string | null
           created_at: string | null
           descricao: string | null
           id: string
+          markup_override_pct: number | null
           obs: string | null
           orcamento_id: string | null
           quantidade: number | null
@@ -3762,9 +3766,13 @@ export type Database = {
           valor_unitario: number | null
         }
         Insert: {
+          ajustado_em?: string | null
+          ajustado_por?: string | null
+          ajuste_obs?: string | null
           created_at?: string | null
           descricao?: string | null
           id?: string
+          markup_override_pct?: number | null
           obs?: string | null
           orcamento_id?: string | null
           quantidade?: number | null
@@ -3773,9 +3781,13 @@ export type Database = {
           valor_unitario?: number | null
         }
         Update: {
+          ajustado_em?: string | null
+          ajustado_por?: string | null
+          ajuste_obs?: string | null
           created_at?: string | null
           descricao?: string | null
           id?: string
+          markup_override_pct?: number | null
           obs?: string | null
           orcamento_id?: string | null
           quantidade?: number | null
@@ -3795,11 +3807,15 @@ export type Database = {
       }
       orcamento_fretes: {
         Row: {
+          ajustado_em: string | null
+          ajustado_por: string | null
+          ajuste_obs: string | null
           created_at: string | null
           descricao_percurso: string
           fornecedor_id: string | null
           id: string
           margem_seguranca_pct: number | null
+          markup_override_pct: number | null
           obs: string | null
           orcamento_id: string | null
           percurso: string | null
@@ -3810,11 +3826,15 @@ export type Database = {
           valor_unitario: number | null
         }
         Insert: {
+          ajustado_em?: string | null
+          ajustado_por?: string | null
+          ajuste_obs?: string | null
           created_at?: string | null
           descricao_percurso: string
           fornecedor_id?: string | null
           id?: string
           margem_seguranca_pct?: number | null
+          markup_override_pct?: number | null
           obs?: string | null
           orcamento_id?: string | null
           percurso?: string | null
@@ -3825,11 +3845,15 @@ export type Database = {
           valor_unitario?: number | null
         }
         Update: {
+          ajustado_em?: string | null
+          ajustado_por?: string | null
+          ajuste_obs?: string | null
           created_at?: string | null
           descricao_percurso?: string
           fornecedor_id?: string | null
           id?: string
           margem_seguranca_pct?: number | null
+          markup_override_pct?: number | null
           obs?: string | null
           orcamento_id?: string | null
           percurso?: string | null
@@ -3858,12 +3882,16 @@ export type Database = {
       }
       orcamento_insumos: {
         Row: {
+          ajustado_em: string | null
+          ajustado_por: string | null
+          ajuste_obs: string | null
           calculado_automaticamente: boolean | null
           created_at: string | null
           fornecedor_id: string | null
           id: string
           insumo_id: string | null
           margem_seguranca_pct: number | null
+          markup_override_pct: number | null
           markup_pct: number | null
           nome: string
           obs_interna: string | null
@@ -3879,12 +3907,16 @@ export type Database = {
           valor_unitario: number | null
         }
         Insert: {
+          ajustado_em?: string | null
+          ajustado_por?: string | null
+          ajuste_obs?: string | null
           calculado_automaticamente?: boolean | null
           created_at?: string | null
           fornecedor_id?: string | null
           id?: string
           insumo_id?: string | null
           margem_seguranca_pct?: number | null
+          markup_override_pct?: number | null
           markup_pct?: number | null
           nome: string
           obs_interna?: string | null
@@ -3900,12 +3932,16 @@ export type Database = {
           valor_unitario?: number | null
         }
         Update: {
+          ajustado_em?: string | null
+          ajustado_por?: string | null
+          ajuste_obs?: string | null
           calculado_automaticamente?: boolean | null
           created_at?: string | null
           fornecedor_id?: string | null
           id?: string
           insumo_id?: string | null
           margem_seguranca_pct?: number | null
+          markup_override_pct?: number | null
           markup_pct?: number | null
           nome?: string
           obs_interna?: string | null
@@ -3946,6 +3982,9 @@ export type Database = {
       }
       orcamento_itens: {
         Row: {
+          ajustado_em: string | null
+          ajustado_por: string | null
+          ajuste_obs: string | null
           categoria: string | null
           created_at: string | null
           custo_unitario: number | null
@@ -3956,6 +3995,7 @@ export type Database = {
           margem_bruta_pct: number | null
           margem_seguranca_pct: number | null
           markup_motivo: string | null
+          markup_override_pct: number | null
           markup_pct: number | null
           nome_cientifico: string | null
           nome_popular: string
@@ -3969,12 +4009,16 @@ export type Database = {
           porte_fornecedor: string | null
           porte_solicitado: string | null
           preco_venda_final: number | null
+          preco_venda_override: number | null
           preco_venda_unitario: number | null
           quantidade_esperada: number
           quantidade_orcar: number | null
           unidade: string | null
         }
         Insert: {
+          ajustado_em?: string | null
+          ajustado_por?: string | null
+          ajuste_obs?: string | null
           categoria?: string | null
           created_at?: string | null
           custo_unitario?: number | null
@@ -3985,6 +4029,7 @@ export type Database = {
           margem_bruta_pct?: number | null
           margem_seguranca_pct?: number | null
           markup_motivo?: string | null
+          markup_override_pct?: number | null
           markup_pct?: number | null
           nome_cientifico?: string | null
           nome_popular: string
@@ -3998,12 +4043,16 @@ export type Database = {
           porte_fornecedor?: string | null
           porte_solicitado?: string | null
           preco_venda_final?: number | null
+          preco_venda_override?: number | null
           preco_venda_unitario?: number | null
           quantidade_esperada: number
           quantidade_orcar?: number | null
           unidade?: string | null
         }
         Update: {
+          ajustado_em?: string | null
+          ajustado_por?: string | null
+          ajuste_obs?: string | null
           categoria?: string | null
           created_at?: string | null
           custo_unitario?: number | null
@@ -4014,6 +4063,7 @@ export type Database = {
           margem_bruta_pct?: number | null
           margem_seguranca_pct?: number | null
           markup_motivo?: string | null
+          markup_override_pct?: number | null
           markup_pct?: number | null
           nome_cientifico?: string | null
           nome_popular?: string
@@ -4027,6 +4077,7 @@ export type Database = {
           porte_fornecedor?: string | null
           porte_solicitado?: string | null
           preco_venda_final?: number | null
+          preco_venda_override?: number | null
           preco_venda_unitario?: number | null
           quantidade_esperada?: number
           quantidade_orcar?: number | null
@@ -4065,12 +4116,16 @@ export type Database = {
       }
       orcamento_mo: {
         Row: {
+          ajustado_em: string | null
+          ajustado_por: string | null
+          ajuste_obs: string | null
           aliquota_mes_pct: number | null
           cargo_id: string | null
           colaborador_id: string | null
           created_at: string | null
           custo_total: number | null
           id: string
+          markup_override_pct: number | null
           orcamento_id: string | null
           qtd_dias: number | null
           qtd_funcionarios: number | null
@@ -4079,12 +4134,16 @@ export type Database = {
           valor_com_imposto: number | null
         }
         Insert: {
+          ajustado_em?: string | null
+          ajustado_por?: string | null
+          ajuste_obs?: string | null
           aliquota_mes_pct?: number | null
           cargo_id?: string | null
           colaborador_id?: string | null
           created_at?: string | null
           custo_total?: number | null
           id?: string
+          markup_override_pct?: number | null
           orcamento_id?: string | null
           qtd_dias?: number | null
           qtd_funcionarios?: number | null
@@ -4093,12 +4152,16 @@ export type Database = {
           valor_com_imposto?: number | null
         }
         Update: {
+          ajustado_em?: string | null
+          ajustado_por?: string | null
+          ajuste_obs?: string | null
           aliquota_mes_pct?: number | null
           cargo_id?: string | null
           colaborador_id?: string | null
           created_at?: string | null
           custo_total?: number | null
           id?: string
+          markup_override_pct?: number | null
           orcamento_id?: string | null
           qtd_dias?: number | null
           qtd_funcionarios?: number | null
@@ -4174,8 +4237,12 @@ export type Database = {
       }
       orcamento_transporte: {
         Row: {
+          ajustado_em: string | null
+          ajustado_por: string | null
+          ajuste_obs: string | null
           created_at: string | null
           id: string
+          markup_override_pct: number | null
           orcamento_id: string | null
           qtd_dias: number | null
           qtd_km: number | null
@@ -4184,8 +4251,12 @@ export type Database = {
           valor_km: number | null
         }
         Insert: {
+          ajustado_em?: string | null
+          ajustado_por?: string | null
+          ajuste_obs?: string | null
           created_at?: string | null
           id?: string
+          markup_override_pct?: number | null
           orcamento_id?: string | null
           qtd_dias?: number | null
           qtd_km?: number | null
@@ -4194,8 +4265,12 @@ export type Database = {
           valor_km?: number | null
         }
         Update: {
+          ajustado_em?: string | null
+          ajustado_por?: string | null
+          ajuste_obs?: string | null
           created_at?: string | null
           id?: string
+          markup_override_pct?: number | null
           orcamento_id?: string | null
           qtd_dias?: number | null
           qtd_km?: number | null
