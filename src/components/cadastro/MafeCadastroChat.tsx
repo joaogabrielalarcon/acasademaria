@@ -323,6 +323,43 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
     return data.id;
   }
 
+  async function gravarPrecoFornecedor() {
+    if (!fornecedorSel?.id || !itemSel?.id) throw new Error("Selecione fornecedor e item.");
+    const preco = Number(String(extraido?.preco ?? "").replace(",", "."));
+    if (!Number.isFinite(preco) || preco <= 0) throw new Error("Preço inválido.");
+    const porte = (extraido?.porte ? String(extraido.porte).trim() : null) || itemSel.porte || null;
+    const unidade = (extraido?.unidade ? String(extraido.unidade).trim() : null) || itemSel.unidade || null;
+    const hoje = new Date().toISOString().slice(0, 10);
+    const observacoes = extraido?.observacoes ? String(extraido.observacoes).trim() : null;
+
+    // historico_precos (cronológico do item — fonte usada pelos orçamentos)
+    const { error: e1 } = await supabase.from("historico_precos").insert([{
+      item_id: itemSel.id,
+      item_tipo: itemSel.tipo,
+      fornecedor_id: fornecedorSel.id,
+      preco,
+      porte,
+      unidade,
+      data_orcamento: hoje,
+      registrado_por: user?.id,
+      observacoes,
+    }] as any);
+    if (e1) throw e1;
+
+    // historico_precos_fornecedor (visão por fornecedor — só plantas)
+    if (itemSel.tipo === "planta") {
+      const { error: e2 } = await supabase.from("historico_precos_fornecedor").insert([{
+        fornecedor_id: fornecedorSel.id,
+        planta_id: itemSel.id,
+        porte,
+        unidade,
+        preco,
+        data_cotacao: hoje,
+      }] as any);
+      if (e2) console.warn("[preco_fornecedor] aviso historico_precos_fornecedor:", e2.message);
+    }
+  }
+
   const handleSalvar = async () => {
     if (!extraido || !podeSalvar || saving) return;
     setSaving(true);
@@ -332,9 +369,15 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
         id = await gravarFornecedor(extraido, atualizarId);
         qc.invalidateQueries({ queryKey: ["fornecedores"] });
         qc.invalidateQueries({ queryKey: ["fornecedores-todos"] });
-      } else {
+      } else if (entidade === "plantas") {
         id = await gravarPlanta(extraido, atualizarId);
         qc.invalidateQueries({ queryKey: ["plantas"] });
+      } else {
+        await gravarPrecoFornecedor();
+        qc.invalidateQueries({ queryKey: ["historico_precos"] });
+        qc.invalidateQueries({ queryKey: ["historico-precos-fornecedor"] });
+        qc.invalidateQueries({ queryKey: ["plantas"] });
+        qc.invalidateQueries({ queryKey: ["insumos"] });
       }
       toast({
         title: atualizarId ? "Atualizado" : "Cadastrado",
