@@ -94,6 +94,7 @@ import { History, GitBranch } from "lucide-react";
 import { EnderecoFields, composeEndereco } from "@/components/EnderecoFields";
 import { Star, Filter, MessageCircle, Lock, Crown, ChevronsUp, ChevronsDown, Zap, Store, AlertCircle, RotateCcw } from "lucide-react";
 import { MemorialItensTable } from "@/components/orcamento/MemorialItensTable";
+import { VirtualWindowList } from "@/components/orcamento/VirtualWindowList";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatPorteMetros, parsePorteMetros } from "@/lib/porte";
 
