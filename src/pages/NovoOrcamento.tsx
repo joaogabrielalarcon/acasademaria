@@ -1720,15 +1720,33 @@ export default function NovoOrcamento() {
         const { error } = await (supabase as any).from("orcamentos").update(payload).eq("id", id);
         if (error) throw error;
         return id as string;
-      } else {
+      }
+      // Insert com retry contra duplicação de código (raça com outro orçamento).
+      const tryInsert = async (p: any) => {
         const { data, error } = await (supabase as any)
           .from("orcamentos")
-          .insert(payload)
+          .insert(p)
           .select("id")
           .single();
-        if (error) throw error;
-        return data.id as string;
+        return { data, error };
+      };
+      let { data, error } = await tryInsert(payload);
+      if (error && (error.code === "23505" || /duplic/i.test(error.message || ""))) {
+        // re-gera código atomicamente e tenta de novo
+        try {
+          const { data: novo } = await (supabase as any).rpc("gerar_codigo_orcamento", {
+            p_sigla: form.tipo_proposta_sigla,
+          });
+          if (novo) {
+            setForm((c) => ({ ...c, codigo: novo }));
+            const r2 = await tryInsert({ ...payload, codigo: novo });
+            data = r2.data;
+            error = r2.error;
+          }
+        } catch {}
       }
+      if (error) throw error;
+      return data.id as string;
     },
     onSuccess: (newId) => {
       queryClient.invalidateQueries({ queryKey: ["orcamentos"] });
