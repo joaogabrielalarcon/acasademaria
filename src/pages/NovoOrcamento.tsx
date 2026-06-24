@@ -61,6 +61,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FornecedorPopover } from "@/components/orcamento/FornecedorPopover";
+import { TabelaItensProjeto } from "@/components/orcamento/TabelaItensProjeto";
+import { Badge } from "@/components/ui/badge";
 import { MercadoInlineEditor, parseMercados } from "@/components/orcamento/MercadoInlineEditor";
 import { AtualizarCotacaoPopover } from "@/components/orcamento/AtualizarCotacaoPopover";
 import { MafeFAB } from "@/components/orcamento/MafeFAB";
@@ -4016,6 +4018,38 @@ export default function NovoOrcamento() {
               )}
 
               {tabEtapa3 === "comparativo" && (<>
+              {/* Sub-fase 3B — Preview da nova tabela única de itens do projeto */}
+              {itensProjeto.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-display text-lg text-foreground">Itens do projeto</h3>
+                    <Badge variant="outline" className="text-[10px]">preview 3B</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Visão unificada de plantas e insumos. A seleção de fornecedor continua disponível nos cards abaixo enquanto esta tabela é validada.
+                  </p>
+                  <TabelaItensProjeto
+                    itens={itensProjeto}
+                    getAlternativas={(item) => {
+                      const idx = item.ref?.itemMemorialIdx;
+                      if (idx == null || !itensMaterial[idx]) return [];
+                      const rows = fornecedoresDoItem(itensMaterial[idx]) as any[];
+                      const sel = new Set(fornecedoresSelecionados[idx] || []);
+                      return rows.map((r: any) => ({
+                        fornecedor_id: r.fornecedor_id,
+                        fornecedor_nome: r.fornecedores?.nome || "Fornecedor",
+                        porte: r.porte,
+                        preco: r.preco != null ? Number(r.preco) : null,
+                        data: r.data_orcamento,
+                        estrelas: r.fornecedores?.nota_media != null ? Number(r.fornecedores.nota_media) : null,
+                        mercado: r.fornecedores?.mercado || null,
+                        selecionado: sel.has(r.fornecedor_id),
+                      }));
+                    }}
+                  />
+                </div>
+              )}
+
               {itensMaterial.length === 0 && (
                 <EmptyState
                   title="Sem itens no memorial"
