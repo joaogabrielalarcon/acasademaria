@@ -305,50 +305,35 @@ export function TabelaItensProjeto({
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-secondary/60 text-foreground hidden md:table-header-group">
-            <tr className="border-b border-primary/20">
-              <th className="w-8" />
-              <th className="text-left px-3 py-2 font-semibold">Item</th>
-              <th className="text-right px-3 py-2 font-semibold w-[120px]">Quantidade</th>
-              <th className="text-left px-3 py-2 font-semibold w-[80px]">Un</th>
-              <th className="text-right px-3 py-2 font-semibold w-[120px]">Valor unit.</th>
-              <th className="text-left px-3 py-2 font-semibold w-[260px]">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtrados.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-3 py-8 text-center text-muted-foreground">
-                  Nenhum item corresponde aos filtros.
-                </td>
-              </tr>
-            )}
-            {filtrados.map((it) => (
-              <LinhaItem
-                key={it.chave}
-                item={it}
-                aberto={isAberto(it)}
-                setAberto={(v) => setAberto(it.chave, v)}
-                filtros={filtrosPorLinha[it.chave] || filtroPadrao}
-                setFiltros={(p) => setFiltros(it.chave, p)}
-                getAlternativas={getAlternativas}
-                onSelecionarFornecedor={(alt) => {
-                  onSelecionarFornecedor?.(it, alt);
-                  setAberto(it.chave, false);
-                }}
-                onAtualizarQuantidade={
-                  onAtualizarQuantidade ? (q) => onAtualizarQuantidade(it, q) : undefined
-                }
-                onEditarCotacao={onEditarCotacao ? (alt) => onEditarCotacao(it, alt) : undefined}
-                onMesclarFornecedores={
-                  onMesclarFornecedores ? (alts) => onMesclarFornecedores(it, alts) : undefined
-                }
-              />
-            ))}
-          </tbody>
-        </table>
+      <div className="flex flex-col gap-2 p-3">
+        {filtrados.length === 0 ? (
+          <div className="px-3 py-8 text-center text-muted-foreground text-sm">
+            Nenhum item corresponde aos filtros.
+          </div>
+        ) : (
+          filtrados.map((it) => (
+            <LinhaItem
+              key={it.chave}
+              item={it}
+              aberto={isAberto(it)}
+              setAberto={(v) => setAberto(it.chave, v)}
+              filtros={filtrosPorLinha[it.chave] || filtroPadrao}
+              setFiltros={(p) => setFiltros(it.chave, p)}
+              getAlternativas={getAlternativas}
+              onSelecionarFornecedor={(alt) => {
+                onSelecionarFornecedor?.(it, alt);
+                setAberto(it.chave, false);
+              }}
+              onAtualizarQuantidade={
+                onAtualizarQuantidade ? (q) => onAtualizarQuantidade(it, q) : undefined
+              }
+              onEditarCotacao={onEditarCotacao ? (alt) => onEditarCotacao(it, alt) : undefined}
+              onMesclarFornecedores={
+                onMesclarFornecedores ? (alts) => onMesclarFornecedores(it, alts) : undefined
+              }
+            />
+          ))
+        )}
       </div>
     </Card>
   );
