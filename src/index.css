@@ -54,6 +54,12 @@
     --mafe-diario-ready: 10 65% 24%;
     --mafe-diario-typing: 10 50% 50%;
     
+    /* Accent colors — marca marinho e rosé */
+    --marinho: 263 47% 18%; /* azul-marinho da marca, ~#281842 */
+    --marinho-foreground: 27 100% 95%; /* texto sobre marinho = creme */
+    --rose: 15 41% 55%; /* rosé da marca, ~#BC755D */
+    --rose-foreground: 15 50% 18%; /* texto sobre rosé */
+    
     /* Destructive — terracota */
     --destructive: 10 65% 38%;
     --destructive-foreground: 27 100% 97%;
@@ -107,6 +113,13 @@
     --mafe-diario-awaiting: 10 50% 50%;
     --mafe-diario-ready: 10 65% 24%;
     --mafe-diario-typing: 10 50% 50%;
+    
+    /* Accent colors — marca marinho e rosé */
+    --marinho: 263 47% 18%; /* azul-marinho da marca, ~#281842 */
+    --marinho-foreground: 27 100% 95%; /* texto sobre marinho = creme */
+    --rose: 15 41% 55%; /* rosé da marca, ~#BC755D */
+    --rose-foreground: 15 50% 18%; /* texto sobre rosé */
+    
     --border: 10 65% 38% / 0.18;
     --input: 10 65% 38% / 0.25;
     --ring: 10 65% 38%;
