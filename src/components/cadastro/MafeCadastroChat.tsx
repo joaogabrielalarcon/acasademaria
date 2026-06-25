@@ -342,7 +342,29 @@ export function MafeCadastroChat({ open, onOpenChange, entidade, onSaved }: Prop
     return data.id;
   }
 
-  async function gravarPrecoFornecedor() {
+  async function gravarInsumo(payload: Extraido, idExistente: string | null) {
+    const limpo: Record<string, any> = {};
+    for (const [k, v] of Object.entries(payload)) {
+      if (v !== null && v !== undefined && String(v).trim() !== "") limpo[k] = v;
+    }
+    if (idExistente) {
+      const { error } = await supabase
+        .from("insumos")
+        .update({ ...limpo, updated_by: user?.id })
+        .eq("id", idExistente);
+      if (error) throw error;
+      return idExistente;
+    }
+    const { data, error } = await supabase
+      .from("insumos")
+      .insert([{ ...(limpo as any), ativo: true, tipo_produto: "insumo", created_by: user?.id }])
+      .select("id")
+      .single();
+    if (error) throw error;
+    return data.id;
+  }
+
+
     if (!fornecedorSel?.id || !itemSel?.id) throw new Error("Selecione fornecedor e item.");
     const preco = Number(String(extraido?.preco ?? "").replace(",", "."));
     if (!Number.isFinite(preco) || preco <= 0) throw new Error("Preço inválido.");
