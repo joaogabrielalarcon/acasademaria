@@ -904,11 +904,11 @@ function HeaderFilterPopover({
 }: {
   label: string;
   ativo?: boolean;
-  icon?: React.ComponentType<{ className?: string }>;
+  icon?: ComponentType<{ className?: string }>;
   count?: number;
   align?: "start" | "center" | "end";
   contentClassName?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const IconComp = Icon ?? Filter;
   return (
