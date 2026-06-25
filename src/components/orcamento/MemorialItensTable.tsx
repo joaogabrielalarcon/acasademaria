@@ -22,6 +22,15 @@ import { AlertTriangle, Check, Link2, Minus, Plus, Sparkles, X } from "lucide-re
 import { cn } from "@/lib/utils";
 import { UnidadeCell } from "./UnidadeCell";
 
+export interface SugestaoCatalogoLite {
+  item_id: string;
+  nome: string;
+  nome_secundario: string | null;
+  score: number;
+  fonte: string;
+  tipo: "planta" | "insumo";
+}
+
 export interface ItemMemorialLike {
   nome_popular: string;
   nome_cientifico: string | null;
@@ -32,6 +41,7 @@ export interface ItemMemorialLike {
   confianca: "alta" | "media" | "baixa";
   planta_id?: string | null;
   insumo_id?: string | null;
+  sugestoes?: SugestaoCatalogoLite[];
 }
 
 export interface PlantaCatalogoLite {
