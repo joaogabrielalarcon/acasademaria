@@ -412,12 +412,18 @@ export function MafeCadastroChat({ open, onOpenChange, entidade, onSaved }: Prop
       } else if (entidade === "plantas") {
         id = await gravarPlanta(extraido, atualizarId);
         qc.invalidateQueries({ queryKey: ["plantas"] });
+      } else if (entidade === "insumos") {
+        id = await gravarInsumo(extraido, atualizarId);
+        qc.invalidateQueries({ queryKey: ["insumos"] });
       } else {
         await gravarPrecoFornecedor();
         qc.invalidateQueries({ queryKey: ["historico_precos"] });
         qc.invalidateQueries({ queryKey: ["historico-precos-fornecedor"] });
         qc.invalidateQueries({ queryKey: ["plantas"] });
         qc.invalidateQueries({ queryKey: ["insumos"] });
+      }
+      if (id && onSaved) {
+        try { onSaved({ entidade, id }); } catch (e) { console.warn("[MafeCadastroChat] onSaved error", e); }
       }
       const isPreco = entidade === "preco_fornecedor";
       toast({
