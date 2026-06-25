@@ -27,6 +27,8 @@ import { useInsumos, Insumo } from "@/hooks/useInsumos";
 import { useFornecedores } from "@/hooks/useFornecedores";
 import { useAuth, useIsAdmin, useIsAdminOrAdministrativo } from "@/hooks/useAuth";
 import { MesclarItensDialog, ItemFusivel } from "@/components/catalogo/MesclarItensDialog";
+import { SugerirDuplicadosDialog } from "@/components/catalogo/SugerirDuplicadosDialog";
+import { Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { capitalizeWords } from "@/hooks/useInputMasks";
