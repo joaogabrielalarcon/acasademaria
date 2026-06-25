@@ -105,6 +105,8 @@ import { VirtualWindowList } from "@/components/orcamento/VirtualWindowList";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatPorteMetros, parsePorteMetros } from "@/lib/porte";
 import { useInsumos } from "@/hooks/useInsumos";
+import { usePlantas } from "@/hooks/usePlantas";
+import { MafeCadastroChat, type EntidadeCadastro } from "@/components/cadastro/MafeCadastroChat";
 
 const CATEGORIAS_ITEM = [
   "Árvores",
