@@ -3313,7 +3313,65 @@ export default function NovoOrcamento() {
     }
   }, [isEdit]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Barra de contexto: resumo dos dados da etapa 1 exibido no topo
+  const contextoOrcamento = useMemo(() => {
+    const cliente = (clientes as any[]).find((c) => c.id === form.cliente_id);
+    const local = (locaisCliente as any[]).find((l) => l.id === form.local_id);
+    const tipo = (tipos as TipoProposta[]).find((t) => t.id === form.tipo_proposta_id);
 
+    const localLabel = [
+      local?.cidade ? capitalizeWords(local.cidade) : null,
+      local?.estado || null,
+      local?.tipo_cliente
+        ? TIPOS_CLIENTE.find((tc) => tc.value === local.tipo_cliente)?.label || local.tipo_cliente
+        : null,
+    ]
+      .filter(Boolean)
+      .join(" / ");
+
+    const propostaLabel = form.codigo
+      ? `${form.codigo}${tipo ? ` · ${tipo.sigla}` : ""}`
+      : tipo?.sigla || "";
+
+    const prazo = Number(form.prazo_validade_dias) || 0;
+    let prazoLabel = `validade: ${prazo} dias`;
+    let prazoVencido = false;
+
+    if (form.data_envio) {
+      const vencimento = new Date(form.data_envio);
+      vencimento.setDate(vencimento.getDate() + prazo);
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      const diff = Math.ceil((vencimento.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+      if (diff < 0) {
+        prazoLabel = `vencido há ${Math.abs(diff)} dias`;
+        prazoVencido = true;
+      } else if (diff === 0) {
+        prazoLabel = "vence hoje";
+        prazoVencido = true;
+      } else {
+        prazoLabel = `faltam ${diff} dias`;
+      }
+    }
+
+    return {
+      clienteNome: cliente?.nome || "",
+      localLabel,
+      propostaLabel,
+      prazoLabel,
+      prazoVencido,
+    };
+  }, [
+    clientes,
+    locaisCliente,
+    tipos,
+    form.cliente_id,
+    form.local_id,
+    form.tipo_proposta_id,
+    form.codigo,
+    form.prazo_validade_dias,
+    form.data_envio,
+  ]);
 
   return (
     <AppLayout>
