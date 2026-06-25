@@ -4141,16 +4141,23 @@ export default function NovoOrcamento() {
                         ? itensMaterial.map((it, i) => ({ it, i })).filter((x) => x.it.confianca === "baixa")[idx]?.i
                         : idx;
                       if (realIdx == null) return;
+                      const itemAtual = itensMaterial[realIdx];
+                      const nomeOriginal = (itemAtual?.nome_popular || "").trim();
                       updateItem(realIdx, {
                         planta_id: planta?.id ?? null,
                         insumo_id: null,
-                        nome_popular: planta?.nome_popular ?? itensMaterial[realIdx].nome_popular,
-                        nome_cientifico: planta?.nome_cientifico ?? itensMaterial[realIdx].nome_cientifico,
+                        nome_popular: planta?.nome_popular ?? itemAtual.nome_popular,
+                        nome_cientifico: planta?.nome_cientifico ?? itemAtual.nome_cientifico,
                         unidade: planta?.unidade
                           ? String(planta.unidade).toUpperCase()
-                          : itensMaterial[realIdx].unidade,
+                          : itemAtual.unidade,
                         confianca: "alta",
+                        sugestoes: undefined,
                       });
+                      // Aprende o apelido: próxima rodada casa direto.
+                      if (planta?.id && nomeOriginal && nomeOriginal.toLowerCase() !== (planta.nome_popular || "").toLowerCase()) {
+                        aprenderApelido("planta", planta.id, nomeOriginal);
+                      }
                     }}
                     onOpenCadastro={(idx) => {
                       const realIdx = filtroBaixaConfianca
