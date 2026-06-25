@@ -2788,6 +2788,56 @@ export type Database = {
           },
         ]
       }
+      insumo_unidades: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          fator_para_padrao: number | null
+          id: string
+          insumo_id: string
+          is_padrao: boolean
+          ordem: number
+          unidade: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          fator_para_padrao?: number | null
+          id?: string
+          insumo_id: string
+          is_padrao?: boolean
+          ordem?: number
+          unidade: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          fator_para_padrao?: number | null
+          id?: string
+          insumo_id?: string
+          is_padrao?: boolean
+          ordem?: number
+          unidade?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insumo_unidades_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "insumos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       insumos: {
         Row: {
           ativo: boolean
