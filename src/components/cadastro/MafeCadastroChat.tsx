@@ -264,6 +264,7 @@ export function MafeCadastroChat({ open, onOpenChange, entidade, onSaved }: Prop
     if (!extraido) return false;
     if (entidade === "fornecedores") return Boolean(String(extraido.nome ?? "").trim());
     if (entidade === "plantas") return Boolean(String(extraido.nome_popular ?? "").trim());
+    if (entidade === "insumos") return Boolean(String(extraido.nome ?? "").trim());
     // preco_fornecedor
     if (!fornecedorSel?.id || !itemSel?.id) return false;
     if (!Number.isFinite(precoNovoNum) || precoNovoNum <= 0) return false;
