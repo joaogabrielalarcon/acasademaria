@@ -56,6 +56,7 @@ export function InsumosContent() {
   const [showHistorico, setShowHistorico] = useState<Insumo | null>(null);
   const [mergePrincipal, setMergePrincipal] = useState<Insumo | null>(null);
   const [tipoAba, setTipoAba] = useState<"insumo" | "condicionador_solo">("insumo");
+  const [sugDupOpen, setSugDupOpen] = useState(false);
 
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
