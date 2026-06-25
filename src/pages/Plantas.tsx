@@ -331,6 +331,19 @@ export function PlantasContent() {
       )}
 
       <ImportarPlantasDialog open={importarOpen} onOpenChange={setImportarOpen} />
+
+      <SugerirDuplicadosDialog
+        open={sugDupOpen}
+        onOpenChange={setSugDupOpen}
+        tipo="planta"
+        onEscolher={(par) => {
+          const principal = plantas.find((p) => p.id === par.a_id);
+          if (principal) {
+            setSugDupOpen(false);
+            setMergePrincipal(principal);
+          }
+        }}
+      />
     </>
   );
 }
