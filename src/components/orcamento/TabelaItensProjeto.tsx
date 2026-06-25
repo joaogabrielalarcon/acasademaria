@@ -605,12 +605,205 @@ function LinhaItem({
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-primary/10">
-                        <th className="text-left py-2 pr-3 text-[10px] uppercase tracking-wide text-muted-foreground">Fornecedor</th>
-                        <th className="text-left py-2 pr-3 text-[10px] uppercase tracking-wide text-muted-foreground">Mercado</th>
-                        <th className="text-left py-2 pr-3 text-[10px] uppercase tracking-wide text-muted-foreground">Porte</th>
+                        <th className="text-left py-2 pr-3 text-[10px] uppercase tracking-wide">
+                          <HeaderFilterPopover
+                            label="Fornecedor"
+                            ativo={filtros.sort === "nota"}
+                            icon={filtros.sort === "nota" ? (filtros.sortDir === "asc" ? ArrowUp : ArrowDown) : Filter}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => setFiltros({ sort: "nota", sortDir: "desc" })}
+                              className={cn(
+                                "w-full text-left text-xs px-2 py-1.5 rounded hover:bg-accent",
+                                filtros.sort === "nota" && "bg-accent text-primary font-semibold",
+                              )}
+                            >
+                              Melhor nota
+                            </button>
+                          </HeaderFilterPopover>
+                        </th>
+                        <th className="text-left py-2 pr-3 text-[10px] uppercase tracking-wide">
+                          {mercadosDisponiveis.length > 0 ? (
+                            <HeaderFilterPopover
+                              label="Mercado"
+                              ativo={filtros.mercados.length > 0}
+                              icon={Filter}
+                              count={filtros.mercados.length}
+                              contentClassName="w-56"
+                            >
+                              <div className="space-y-1 max-h-64 overflow-y-auto">
+                                {mercadosDisponiveis.map((m) => {
+                                  const ativo = filtros.mercados.includes(m);
+                                  return (
+                                    <button
+                                      key={m}
+                                      type="button"
+                                      onClick={() =>
+                                        setFiltros({
+                                          mercados: ativo
+                                            ? filtros.mercados.filter((x) => x !== m)
+                                            : [...filtros.mercados, m],
+                                        })
+                                      }
+                                      className={cn(
+                                        "w-full text-left text-xs px-2 py-1.5 rounded flex items-center gap-2 hover:bg-accent",
+                                        ativo && "bg-accent",
+                                      )}
+                                    >
+                                      <span
+                                        className={cn(
+                                          "w-3.5 h-3.5 border border-primary rounded-sm flex items-center justify-center",
+                                          ativo && "bg-primary text-primary-foreground",
+                                        )}
+                                      >
+                                        {ativo && <Check className="w-3 h-3" />}
+                                      </span>
+                                      {m}
+                                    </button>
+                                  );
+                                })}
+                                {filtros.mercados.length > 0 && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 w-full text-xs"
+                                    onClick={() => setFiltros({ mercados: [] })}
+                                  >
+                                    Limpar
+                                  </Button>
+                                )}
+                              </div>
+                            </HeaderFilterPopover>
+                          ) : (
+                            <span className="text-muted-foreground">Mercado</span>
+                          )}
+                        </th>
+                        <th className="text-left py-2 pr-3 text-[10px] uppercase tracking-wide">
+                          {portesDisponiveis.length > 0 ? (
+                            <HeaderFilterPopover
+                              label="Porte"
+                              ativo={!!filtros.porte}
+                              icon={Filter}
+                              contentClassName="w-44"
+                            >
+                              <div className="space-y-1 max-h-64 overflow-y-auto">
+                                <button
+                                  type="button"
+                                  onClick={() => setFiltros({ porte: "" })}
+                                  className={cn(
+                                    "w-full text-left text-xs px-2 py-1.5 rounded hover:bg-accent",
+                                    !filtros.porte && "bg-accent text-primary font-semibold",
+                                  )}
+                                >
+                                  Todos os portes
+                                </button>
+                                {portesDisponiveis.map((p) => (
+                                  <button
+                                    key={p}
+                                    type="button"
+                                    onClick={() => setFiltros({ porte: p })}
+                                    className={cn(
+                                      "w-full text-left text-xs px-2 py-1.5 rounded hover:bg-accent",
+                                      filtros.porte === p && "bg-accent text-primary font-semibold",
+                                    )}
+                                  >
+                                    {p}
+                                  </button>
+                                ))}
+                              </div>
+                            </HeaderFilterPopover>
+                          ) : (
+                            <span className="text-muted-foreground">Porte</span>
+                          )}
+                        </th>
                         <th className="text-left py-2 pr-3 text-[10px] uppercase tracking-wide text-muted-foreground">Unid.</th>
-                        <th className="text-right py-2 pr-3 text-[10px] uppercase tracking-wide text-muted-foreground">Preço</th>
-                        <th className="text-left py-2 pr-3 text-[10px] uppercase tracking-wide text-muted-foreground">Cotado</th>
+                        <th className="text-right py-2 pr-3 text-[10px] uppercase tracking-wide">
+                          <div className="flex justify-end">
+                            <HeaderFilterPopover
+                              label="Preço"
+                              ativo={filtros.sort === "preco"}
+                              icon={filtros.sort === "preco" ? (filtros.sortDir === "asc" ? ArrowUp : ArrowDown) : Filter}
+                              align="end"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => setFiltros({ sort: "preco", sortDir: "asc" })}
+                                className={cn(
+                                  "w-full text-left text-xs px-2 py-1.5 rounded hover:bg-accent",
+                                  filtros.sort === "preco" && filtros.sortDir === "asc" && "bg-accent text-primary font-semibold",
+                                )}
+                              >
+                                Menor preço
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setFiltros({ sort: "preco", sortDir: "desc" })}
+                                className={cn(
+                                  "w-full text-left text-xs px-2 py-1.5 rounded hover:bg-accent",
+                                  filtros.sort === "preco" && filtros.sortDir === "desc" && "bg-accent text-primary font-semibold",
+                                )}
+                              >
+                                Maior preço
+                              </button>
+                            </HeaderFilterPopover>
+                          </div>
+                        </th>
+                        <th className="text-left py-2 pr-3 text-[10px] uppercase tracking-wide">
+                          <HeaderFilterPopover
+                            label="Cotado"
+                            ativo={filtros.sort === "data" || filtros.periodo !== "3m"}
+                            icon={filtros.sort === "data" ? (filtros.sortDir === "asc" ? ArrowUp : ArrowDown) : Filter}
+                            contentClassName="w-52"
+                          >
+                            <div className="space-y-2">
+                              <div>
+                                <div className="text-[10px] uppercase tracking-wide text-muted-foreground px-2 mb-1">Período</div>
+                                {([
+                                  { v: "3m", label: "Últimos 3 meses" },
+                                  { v: "6m", label: "Últimos 6 meses" },
+                                  { v: "1y", label: "Último ano" },
+                                  { v: "all", label: "Tudo" },
+                                ] as const).map((o) => (
+                                  <button
+                                    key={o.v}
+                                    type="button"
+                                    onClick={() => setFiltros({ periodo: o.v })}
+                                    className={cn(
+                                      "w-full text-left text-xs px-2 py-1.5 rounded hover:bg-accent",
+                                      filtros.periodo === o.v && "bg-accent text-primary font-semibold",
+                                    )}
+                                  >
+                                    {o.label}
+                                  </button>
+                                ))}
+                              </div>
+                              <div className="border-t border-primary/10 pt-2">
+                                <div className="text-[10px] uppercase tracking-wide text-muted-foreground px-2 mb-1">Ordenar</div>
+                                <button
+                                  type="button"
+                                  onClick={() => setFiltros({ sort: "data", sortDir: "desc" })}
+                                  className={cn(
+                                    "w-full text-left text-xs px-2 py-1.5 rounded hover:bg-accent",
+                                    filtros.sort === "data" && filtros.sortDir === "desc" && "bg-accent text-primary font-semibold",
+                                  )}
+                                >
+                                  Mais recentes
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setFiltros({ sort: "data", sortDir: "asc" })}
+                                  className={cn(
+                                    "w-full text-left text-xs px-2 py-1.5 rounded hover:bg-accent",
+                                    filtros.sort === "data" && filtros.sortDir === "asc" && "bg-accent text-primary font-semibold",
+                                  )}
+                                >
+                                  Mais antigos
+                                </button>
+                              </div>
+                            </div>
+                          </HeaderFilterPopover>
+                        </th>
                         <th className="text-left py-2 pr-3 text-[10px] uppercase tracking-wide text-muted-foreground" />
                       </tr>
                     </thead>
