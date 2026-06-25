@@ -27,6 +27,8 @@ import { useInsumos, Insumo } from "@/hooks/useInsumos";
 import { useFornecedores } from "@/hooks/useFornecedores";
 import { useAuth, useIsAdmin, useIsAdminOrAdministrativo } from "@/hooks/useAuth";
 import { MesclarItensDialog, ItemFusivel } from "@/components/catalogo/MesclarItensDialog";
+import { SugerirDuplicadosDialog } from "@/components/catalogo/SugerirDuplicadosDialog";
+import { Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { capitalizeWords } from "@/hooks/useInputMasks";
@@ -54,6 +56,7 @@ export function InsumosContent() {
   const [showHistorico, setShowHistorico] = useState<Insumo | null>(null);
   const [mergePrincipal, setMergePrincipal] = useState<Insumo | null>(null);
   const [tipoAba, setTipoAba] = useState<"insumo" | "condicionador_solo">("insumo");
+  const [sugDupOpen, setSugDupOpen] = useState(false);
 
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
@@ -401,6 +404,11 @@ export function InsumosContent() {
               </form>
             </DialogContent>
           </Dialog>
+          {podeMesclar && (
+            <Button variant="outline" className="gap-2" onClick={() => setSugDupOpen(true)}>
+              <Sparkles className="w-4 h-4" /> Sugerir duplicados
+            </Button>
+          )}
           </div>
         </div>
 
@@ -497,6 +505,19 @@ export function InsumosContent() {
           onMerged={() => setMergePrincipal(null)}
         />
       )}
+
+      <SugerirDuplicadosDialog
+        open={sugDupOpen}
+        onOpenChange={setSugDupOpen}
+        tipo="insumo"
+        onEscolher={(par) => {
+          const principal = insumos.find((i) => i.id === par.a_id);
+          if (principal) {
+            setSugDupOpen(false);
+            setMergePrincipal(principal);
+          }
+        }}
+      />
     </>
   );
 }

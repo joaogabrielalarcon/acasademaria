@@ -15,14 +15,17 @@ import { useAuth, useIsAdmin, useIsAdminOrAdministrativo } from "@/hooks/useAuth
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { MesclarItensDialog, ItemFusivel } from "@/components/catalogo/MesclarItensDialog";
+import { SugerirDuplicadosDialog } from "@/components/catalogo/SugerirDuplicadosDialog";
 import { formatPorteMetros } from "@/lib/porte";
 import { MobileCardList, MobileCardItem } from "@/components/ui/mobile-card-list";
+import { Sparkles } from "lucide-react";
 
 export function PlantasContent() {
   const [itemToDelete, setItemToDelete] = useState<Planta | null>(null);
   const [mergePrincipal, setMergePrincipal] = useState<Planta | null>(null);
   const [importarOpen, setImportarOpen] = useState(false);
   const [mobileSearch, setMobileSearch] = useState("");
+  const [sugDupOpen, setSugDupOpen] = useState(false);
 
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
@@ -157,9 +160,16 @@ export function PlantasContent() {
               <Plus className="w-4 h-4" /> Nova Planta
             </Link>
           </Button>
-          <Button variant="outline" className="gap-2" onClick={() => setImportarOpen(true)}>
-            <Upload className="w-4 h-4" /> Importar Plantas
-          </Button>
+          <div className="flex items-center gap-2">
+            {podeMesclar && (
+              <Button variant="outline" className="gap-2" onClick={() => setSugDupOpen(true)}>
+                <Sparkles className="w-4 h-4" /> Sugerir duplicados
+              </Button>
+            )}
+            <Button variant="outline" className="gap-2" onClick={() => setImportarOpen(true)}>
+              <Upload className="w-4 h-4" /> Importar Plantas
+            </Button>
+          </div>
         </div>
 
         {/* Desktop / tablet */}
@@ -321,6 +331,19 @@ export function PlantasContent() {
       )}
 
       <ImportarPlantasDialog open={importarOpen} onOpenChange={setImportarOpen} />
+
+      <SugerirDuplicadosDialog
+        open={sugDupOpen}
+        onOpenChange={setSugDupOpen}
+        tipo="planta"
+        onEscolher={(par) => {
+          const principal = plantas.find((p) => p.id === par.a_id);
+          if (principal) {
+            setSugDupOpen(false);
+            setMergePrincipal(principal);
+          }
+        }}
+      />
     </>
   );
 }
