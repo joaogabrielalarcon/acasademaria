@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/command";
 import { AlertTriangle, Check, Link2, Minus, Plus, Sparkles, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { UnidadeCell } from "./UnidadeCell";
 
 export interface ItemMemorialLike {
   nome_popular: string;
