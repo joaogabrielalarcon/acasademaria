@@ -569,139 +569,20 @@ function LinhaItem({
         <tr className="bg-secondary/30 border-b border-primary/20">
           <td colSpan={6} className="px-4 py-3">
             <div className="space-y-3">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Cotações disponíveis
-                </div>
-                <div className="flex flex-wrap gap-1.5 items-center">
-                  <Select value={filtros.sort} onValueChange={(v) => setFiltros({ sort: v as SortKey })}>
-                    <SelectTrigger className="h-8 w-[150px] bg-background text-xs">
-                      <ArrowDownUp className="w-3 h-3 mr-1" />
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="data">Mais recentes</SelectItem>
-                      <SelectItem value="preco">Menor preço</SelectItem>
-                      <SelectItem value="nota">Melhor nota</SelectItem>
-                      <SelectItem value="mercado">Mercado</SelectItem>
-                      <SelectItem value="porte">Porte</SelectItem>
-                    </SelectContent>
-                  </Select>
+              {fornecedoresDuplicados.length > 0 && onMesclarFornecedores && (
+                <div className="flex justify-end">
                   <Button
                     type="button"
                     size="sm"
-                    variant="outline"
-                    className="h-8 px-2 text-xs"
-                    onClick={() => setFiltros({ sortDir: filtros.sortDir === "asc" ? "desc" : "asc" })}
+                    variant="ghost"
+                    className="h-7 text-xs text-muted-foreground hover:text-primary"
+                    onClick={() => onMesclarFornecedores(altsBrutas)}
+                    title="Fornecedores aparecem repetidos. Mesclar?"
                   >
-                    {filtros.sortDir === "asc" ? "↑" : "↓"}
+                    <GitMerge className="w-3.5 h-3.5" /> Mesclar duplicados
                   </Button>
-
-                  {portesDisponiveis.length > 0 && (
-                    <Select
-                      value={filtros.porte || "_todos"}
-                      onValueChange={(v) => setFiltros({ porte: v === "_todos" ? "" : v })}
-                    >
-                      <SelectTrigger className="h-8 w-[130px] bg-background text-xs">
-                        <SelectValue placeholder="Porte" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="_todos">Todos os portes</SelectItem>
-                        {portesDisponiveis.map((p) => (
-                          <SelectItem key={p} value={p}>{p}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-
-                  {mercadosDisponiveis.length > 0 && (
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button type="button" size="sm" variant="outline" className="h-8 text-xs">
-                          Mercado
-                          {filtros.mercados.length > 0 && (
-                            <Badge variant="secondary" className="ml-1 text-[10px] px-1">
-                              {filtros.mercados.length}
-                            </Badge>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-56 p-2" align="end">
-                        <div className="space-y-1 max-h-64 overflow-y-auto">
-                          {mercadosDisponiveis.map((m) => {
-                            const ativo = filtros.mercados.includes(m);
-                            return (
-                              <button
-                                key={m}
-                                type="button"
-                                onClick={() =>
-                                  setFiltros({
-                                    mercados: ativo
-                                      ? filtros.mercados.filter((x) => x !== m)
-                                      : [...filtros.mercados, m],
-                                  })
-                                }
-                                className={cn(
-                                  "w-full text-left text-xs px-2 py-1.5 rounded flex items-center gap-2 hover:bg-accent",
-                                  ativo && "bg-accent",
-                                )}
-                              >
-                                <span
-                                  className={cn(
-                                    "w-3.5 h-3.5 border border-primary rounded-sm flex items-center justify-center",
-                                    ativo && "bg-primary text-primary-foreground",
-                                  )}
-                                >
-                                  {ativo && <Check className="w-3 h-3" />}
-                                </span>
-                                {m}
-                              </button>
-                            );
-                          })}
-                          {filtros.mercados.length > 0 && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 w-full text-xs"
-                              onClick={() => setFiltros({ mercados: [] })}
-                            >
-                              Limpar
-                            </Button>
-                          )}
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  )}
-
-                  <Select
-                    value={filtros.periodo}
-                    onValueChange={(v) => setFiltros({ periodo: v as Periodo })}
-                  >
-                    <SelectTrigger className="h-8 w-[140px] bg-background text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="3m">Últimos 3 meses</SelectItem>
-                      <SelectItem value="6m">Últimos 6 meses</SelectItem>
-                      <SelectItem value="1y">Último ano</SelectItem>
-                      <SelectItem value="all">Tudo</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  {fornecedoresDuplicados.length > 0 && onMesclarFornecedores && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="h-8 text-xs"
-                      onClick={() => onMesclarFornecedores(altsBrutas)}
-                      title="Fornecedores aparecem repetidos. Mesclar?"
-                    >
-                      <GitMerge className="w-3.5 h-3.5" /> Mesclar duplicados
-                    </Button>
-                  )}
                 </div>
-              </div>
+              )}
 
               {altsBrutas.length === 0 ? (
                 <div className="text-sm text-muted-foreground py-3 px-2 rounded bg-background border border-dashed border-primary/20">
