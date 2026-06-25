@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ComponentType, type ReactNode } from "react";
 import {
   ChevronDown,
   ChevronRight,
@@ -7,6 +7,9 @@ import {
   Plus,
   Check,
   ArrowDownUp,
+  ArrowDown,
+  ArrowUp,
+  Filter,
   CheckCircle2,
   AlertCircle,
   Sparkles,
@@ -566,139 +569,20 @@ function LinhaItem({
         <tr className="bg-secondary/30 border-b border-primary/20">
           <td colSpan={6} className="px-4 py-3">
             <div className="space-y-3">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Cotações disponíveis
-                </div>
-                <div className="flex flex-wrap gap-1.5 items-center">
-                  <Select value={filtros.sort} onValueChange={(v) => setFiltros({ sort: v as SortKey })}>
-                    <SelectTrigger className="h-8 w-[150px] bg-background text-xs">
-                      <ArrowDownUp className="w-3 h-3 mr-1" />
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="data">Mais recentes</SelectItem>
-                      <SelectItem value="preco">Menor preço</SelectItem>
-                      <SelectItem value="nota">Melhor nota</SelectItem>
-                      <SelectItem value="mercado">Mercado</SelectItem>
-                      <SelectItem value="porte">Porte</SelectItem>
-                    </SelectContent>
-                  </Select>
+              {fornecedoresDuplicados.length > 0 && onMesclarFornecedores && (
+                <div className="flex justify-end">
                   <Button
                     type="button"
                     size="sm"
-                    variant="outline"
-                    className="h-8 px-2 text-xs"
-                    onClick={() => setFiltros({ sortDir: filtros.sortDir === "asc" ? "desc" : "asc" })}
+                    variant="ghost"
+                    className="h-7 text-xs text-muted-foreground hover:text-primary"
+                    onClick={() => onMesclarFornecedores(altsBrutas)}
+                    title="Fornecedores aparecem repetidos. Mesclar?"
                   >
-                    {filtros.sortDir === "asc" ? "↑" : "↓"}
+                    <GitMerge className="w-3.5 h-3.5" /> Mesclar duplicados
                   </Button>
-
-                  {portesDisponiveis.length > 0 && (
-                    <Select
-                      value={filtros.porte || "_todos"}
-                      onValueChange={(v) => setFiltros({ porte: v === "_todos" ? "" : v })}
-                    >
-                      <SelectTrigger className="h-8 w-[130px] bg-background text-xs">
-                        <SelectValue placeholder="Porte" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="_todos">Todos os portes</SelectItem>
-                        {portesDisponiveis.map((p) => (
-                          <SelectItem key={p} value={p}>{p}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-
-                  {mercadosDisponiveis.length > 0 && (
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button type="button" size="sm" variant="outline" className="h-8 text-xs">
-                          Mercado
-                          {filtros.mercados.length > 0 && (
-                            <Badge variant="secondary" className="ml-1 text-[10px] px-1">
-                              {filtros.mercados.length}
-                            </Badge>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-56 p-2" align="end">
-                        <div className="space-y-1 max-h-64 overflow-y-auto">
-                          {mercadosDisponiveis.map((m) => {
-                            const ativo = filtros.mercados.includes(m);
-                            return (
-                              <button
-                                key={m}
-                                type="button"
-                                onClick={() =>
-                                  setFiltros({
-                                    mercados: ativo
-                                      ? filtros.mercados.filter((x) => x !== m)
-                                      : [...filtros.mercados, m],
-                                  })
-                                }
-                                className={cn(
-                                  "w-full text-left text-xs px-2 py-1.5 rounded flex items-center gap-2 hover:bg-accent",
-                                  ativo && "bg-accent",
-                                )}
-                              >
-                                <span
-                                  className={cn(
-                                    "w-3.5 h-3.5 border border-primary rounded-sm flex items-center justify-center",
-                                    ativo && "bg-primary text-primary-foreground",
-                                  )}
-                                >
-                                  {ativo && <Check className="w-3 h-3" />}
-                                </span>
-                                {m}
-                              </button>
-                            );
-                          })}
-                          {filtros.mercados.length > 0 && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 w-full text-xs"
-                              onClick={() => setFiltros({ mercados: [] })}
-                            >
-                              Limpar
-                            </Button>
-                          )}
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  )}
-
-                  <Select
-                    value={filtros.periodo}
-                    onValueChange={(v) => setFiltros({ periodo: v as Periodo })}
-                  >
-                    <SelectTrigger className="h-8 w-[140px] bg-background text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="3m">Últimos 3 meses</SelectItem>
-                      <SelectItem value="6m">Últimos 6 meses</SelectItem>
-                      <SelectItem value="1y">Último ano</SelectItem>
-                      <SelectItem value="all">Tudo</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  {fornecedoresDuplicados.length > 0 && onMesclarFornecedores && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="h-8 text-xs"
-                      onClick={() => onMesclarFornecedores(altsBrutas)}
-                      title="Fornecedores aparecem repetidos. Mesclar?"
-                    >
-                      <GitMerge className="w-3.5 h-3.5" /> Mesclar duplicados
-                    </Button>
-                  )}
                 </div>
-              </div>
+              )}
 
               {altsBrutas.length === 0 ? (
                 <div className="text-sm text-muted-foreground py-3 px-2 rounded bg-background border border-dashed border-primary/20">
@@ -721,12 +605,205 @@ function LinhaItem({
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-primary/10">
-                        <th className="text-left py-2 pr-3 text-[10px] uppercase tracking-wide text-muted-foreground">Fornecedor</th>
-                        <th className="text-left py-2 pr-3 text-[10px] uppercase tracking-wide text-muted-foreground">Mercado</th>
-                        <th className="text-left py-2 pr-3 text-[10px] uppercase tracking-wide text-muted-foreground">Porte</th>
+                        <th className="text-left py-2 pr-3 text-[10px] uppercase tracking-wide">
+                          <HeaderFilterPopover
+                            label="Fornecedor"
+                            ativo={filtros.sort === "nota"}
+                            icon={filtros.sort === "nota" ? (filtros.sortDir === "asc" ? ArrowUp : ArrowDown) : Filter}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => setFiltros({ sort: "nota", sortDir: "desc" })}
+                              className={cn(
+                                "w-full text-left text-xs px-2 py-1.5 rounded hover:bg-accent",
+                                filtros.sort === "nota" && "bg-accent text-primary font-semibold",
+                              )}
+                            >
+                              Melhor nota
+                            </button>
+                          </HeaderFilterPopover>
+                        </th>
+                        <th className="text-left py-2 pr-3 text-[10px] uppercase tracking-wide">
+                          {mercadosDisponiveis.length > 0 ? (
+                            <HeaderFilterPopover
+                              label="Mercado"
+                              ativo={filtros.mercados.length > 0}
+                              icon={Filter}
+                              count={filtros.mercados.length}
+                              contentClassName="w-56"
+                            >
+                              <div className="space-y-1 max-h-64 overflow-y-auto">
+                                {mercadosDisponiveis.map((m) => {
+                                  const ativo = filtros.mercados.includes(m);
+                                  return (
+                                    <button
+                                      key={m}
+                                      type="button"
+                                      onClick={() =>
+                                        setFiltros({
+                                          mercados: ativo
+                                            ? filtros.mercados.filter((x) => x !== m)
+                                            : [...filtros.mercados, m],
+                                        })
+                                      }
+                                      className={cn(
+                                        "w-full text-left text-xs px-2 py-1.5 rounded flex items-center gap-2 hover:bg-accent",
+                                        ativo && "bg-accent",
+                                      )}
+                                    >
+                                      <span
+                                        className={cn(
+                                          "w-3.5 h-3.5 border border-primary rounded-sm flex items-center justify-center",
+                                          ativo && "bg-primary text-primary-foreground",
+                                        )}
+                                      >
+                                        {ativo && <Check className="w-3 h-3" />}
+                                      </span>
+                                      {m}
+                                    </button>
+                                  );
+                                })}
+                                {filtros.mercados.length > 0 && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 w-full text-xs"
+                                    onClick={() => setFiltros({ mercados: [] })}
+                                  >
+                                    Limpar
+                                  </Button>
+                                )}
+                              </div>
+                            </HeaderFilterPopover>
+                          ) : (
+                            <span className="text-muted-foreground">Mercado</span>
+                          )}
+                        </th>
+                        <th className="text-left py-2 pr-3 text-[10px] uppercase tracking-wide">
+                          {portesDisponiveis.length > 0 ? (
+                            <HeaderFilterPopover
+                              label="Porte"
+                              ativo={!!filtros.porte}
+                              icon={Filter}
+                              contentClassName="w-44"
+                            >
+                              <div className="space-y-1 max-h-64 overflow-y-auto">
+                                <button
+                                  type="button"
+                                  onClick={() => setFiltros({ porte: "" })}
+                                  className={cn(
+                                    "w-full text-left text-xs px-2 py-1.5 rounded hover:bg-accent",
+                                    !filtros.porte && "bg-accent text-primary font-semibold",
+                                  )}
+                                >
+                                  Todos os portes
+                                </button>
+                                {portesDisponiveis.map((p) => (
+                                  <button
+                                    key={p}
+                                    type="button"
+                                    onClick={() => setFiltros({ porte: p })}
+                                    className={cn(
+                                      "w-full text-left text-xs px-2 py-1.5 rounded hover:bg-accent",
+                                      filtros.porte === p && "bg-accent text-primary font-semibold",
+                                    )}
+                                  >
+                                    {p}
+                                  </button>
+                                ))}
+                              </div>
+                            </HeaderFilterPopover>
+                          ) : (
+                            <span className="text-muted-foreground">Porte</span>
+                          )}
+                        </th>
                         <th className="text-left py-2 pr-3 text-[10px] uppercase tracking-wide text-muted-foreground">Unid.</th>
-                        <th className="text-right py-2 pr-3 text-[10px] uppercase tracking-wide text-muted-foreground">Preço</th>
-                        <th className="text-left py-2 pr-3 text-[10px] uppercase tracking-wide text-muted-foreground">Cotado</th>
+                        <th className="text-right py-2 pr-3 text-[10px] uppercase tracking-wide">
+                          <div className="flex justify-end">
+                            <HeaderFilterPopover
+                              label="Preço"
+                              ativo={filtros.sort === "preco"}
+                              icon={filtros.sort === "preco" ? (filtros.sortDir === "asc" ? ArrowUp : ArrowDown) : Filter}
+                              align="end"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => setFiltros({ sort: "preco", sortDir: "asc" })}
+                                className={cn(
+                                  "w-full text-left text-xs px-2 py-1.5 rounded hover:bg-accent",
+                                  filtros.sort === "preco" && filtros.sortDir === "asc" && "bg-accent text-primary font-semibold",
+                                )}
+                              >
+                                Menor preço
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setFiltros({ sort: "preco", sortDir: "desc" })}
+                                className={cn(
+                                  "w-full text-left text-xs px-2 py-1.5 rounded hover:bg-accent",
+                                  filtros.sort === "preco" && filtros.sortDir === "desc" && "bg-accent text-primary font-semibold",
+                                )}
+                              >
+                                Maior preço
+                              </button>
+                            </HeaderFilterPopover>
+                          </div>
+                        </th>
+                        <th className="text-left py-2 pr-3 text-[10px] uppercase tracking-wide">
+                          <HeaderFilterPopover
+                            label="Cotado"
+                            ativo={filtros.sort === "data" || filtros.periodo !== "3m"}
+                            icon={filtros.sort === "data" ? (filtros.sortDir === "asc" ? ArrowUp : ArrowDown) : Filter}
+                            contentClassName="w-52"
+                          >
+                            <div className="space-y-2">
+                              <div>
+                                <div className="text-[10px] uppercase tracking-wide text-muted-foreground px-2 mb-1">Período</div>
+                                {([
+                                  { v: "3m", label: "Últimos 3 meses" },
+                                  { v: "6m", label: "Últimos 6 meses" },
+                                  { v: "1y", label: "Último ano" },
+                                  { v: "all", label: "Tudo" },
+                                ] as const).map((o) => (
+                                  <button
+                                    key={o.v}
+                                    type="button"
+                                    onClick={() => setFiltros({ periodo: o.v })}
+                                    className={cn(
+                                      "w-full text-left text-xs px-2 py-1.5 rounded hover:bg-accent",
+                                      filtros.periodo === o.v && "bg-accent text-primary font-semibold",
+                                    )}
+                                  >
+                                    {o.label}
+                                  </button>
+                                ))}
+                              </div>
+                              <div className="border-t border-primary/10 pt-2">
+                                <div className="text-[10px] uppercase tracking-wide text-muted-foreground px-2 mb-1">Ordenar</div>
+                                <button
+                                  type="button"
+                                  onClick={() => setFiltros({ sort: "data", sortDir: "desc" })}
+                                  className={cn(
+                                    "w-full text-left text-xs px-2 py-1.5 rounded hover:bg-accent",
+                                    filtros.sort === "data" && filtros.sortDir === "desc" && "bg-accent text-primary font-semibold",
+                                  )}
+                                >
+                                  Mais recentes
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setFiltros({ sort: "data", sortDir: "asc" })}
+                                  className={cn(
+                                    "w-full text-left text-xs px-2 py-1.5 rounded hover:bg-accent",
+                                    filtros.sort === "data" && filtros.sortDir === "asc" && "bg-accent text-primary font-semibold",
+                                  )}
+                                >
+                                  Mais antigos
+                                </button>
+                              </div>
+                            </div>
+                          </HeaderFilterPopover>
+                        </th>
                         <th className="text-left py-2 pr-3 text-[10px] uppercase tracking-wide text-muted-foreground" />
                       </tr>
                     </thead>
@@ -813,5 +890,49 @@ function LinhaItem({
         </tr>
       )}
     </>
+  );
+}
+
+function HeaderFilterPopover({
+  label,
+  ativo,
+  icon: Icon,
+  count,
+  align = "start",
+  contentClassName,
+  children,
+}: {
+  label: string;
+  ativo?: boolean;
+  icon?: ComponentType<{ className?: string }>;
+  count?: number;
+  align?: "start" | "center" | "end";
+  contentClassName?: string;
+  children: ReactNode;
+}) {
+  const IconComp = Icon ?? Filter;
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            "inline-flex items-center gap-1 uppercase tracking-wide text-[10px] hover:text-primary transition-colors",
+            ativo ? "text-primary font-semibold" : "text-muted-foreground",
+          )}
+        >
+          {label}
+          {count != null && count > 0 && (
+            <span className="inline-flex items-center justify-center rounded bg-primary/10 text-primary text-[9px] px-1 min-w-[14px] h-3.5">
+              {count}
+            </span>
+          )}
+          <IconComp className="w-3 h-3" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align={align} className={cn("w-48 p-2", contentClassName)}>
+        {children}
+      </PopoverContent>
+    </Popover>
   );
 }
