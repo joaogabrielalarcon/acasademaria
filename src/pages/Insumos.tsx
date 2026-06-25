@@ -404,6 +404,11 @@ export function InsumosContent() {
               </form>
             </DialogContent>
           </Dialog>
+          {podeMesclar && (
+            <Button variant="outline" className="gap-2" onClick={() => setSugDupOpen(true)}>
+              <Sparkles className="w-4 h-4" /> Sugerir duplicados
+            </Button>
+          )}
           </div>
         </div>
 
