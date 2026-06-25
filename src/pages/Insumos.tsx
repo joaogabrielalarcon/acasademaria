@@ -505,6 +505,19 @@ export function InsumosContent() {
           onMerged={() => setMergePrincipal(null)}
         />
       )}
+
+      <SugerirDuplicadosDialog
+        open={sugDupOpen}
+        onOpenChange={setSugDupOpen}
+        tipo="insumo"
+        onEscolher={(par) => {
+          const principal = insumos.find((i) => i.id === par.a_id);
+          if (principal) {
+            setSugDupOpen(false);
+            setMergePrincipal(principal);
+          }
+        }}
+      />
     </>
   );
 }
