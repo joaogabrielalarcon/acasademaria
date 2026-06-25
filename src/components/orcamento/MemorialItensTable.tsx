@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState, useMemo } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AlertTriangle, Check, Minus, X } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { AlertTriangle, Check, Link2, Minus, Plus, Sparkles, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface ItemMemorialLike {
@@ -20,6 +29,16 @@ export interface ItemMemorialLike {
   unidade: string;
   categoria: string;
   confianca: "alta" | "media" | "baixa";
+  planta_id?: string | null;
+  insumo_id?: string | null;
+}
+
+export interface PlantaCatalogoLite {
+  id: string;
+  nome_popular: string;
+  nome_cientifico: string | null;
+  unidade?: string | null;
+  porte?: string | null;
 }
 
 interface Props {
@@ -28,17 +47,161 @@ interface Props {
   unidades: string[];
   onUpdate: (idx: number, patch: Partial<ItemMemorialLike>) => void;
   onRemove: (idx: number) => void;
+  /** Catálogo real de plantas para casar/escolher por linha. */
+  plantasCatalogo?: PlantaCatalogoLite[];
+  /** Liga (ou desliga, passando null) o item a uma planta do catálogo. */
+  onLinkPlanta?: (idx: number, planta: PlantaCatalogoLite | null) => void;
+  /** Abre o cadastro rápido (Mafe) para criar o item no catálogo. */
+  onOpenCadastro?: (idx: number) => void;
   /** Limite a partir do qual virtualiza. Default 80. */
   virtualizeThreshold?: number;
 }
 
 const COLS =
-  "grid-cols-[3rem_minmax(11rem,1fr)_minmax(14rem,1.4fr)_minmax(14rem,1.4fr)_minmax(8rem,0.7fr)_minmax(6rem,0.5fr)_minmax(7rem,0.6fr)_5rem_4rem]";
+  "grid-cols-[3rem_minmax(11rem,1fr)_minmax(13rem,1.3fr)_minmax(13rem,1.3fr)_minmax(8rem,0.7fr)_minmax(6rem,0.5fr)_minmax(7rem,0.6fr)_minmax(11rem,0.9fr)_5rem_4rem]";
 
 function ConfiancaIcon({ c }: { c: ItemMemorialLike["confianca"] }) {
   if (c === "alta") return <Check className="w-4 h-4 text-primary inline" />;
   if (c === "media") return <Minus className="w-4 h-4 text-muted-foreground inline" />;
   return <AlertTriangle className="w-4 h-4 text-yellow-600 inline" />;
+}
+
+function normalizar(s: string) {
+  return (s || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function CatalogoCell({
+  it,
+  realIdx,
+  plantasCatalogo,
+  onLinkPlanta,
+  onOpenCadastro,
+}: {
+  it: ItemMemorialLike;
+  realIdx: number;
+  plantasCatalogo?: PlantaCatalogoLite[];
+  onLinkPlanta?: Props["onLinkPlanta"];
+  onOpenCadastro?: Props["onOpenCadastro"];
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+
+  const ligadaAoCatalogo = !!it.planta_id || !!it.insumo_id;
+
+  // top 30 sugestões: começa por matches de nome
+  const sugestoes = useMemo(() => {
+    if (!plantasCatalogo || plantasCatalogo.length === 0) return [];
+    const q = normalizar(query || it.nome_popular || "");
+    if (!q) return plantasCatalogo.slice(0, 30);
+    const filtradas = plantasCatalogo.filter((p) => {
+      const a = normalizar(p.nome_popular);
+      const b = normalizar(p.nome_cientifico || "");
+      return a.includes(q) || b.includes(q);
+    });
+    return filtradas.slice(0, 60);
+  }, [plantasCatalogo, query, it.nome_popular]);
+
+  if (!onLinkPlanta && !onOpenCadastro) {
+    return <div className="text-xs text-muted-foreground">—</div>;
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className={cn(
+              "h-8 px-2 gap-1.5 text-xs flex-1 justify-start",
+              ligadaAoCatalogo
+                ? "border-primary/40 bg-primary/5 text-primary hover:bg-primary/10"
+                : "border-dashed text-muted-foreground",
+            )}
+            title={ligadaAoCatalogo ? "Item vinculado ao catálogo · clique para trocar" : "Buscar no catálogo"}
+          >
+            <Link2 className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{ligadaAoCatalogo ? "Catálogo" : "Novo / a conferir"}</span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="p-0 w-[22rem]" align="start">
+          <Command shouldFilter={false}>
+            <CommandInput
+              placeholder="Buscar planta no catálogo..."
+              value={query}
+              onValueChange={setQuery}
+            />
+            <CommandList>
+              <CommandEmpty>Nada encontrado.</CommandEmpty>
+              {ligadaAoCatalogo && (
+                <CommandGroup heading="Vínculo atual">
+                  <CommandItem
+                    onSelect={() => {
+                      onLinkPlanta?.(realIdx, null);
+                      setOpen(false);
+                    }}
+                    className="text-destructive"
+                  >
+                    <X className="w-4 h-4" />
+                    Desvincular do catálogo
+                  </CommandItem>
+                </CommandGroup>
+              )}
+              <CommandGroup heading="Plantas">
+                {sugestoes.map((p) => (
+                  <CommandItem
+                    key={p.id}
+                    value={`${p.nome_popular} ${p.nome_cientifico || ""}`}
+                    onSelect={() => {
+                      onLinkPlanta?.(realIdx, p);
+                      setOpen(false);
+                    }}
+                  >
+                    <div className="flex flex-col">
+                      <span>{p.nome_popular}</span>
+                      {p.nome_cientifico && (
+                        <span className="text-xs italic text-muted-foreground">{p.nome_cientifico}</span>
+                      )}
+                    </div>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+              {onOpenCadastro && (
+                <CommandGroup heading="Não está aqui?">
+                  <CommandItem
+                    onSelect={() => {
+                      onOpenCadastro(realIdx);
+                      setOpen(false);
+                    }}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Cadastrar "{it.nome_popular || "novo item"}" no catálogo
+                  </CommandItem>
+                </CommandGroup>
+              )}
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+      {!ligadaAoCatalogo && onOpenCadastro && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0"
+          title="Cadastrar no catálogo"
+          onClick={() => onOpenCadastro(realIdx)}
+        >
+          <Plus className="w-4 h-4" />
+        </Button>
+      )}
+    </div>
+  );
 }
 
 function Row({
@@ -49,6 +212,9 @@ function Row({
   unidades,
   onUpdate,
   onRemove,
+  plantasCatalogo,
+  onLinkPlanta,
+  onOpenCadastro,
 }: {
   it: ItemMemorialLike;
   idx: number;
@@ -57,6 +223,9 @@ function Row({
   unidades: string[];
   onUpdate: Props["onUpdate"];
   onRemove: Props["onRemove"];
+  plantasCatalogo?: PlantaCatalogoLite[];
+  onLinkPlanta?: Props["onLinkPlanta"];
+  onOpenCadastro?: Props["onOpenCadastro"];
 }) {
   const baixa = it.confianca === "baixa";
   return (
@@ -134,6 +303,15 @@ function Row({
           </SelectContent>
         </Select>
       </div>
+      <div>
+        <CatalogoCell
+          it={it}
+          realIdx={realIdx}
+          plantasCatalogo={plantasCatalogo}
+          onLinkPlanta={onLinkPlanta}
+          onOpenCadastro={onOpenCadastro}
+        />
+      </div>
       <div className="text-center">
         <ConfiancaIcon c={it.confianca} />
       </div>
@@ -152,6 +330,9 @@ export function MemorialItensTable({
   unidades,
   onUpdate,
   onRemove,
+  plantasCatalogo,
+  onLinkPlanta,
+  onOpenCadastro,
   virtualizeThreshold = 80,
 }: Props) {
   // Preserva o índice real para callbacks
@@ -181,6 +362,7 @@ export function MemorialItensTable({
       <div>Porte</div>
       <div>Qtd</div>
       <div>Unidade</div>
+      <div>Catálogo</div>
       <div className="text-center">Confiança</div>
       <div className="text-center">Excluir</div>
     </div>
@@ -189,7 +371,7 @@ export function MemorialItensTable({
   if (!shouldVirtualize) {
     return (
       <div className="border rounded-lg overflow-x-auto max-w-full">
-        <div className="min-w-[1100px]">
+        <div className="min-w-[1280px]">
           {Header}
           {indexed.map(({ it, realIdx }, displayIdx) => (
             <Row
@@ -201,6 +383,9 @@ export function MemorialItensTable({
               unidades={unidades}
               onUpdate={onUpdate}
               onRemove={onRemove}
+              plantasCatalogo={plantasCatalogo}
+              onLinkPlanta={onLinkPlanta}
+              onOpenCadastro={onOpenCadastro}
             />
           ))}
         </div>
@@ -210,7 +395,7 @@ export function MemorialItensTable({
 
   return (
     <div className="border rounded-lg overflow-x-auto max-w-full">
-      <div className="min-w-[1100px]">
+      <div className="min-w-[1280px]">
         {Header}
         <div ref={parentRef} className="overflow-y-auto" style={{ maxHeight: 560 }}>
           <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
@@ -235,6 +420,9 @@ export function MemorialItensTable({
                     unidades={unidades}
                     onUpdate={onUpdate}
                     onRemove={onRemove}
+                    plantasCatalogo={plantasCatalogo}
+                    onLinkPlanta={onLinkPlanta}
+                    onOpenCadastro={onOpenCadastro}
                   />
                 </div>
               );
