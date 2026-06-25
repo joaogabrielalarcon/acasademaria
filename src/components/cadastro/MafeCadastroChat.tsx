@@ -141,6 +141,8 @@ export function MafeCadastroChat({ open, onOpenChange, entidade, onSaved }: Prop
       return "Olá! Me conte sobre o fornecedor que você quer cadastrar ou atualizar. Pode escrever livre, mandar uma foto ou um print. Eu organizo os dados e te mostro o que falta antes de gravar.";
     if (entidade === "plantas")
       return "Olá! Me conte sobre a planta. Pode escrever livre, mandar uma foto ou um print. Eu organizo os dados e te mostro o que falta antes de gravar.";
+    if (entidade === "insumos")
+      return "Olá! Me conte sobre o insumo (ex: Terra preta, Bidim, Torta de mamona). Pode escrever livre, mandar uma foto ou um print. Eu organizo os dados e te mostro o que falta antes de gravar.";
     return "Olá! Me diga qual fornecedor tem qual item por qual preço. Ex: \"Adubos Jarinu tem Ipê amarelo porte 1,80 por R$ 45\". Pode mandar foto ou print. Eu busco no catálogo inteiro, confirmo com você e gravo no histórico de preços.";
   })();
 
