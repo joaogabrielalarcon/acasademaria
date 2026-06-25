@@ -412,6 +412,12 @@ export default function NovoOrcamento() {
 
   // Insumos completos (com is_base/base_ordem) — usado pela tabela única da Etapa 3.
   const { data: insumosFull = [] } = useInsumos();
+  // Catálogo de plantas (busca/casamento de itens do memorial).
+  const { data: plantasFull = [] } = usePlantas();
+  // Dialog de cadastro rápido (reusa Mafe-cadastro). Quando uma planta nova é gravada, recasamos o item.
+  const [cadastroChat, setCadastroChat] = useState<
+    { entidade: EntidadeCadastro; itemIdx: number } | null
+  >(null);
 
 
 
