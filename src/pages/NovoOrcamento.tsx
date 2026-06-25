@@ -4107,7 +4107,14 @@ export default function NovoOrcamento() {
                         ? itensMaterial.map((it, i) => ({ it, i })).filter((x) => x.it.confianca === "baixa")[idx]?.i
                         : idx;
                       if (realIdx == null) return;
-                      setCadastroChat({ entidade: "plantas", itemIdx: realIdx });
+                      const it = itensMaterial[realIdx];
+                      const cat = (it?.categoria || "").toLowerCase();
+                      const ehPlanta = !!it?.planta_id || CATEGORIAS_ITEM.some(
+                        (c) => c.toLowerCase() === cat,
+                      );
+                      const ehInsumo = !!it?.insumo_id || (!ehPlanta && cat.length > 0);
+                      const entidade: EntidadeCadastro = ehInsumo ? "insumos" : "plantas";
+                      setCadastroChat({ entidade, itemIdx: realIdx });
                     }}
                   />
 
@@ -6293,6 +6300,25 @@ export default function NovoOrcamento() {
           open={!!cadastroChat}
           onOpenChange={(v) => { if (!v) setCadastroChat(null); }}
           entidade={cadastroChat.entidade}
+          onSaved={({ entidade, id }) => {
+            const realIdx = cadastroChat.itemIdx;
+            if (realIdx == null || realIdx < 0) return;
+            const atual = itensMaterial[realIdx];
+            if (!atual) return;
+            if (entidade === "plantas") {
+              updateItem(realIdx, {
+                planta_id: id,
+                insumo_id: null,
+                confianca: "alta",
+              });
+            } else if (entidade === "insumos") {
+              updateItem(realIdx, {
+                insumo_id: id,
+                planta_id: null,
+                confianca: "alta",
+              });
+            }
+          }}
         />
       )}
     </AppLayout>

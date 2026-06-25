@@ -97,6 +97,50 @@ const ENTIDADES: Record<string, EntidadeCfg> = {
       "Extraia dados de um fornecedor (viveiro, mercado, prestador). Se vier endereço completo, separe cidade e UF. Telefone só dígitos com DDD quando possível.",
   },
 
+  insumos: {
+    label: "Insumo",
+    tabela: "insumos",
+    campos: [
+      { name: "nome", tipo: "text", obrigatorio: true, descricao: "Nome do insumo (ex: Terra preta, Bidim, Torta de mamona)" },
+      { name: "categoria", tipo: "text", descricao: "Categoria livre (Adubo, Substrato, Tela, Lona, etc.)" },
+      { name: "unidade", tipo: "text", descricao: "Unidade de medida (kg, saco, m, m², m³, rolo, litro, unid)" },
+      { name: "volume_apresentacao", tipo: "text", descricao: "Volume/peso da apresentação (ex: 25kg, 50L, rolo 50m)" },
+      { name: "descricao_produto", tipo: "text", descricao: "Descrição livre do produto" },
+      { name: "observacoes", tipo: "text" },
+    ],
+    buscarDuplicados: async (supabase, extraido) => {
+      const nome = String(extraido.nome ?? "").trim();
+      if (!nome) return [];
+      const tokens = normaliza(nome).split(/\s+/).filter((t) => t.length >= 3).slice(0, 3);
+      let q = supabase
+        .from("insumos")
+        .select("id,nome,categoria,unidade,volume_apresentacao")
+        .eq("ativo", true)
+        .limit(20);
+      if (tokens.length > 0) {
+        q = q.or(tokens.map((t) => `nome.ilike.%${t}%`).join(","));
+      } else {
+        q = q.ilike("nome", `%${nome}%`);
+      }
+      const { data } = await q;
+      const cat = normaliza(extraido.categoria);
+      const arr = (data ?? []) as any[];
+      return arr
+        .map((r) => ({
+          ...r,
+          _score:
+            (normaliza(r.nome) === normaliza(nome) ? 3
+              : normaliza(r.nome).includes(normaliza(nome)) || normaliza(nome).includes(normaliza(r.nome))
+              ? 2 : 1) +
+            (cat && normaliza(r.categoria) === cat ? 1 : 0),
+        }))
+        .sort((a, b) => b._score - a._score)
+        .slice(0, 5);
+    },
+    systemHint:
+      "Extraia dados de um insumo de catálogo (terra, substrato, adubo, bidim, lona, corda, tela, etc.). Unidade em forma curta (kg, saco, m, m², m³, rolo, litro, unid). Não invente categoria.",
+  },
+
   plantas: {
     label: "Planta",
     tabela: "plantas",

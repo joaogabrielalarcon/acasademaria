@@ -24,12 +24,14 @@ import { Loader2, Send, ImagePlus, X, AlertCircle, CheckCircle2, Sparkles, Trend
 import mafeAvatar from "@/assets/flora-avatar.webp";
 import { MafeCadastroPlanilha } from "./MafeCadastroPlanilha";
 
-export type EntidadeCadastro = "fornecedores" | "plantas" | "preco_fornecedor";
+export type EntidadeCadastro = "fornecedores" | "plantas" | "insumos" | "preco_fornecedor";
 
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   entidade: EntidadeCadastro;
+  /** Callback opcional disparado após salvar com sucesso. Passa o id e a entidade do registro criado/atualizado. */
+  onSaved?: (info: { entidade: EntidadeCadastro; id: string }) => void;
 }
 
 interface ChatMsg {
@@ -50,6 +52,7 @@ interface Duplicado {
 const ENTIDADE_LABEL: Record<EntidadeCadastro, string> = {
   fornecedores: "Fornecedor",
   plantas: "Planta",
+  insumos: "Insumo",
   preco_fornecedor: "Preço de fornecedor",
 };
 
@@ -78,6 +81,14 @@ const CAMPOS_UI: Record<EntidadeCadastro, { name: string; label: string; type?: 
     { name: "dap_cm", label: "DAP (cm)" },
     { name: "observacoes", label: "Observações", type: "textarea" },
   ],
+  insumos: [
+    { name: "nome", label: "Nome" },
+    { name: "categoria", label: "Categoria" },
+    { name: "unidade", label: "Unidade" },
+    { name: "volume_apresentacao", label: "Volume / apresentação" },
+    { name: "descricao_produto", label: "Descrição", type: "textarea" },
+    { name: "observacoes", label: "Observações", type: "textarea" },
+  ],
   preco_fornecedor: [
     { name: "porte", label: "Porte (m)" },
     { name: "unidade", label: "Unidade" },
@@ -90,12 +101,15 @@ function descreveDuplicado(entidade: EntidadeCadastro, d: Duplicado): string {
   if (entidade === "fornecedores") {
     return [d.nome, d.cidade, d.estado].filter(Boolean).join(" · ");
   }
+  if (entidade === "insumos") {
+    return [d.nome, d.categoria, d.volume_apresentacao || d.unidade].filter(Boolean).join(" · ");
+  }
   return [d.nome_popular, d.nome_cientifico, d.porte && `porte ${d.porte}`]
     .filter(Boolean)
     .join(" · ");
 }
 
-export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
+export function MafeCadastroChat({ open, onOpenChange, entidade, onSaved }: Props) {
   const { session, user } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -127,6 +141,8 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
       return "Olá! Me conte sobre o fornecedor que você quer cadastrar ou atualizar. Pode escrever livre, mandar uma foto ou um print. Eu organizo os dados e te mostro o que falta antes de gravar.";
     if (entidade === "plantas")
       return "Olá! Me conte sobre a planta. Pode escrever livre, mandar uma foto ou um print. Eu organizo os dados e te mostro o que falta antes de gravar.";
+    if (entidade === "insumos")
+      return "Olá! Me conte sobre o insumo (ex: Terra preta, Bidim, Torta de mamona). Pode escrever livre, mandar uma foto ou um print. Eu organizo os dados e te mostro o que falta antes de gravar.";
     return "Olá! Me diga qual fornecedor tem qual item por qual preço. Ex: \"Adubos Jarinu tem Ipê amarelo porte 1,80 por R$ 45\". Pode mandar foto ou print. Eu busco no catálogo inteiro, confirmo com você e gravo no histórico de preços.";
   })();
 
@@ -248,6 +264,7 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
     if (!extraido) return false;
     if (entidade === "fornecedores") return Boolean(String(extraido.nome ?? "").trim());
     if (entidade === "plantas") return Boolean(String(extraido.nome_popular ?? "").trim());
+    if (entidade === "insumos") return Boolean(String(extraido.nome ?? "").trim());
     // preco_fornecedor
     if (!fornecedorSel?.id || !itemSel?.id) return false;
     if (!Number.isFinite(precoNovoNum) || precoNovoNum <= 0) return false;
@@ -325,6 +342,27 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
     return data.id;
   }
 
+  async function gravarInsumo(payload: Extraido, idExistente: string | null) {
+    const limpo: Record<string, any> = {};
+    for (const [k, v] of Object.entries(payload)) {
+      if (v !== null && v !== undefined && String(v).trim() !== "") limpo[k] = v;
+    }
+    if (idExistente) {
+      const { error } = await supabase
+        .from("insumos")
+        .update({ ...limpo, updated_by: user?.id })
+        .eq("id", idExistente);
+      if (error) throw error;
+      return idExistente;
+    }
+    const { data, error } = await supabase
+      .from("insumos")
+      .insert([{ ...(limpo as any), ativo: true, tipo_produto: "insumo", created_by: user?.id }])
+      .select("id")
+      .single();
+    if (error) throw error;
+    return data.id;
+  }
   async function gravarPrecoFornecedor() {
     if (!fornecedorSel?.id || !itemSel?.id) throw new Error("Selecione fornecedor e item.");
     const preco = Number(String(extraido?.preco ?? "").replace(",", "."));
@@ -374,12 +412,18 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
       } else if (entidade === "plantas") {
         id = await gravarPlanta(extraido, atualizarId);
         qc.invalidateQueries({ queryKey: ["plantas"] });
+      } else if (entidade === "insumos") {
+        id = await gravarInsumo(extraido, atualizarId);
+        qc.invalidateQueries({ queryKey: ["insumos"] });
       } else {
         await gravarPrecoFornecedor();
         qc.invalidateQueries({ queryKey: ["historico_precos"] });
         qc.invalidateQueries({ queryKey: ["historico-precos-fornecedor"] });
         qc.invalidateQueries({ queryKey: ["plantas"] });
         qc.invalidateQueries({ queryKey: ["insumos"] });
+      }
+      if (id && onSaved) {
+        try { onSaved({ entidade, id }); } catch (e) { console.warn("[MafeCadastroChat] onSaved error", e); }
       }
       const isPreco = entidade === "preco_fornecedor";
       toast({
@@ -531,6 +575,8 @@ export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
                       ? "Adubos Jarinu, Jarinu/SP, contato João, 11 99999-9999"
                       : entidade === "plantas"
                       ? "Ipê amarelo, Handroanthus chrysotrichus, porte 1,80, unidade Muda"
+                      : entidade === "insumos"
+                      ? "Terra preta vegetal, saco 25kg, categoria Substrato"
                       : "Adubos Jarinu tem Ipê amarelo porte 1,80 por R$ 45"
                   }`}
                   rows={2}
