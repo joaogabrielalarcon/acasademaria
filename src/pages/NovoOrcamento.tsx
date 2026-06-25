@@ -6300,6 +6300,25 @@ export default function NovoOrcamento() {
           open={!!cadastroChat}
           onOpenChange={(v) => { if (!v) setCadastroChat(null); }}
           entidade={cadastroChat.entidade}
+          onSaved={({ entidade, id }) => {
+            const realIdx = cadastroChat.itemIdx;
+            if (realIdx == null || realIdx < 0) return;
+            const atual = itensMaterial[realIdx];
+            if (!atual) return;
+            if (entidade === "plantas") {
+              updateItem(realIdx, {
+                planta_id: id,
+                insumo_id: null,
+                confianca: "alta",
+              });
+            } else if (entidade === "insumos") {
+              updateItem(realIdx, {
+                insumo_id: id,
+                planta_id: null,
+                confianca: "alta",
+              });
+            }
+          }}
         />
       )}
     </AppLayout>
