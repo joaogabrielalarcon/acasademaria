@@ -288,6 +288,39 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogo_apelidos: {
+        Row: {
+          apelido: string
+          apelido_norm: string
+          confianca: string
+          criado_em: string
+          criado_por: string | null
+          id: string
+          item_id: string
+          tipo: string
+        }
+        Insert: {
+          apelido: string
+          apelido_norm: string
+          confianca?: string
+          criado_em?: string
+          criado_por?: string | null
+          id?: string
+          item_id: string
+          tipo: string
+        }
+        Update: {
+          apelido?: string
+          apelido_norm?: string
+          confianca?: string
+          criado_em?: string
+          criado_por?: string | null
+          id?: string
+          item_id?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
       categorias_plantas: {
         Row: {
           ativo: boolean
@@ -5892,6 +5925,17 @@ export type Database = {
       }
       is_colaborador_ativo: { Args: { _user_id: string }; Returns: boolean }
       is_manager_or_admin: { Args: { _user_id: string }; Returns: boolean }
+      match_catalogo: {
+        Args: { p_limit?: number; p_query: string; p_tipo: string }
+        Returns: {
+          fonte: string
+          item_id: string
+          nome: string
+          nome_secundario: string
+          score: number
+          status: string
+        }[]
+      }
       merge_fornecedores: {
         Args: { p_duplicado_ids: string[]; p_principal_id: string }
         Returns: Json
@@ -5904,6 +5948,7 @@ export type Database = {
         Args: { p_duplicado_ids: string[]; p_principal_id: string }
         Returns: Json
       }
+      norm_catalogo: { Args: { t: string }; Returns: string }
       normalize_cnpj: { Args: { _cnpj: string }; Returns: string }
       normalize_fornecedor_nome: { Args: { _nome: string }; Returns: string }
       set_fornecedor_mercado: {
@@ -5912,6 +5957,19 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      sugerir_duplicados_catalogo: {
+        Args: { p_limiar?: number; p_limit?: number; p_tipo: string }
+        Returns: {
+          a_id: string
+          a_nome: string
+          a_secundario: string
+          b_id: string
+          b_nome: string
+          b_secundario: string
+          score: number
+        }[]
+      }
+      unaccent_safe: { Args: { t: string }; Returns: string }
     }
     Enums: {
       user_role:
