@@ -3416,6 +3416,39 @@ export default function NovoOrcamento() {
             )}
           </div>
 
+          {/* Barra de contexto do orçamento (dados da etapa 1) */}
+          {(contextoOrcamento.clienteNome || contextoOrcamento.localLabel || contextoOrcamento.propostaLabel) && (
+            <div className="rounded-lg bg-marinho text-marinho-foreground px-4 py-3 flex flex-col md:flex-row md:items-center gap-3 md:gap-6">
+              <div className="flex-1 min-w-0 space-y-0.5">
+                {contextoOrcamento.clienteNome && (
+                  <div className="font-display text-lg leading-tight">{contextoOrcamento.clienteNome}</div>
+                )}
+                <div className="text-sm text-marinho-foreground/80 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                  {contextoOrcamento.localLabel && <span>{contextoOrcamento.localLabel}</span>}
+                  {contextoOrcamento.propostaLabel && (
+                    <>
+                      {contextoOrcamento.localLabel && <span>·</span>}
+                      <span className="font-mono">{contextoOrcamento.propostaLabel}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center justify-end md:justify-start">
+                <Badge
+                  className={cn(
+                    "border-0 hover:opacity-90",
+                    contextoOrcamento.prazoVencido
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-primary text-primary-foreground"
+                  )}
+                >
+                  <Clock className="w-3.5 h-3.5 mr-1.5" />
+                  {contextoOrcamento.prazoLabel}
+                </Badge>
+              </div>
+            </div>
+          )}
+
           {!isEdit && (
             <>
               <DraftResumeBanner draft={draft} hint="Os arquivos anexados (PDF, fotos) precisam ser selecionados de novo." />
