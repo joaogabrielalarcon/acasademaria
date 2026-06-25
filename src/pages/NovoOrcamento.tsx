@@ -4107,7 +4107,14 @@ export default function NovoOrcamento() {
                         ? itensMaterial.map((it, i) => ({ it, i })).filter((x) => x.it.confianca === "baixa")[idx]?.i
                         : idx;
                       if (realIdx == null) return;
-                      setCadastroChat({ entidade: "plantas", itemIdx: realIdx });
+                      const it = itensMaterial[realIdx];
+                      const cat = (it?.categoria || "").toLowerCase();
+                      const ehPlanta = !!it?.planta_id || CATEGORIAS_ITEM.some(
+                        (c) => c.toLowerCase() === cat,
+                      );
+                      const ehInsumo = !!it?.insumo_id || (!ehPlanta && cat.length > 0);
+                      const entidade: EntidadeCadastro = ehInsumo ? "insumos" : "plantas";
+                      setCadastroChat({ entidade, itemIdx: realIdx });
                     }}
                   />
 
