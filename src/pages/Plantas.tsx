@@ -25,6 +25,7 @@ export function PlantasContent() {
   const [mergePrincipal, setMergePrincipal] = useState<Planta | null>(null);
   const [importarOpen, setImportarOpen] = useState(false);
   const [mobileSearch, setMobileSearch] = useState("");
+  const [sugDupOpen, setSugDupOpen] = useState(false);
 
   const { user } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
