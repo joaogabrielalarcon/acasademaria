@@ -105,6 +105,8 @@ import { VirtualWindowList } from "@/components/orcamento/VirtualWindowList";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatPorteMetros, parsePorteMetros } from "@/lib/porte";
 import { useInsumos } from "@/hooks/useInsumos";
+import { usePlantas } from "@/hooks/usePlantas";
+import { MafeCadastroChat, type EntidadeCadastro } from "@/components/cadastro/MafeCadastroChat";
 
 const CATEGORIAS_ITEM = [
   "Árvores",
@@ -410,6 +412,12 @@ export default function NovoOrcamento() {
 
   // Insumos completos (com is_base/base_ordem) — usado pela tabela única da Etapa 3.
   const { data: insumosFull = [] } = useInsumos();
+  // Catálogo de plantas (busca/casamento de itens do memorial).
+  const { data: plantasFull = [] } = usePlantas();
+  // Dialog de cadastro rápido (reusa Mafe-cadastro). Quando uma planta nova é gravada, recasamos o item.
+  const [cadastroChat, setCadastroChat] = useState<
+    { entidade: EntidadeCadastro; itemIdx: number } | null
+  >(null);
 
 
 
@@ -2366,10 +2374,20 @@ export default function NovoOrcamento() {
     return out;
   };
 
-  // Mapeia ItemMemorial (por idx) -> { item_id, item_tipo } usando histórico carregado
+  // Mapeia ItemMemorial (por idx) -> { item_id, item_tipo }. Prioriza o vínculo explícito
+  // (planta_id/insumo_id setado pelo operador ou pelo auto-match na extração) e cai para
+  // o casamento por nome via historico_precos quando não houver vínculo.
   const itemDbInfoByIdx = useMemo(() => {
     const map: Record<number, { item_id: string; item_tipo: "planta" | "insumo" }> = {};
     itensMaterial.forEach((it, idx) => {
+      if (it.planta_id) {
+        map[idx] = { item_id: it.planta_id, item_tipo: "planta" };
+        return;
+      }
+      if (it.insumo_id) {
+        map[idx] = { item_id: it.insumo_id, item_tipo: "insumo" };
+        return;
+      }
       const rows = fornecedoresDoItem(it);
       const r = rows[0];
       if (r?.item_id && r?.item_tipo) {
@@ -3160,19 +3178,49 @@ export default function NovoOrcamento() {
         return;
       }
       firstAutoSaveRef.current = false;
-      setItensMaterial(itens);
+      // Casa cada item com o catálogo real de plantas (por nome popular/científico normalizado).
+      const norm = normalizarNomeCatalogo;
+      const plantasMap = new Map<string, any>();
+      (plantasFull as any[]).forEach((p: any) => {
+        const pop = norm(p.nome_popular || "");
+        const sci = norm(p.nome_cientifico || "");
+        if (pop && !plantasMap.has(pop)) plantasMap.set(pop, p);
+        if (sci && !plantasMap.has(sci)) plantasMap.set(sci, p);
+      });
+      const itensCasados = itens.map((it) => {
+        const hit = plantasMap.get(norm(it.nome_popular)) || plantasMap.get(norm(it.nome_cientifico || ""));
+        if (!hit) return it;
+        return {
+          ...it,
+          planta_id: hit.id,
+          nome_cientifico: it.nome_cientifico || hit.nome_cientifico || null,
+          unidade: it.unidade || (hit.unidade ? String(hit.unidade).toUpperCase() : it.unidade),
+        };
+      });
+      setItensMaterial(itensCasados);
       // Captura insumos extraordinários (novo formato da edge function ler-memorial-pdf).
       const insumosRaw = Array.isArray((data as any)?.insumos) ? (data as any).insumos : [];
+      const insumosMap = new Map<string, any>();
+      (insumosFull as any[]).forEach((ins: any) => {
+        const k = norm(ins.nome || "");
+        if (k && !insumosMap.has(k)) insumosMap.set(k, ins);
+      });
       const insumosNorm: InsumoMemorial[] = insumosRaw
         .filter((r: any) => r && typeof r.nome === "string" && r.nome.trim())
-        .map((r: any) => ({
-          nome: String(r.nome).trim(),
-          quantidade: typeof r.quantidade === "number" ? r.quantidade : (r.quantidade ? Number(r.quantidade) || null : null),
-          unidade: String(r.unidade || "unidade"),
-          categoria: r.categoria ? String(r.categoria) : null,
-          observacao: r.observacao ? String(r.observacao) : null,
-          confianca: (["alta", "media", "baixa"].includes(r.confianca) ? r.confianca : "media") as InsumoMemorial["confianca"],
-        }));
+        .map((r: any) => {
+          const nome = String(r.nome).trim();
+          const hit = insumosMap.get(norm(nome));
+          return {
+            nome,
+            quantidade: typeof r.quantidade === "number" ? r.quantidade : (r.quantidade ? Number(r.quantidade) || null : null),
+            unidade: String(r.unidade || hit?.unidade || "unidade"),
+            categoria: r.categoria ? String(r.categoria) : (hit?.categoria || null),
+            observacao: r.observacao ? String(r.observacao) : null,
+            confianca: (["alta", "media", "baixa"].includes(r.confianca) ? r.confianca : "media") as InsumoMemorial["confianca"],
+            insumo_id: hit?.id || null,
+            match_status: hit ? "alta" : "sem_match",
+          };
+        });
       setItensInsumoExtra(insumosNorm);
       setPdfCarregado(true);
       setFiltroBaixaConfianca(false);
@@ -4036,6 +4084,30 @@ export default function NovoOrcamento() {
                       } else {
                         removeItem(idx);
                       }
+                    }}
+                    plantasCatalogo={plantasFull as any[]}
+                    onLinkPlanta={(idx, planta) => {
+                      const realIdx = filtroBaixaConfianca
+                        ? itensMaterial.map((it, i) => ({ it, i })).filter((x) => x.it.confianca === "baixa")[idx]?.i
+                        : idx;
+                      if (realIdx == null) return;
+                      updateItem(realIdx, {
+                        planta_id: planta?.id ?? null,
+                        insumo_id: null,
+                        nome_popular: planta?.nome_popular ?? itensMaterial[realIdx].nome_popular,
+                        nome_cientifico: planta?.nome_cientifico ?? itensMaterial[realIdx].nome_cientifico,
+                        unidade: planta?.unidade
+                          ? String(planta.unidade).toUpperCase()
+                          : itensMaterial[realIdx].unidade,
+                        confianca: "alta",
+                      });
+                    }}
+                    onOpenCadastro={(idx) => {
+                      const realIdx = filtroBaixaConfianca
+                        ? itensMaterial.map((it, i) => ({ it, i })).filter((x) => x.it.confianca === "baixa")[idx]?.i
+                        : idx;
+                      if (realIdx == null) return;
+                      setCadastroChat({ entidade: "plantas", itemIdx: realIdx });
                     }}
                   />
 
@@ -6216,6 +6288,13 @@ export default function NovoOrcamento() {
           </>
         );
       })()}
+      {cadastroChat && (
+        <MafeCadastroChat
+          open={!!cadastroChat}
+          onOpenChange={(v) => { if (!v) setCadastroChat(null); }}
+          entidade={cadastroChat.entidade}
+        />
+      )}
     </AppLayout>
   );
 }
