@@ -24,12 +24,14 @@ import { Loader2, Send, ImagePlus, X, AlertCircle, CheckCircle2, Sparkles, Trend
 import mafeAvatar from "@/assets/flora-avatar.webp";
 import { MafeCadastroPlanilha } from "./MafeCadastroPlanilha";
 
-export type EntidadeCadastro = "fornecedores" | "plantas" | "preco_fornecedor";
+export type EntidadeCadastro = "fornecedores" | "plantas" | "insumos" | "preco_fornecedor";
 
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   entidade: EntidadeCadastro;
+  /** Callback opcional disparado após salvar com sucesso. Passa o id e a entidade do registro criado/atualizado. */
+  onSaved?: (info: { entidade: EntidadeCadastro; id: string }) => void;
 }
 
 interface ChatMsg {
@@ -50,6 +52,7 @@ interface Duplicado {
 const ENTIDADE_LABEL: Record<EntidadeCadastro, string> = {
   fornecedores: "Fornecedor",
   plantas: "Planta",
+  insumos: "Insumo",
   preco_fornecedor: "Preço de fornecedor",
 };
 
@@ -78,6 +81,14 @@ const CAMPOS_UI: Record<EntidadeCadastro, { name: string; label: string; type?: 
     { name: "dap_cm", label: "DAP (cm)" },
     { name: "observacoes", label: "Observações", type: "textarea" },
   ],
+  insumos: [
+    { name: "nome", label: "Nome" },
+    { name: "categoria", label: "Categoria" },
+    { name: "unidade", label: "Unidade" },
+    { name: "volume_apresentacao", label: "Volume / apresentação" },
+    { name: "descricao_produto", label: "Descrição", type: "textarea" },
+    { name: "observacoes", label: "Observações", type: "textarea" },
+  ],
   preco_fornecedor: [
     { name: "porte", label: "Porte (m)" },
     { name: "unidade", label: "Unidade" },
@@ -89,6 +100,9 @@ const CAMPOS_UI: Record<EntidadeCadastro, { name: string; label: string; type?: 
 function descreveDuplicado(entidade: EntidadeCadastro, d: Duplicado): string {
   if (entidade === "fornecedores") {
     return [d.nome, d.cidade, d.estado].filter(Boolean).join(" · ");
+  }
+  if (entidade === "insumos") {
+    return [d.nome, d.categoria, d.volume_apresentacao || d.unidade].filter(Boolean).join(" · ");
   }
   return [d.nome_popular, d.nome_cientifico, d.porte && `porte ${d.porte}`]
     .filter(Boolean)
