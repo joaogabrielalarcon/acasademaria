@@ -3168,19 +3168,49 @@ export default function NovoOrcamento() {
         return;
       }
       firstAutoSaveRef.current = false;
-      setItensMaterial(itens);
+      // Casa cada item com o catálogo real de plantas (por nome popular/científico normalizado).
+      const norm = normalizarNomeCatalogo;
+      const plantasMap = new Map<string, any>();
+      (plantasFull as any[]).forEach((p: any) => {
+        const pop = norm(p.nome_popular || "");
+        const sci = norm(p.nome_cientifico || "");
+        if (pop && !plantasMap.has(pop)) plantasMap.set(pop, p);
+        if (sci && !plantasMap.has(sci)) plantasMap.set(sci, p);
+      });
+      const itensCasados = itens.map((it) => {
+        const hit = plantasMap.get(norm(it.nome_popular)) || plantasMap.get(norm(it.nome_cientifico || ""));
+        if (!hit) return it;
+        return {
+          ...it,
+          planta_id: hit.id,
+          nome_cientifico: it.nome_cientifico || hit.nome_cientifico || null,
+          unidade: it.unidade || (hit.unidade ? String(hit.unidade).toUpperCase() : it.unidade),
+        };
+      });
+      setItensMaterial(itensCasados);
       // Captura insumos extraordinários (novo formato da edge function ler-memorial-pdf).
       const insumosRaw = Array.isArray((data as any)?.insumos) ? (data as any).insumos : [];
+      const insumosMap = new Map<string, any>();
+      (insumosFull as any[]).forEach((ins: any) => {
+        const k = norm(ins.nome || "");
+        if (k && !insumosMap.has(k)) insumosMap.set(k, ins);
+      });
       const insumosNorm: InsumoMemorial[] = insumosRaw
         .filter((r: any) => r && typeof r.nome === "string" && r.nome.trim())
-        .map((r: any) => ({
-          nome: String(r.nome).trim(),
-          quantidade: typeof r.quantidade === "number" ? r.quantidade : (r.quantidade ? Number(r.quantidade) || null : null),
-          unidade: String(r.unidade || "unidade"),
-          categoria: r.categoria ? String(r.categoria) : null,
-          observacao: r.observacao ? String(r.observacao) : null,
-          confianca: (["alta", "media", "baixa"].includes(r.confianca) ? r.confianca : "media") as InsumoMemorial["confianca"],
-        }));
+        .map((r: any) => {
+          const nome = String(r.nome).trim();
+          const hit = insumosMap.get(norm(nome));
+          return {
+            nome,
+            quantidade: typeof r.quantidade === "number" ? r.quantidade : (r.quantidade ? Number(r.quantidade) || null : null),
+            unidade: String(r.unidade || hit?.unidade || "unidade"),
+            categoria: r.categoria ? String(r.categoria) : (hit?.categoria || null),
+            observacao: r.observacao ? String(r.observacao) : null,
+            confianca: (["alta", "media", "baixa"].includes(r.confianca) ? r.confianca : "media") as InsumoMemorial["confianca"],
+            insumo_id: hit?.id || null,
+            match_status: hit ? "alta" : "sem_match",
+          };
+        });
       setItensInsumoExtra(insumosNorm);
       setPdfCarregado(true);
       setFiltroBaixaConfianca(false);
