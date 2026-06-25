@@ -188,10 +188,11 @@ export function TabelaItensProjeto({
       {/* Barra superior — Progresso + ações */}
       <div className="p-3 border-b border-primary/20 bg-secondary/40 flex flex-wrap gap-3 items-center">
         <div className="flex items-center gap-3 min-w-[220px]">
-          <div className="text-sm">
-            <span className="font-display text-xl text-foreground">{totalResolvido}</span>
-            <span className="text-muted-foreground"> de {itens.length} com fornecedor</span>
-          </div>
+        <div className="text-sm">
+          <span className="text-sm font-medium text-foreground">{totalResolvido}</span>
+          <span className="text-muted-foreground"> de {itens.length} com fornecedor</span>
+          <span className="text-sm font-medium text-primary"> · {progresso}%</span>
+        </div>
           <div className="h-2 w-32 rounded-full bg-background border border-primary/20 overflow-hidden">
             <div
               className="h-full bg-primary transition-all"
@@ -209,7 +210,7 @@ export function TabelaItensProjeto({
             className="h-9"
           >
             <AlertCircle className="w-4 h-4" />
-            {soSemForn ? "Ver tudo" : `Ver só o que falta (${totalFaltam})`}
+            {soSemForn ? "Ver tudo" : `Itens em aberto (${totalFaltam})`}
           </Button>
         )}
 
@@ -478,10 +479,13 @@ function LinhaItem({
         className={cn(
           "border-b border-primary/10 transition-colors",
           aberto ? "bg-accent/30" : "hover:bg-accent/20",
-          !resolvido && "bg-amber-50/40 dark:bg-amber-950/10",
+          !resolvido && "bg-primary/5",
         )}
       >
-        <td className="px-2 py-3 align-middle text-muted-foreground cursor-pointer w-8" onClick={() => setAberto(!aberto)}>
+        <td
+          className={cn("px-2 py-3 align-middle text-muted-foreground cursor-pointer w-8 border-l-2", resolvido ? "border-l-marinho" : "border-l-primary")}
+          onClick={() => setAberto(!aberto)}
+        >
           {aberto ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
         </td>
         <td className="px-3 py-3 align-middle cursor-pointer" onClick={() => setAberto(!aberto)}>
@@ -529,8 +533,8 @@ function LinhaItem({
           <div className="flex items-center gap-2 flex-wrap">
             {resolvido ? (
               <>
-                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-semibold">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Pronto
+                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-marinho/10 text-marinho text-xs font-semibold">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-marinho" /> Pronto
                 </span>
                 <span className="text-xs text-foreground truncate max-w-[140px]">{item.fornecedor_nome || ""}</span>
                 <Button
@@ -751,7 +755,7 @@ function LinhaItem({
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="font-display text-xl text-foreground tabular-nums">{brl(a.preco)}</div>
+                          <div className="text-base font-medium text-foreground tabular-nums">{brl(a.preco)}</div>
                           <div className="text-[10px] text-muted-foreground uppercase">{a.unidade || ""}</div>
                         </div>
                         <div className="flex items-center gap-1">
@@ -774,9 +778,9 @@ function LinhaItem({
                           ) : onSelecionarFornecedor ? (
                             <Button
                               type="button"
-                              size="lg"
+                              size="sm"
                               variant="terracota"
-                              className="h-10 px-4"
+                              className="h-9"
                               onClick={() => onSelecionarFornecedor(a)}
                             >
                               <Check className="w-4 h-4" />
