@@ -6288,6 +6288,13 @@ export default function NovoOrcamento() {
           </>
         );
       })()}
+      {cadastroChat && (
+        <MafeCadastroChat
+          open={!!cadastroChat}
+          onOpenChange={(v) => { if (!v) setCadastroChat(null); }}
+          entidade={cadastroChat.entidade}
+        />
+      )}
     </AppLayout>
   );
 }
