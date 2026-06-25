@@ -3197,7 +3197,7 @@ export default function NovoOrcamento() {
         if (pop && !plantasMap.has(pop)) plantasMap.set(pop, p);
         if (sci && !plantasMap.has(sci)) plantasMap.set(sci, p);
       });
-      const itensCasados = itens.map((it) => {
+      const itensPreCasados = itens.map((it) => {
         const hit = plantasMap.get(norm(it.nome_popular)) || plantasMap.get(norm(it.nome_cientifico || ""));
         if (!hit) return it;
         return {
@@ -3207,6 +3207,33 @@ export default function NovoOrcamento() {
           unidade: it.unidade || (hit.unidade ? String(hit.unidade).toUpperCase() : it.unidade),
         };
       });
+      // Funil inteligente: para o que não casou direto, chama match_catalogo (apelido/científico/fuzzy).
+      const itensCasados = await Promise.all(
+        itensPreCasados.map(async (it) => {
+          if (it.planta_id) return it;
+          const query = it.nome_cientifico || it.nome_popular;
+          const candidatos = await matchCatalogo("planta", query, 4);
+          if (!candidatos.length) return it;
+          const top = candidatos[0];
+          if (top.status === "match") {
+            return { ...it, planta_id: top.item_id, nome_cientifico: it.nome_cientifico || top.nome_secundario || null };
+          }
+          // suggest: deixa o operador confirmar
+          return {
+            ...it,
+            sugestoes: candidatos
+              .filter((c) => c.status === "suggest" || c.status === "match")
+              .map((c) => ({
+                item_id: c.item_id,
+                nome: c.nome,
+                nome_secundario: c.nome_secundario,
+                score: c.score,
+                fonte: c.fonte,
+                tipo: "planta" as const,
+              })),
+          };
+        }),
+      );
       setItensMaterial(itensCasados);
       // Captura insumos extraordinários (novo formato da edge function ler-memorial-pdf).
       const insumosRaw = Array.isArray((data as any)?.insumos) ? (data as any).insumos : [];
@@ -3215,7 +3242,7 @@ export default function NovoOrcamento() {
         const k = norm(ins.nome || "");
         if (k && !insumosMap.has(k)) insumosMap.set(k, ins);
       });
-      const insumosNorm: InsumoMemorial[] = insumosRaw
+      const insumosPre: InsumoMemorial[] = insumosRaw
         .filter((r: any) => r && typeof r.nome === "string" && r.nome.trim())
         .map((r: any) => {
           const nome = String(r.nome).trim();
@@ -3231,6 +3258,18 @@ export default function NovoOrcamento() {
             match_status: hit ? "alta" : "sem_match",
           };
         });
+      const insumosNorm: InsumoMemorial[] = await Promise.all(
+        insumosPre.map(async (ins) => {
+          if (ins.insumo_id) return ins;
+          const candidatos = await matchCatalogo("insumo", ins.nome, 4);
+          if (!candidatos.length) return ins;
+          const top = candidatos[0];
+          if (top.status === "match") {
+            return { ...ins, insumo_id: top.item_id, match_status: "alta" as const };
+          }
+          return ins;
+        }),
+      );
       setItensInsumoExtra(insumosNorm);
       setPdfCarregado(true);
       setFiltroBaixaConfianca(false);
