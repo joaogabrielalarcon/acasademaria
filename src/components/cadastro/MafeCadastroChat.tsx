@@ -347,21 +347,34 @@ export function MafeCadastroChat({ open, onOpenChange, entidade, onSaved }: Prop
     for (const [k, v] of Object.entries(payload)) {
       if (v !== null && v !== undefined && String(v).trim() !== "") limpo[k] = v;
     }
+    let id: string;
     if (idExistente) {
       const { error } = await supabase
         .from("insumos")
         .update({ ...limpo, updated_by: user?.id })
         .eq("id", idExistente);
       if (error) throw error;
-      return idExistente;
+      id = idExistente;
+    } else {
+      const { data, error } = await supabase
+        .from("insumos")
+        .insert([{ ...(limpo as any), ativo: true, tipo_produto: "insumo", created_by: user?.id }])
+        .select("id")
+        .single();
+      if (error) throw error;
+      id = data.id;
     }
-    const { data, error } = await supabase
-      .from("insumos")
-      .insert([{ ...(limpo as any), ativo: true, tipo_produto: "insumo", created_by: user?.id }])
-      .select("id")
-      .single();
-    if (error) throw error;
-    return data.id;
+    // Garante que a unidade informada vire forma de compra padrão (idempotente).
+    const un = String(limpo.unidade ?? "").trim();
+    if (un) {
+      await supabase
+        .from("insumo_unidades")
+        .upsert(
+          { insumo_id: id, unidade: un, is_padrao: true },
+          { onConflict: "insumo_id,unidade" },
+        );
+    }
+    return id;
   }
   async function gravarPrecoFornecedor() {
     if (!fornecedorSel?.id || !itemSel?.id) throw new Error("Selecione fornecedor e item.");
