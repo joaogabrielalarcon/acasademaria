@@ -892,3 +892,47 @@ function LinhaItem({
     </>
   );
 }
+
+function HeaderFilterPopover({
+  label,
+  ativo,
+  icon: Icon,
+  count,
+  align = "start",
+  contentClassName,
+  children,
+}: {
+  label: string;
+  ativo?: boolean;
+  icon?: React.ComponentType<{ className?: string }>;
+  count?: number;
+  align?: "start" | "center" | "end";
+  contentClassName?: string;
+  children: React.ReactNode;
+}) {
+  const IconComp = Icon ?? Filter;
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            "inline-flex items-center gap-1 uppercase tracking-wide text-[10px] hover:text-primary transition-colors",
+            ativo ? "text-primary font-semibold" : "text-muted-foreground",
+          )}
+        >
+          {label}
+          {count != null && count > 0 && (
+            <span className="inline-flex items-center justify-center rounded bg-primary/10 text-primary text-[9px] px-1 min-w-[14px] h-3.5">
+              {count}
+            </span>
+          )}
+          <IconComp className="w-3 h-3" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align={align} className={cn("w-48 p-2", contentClassName)}>
+        {children}
+      </PopoverContent>
+    </Popover>
+  );
+}
