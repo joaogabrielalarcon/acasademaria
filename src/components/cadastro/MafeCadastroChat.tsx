@@ -363,8 +363,7 @@ export function MafeCadastroChat({ open, onOpenChange, entidade, onSaved }: Prop
     if (error) throw error;
     return data.id;
   }
-
-
+  async function gravarPrecoFornecedor() {
     if (!fornecedorSel?.id || !itemSel?.id) throw new Error("Selecione fornecedor e item.");
     const preco = Number(String(extraido?.preco ?? "").replace(",", "."));
     if (!Number.isFinite(preco) || preco <= 0) throw new Error("Preço inválido.");
