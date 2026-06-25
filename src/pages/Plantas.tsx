@@ -160,9 +160,16 @@ export function PlantasContent() {
               <Plus className="w-4 h-4" /> Nova Planta
             </Link>
           </Button>
-          <Button variant="outline" className="gap-2" onClick={() => setImportarOpen(true)}>
-            <Upload className="w-4 h-4" /> Importar Plantas
-          </Button>
+          <div className="flex items-center gap-2">
+            {podeMesclar && (
+              <Button variant="outline" className="gap-2" onClick={() => setSugDupOpen(true)}>
+                <Sparkles className="w-4 h-4" /> Sugerir duplicados
+              </Button>
+            )}
+            <Button variant="outline" className="gap-2" onClick={() => setImportarOpen(true)}>
+              <Upload className="w-4 h-4" /> Importar Plantas
+            </Button>
+          </div>
         </div>
 
         {/* Desktop / tablet */}
