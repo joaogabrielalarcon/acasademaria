@@ -3434,14 +3434,7 @@ export default function NovoOrcamento() {
                 </div>
               </div>
               <div className="flex items-center justify-end md:justify-start">
-                <Badge
-                  className={cn(
-                    "border-0 hover:opacity-90",
-                    contextoOrcamento.prazoVencido
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-primary text-primary-foreground"
-                  )}
-                >
+                <Badge className="border-0 bg-primary text-primary-foreground hover:opacity-90">
                   <Clock className="w-3.5 h-3.5 mr-1.5" />
                   {contextoOrcamento.prazoLabel}
                 </Badge>
