@@ -575,6 +575,8 @@ export function MafeCadastroChat({ open, onOpenChange, entidade, onSaved }: Prop
                       ? "Adubos Jarinu, Jarinu/SP, contato João, 11 99999-9999"
                       : entidade === "plantas"
                       ? "Ipê amarelo, Handroanthus chrysotrichus, porte 1,80, unidade Muda"
+                      : entidade === "insumos"
+                      ? "Terra preta vegetal, saco 25kg, categoria Substrato"
                       : "Adubos Jarinu tem Ipê amarelo porte 1,80 por R$ 45"
                   }`}
                   rows={2}
