@@ -128,6 +128,15 @@ const normalizarNomeCatalogo = (s: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
+interface SugestaoCatalogo {
+  item_id: string;
+  nome: string;
+  nome_secundario: string | null;
+  score: number;
+  fonte: string;
+  tipo: "planta" | "insumo";
+}
+
 interface ItemMemorial {
   nome_popular: string;
   nome_cientifico: string | null;
@@ -138,6 +147,7 @@ interface ItemMemorial {
   unidade: string;
   categoria: string;
   confianca: "alta" | "media" | "baixa";
+  sugestoes?: SugestaoCatalogo[];
 }
 
 // Insumos extraordinários extraídos do memorial (formato novo retornado pela edge function).
