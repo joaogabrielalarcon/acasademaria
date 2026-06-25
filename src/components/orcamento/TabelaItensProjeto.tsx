@@ -884,10 +884,10 @@ function LinhaItem({
                 </div>
               )}
             </div>
-          </td>
-        </tr>
-      )}
-    </>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
