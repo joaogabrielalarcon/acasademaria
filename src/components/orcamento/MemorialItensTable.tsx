@@ -291,18 +291,12 @@ function Row({
         />
       </div>
       <div>
-        <Select value={it.unidade} onValueChange={(v) => onUpdate(realIdx, { unidade: v })}>
-          <SelectTrigger className="h-8 gap-2">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {unidades.map((u) => (
-              <SelectItem key={u} value={u}>
-                {u}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <UnidadeCell
+          insumoId={it.insumo_id ?? null}
+          value={it.unidade}
+          unidadesGlobais={unidades}
+          onChange={(v) => onUpdate(realIdx, { unidade: v })}
+        />
       </div>
       <div>
         <CatalogoCell
