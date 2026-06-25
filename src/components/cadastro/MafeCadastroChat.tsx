@@ -109,7 +109,7 @@ function descreveDuplicado(entidade: EntidadeCadastro, d: Duplicado): string {
     .join(" · ");
 }
 
-export function MafeCadastroChat({ open, onOpenChange, entidade }: Props) {
+export function MafeCadastroChat({ open, onOpenChange, entidade, onSaved }: Props) {
   const { session, user } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
