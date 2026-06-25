@@ -717,80 +717,95 @@ function LinhaItem({
                   </Button>
                 </div>
               ) : (
-                <div className="grid gap-2">
-                  {altsFiltradas.map((a, i) => {
-                    const ehMenor = menorPrecoId === `${a.fornecedor_id}-${a.preco}`;
-                    const ehRecente = maisRecenteId === `${a.fornecedor_id}-${a.data}`;
-                    return (
-                      <div
-                        key={`${a.fornecedor_id}-${i}`}
-                        className={cn(
-                          "rounded-lg border p-3 bg-background flex flex-wrap items-center gap-3",
-                          a.selecionado
-                            ? "border-primary ring-1 ring-primary/40 bg-primary/5"
-                            : ehMenor
-                            ? "border-primary/50"
-                            : "border-primary/15",
-                        )}
-                      >
-                        <div className="min-w-[180px] flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-medium text-foreground">{a.fornecedor_nome}</span>
-                            {ehMenor && (
-                              <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-primary text-primary-foreground font-semibold">
-                                <Sparkles className="w-3 h-3" /> melhor preço
-                              </span>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-primary/10">
+                        <th className="text-left py-2 pr-3 text-[10px] uppercase tracking-wide text-muted-foreground">Fornecedor</th>
+                        <th className="text-left py-2 pr-3 text-[10px] uppercase tracking-wide text-muted-foreground">Mercado</th>
+                        <th className="text-left py-2 pr-3 text-[10px] uppercase tracking-wide text-muted-foreground">Porte</th>
+                        <th className="text-left py-2 pr-3 text-[10px] uppercase tracking-wide text-muted-foreground">Unid.</th>
+                        <th className="text-right py-2 pr-3 text-[10px] uppercase tracking-wide text-muted-foreground">Preço</th>
+                        <th className="text-left py-2 pr-3 text-[10px] uppercase tracking-wide text-muted-foreground">Cotado</th>
+                        <th className="text-left py-2 pr-3 text-[10px] uppercase tracking-wide text-muted-foreground" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {altsFiltradas.map((a, i) => {
+                        const ehMenor = menorPrecoId === `${a.fornecedor_id}-${a.preco}`;
+                        const ehRecente = maisRecenteId === `${a.fornecedor_id}-${a.data}`;
+                        return (
+                          <tr
+                            key={`${a.fornecedor_id}-${i}`}
+                            className={cn(
+                              "border-b border-primary/10 last:border-0",
+                              a.selecionado && "bg-marinho/5",
                             )}
-                            {ehRecente && !ehMenor && (
-                              <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground font-semibold">
-                                mais recente
+                          >
+                            <td className="py-2 pr-3 align-middle">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-medium text-foreground">{a.fornecedor_nome}</span>
+                                {ehMenor && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-primary text-primary-foreground font-semibold">
+                                    <Sparkles className="w-3 h-3" /> melhor preço
+                                  </span>
+                                )}
+                                {ehRecente && !ehMenor && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground font-semibold">
+                                    mais recente
+                                  </span>
+                                )}
+                              </div>
+                              {a.estrelas != null && (
+                                <div className="text-[11px] text-muted-foreground">★ {a.estrelas.toFixed(1)}</div>
+                              )}
+                            </td>
+                            <td className="py-2 pr-3 align-middle text-muted-foreground">{a.mercado || "—"}</td>
+                            <td className="py-2 pr-3 align-middle text-muted-foreground">{a.porte || "—"}</td>
+                            <td className="py-2 pr-3 align-middle text-muted-foreground">{a.unidade || "—"}</td>
+                            <td className="py-2 pr-3 align-middle text-right">
+                              <span className={cn("text-base font-medium tabular-nums", ehMenor ? "text-primary" : "text-foreground")}>
+                                {brl(a.preco)}
                               </span>
-                            )}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-0.5">
-                            {[a.mercado, a.porte && `porte ${a.porte}`, `cotado em ${fmtData(a.data)}`]
-                              .filter(Boolean)
-                              .join(" · ")}
-                            {a.estrelas != null && ` · ★ ${a.estrelas.toFixed(1)}`}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-base font-medium text-foreground tabular-nums">{brl(a.preco)}</div>
-                          <div className="text-[10px] text-muted-foreground uppercase">{a.unidade || ""}</div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {onEditarCotacao && (
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              className="h-9 px-2"
-                              title="Editar cotação"
-                              onClick={() => onEditarCotacao(a)}
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </Button>
-                          )}
-                          {a.selecionado ? (
-                            <span className="inline-flex items-center gap-1 px-3 py-2 rounded-md bg-primary/10 text-primary text-xs font-semibold">
-                              <CheckCircle2 className="w-3.5 h-3.5" /> Selecionado
-                            </span>
-                          ) : onSelecionarFornecedor ? (
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="terracota"
-                              className="h-9"
-                              onClick={() => onSelecionarFornecedor(a)}
-                            >
-                              <Check className="w-4 h-4" />
-                              Selecionar
-                            </Button>
-                          ) : null}
-                        </div>
-                      </div>
-                    );
-                  })}
+                            </td>
+                            <td className="py-2 pr-3 align-middle text-muted-foreground">{fmtData(a.data)}</td>
+                            <td className="py-2 pr-3 align-middle">
+                              <div className="flex items-center gap-1 justify-end">
+                                {onEditarCotacao && (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-9 px-2"
+                                    title="Editar cotação"
+                                    onClick={() => onEditarCotacao(a)}
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </Button>
+                                )}
+                                {a.selecionado ? (
+                                  <span className="inline-flex items-center gap-1 px-2 py-1.5 rounded-md bg-marinho/10 text-marinho text-xs font-semibold">
+                                    <CheckCircle2 className="w-3.5 h-3.5" /> Selecionado
+                                  </span>
+                                ) : onSelecionarFornecedor ? (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="terracota"
+                                    className="h-9"
+                                    onClick={() => onSelecionarFornecedor(a)}
+                                  >
+                                    <Check className="w-4 h-4" />
+                                    Selecionar
+                                  </Button>
+                                ) : null}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
