@@ -462,69 +462,82 @@ function LinhaItem({
   const editavelQtd = !!onAtualizarQuantidade && item.tipo === "insumo";
 
   return (
-    <>
-      <tr
-        className={cn(
-          "border-b border-primary/10 transition-colors",
-          aberto ? "bg-accent/30" : "hover:bg-accent/20",
-          !resolvido && "bg-primary/5",
-        )}
-      >
-        <td
-          className={cn("px-2 py-3 align-middle text-muted-foreground cursor-pointer w-8 border-l-2", resolvido ? "border-l-marinho" : "border-l-primary")}
+    <div
+      className={cn(
+        "rounded-lg border bg-card overflow-hidden flex transition-colors",
+        aberto ? "border-primary/30" : "border-primary/20 hover:bg-accent/20",
+      )}
+    >
+      <span
+        className={cn("w-1 shrink-0", resolvido ? "bg-marinho" : "bg-primary")}
+        aria-hidden
+      />
+      <div className="flex-1 min-w-0 p-3">
+        <div
+          className="flex items-center gap-3 cursor-pointer"
           onClick={() => setAberto(!aberto)}
         >
-          {aberto ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-        </td>
-        <td className="px-3 py-3 align-middle cursor-pointer" onClick={() => setAberto(!aberto)}>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-medium text-foreground">{item.nome}</span>
-            <Badge variant={item.tipo === "planta" ? "default" : "secondary"} className="text-[10px] capitalize">
-              {item.tipo}
-            </Badge>
-            {item.badges.includes("baixa confiança") && (
-              <Badge variant="outline" className="text-[10px]">conferir</Badge>
+          <span className="text-muted-foreground shrink-0">
+            {aberto ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          </span>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-medium text-foreground truncate">{item.nome}</span>
+              <Badge variant={item.tipo === "planta" ? "default" : "secondary"} className="text-[10px] capitalize">
+                {item.tipo}
+              </Badge>
+              {item.badges.includes("baixa confiança") && (
+                <Badge variant="outline" className="text-[10px]">conferir</Badge>
+              )}
+            </div>
+            {item.tipo === "planta" && item.nome_cientifico && (
+              <div className="text-xs text-muted-foreground italic truncate">{item.nome_cientifico}</div>
             )}
+            <div className="text-xs text-muted-foreground flex items-center gap-1 flex-wrap mt-0.5">
+              <span>{item.categoria || "—"}</span>
+              {item.porte && <span>· Porte {item.porte}</span>}
+              <span>·</span>
+              {editavelQtd ? (
+                <span className="inline-flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={qtdLocal}
+                    data-qtd-chave={item.chave}
+                    onChange={(e) => setQtdLocal(e.target.value)}
+                    onBlur={() => {
+                      const n = Number(qtdLocal);
+                      if (!isNaN(n) && n !== Number(item.quantidade)) onAtualizarQuantidade!(n);
+                    }}
+                    className="h-7 w-20 text-right tabular-nums bg-background px-2 py-0"
+                  />
+                  <span>{item.unidade || ""}</span>
+                </span>
+              ) : (
+                <span className="tabular-nums">
+                  {item.quantidade.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} {item.unidade || ""}
+                </span>
+              )}
+              <span>·</span>
+              {resolvido ? (
+                <span className="text-foreground truncate max-w-[180px]">{item.fornecedor_nome || ""}</span>
+              ) : (
+                <span className="text-primary font-medium">em aberto</span>
+              )}
+            </div>
           </div>
-          {item.tipo === "planta" && item.nome_cientifico && (
-            <div className="text-xs text-muted-foreground italic">{item.nome_cientifico}</div>
-          )}
-          <div className="text-xs text-muted-foreground">
-            {item.categoria || "—"}
-            {item.porte ? ` · Porte ${item.porte}` : ""}
-          </div>
-        </td>
-        <td className="px-3 py-3 align-middle text-right">
-          {editavelQtd ? (
-            <Input
-              type="number"
-              min={0}
-              step="0.01"
-              value={qtdLocal}
-              data-qtd-chave={item.chave}
-              onChange={(e) => setQtdLocal(e.target.value)}
-              onBlur={() => {
-                const n = Number(qtdLocal);
-                if (!isNaN(n) && n !== Number(item.quantidade)) onAtualizarQuantidade!(n);
-              }}
-              className="h-9 w-24 text-right tabular-nums bg-background inline-block"
-            />
-          ) : (
-            <span className="tabular-nums">
-              {item.quantidade.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}
-            </span>
-          )}
-        </td>
-        <td className="px-3 py-3 align-middle text-muted-foreground">{item.unidade || "—"}</td>
-        <td className="px-3 py-3 align-middle text-right tabular-nums">{brl(item.valor_unitario)}</td>
-        <td className="px-3 py-3 align-middle">
-          <div className="flex items-center gap-2 flex-wrap">
+
+          <div
+            className="flex items-center gap-2 shrink-0"
+            onClick={(e) => e.stopPropagation()}
+          >
             {resolvido ? (
               <>
-                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-marinho/10 text-marinho text-xs font-semibold">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-marinho" /> Pronto
+                <span className="text-base font-medium tabular-nums text-foreground">
+                  {brl(item.valor_unitario)}
                 </span>
-                <span className="text-xs text-foreground truncate max-w-[140px]">{item.fornecedor_nome || ""}</span>
                 <Button
                   type="button"
                   size="sm"
@@ -548,12 +561,12 @@ function LinhaItem({
               </Button>
             )}
           </div>
-        </td>
-      </tr>
-      {aberto && (
-        <tr className="bg-secondary/30 border-b border-primary/20">
-          <td colSpan={6} className="px-4 py-3">
+        </div>
+
+        {aberto && (
+          <div className="mt-3">
             <div className="space-y-3">
+
               {fornecedoresDuplicados.length > 0 && onMesclarFornecedores && (
                 <div className="flex justify-end">
                   <Button
