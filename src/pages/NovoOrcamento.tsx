@@ -4085,6 +4085,30 @@ export default function NovoOrcamento() {
                         removeItem(idx);
                       }
                     }}
+                    plantasCatalogo={plantasFull as any[]}
+                    onLinkPlanta={(idx, planta) => {
+                      const realIdx = filtroBaixaConfianca
+                        ? itensMaterial.map((it, i) => ({ it, i })).filter((x) => x.it.confianca === "baixa")[idx]?.i
+                        : idx;
+                      if (realIdx == null) return;
+                      updateItem(realIdx, {
+                        planta_id: planta?.id ?? null,
+                        insumo_id: null,
+                        nome_popular: planta?.nome_popular ?? itensMaterial[realIdx].nome_popular,
+                        nome_cientifico: planta?.nome_cientifico ?? itensMaterial[realIdx].nome_cientifico,
+                        unidade: planta?.unidade
+                          ? String(planta.unidade).toUpperCase()
+                          : itensMaterial[realIdx].unidade,
+                        confianca: "alta",
+                      });
+                    }}
+                    onOpenCadastro={(idx) => {
+                      const realIdx = filtroBaixaConfianca
+                        ? itensMaterial.map((it, i) => ({ it, i })).filter((x) => x.it.confianca === "baixa")[idx]?.i
+                        : idx;
+                      if (realIdx == null) return;
+                      setCadastroChat({ entidade: "plantas", itemIdx: realIdx });
+                    }}
                   />
 
                   <Button variant="outline" onClick={addItem}>
