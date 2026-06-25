@@ -2374,10 +2374,20 @@ export default function NovoOrcamento() {
     return out;
   };
 
-  // Mapeia ItemMemorial (por idx) -> { item_id, item_tipo } usando histórico carregado
+  // Mapeia ItemMemorial (por idx) -> { item_id, item_tipo }. Prioriza o vínculo explícito
+  // (planta_id/insumo_id setado pelo operador ou pelo auto-match na extração) e cai para
+  // o casamento por nome via historico_precos quando não houver vínculo.
   const itemDbInfoByIdx = useMemo(() => {
     const map: Record<number, { item_id: string; item_tipo: "planta" | "insumo" }> = {};
     itensMaterial.forEach((it, idx) => {
+      if (it.planta_id) {
+        map[idx] = { item_id: it.planta_id, item_tipo: "planta" };
+        return;
+      }
+      if (it.insumo_id) {
+        map[idx] = { item_id: it.insumo_id, item_tipo: "insumo" };
+        return;
+      }
       const rows = fornecedoresDoItem(it);
       const r = rows[0];
       if (r?.item_id && r?.item_tipo) {
