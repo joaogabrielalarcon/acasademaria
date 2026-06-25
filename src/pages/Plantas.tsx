@@ -15,8 +15,10 @@ import { useAuth, useIsAdmin, useIsAdminOrAdministrativo } from "@/hooks/useAuth
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { MesclarItensDialog, ItemFusivel } from "@/components/catalogo/MesclarItensDialog";
+import { SugerirDuplicadosDialog } from "@/components/catalogo/SugerirDuplicadosDialog";
 import { formatPorteMetros } from "@/lib/porte";
 import { MobileCardList, MobileCardItem } from "@/components/ui/mobile-card-list";
+import { Sparkles } from "lucide-react";
 
 export function PlantasContent() {
   const [itemToDelete, setItemToDelete] = useState<Planta | null>(null);
