@@ -269,15 +269,22 @@ function ObservacaoCell({
         <button
           type="button"
           className={cn(
-            "inline-flex items-center justify-center h-6 w-6 rounded-full transition-colors",
+            "w-full h-7 rounded-md flex items-center justify-center gap-1 text-[10px] font-semibold uppercase tracking-wide transition-all",
             tem
-              ? "text-primary hover:bg-primary/10"
-              : "text-muted-foreground/40 hover:bg-muted hover:text-foreground opacity-60 group-hover:opacity-100",
+              ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+              : "border border-dashed border-muted-foreground/30 text-muted-foreground/60 hover:border-primary/50 hover:text-primary",
           )}
           title={tem ? `Observação: ${value}` : "Adicionar observação"}
-          aria-label={tem ? "Tem observação" : "Sem observação"}
+          aria-label={tem ? "Tem observação" : "Adicionar observação"}
         >
-          {tem ? <MessageSquareText className="w-3.5 h-3.5" /> : <MessageSquare className="w-3.5 h-3.5" />}
+          {tem ? (
+            <>
+              <MessageSquareText className="w-3.5 h-3.5" />
+              <span>Obs</span>
+            </>
+          ) : (
+            <Plus className="w-3.5 h-3.5" />
+          )}
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-[22rem] p-3" align="end">
