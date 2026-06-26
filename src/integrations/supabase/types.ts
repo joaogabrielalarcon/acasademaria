@@ -4105,6 +4105,63 @@ export type Database = {
           },
         ]
       }
+      orcamento_item_fornecedores: {
+        Row: {
+          created_at: string
+          estrelas: number | null
+          fornecedor_id: string
+          foto_url: string | null
+          id: string
+          observacao: string | null
+          orcamento_item_id: string
+          preco_unitario: number | null
+          rank: number
+          unidade: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          estrelas?: number | null
+          fornecedor_id: string
+          foto_url?: string | null
+          id?: string
+          observacao?: string | null
+          orcamento_item_id: string
+          preco_unitario?: number | null
+          rank?: number
+          unidade?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          estrelas?: number | null
+          fornecedor_id?: string
+          foto_url?: string | null
+          id?: string
+          observacao?: string | null
+          orcamento_item_id?: string
+          preco_unitario?: number | null
+          rank?: number
+          unidade?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_item_fornecedores_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_item_fornecedores_orcamento_item_id_fkey"
+            columns: ["orcamento_item_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_itens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orcamento_itens: {
         Row: {
           ajustado_em: string | null
