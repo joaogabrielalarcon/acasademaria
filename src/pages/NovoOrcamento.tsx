@@ -652,6 +652,7 @@ export default function NovoOrcamento() {
 
     // 3) Insumos extraordinários do memorial — dedup por nome
     itensInsumoExtra.forEach((e, idx) => {
+      if (insumosExcluidos.has(norm(e.nome))) return;
       if (nomesNaLista.has(norm(e.nome))) return;
       const match = (insumosFull || []).find((i) => norm(i.nome) === norm(e.nome));
       const adicMatch = insumosAdicionais.find(
