@@ -17,7 +17,9 @@ import {
   ChevronsUpDown,
   Pencil,
   GitMerge,
+  Trash2,
 } from "lucide-react";
+import { UNIDADES_COTACAO } from "@/lib/unidades";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
