@@ -1,43 +1,96 @@
-## Etapa 3 — finalização do redesenho
+## O que vai mudar
 
-A consolidação pedida toca ~1000 linhas para remover (cards antigos + bloco "Insumos de Plantio" + checkboxes), e adiciona comportamentos novos (ordenação/filtros/período dentro da expansão, selecionar como principal, insumos base/memorial passando pela mesma seleção de fornecedor, "+ Adicionar item" do catálogo) sem mexer no save que alimenta as etapas 4–6. Pra entregar com segurança e sem quebrar cálculo, divido em 3 slices, cada um verificável.
+### 1. Reestruturação das etapas (de 5 para 4)
 
-### Slice 1 — Tabela única vira a etapa 3 (sem duplicação) + seleção de planta
+```text
+Hoje:  1 Cadastro · 2 Fornecedores · 3 Markup · 4 MO/Fretes · 5 Resumo
+Novo:  1 Informações Iniciais · 2 Fornecedores · 3 Mão de Obra e Fretes · 4 Resumo Final
+```
 
-Foco: matar a UI duplicada e tornar a `TabelaItensProjeto` a única tela do "Comparativo".
+- A configuração de **Markup e Margens** (categorias + perfis) sai da etapa própria e entra dentro de **Informações Iniciais** como um bloco acordeão abaixo de Cliente/Prazo. Mesmos componentes, só muda o lugar de render.
+- Renumerar `etapaAtual`, navegação, breadcrumbs e validações.
 
-- Remove o bloco "preview 3B" no topo (cabeçalho + chip).
-- Remove o `renderCard` antigo e tudo ligado a ele (linhas ~4053–4884): cards por item, filtros por item (`filtrosTab3`), seletor de fornecedor por item, sub-popovers de cotação por linha.
-- Remove o bloco "Insumos de Plantio" (linhas ~5404–~5650): tabela de calculados, lista de adicionais e command picker antigo.
-- Mantém: barra sticky com contadores (sem fornecedor / risco / OK), `Tabs` (Comparativo / Atualizar), painel `AtualizarCotacoesPanel`, FAB Mafe, diálogos auxiliares (`EditarMercadoDialog`, `IndisponibilidadeDialog`, `NovoFornecedorDialog`, `ResumoFornecedoresDialog`), botão WhatsApp.
-- `TabelaItensProjeto` recebe:
-  - `onSelecionarFornecedor(item, fid)` para plantas → equivalente a marcar `fornecedoresSelecionados[idx] = [fid]` + `cotacoes[idx][fid].status_selecao = "principal"` (limpa principal dos outros) + colapsa a linha.
-  - Dentro da expansão: ordenação (Mais recentes ▾ Menor preço, Melhor nota, Mercado, Porte) e filtros (Mercado multi, Porte, Período: 3m/6m/1a/tudo) — default Mais recentes + 3m.
-- Cabeçalho da tabela ganha botão "+ Adicionar item" (placeholder que abre o Command picker — Slice 2 entrega a busca + cadastrar novo).
-- Save inalterado: continua usando `fornecedoresSelecionados`/`cotacoes`/`insumosAdicionais` exatamente como hoje.
+### 2. Card do item (TabelaItensProjeto)
 
-Verificação: typecheck, fluxo manual no preview — abrir orçamento, ver tabela única, expandir uma linha de planta, ordenar/filtrar, selecionar fornecedor, conferir contadores e avançar pra Etapa 4 sem perder cálculo.
+Hoje o card só ganha uma barrinha lateral marinho. Vai ficar:
 
-### Slice 2 — "+ Adicionar item" + linhas manuais
+- **Resolvido (tem fornecedor principal)**: fundo `bg-marinho/5`, borda `border-marinho/40`, barra lateral marinho de 4px. Quando há reservas, mostra um pequeno "+2 reservas".
+- **Pendente**: mantém o visual atual (terracota).
+- **Linha de totais** dentro do card quando resolvido:
+  `Qtd × Custo unit. = Total compra · Markup X% → Total venda`
+  Puxa o markup da categoria do item (mesma lógica que já alimenta Etapa Resumo).
 
-- Command picker no header da tabela com aba Plantas / Insumos do catálogo, busca e fallback "Cadastrar novo" via `openQuickAdd` (reaproveita `mafe-cadastro`).
-- Linha manual de planta entra em `itensMaterial`; linha manual de insumo entra em `insumosAdicionais` — save já cobre os dois.
-- Para insumo escolhido no picker: pré-preenche unidade e valor unitário do catálogo, abre a expansão automaticamente pra escolher fornecedor.
+### 3. Múltipla seleção de fornecedores por item
 
-### Slice 3 — Insumos (base + memorial + manuais) com seleção de fornecedor real
+- Novo conceito de **rank**: 1 = principal, 2,3,4… = reservas.
+- Cada linha de fornecedor expandida ganha:
+  - Botão **"Definir como principal"** (se não for) → vira rank 1, o antigo principal cai pra reserva.
+  - Botão **"Adicionar como reserva"** (se não estiver na lista).
+  - Botão **"Remover"** (se já estiver na lista).
+- Selecionados aparecem no topo da lista com badge **Principal / Reserva 2 / Reserva 3…**.
+- O preço/total do card sempre usa o **principal**. Reservas ficam visíveis para fallback rápido durante compras.
 
-- Estende `historicoPorItem` pra incluir insumos (já temos `nomesItens` mas hoje só plantas usam): query por nome de insumo (`is_base` e memorial) → mesma estrutura de alternativas.
-- `TabelaItensProjeto.getAlternativas` passa a resolver para linhas de insumo também.
-- Selecionar fornecedor em linha de insumo cria/atualiza uma entrada em `insumosAdicionais` (insumo_id, quantidade, valor, fornecedor_id) — assim o save existente persiste sem mudança.
-- Quantidade editável para insumos não-calculados; Terra/Munck/Corda permanecem calculadas via coeficientes mas exibidas como editáveis com badge "calculado".
-- Mobile: expansão vira card full-width usando o mesmo componente (sem nova lógica).
+### 4. Informações novas dentro do card expandido
 
-### Riscos e mitigações
+Para cada linha de fornecedor:
 
-- Save das etapas 4–6 lê de `orcamento_itens`, `orcamento_insumos`, `orcamento_cotacoes`. Como mantemos os mesmos estados de origem (`itensMaterial`, `insumosAdicionais`, `cotacoes`, `fornecedoresSelecionados`), o pipeline atual continua intacto. Slice 3 só amplia `insumosAdicionais`.
-- Backups: hoje há "Backup 1/2/3" no card antigo. Slice 1 já reduz pra "Selecionado + alternativas" como combinado.
-- `pendenciasEtapa3` (bloqueia avanço se não tem principal) continua válido — passa a refletir as seleções feitas pela nova tabela.
+- **Miniatura de foto** do item-naquele-fornecedor (40×40) à esquerda. Clique abre lightbox. Quando não há foto, mostra placeholder discreto.
+- **Observação do arquiteto** (vinda do memorial, `item.observacao`) aparece **uma vez no topo do card expandido**, num bloco terracota claro com ícone de balão (só se houver).
+- **Observação do fornecedor** (texto livre por cotação) aparece como linha auxiliar abaixo do nome do fornecedor, em cinza pequeno.
+- **Nota do item nesse fornecedor** (estrelas 0–5, já existe `estrelas` na alternativa) renderiza como ⭐ no lugar de só número.
+- **Selos** ao lado do nome:
+  - 🏷️ **Melhor preço** (já existe, mantém)
+  - ⭐ **Melhor nota** (novo) — fornecedor com `estrelas` máxima entre os com cotação válida.
+  - Quando o mesmo é melhor preço e melhor nota, mostra os dois selos.
 
-### Pergunta antes de começar
+### 5. Dados que precisam existir (backend)
 
-Posso começar pelo Slice 1 já (remoção do antigo + tabela única + seleção de planta com ordenar/filtrar/período), reportar e seguir pro 2 e 3? Ou prefere que eu tente os três numa só leva (risco maior de regressão no cálculo)?
+Tabela nova `orcamento_item_fornecedores` para guardar a lista de selecionados com rank:
+
+```text
+orcamento_item_fornecedores
+  id uuid pk
+  orcamento_item_id uuid fk -> orcamento_itens
+  fornecedor_id uuid fk -> fornecedores
+  rank smallint        -- 1 principal, 2+ reservas
+  preco_unitario numeric
+  unidade text
+  observacao text       -- obs do fornecedor sobre o item
+  foto_url text         -- preenchido depois quando houver upload
+  created_at, updated_at
+  unique (orcamento_item_id, fornecedor_id)
+  unique (orcamento_item_id, rank) deferrable
+```
+
+RLS por orçamento + GRANTs padrão. Mantém `orcamento_itens.fornecedor_id` como espelho do rank 1 (compatibilidade com o resto do código).
+
+A coluna `foto_url` fica preparada mas o **upload de foto não entra agora** — só o slot de exibição + placeholder. O upload vem num passo seguinte com o bucket.
+
+### 6. O que NÃO entra agora (fica para próximo passo)
+
+- Upload real de foto do item-no-fornecedor (precisa decidir bucket + UI de upload). Hoje só o placeholder e a abertura do lightbox quando já existir URL.
+- Migrar dados antigos: orçamentos existentes continuam com 1 fornecedor; a tabela nova só passa a popular daqui pra frente.
+
+## Detalhes técnicos
+
+- `src/pages/NovoOrcamento.tsx`: reduzir steps, mover bloco de Markup pra dentro da etapa 1, ajustar todos os `etapaAtual === N`, navegação e progresso.
+- `src/components/orcamento/TabelaItensProjeto.tsx`:
+  - novo visual resolvido (azul cheio)
+  - bloco de totais (compra/venda) dentro do card
+  - selos de melhor nota
+  - render de observação do arquiteto no topo do expandido
+  - render de foto miniatura + obs do fornecedor + estrelas em cada linha
+  - botões Principal / Reserva / Remover por fornecedor
+- Novo hook `useOrcamentoItemFornecedores(orcamento_item_id)` para CRUD da tabela nova + retorno consolidado para o card.
+- Migration cria a tabela + índices + RLS + GRANTs.
+- Função utilitária para calcular preço de venda: `custo × (1 + markup_categoria)` reaproveitando a lógica de Etapa Resumo já existente.
+
+## Aceite
+
+- Selecionar fornecedor pinta o card de azul e mostra Total compra/Total venda.
+- Dá pra marcar 1 principal e várias reservas; reservas ficam visíveis com rank.
+- Trocar o principal rebaixa o anterior para reserva sem perder.
+- Observação do arquiteto aparece em destaque dentro do card expandido.
+- Selo de melhor nota aparece junto do de melhor preço.
+- Slot de foto aparece (placeholder por enquanto), pronto para o upload do próximo passo.
+- Tabs ficam: Informações Iniciais (com Markup) · Fornecedores · MO/Fretes · Resumo Final.
