@@ -2025,53 +2025,93 @@ export default function NovoOrcamento() {
   // Persiste em orcamento_cotacoes assim que o usuário escolhe/altera, sem depender
   // do "Salvar" global. Só roda em modo edição (precisa de item_id existente).
   const cotacoesAutosaveRef = useRef<number | null>(null);
+  const cotacoesLatestRef = useRef<{
+    cotacoes: Record<number, Record<string, CotacaoLinha>>;
+    itemIdByIdx: Record<number, string>;
+  }>({ cotacoes: {}, itemIdByIdx: {} });
+  const cotacoesLastSerializedRef = useRef<string>("");
+
+  const flushCotacoesSave = useCallback(async () => {
+    const { cotacoes: snapCot, itemIdByIdx: snapMap } = cotacoesLatestRef.current;
+    if (Object.keys(snapMap).length === 0) return;
+    try {
+      for (const [idxStr, itemId] of Object.entries(snapMap)) {
+        const idx = Number(idxStr);
+        const itemCot = snapCot[idx];
+        if (!itemCot) continue;
+        await (supabase as any).from("orcamento_cotacoes").delete().eq("item_id", itemId);
+        const rows = Object.entries(itemCot)
+          .filter(([fid]) => !!fid)
+          .map(([fid, l]) => ({
+            item_id: itemId,
+            fornecedor_id: fid,
+            valor_unitario_cotado: Number(l.valor_unitario) || 0,
+            porte_ofertado: l.porte_ofertado || null,
+            disponivel: l.disponivel,
+            status_selecao: l.status_selecao,
+            obs: l.obs || null,
+          }));
+        if (rows.length > 0) {
+          await (supabase as any).from("orcamento_cotacoes").insert(rows);
+        }
+        const principal = Object.entries(itemCot).find(
+          ([, l]) => l.status_selecao === "principal",
+        );
+        await (supabase as any)
+          .from("orcamento_itens")
+          .update({
+            fornecedor_escolhido_id: principal ? principal[0] : null,
+            custo_unitario: principal ? Number(principal[1].valor_unitario) || 0 : 0,
+          })
+          .eq("id", itemId);
+      }
+    } catch (err) {
+      console.warn("[autosave-cotacoes] falhou:", err);
+    }
+  }, []);
+
   useEffect(() => {
+    cotacoesLatestRef.current = { cotacoes, itemIdByIdx };
     if (!isEdit || !id || !hidratadoRef.current) return;
     if (Object.keys(itemIdByIdx).length === 0) return;
+    // Evita re-salvar logo após hidratar quando nada mudou de fato.
+    const serialized = JSON.stringify({ cotacoes, sel: fornecedoresSelecionados });
+    if (serialized === cotacoesLastSerializedRef.current) return;
+    cotacoesLastSerializedRef.current = serialized;
     if (cotacoesAutosaveRef.current) window.clearTimeout(cotacoesAutosaveRef.current);
-    cotacoesAutosaveRef.current = window.setTimeout(async () => {
-      try {
-        for (const [idxStr, itemId] of Object.entries(itemIdByIdx)) {
-          const idx = Number(idxStr);
-          const itemCot = cotacoes[idx];
-          if (!itemCot) continue;
-          // Substitui o conjunto de cotações desse item.
-          await (supabase as any).from("orcamento_cotacoes").delete().eq("item_id", itemId);
-          const rows = Object.entries(itemCot)
-            .filter(([fid]) => !!fid)
-            .map(([fid, l]) => ({
-              item_id: itemId,
-              fornecedor_id: fid,
-              valor_unitario_cotado: Number(l.valor_unitario) || 0,
-              porte_ofertado: l.porte_ofertado || null,
-              disponivel: l.disponivel,
-              status_selecao: l.status_selecao,
-              obs: l.obs || null,
-            }));
-          if (rows.length > 0) {
-            await (supabase as any).from("orcamento_cotacoes").insert(rows);
-          }
-          // Atualiza fornecedor_escolhido_id e custo na linha do item.
-          const principal = Object.entries(itemCot).find(
-            ([, l]) => l.status_selecao === "principal",
-          );
-          await (supabase as any)
-            .from("orcamento_itens")
-            .update({
-              fornecedor_escolhido_id: principal ? principal[0] : null,
-              custo_unitario: principal ? Number(principal[1].valor_unitario) || 0 : 0,
-            })
-            .eq("id", itemId);
-        }
-      } catch (err) {
-        console.warn("[autosave-cotacoes] falhou:", err);
-      }
-    }, 1200);
-    return () => {
-      if (cotacoesAutosaveRef.current) window.clearTimeout(cotacoesAutosaveRef.current);
-    };
+    cotacoesAutosaveRef.current = window.setTimeout(() => {
+      cotacoesAutosaveRef.current = null;
+      flushCotacoesSave();
+    }, 500);
+    // Sem cleanup aqui: não queremos cancelar o save pendente quando o estado
+    // muda de novo (o clearTimeout acima já coalesce). O flush de unmount é
+    // feito no efeito dedicado abaixo.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(cotacoes), JSON.stringify(fornecedoresSelecionados), JSON.stringify(itemIdByIdx), isEdit, id]);
+
+  // Flush no unmount (sair da página) e ao esconder a aba.
+  useEffect(() => {
+    const onHide = () => {
+      if (cotacoesAutosaveRef.current) {
+        window.clearTimeout(cotacoesAutosaveRef.current);
+        cotacoesAutosaveRef.current = null;
+        flushCotacoesSave();
+      }
+    };
+    window.addEventListener("pagehide", onHide);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") onHide();
+    });
+    return () => {
+      window.removeEventListener("pagehide", onHide);
+      // unmount: força o save pendente
+      if (cotacoesAutosaveRef.current) {
+        window.clearTimeout(cotacoesAutosaveRef.current);
+        cotacoesAutosaveRef.current = null;
+        flushCotacoesSave();
+      }
+    };
+  }, [flushCotacoesSave]);
 
 
 
