@@ -621,6 +621,7 @@ export default function NovoOrcamento() {
     const nomesNaLista = new Set<string>();
 
     baseSorted.forEach((ins) => {
+      if (insumosExcluidos.has(norm(ins.nome))) return;
       const jaNoMemorial = itensInsumoExtra.some((e) => norm(e.nome) === norm(ins.nome));
       if (jaNoMemorial) return;
       if (nomesNaLista.has(norm(ins.nome))) return;
