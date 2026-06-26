@@ -41,6 +41,7 @@ export interface ItemMemorialLike {
   confianca: "alta" | "media" | "baixa";
   planta_id?: string | null;
   insumo_id?: string | null;
+  observacao?: string | null;
   sugestoes?: SugestaoCatalogoLite[];
 }
 
@@ -64,9 +65,10 @@ interface Props {
   virtualizeThreshold?: number;
 }
 
-// Linha enxuta: barra confiança · # · nome popular · nome científico · categoria · porte · qtd · unidade · catálogo (ícone) · excluir
+// Linha enxuta: barra confiança · # · nome popular · nome científico · categoria · porte · qtd · unidade · obs (ícone) · catálogo (ícone) · excluir
 const COLS =
-  "grid-cols-[0.25rem_2rem_minmax(11rem,1.6fr)_minmax(10rem,1.4fr)_minmax(7.5rem,0.8fr)_4.5rem_4.5rem_minmax(6rem,0.6fr)_1.75rem_1.75rem]";
+  "grid-cols-[0.25rem_2rem_minmax(11rem,1.6fr)_minmax(10rem,1.4fr)_minmax(7.5rem,0.8fr)_4.5rem_4.5rem_minmax(6rem,0.6fr)_1.75rem_1.75rem_1.75rem]";
+
 
 
 function normalizar(s: string) {
