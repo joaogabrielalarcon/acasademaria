@@ -333,6 +333,10 @@ export function TabelaItensProjeto({
               onAtualizarQuantidade={
                 onAtualizarQuantidade ? (q) => onAtualizarQuantidade(it, q) : undefined
               }
+              onAtualizarUnidade={
+                onAtualizarUnidade ? (u) => onAtualizarUnidade(it, u) : undefined
+              }
+              onRemoverItem={onRemoverItem ? () => onRemoverItem(it) : undefined}
               onEditarCotacao={onEditarCotacao ? (alt) => onEditarCotacao(it, alt) : undefined}
               onMesclarFornecedores={
                 onMesclarFornecedores ? (alts) => onMesclarFornecedores(it, alts) : undefined
