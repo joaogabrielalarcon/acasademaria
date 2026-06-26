@@ -4203,6 +4203,7 @@ export default function NovoOrcamento() {
               )}
 
             </Card>
+            </div>
           )}
 
           {/* Etapa 3 — Seleção de Fornecedores (refatorada) */}
