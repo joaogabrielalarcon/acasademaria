@@ -358,6 +358,8 @@ function LinhaItem({
   getAlternativas,
   onSelecionarFornecedor,
   onAtualizarQuantidade,
+  onAtualizarUnidade,
+  onRemoverItem,
   onEditarCotacao,
   onMesclarFornecedores,
 }: {
@@ -369,6 +371,8 @@ function LinhaItem({
   getAlternativas?: (item: ItemProjeto) => AlternativaFornecedor[];
   onSelecionarFornecedor?: (alt: AlternativaFornecedor) => void;
   onAtualizarQuantidade?: (q: number) => void;
+  onAtualizarUnidade?: (u: string) => void;
+  onRemoverItem?: () => void;
   onEditarCotacao?: (alt: AlternativaFornecedor) => void;
   onMesclarFornecedores?: (alts: AlternativaFornecedor[]) => void;
 }) {
