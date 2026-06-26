@@ -593,6 +593,20 @@ function LinhaItem({
                 Escolher fornecedor
               </Button>
             )}
+            {onRemoverItem && (
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                title="Remover item do orçamento"
+                onClick={() => {
+                  if (window.confirm(`Remover "${item.nome}" deste orçamento?`)) onRemoverItem();
+                }}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            )}
           </div>
         </div>
 
