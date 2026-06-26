@@ -3146,13 +3146,13 @@ export default function NovoOrcamento() {
       });
       return;
     }
-    // Validação ao sair da Etapa 3 (Fornecedores) para Etapa 4 (Markup)
+    // Validação ao sair da Etapa 2 (Fornecedores) para Etapa 3 (MO/Fretes)
     if (etapaAtual === 2 && pendenciasEtapa3.bloqueia) {
       setValidacaoEtapa4Open(true);
       return;
     }
-    // Validação ao sair da Etapa 4 (Markup) para Etapa 5 (MO/Fretes/Transporte)
-    if (etapaAtual === 2 && validacaoEtapa4 && !validacaoEtapa4.ok) {
+    // Validação de Markup ao sair da Etapa 1 (que agora inclui Markup) para Etapa 2
+    if (etapaAtual === 1 && validacaoEtapa4 && !validacaoEtapa4.ok) {
       toast({
         title: "Não é possível avançar",
         description: validacaoEtapa4.motivo,
