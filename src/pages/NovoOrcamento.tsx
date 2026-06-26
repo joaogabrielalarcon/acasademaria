@@ -148,8 +148,10 @@ interface ItemMemorial {
   unidade: string;
   categoria: string;
   confianca: "alta" | "media" | "baixa";
+  observacao?: string | null;
   sugestoes?: SugestaoCatalogo[];
 }
+
 
 // Insumos extraordinários extraídos do memorial (formato novo retornado pela edge function).
 interface InsumoMemorial {
