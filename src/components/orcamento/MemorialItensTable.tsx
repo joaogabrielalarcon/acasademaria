@@ -266,18 +266,20 @@ function Row({
   zebra: boolean;
 }) {
   const baixa = it.confianca === "baixa";
+  const flatInput =
+    "h-7 border-0 bg-transparent shadow-none px-1.5 rounded-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-background hover:bg-muted/40";
   return (
     <div
       data-memorial-row
       className={cn(
-        "grid items-center gap-2 pl-0 pr-2 py-1.5 border-t text-sm transition-colors group",
+        "grid items-center gap-1 pl-0 pr-1 py-1 border-t text-sm transition-colors group",
         COLS,
         zebra ? "bg-muted/20" : "bg-background",
         baixa && "bg-yellow-50/60",
-        "hover:bg-accent/30",
+        "hover:bg-accent/20",
       )}
     >
-      {/* Barra de confiança (visual à esquerda) */}
+      {/* Barra de confiança */}
       <div className="self-stretch py-0.5 pl-0.5">
         <ConfiancaBarra c={it.confianca} />
       </div>
@@ -285,33 +287,31 @@ function Row({
       {/* # */}
       <div className="text-xs text-muted-foreground tabular-nums text-right pr-1">{idx + 1}</div>
 
-      {/* Item: nome popular + científico */}
-      <div className="min-w-0 space-y-1">
+      {/* Nome popular */}
+      <div className="min-w-0">
         <Input
           data-field="nome_popular"
           value={it.nome_popular}
           onChange={(e) => onUpdate(realIdx, { nome_popular: e.target.value })}
           placeholder="Nome popular"
-          className={cn(
-            "h-8 font-medium",
-            baixa && "border-yellow-500 focus-visible:ring-yellow-500",
-          )}
+          className={cn(flatInput, "font-medium", baixa && "ring-1 ring-yellow-500")}
         />
-        <div className="flex items-center gap-1.5">
-          <ConfiancaIcone c={it.confianca} />
-          <Input
-            value={it.nome_cientifico ?? ""}
-            onChange={(e) => onUpdate(realIdx, { nome_cientifico: e.target.value || null })}
-            placeholder="Nome científico (opcional)"
-            className="h-6 italic text-xs border-0 bg-transparent shadow-none px-1 placeholder:text-muted-foreground/60 focus-visible:ring-1"
-          />
-        </div>
+      </div>
+
+      {/* Nome científico */}
+      <div className="min-w-0">
+        <Input
+          value={it.nome_cientifico ?? ""}
+          onChange={(e) => onUpdate(realIdx, { nome_cientifico: e.target.value || null })}
+          placeholder="—"
+          className={cn(flatInput, "italic text-xs text-muted-foreground")}
+        />
       </div>
 
       {/* Categoria */}
       <div className="min-w-0">
         <Select value={it.categoria} onValueChange={(v) => onUpdate(realIdx, { categoria: v })}>
-          <SelectTrigger className="h-8 text-xs">
+          <SelectTrigger className="h-7 text-xs border-0 bg-transparent shadow-none px-1.5 hover:bg-muted/40 focus:ring-1 focus:ring-ring focus:bg-background [&>span]:truncate">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -330,10 +330,7 @@ function Row({
           value={it.porte}
           onChange={(e) => onUpdate(realIdx, { porte: e.target.value })}
           placeholder="—"
-          className={cn(
-            "h-8 text-xs text-center px-1",
-            baixa && "border-yellow-500 focus-visible:ring-yellow-500",
-          )}
+          className={cn(flatInput, "text-xs text-center px-1")}
         />
       </div>
 
@@ -345,10 +342,7 @@ function Row({
           inputMode="decimal"
           value={it.quantidade}
           onChange={(e) => onUpdate(realIdx, { quantidade: parseFloat(e.target.value) || 0 })}
-          className={cn(
-            "h-8 tabular-nums text-right px-1.5",
-            baixa && "border-yellow-500 focus-visible:ring-yellow-500",
-          )}
+          className={cn(flatInput, "tabular-nums text-right px-1.5")}
         />
       </div>
 
@@ -362,8 +356,8 @@ function Row({
         />
       </div>
 
-      {/* Catálogo */}
-      <div className="min-w-0">
+      {/* Catálogo (ícone) */}
+      <div className="flex items-center justify-center">
         <CatalogoCell
           it={it}
           realIdx={realIdx}
@@ -374,20 +368,20 @@ function Row({
       </div>
 
       {/* Excluir */}
-      <div className="text-center">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-muted-foreground hover:text-destructive opacity-50 group-hover:opacity-100 transition-opacity"
+      <div className="flex items-center justify-center">
+        <button
+          type="button"
           onClick={() => onRemove(realIdx)}
           title="Remover item"
+          className="inline-flex items-center justify-center h-6 w-6 rounded-full text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity"
         >
           <Trash2 className="w-3.5 h-3.5" />
-        </Button>
+        </button>
       </div>
     </div>
   );
 }
+
 
 export function MemorialItensTable({
   itens,
