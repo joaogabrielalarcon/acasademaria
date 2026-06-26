@@ -67,9 +67,9 @@ interface Props {
   virtualizeThreshold?: number;
 }
 
-// Linha enxuta: barra confiança · # · nome popular · nome científico · categoria · porte · qtd · unidade · obs (ícone) · catálogo (ícone) · excluir
+// Linha enxuta: barra confiança · # · nome popular · nome científico · categoria · porte · qtd · unidade · obs · catálogo (ícone) · excluir
 const COLS =
-  "grid-cols-[0.25rem_2rem_minmax(11rem,1.6fr)_minmax(10rem,1.4fr)_minmax(7.5rem,0.8fr)_4.5rem_4.5rem_minmax(6rem,0.6fr)_1.75rem_1.75rem_1.75rem]";
+  "grid-cols-[0.25rem_2rem_minmax(10rem,1.5fr)_minmax(9.5rem,1.3fr)_minmax(7.5rem,0.8fr)_4.5rem_4.5rem_minmax(6rem,0.6fr)_5rem_1.75rem_1.75rem]";
 
 
 
