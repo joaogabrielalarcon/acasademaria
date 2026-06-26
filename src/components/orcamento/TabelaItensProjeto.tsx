@@ -77,8 +77,6 @@ interface Props {
   onMesclarFornecedores?: (item: ItemProjeto, alts: AlternativaFornecedor[]) => void;
   onAdicionarItem?: () => void;
 }
-  onAdicionarItem?: () => void;
-}
 
 const brl = (n: number | null | undefined) =>
   n == null ? "—" : n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
