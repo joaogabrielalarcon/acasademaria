@@ -64,11 +64,10 @@ interface Props {
   virtualizeThreshold?: number;
 }
 
-// Layout enxuto, sem rolagem horizontal em viewports >= ~960px.
-// Coluna 1 = barra de confiança (4px) · 2 = # · 3 = item (nome popular + científico) · 4 = categoria
-// 5 = porte · 6 = qtd · 7 = unidade · 8 = catálogo · 9 = ações
+// Linha enxuta: barra confiança · # · nome popular · nome científico · categoria · porte · qtd · unidade · catálogo (ícone) · excluir
 const COLS =
-  "grid-cols-[0.25rem_2.25rem_minmax(13rem,2.2fr)_minmax(8.5rem,0.9fr)_4.5rem_4.5rem_minmax(6.5rem,0.7fr)_minmax(10.5rem,1fr)_2.25rem]";
+  "grid-cols-[0.25rem_2rem_minmax(11rem,1.6fr)_minmax(10rem,1.4fr)_minmax(7.5rem,0.8fr)_4.5rem_4.5rem_minmax(6rem,0.6fr)_1.75rem_1.75rem]";
+
 
 function normalizar(s: string) {
   return (s || "")
@@ -143,101 +142,102 @@ function CatalogoCell({
   };
 
   return (
-    <div className="flex flex-col gap-1 min-w-0">
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            className={cn(
-              "inline-flex items-center gap-1.5 h-7 px-2 rounded-md text-xs font-medium border transition-colors w-full min-w-0",
-              ligadaAoCatalogo
-                ? "border-primary/30 bg-primary/10 text-primary hover:bg-primary/15"
-                : "border-dashed border-muted-foreground/40 text-muted-foreground hover:bg-muted",
-            )}
-            title={ligadaAoCatalogo ? "Vinculado ao catálogo · clique para trocar" : "Vincular ao catálogo"}
-          >
-            <Link2 className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate">{ligadaAoCatalogo ? "No catálogo" : "A vincular"}</span>
-          </button>
-        </PopoverTrigger>
-        <PopoverContent className="p-0 w-[22rem]" align="start">
-          <Command shouldFilter={false}>
-            <CommandInput placeholder="Buscar no catálogo..." value={query} onValueChange={setQuery} />
-            <CommandList>
-              <CommandEmpty>Nada encontrado.</CommandEmpty>
-              {ligadaAoCatalogo && (
-                <CommandGroup heading="Vínculo atual">
-                  <CommandItem
-                    onSelect={() => { onLinkPlanta?.(realIdx, null); setOpen(false); }}
-                    className="text-destructive"
-                  >
-                    <X className="w-4 h-4" />
-                    Desvincular do catálogo
-                  </CommandItem>
-                </CommandGroup>
-              )}
-              {it.sugestoes && it.sugestoes.length > 0 && !ligadaAoCatalogo && (
-                <CommandGroup heading="Sugestões da Mafe">
-                  {it.sugestoes.map((s) => {
-                    const p = plantasCatalogo?.find((x) => x.id === s.item_id);
-                    return (
-                      <CommandItem
-                        key={s.item_id}
-                        onSelect={() => { if (p) { onLinkPlanta?.(realIdx, p); setOpen(false); } }}
-                      >
-                        <Sparkles className="w-4 h-4 text-primary" />
-                        <div className="flex flex-col">
-                          <span>{s.nome}</span>
-                          {s.nome_secundario && (
-                            <span className="text-xs italic text-muted-foreground">{s.nome_secundario}</span>
-                          )}
-                        </div>
-                        <span className="ml-auto text-[10px] text-muted-foreground">{Math.round(s.score * 100)}%</span>
-                      </CommandItem>
-                    );
-                  })}
-                </CommandGroup>
-              )}
-              <CommandGroup heading="Plantas">
-                {sugestoesLista.map((p) => (
-                  <CommandItem
-                    key={p.id}
-                    value={`${p.nome_popular} ${p.nome_cientifico || ""}`}
-                    onSelect={() => { onLinkPlanta?.(realIdx, p); setOpen(false); }}
-                  >
-                    <div className="flex flex-col">
-                      <span>{p.nome_popular}</span>
-                      {p.nome_cientifico && (
-                        <span className="text-xs italic text-muted-foreground">{p.nome_cientifico}</span>
-                      )}
-                    </div>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-              {onOpenCadastro && (
-                <CommandGroup heading="Não está aqui?">
-                  <CommandItem onSelect={() => { onOpenCadastro(realIdx); setOpen(false); }}>
-                    <Plus className="w-4 h-4" />
-                    Cadastrar "{it.nome_popular || "novo item"}" no catálogo
-                  </CommandItem>
-                </CommandGroup>
-              )}
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
-      {sugestaoTop && (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
         <button
           type="button"
-          onClick={aplicarSugestao}
-          className="text-[11px] text-left text-primary hover:underline truncate"
-          title={`Vincular a "${sugestaoTop.nome}" (${Math.round(sugestaoTop.score * 100)}% · ${sugestaoTop.fonte})`}
+          className={cn(
+            "inline-flex items-center justify-center h-6 w-6 rounded-full transition-colors",
+            ligadaAoCatalogo
+              ? "text-primary hover:bg-primary/10"
+              : sugestaoTop
+                ? "text-yellow-600 hover:bg-yellow-500/10"
+                : "text-muted-foreground/50 hover:bg-muted hover:text-foreground",
+          )}
+          title={
+            ligadaAoCatalogo
+              ? "No catálogo · clique para trocar"
+              : sugestaoTop
+                ? `Parece: ${sugestaoTop.nome} · clique para vincular`
+                : "Não vinculado ao catálogo"
+          }
+          aria-label={ligadaAoCatalogo ? "No catálogo" : "A vincular ao catálogo"}
         >
-          Parece: <strong>{sugestaoTop.nome}</strong> · vincular
+          {ligadaAoCatalogo ? (
+            <Check className="w-3.5 h-3.5" />
+          ) : (
+            <Link2 className="w-3.5 h-3.5" />
+          )}
         </button>
-      )}
-    </div>
+      </PopoverTrigger>
+      <PopoverContent className="p-0 w-[22rem]" align="end">
+        <Command shouldFilter={false}>
+          <CommandInput placeholder="Buscar no catálogo..." value={query} onValueChange={setQuery} />
+          <CommandList>
+            <CommandEmpty>Nada encontrado.</CommandEmpty>
+            {ligadaAoCatalogo && (
+              <CommandGroup heading="Vínculo atual">
+                <CommandItem
+                  onSelect={() => { onLinkPlanta?.(realIdx, null); setOpen(false); }}
+                  className="text-destructive"
+                >
+                  <X className="w-4 h-4" />
+                  Desvincular do catálogo
+                </CommandItem>
+              </CommandGroup>
+            )}
+            {it.sugestoes && it.sugestoes.length > 0 && !ligadaAoCatalogo && (
+              <CommandGroup heading="Sugestões da Mafe">
+                {it.sugestoes.map((s) => {
+                  const p = plantasCatalogo?.find((x) => x.id === s.item_id);
+                  return (
+                    <CommandItem
+                      key={s.item_id}
+                      onSelect={() => { if (p) { onLinkPlanta?.(realIdx, p); setOpen(false); } }}
+                    >
+                      <Sparkles className="w-4 h-4 text-primary" />
+                      <div className="flex flex-col">
+                        <span>{s.nome}</span>
+                        {s.nome_secundario && (
+                          <span className="text-xs italic text-muted-foreground">{s.nome_secundario}</span>
+                        )}
+                      </div>
+                      <span className="ml-auto text-[10px] text-muted-foreground">{Math.round(s.score * 100)}%</span>
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            )}
+            <CommandGroup heading="Plantas">
+              {sugestoesLista.map((p) => (
+                <CommandItem
+                  key={p.id}
+                  value={`${p.nome_popular} ${p.nome_cientifico || ""}`}
+                  onSelect={() => { onLinkPlanta?.(realIdx, p); setOpen(false); }}
+                >
+                  <div className="flex flex-col">
+                    <span>{p.nome_popular}</span>
+                    {p.nome_cientifico && (
+                      <span className="text-xs italic text-muted-foreground">{p.nome_cientifico}</span>
+                    )}
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            {onOpenCadastro && (
+              <CommandGroup heading="Não está aqui?">
+                <CommandItem onSelect={() => { onOpenCadastro(realIdx); setOpen(false); }}>
+                  <Plus className="w-4 h-4" />
+                  Cadastrar "{it.nome_popular || "novo item"}" no catálogo
+                </CommandItem>
+              </CommandGroup>
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
+
 }
 
 function Row({
@@ -266,18 +266,20 @@ function Row({
   zebra: boolean;
 }) {
   const baixa = it.confianca === "baixa";
+  const flatInput =
+    "h-7 border-0 bg-transparent shadow-none px-1.5 rounded-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-background hover:bg-muted/40";
   return (
     <div
       data-memorial-row
       className={cn(
-        "grid items-center gap-2 pl-0 pr-2 py-1.5 border-t text-sm transition-colors group",
+        "grid items-center gap-1 pl-0 pr-1 py-1 border-t text-sm transition-colors group",
         COLS,
         zebra ? "bg-muted/20" : "bg-background",
         baixa && "bg-yellow-50/60",
-        "hover:bg-accent/30",
+        "hover:bg-accent/20",
       )}
     >
-      {/* Barra de confiança (visual à esquerda) */}
+      {/* Barra de confiança */}
       <div className="self-stretch py-0.5 pl-0.5">
         <ConfiancaBarra c={it.confianca} />
       </div>
@@ -285,33 +287,31 @@ function Row({
       {/* # */}
       <div className="text-xs text-muted-foreground tabular-nums text-right pr-1">{idx + 1}</div>
 
-      {/* Item: nome popular + científico */}
-      <div className="min-w-0 space-y-1">
+      {/* Nome popular */}
+      <div className="min-w-0">
         <Input
           data-field="nome_popular"
           value={it.nome_popular}
           onChange={(e) => onUpdate(realIdx, { nome_popular: e.target.value })}
           placeholder="Nome popular"
-          className={cn(
-            "h-8 font-medium",
-            baixa && "border-yellow-500 focus-visible:ring-yellow-500",
-          )}
+          className={cn(flatInput, "font-medium", baixa && "ring-1 ring-yellow-500")}
         />
-        <div className="flex items-center gap-1.5">
-          <ConfiancaIcone c={it.confianca} />
-          <Input
-            value={it.nome_cientifico ?? ""}
-            onChange={(e) => onUpdate(realIdx, { nome_cientifico: e.target.value || null })}
-            placeholder="Nome científico (opcional)"
-            className="h-6 italic text-xs border-0 bg-transparent shadow-none px-1 placeholder:text-muted-foreground/60 focus-visible:ring-1"
-          />
-        </div>
+      </div>
+
+      {/* Nome científico */}
+      <div className="min-w-0">
+        <Input
+          value={it.nome_cientifico ?? ""}
+          onChange={(e) => onUpdate(realIdx, { nome_cientifico: e.target.value || null })}
+          placeholder="—"
+          className={cn(flatInput, "italic text-xs text-muted-foreground")}
+        />
       </div>
 
       {/* Categoria */}
       <div className="min-w-0">
         <Select value={it.categoria} onValueChange={(v) => onUpdate(realIdx, { categoria: v })}>
-          <SelectTrigger className="h-8 text-xs">
+          <SelectTrigger className="h-7 text-xs border-0 bg-transparent shadow-none px-1.5 hover:bg-muted/40 focus:ring-1 focus:ring-ring focus:bg-background [&>span]:truncate">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -330,10 +330,7 @@ function Row({
           value={it.porte}
           onChange={(e) => onUpdate(realIdx, { porte: e.target.value })}
           placeholder="—"
-          className={cn(
-            "h-8 text-xs text-center px-1",
-            baixa && "border-yellow-500 focus-visible:ring-yellow-500",
-          )}
+          className={cn(flatInput, "text-xs text-center px-1")}
         />
       </div>
 
@@ -345,10 +342,7 @@ function Row({
           inputMode="decimal"
           value={it.quantidade}
           onChange={(e) => onUpdate(realIdx, { quantidade: parseFloat(e.target.value) || 0 })}
-          className={cn(
-            "h-8 tabular-nums text-right px-1.5",
-            baixa && "border-yellow-500 focus-visible:ring-yellow-500",
-          )}
+          className={cn(flatInput, "tabular-nums text-right px-1.5")}
         />
       </div>
 
@@ -362,8 +356,8 @@ function Row({
         />
       </div>
 
-      {/* Catálogo */}
-      <div className="min-w-0">
+      {/* Catálogo (ícone) */}
+      <div className="flex items-center justify-center">
         <CatalogoCell
           it={it}
           realIdx={realIdx}
@@ -374,20 +368,20 @@ function Row({
       </div>
 
       {/* Excluir */}
-      <div className="text-center">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-muted-foreground hover:text-destructive opacity-50 group-hover:opacity-100 transition-opacity"
+      <div className="flex items-center justify-center">
+        <button
+          type="button"
           onClick={() => onRemove(realIdx)}
           title="Remover item"
+          className="inline-flex items-center justify-center h-6 w-6 rounded-full text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity"
         >
           <Trash2 className="w-3.5 h-3.5" />
-        </Button>
+        </button>
       </div>
     </div>
   );
 }
+
 
 export function MemorialItensTable({
   itens,
@@ -415,23 +409,25 @@ export function MemorialItensTable({
   const Header = (
     <div
       className={cn(
-        "grid gap-2 pl-0 pr-2 py-2 bg-muted/50 text-muted-foreground text-[11px] font-semibold uppercase tracking-wide border-b sticky top-0 z-10",
+        "grid gap-1 pl-0 pr-1 py-2 bg-muted/40 text-muted-foreground text-[10px] font-semibold uppercase tracking-wider border-b sticky top-0 z-10",
         COLS,
       )}
     >
       <div />
       <div className="text-right pr-1">#</div>
-      <div>Item</div>
-      <div>Categoria</div>
+      <div className="px-1.5">Nome popular</div>
+      <div className="px-1.5">Nome científico</div>
+      <div className="px-1.5">Categoria</div>
       <div className="text-center">Porte</div>
       <div className="text-right pr-1">Qtd</div>
-      <div>Unidade</div>
-      <div>Catálogo</div>
-      <div className="text-center">
-        <Trash2 className="w-3 h-3 inline opacity-60" aria-label="Excluir" />
+      <div className="px-1.5">Unidade</div>
+      <div className="text-center" title="Catálogo">
+        <Link2 className="w-3 h-3 inline opacity-60" aria-label="Catálogo" />
       </div>
+      <div />
     </div>
   );
+
 
   if (!shouldVirtualize) {
     return (
