@@ -259,6 +259,7 @@ export default function NovoOrcamento() {
 
   // Etapa 2 — Memorial
   const [memorialModo, setMemorialModo] = useState<"pdf" | "texto">("pdf");
+  const [memorialDialogOpen, setMemorialDialogOpen] = useState(false);
   const [memorialTexto, setMemorialTexto] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfCarregado, setPdfCarregado] = useState(false);
@@ -3966,15 +3967,22 @@ export default function NovoOrcamento() {
                 </div>
               </div>
             </Card>
+            </div>
+          )}
 
-          {/* Memorial Descritivo — agora integrado à Etapa 1 */}
-            <Card className="p-6 space-y-6">
+          {/* Memorial Descritivo — modal acionado pela Etapa 2 (Fornecedores) */}
+          <Dialog open={memorialDialogOpen} onOpenChange={setMemorialDialogOpen}>
+            <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="font-display text-xl">Memorial Descritivo</DialogTitle>
+              </DialogHeader>
+            <Card className="p-6 space-y-6 border-0 shadow-none">
               <div>
-                <h2 className="font-display text-xl text-foreground">Memorial Descritivo</h2>
                 <p className="text-sm text-muted-foreground">
-                  Envie o PDF, cole o texto do memorial, ou pule esta etapa se a proposta não tiver memorial (ex.: desenvolvimento de projeto).
+                  Envie o PDF, cole o texto do memorial, ou feche se a proposta não tiver memorial (ex.: desenvolvimento de projeto). Os itens extraídos entram direto na lista de fornecedores.
                 </p>
               </div>
+
 
               {/* Alternador PDF / Texto */}
               <div className="inline-flex rounded-md border border-border p-1 bg-muted/30 w-fit">
@@ -4253,13 +4261,31 @@ export default function NovoOrcamento() {
               )}
 
             </Card>
-            </div>
-          )}
+            </DialogContent>
+          </Dialog>
+
 
           {/* Etapa 3 — Seleção de Fornecedores (refatorada) */}
           {etapaAtual === 2 && (
             <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 border rounded-lg p-3 bg-muted/20">
+                <div className="flex items-center gap-2 text-sm">
+                  <FileText className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-foreground font-medium">Memorial descritivo</span>
+                  <span className="text-muted-foreground">
+                    {itensMaterial.length > 0
+                      ? `${itensMaterial.length} ${itensMaterial.length === 1 ? "item importado" : "itens importados"}`
+                      : "nenhum item importado ainda"}
+                  </span>
+                </div>
+                <Button variant="terracota" size="sm" onClick={() => setMemorialDialogOpen(true)}>
+                  <Upload className="w-4 h-4" />
+                  {itensMaterial.length > 0 ? "Revisar memorial" : "Importar memorial"}
+                </Button>
+              </div>
+
               <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border rounded-lg p-3 flex flex-wrap gap-3 items-center text-sm">
+
                 <button
                   type="button"
                   onClick={() => setSoSemFornecedor((v) => !v)}
