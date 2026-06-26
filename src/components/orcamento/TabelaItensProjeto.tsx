@@ -941,6 +941,12 @@ function LinhaItem({
                       {altsFiltradas.map((a, i) => {
                         const ehMenor = menorPrecoId === `${a.fornecedor_id}-${a.preco}`;
                         const ehRecente = maisRecenteId === `${a.fornecedor_id}-${a.data}`;
+                        const ehMelhorNota = melhorNotaId === `${a.fornecedor_id}-${a.estrelas}`;
+                        const rankBadge = a.selecionado
+                          ? a.rank === 1 || a.rank == null
+                            ? "Principal"
+                            : `Reserva ${a.rank - 1}`
+                          : null;
                         return (
                           <tr
                             key={`${a.fornecedor_id}-${i}`}
@@ -951,13 +957,47 @@ function LinhaItem({
                           >
                             <td className="py-2 pr-3 align-middle">
                               <div className="flex items-center gap-2 flex-wrap">
+                                {a.foto_url && (
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <button
+                                        type="button"
+                                        className="w-8 h-8 rounded border border-primary/20 overflow-hidden shrink-0 hover:ring-2 hover:ring-marinho/40 transition"
+                                        title="Ver foto"
+                                      >
+                                        <img
+                                          src={a.foto_url}
+                                          alt={a.fornecedor_nome}
+                                          className="w-full h-full object-cover"
+                                        />
+                                      </button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="p-1 w-64">
+                                      <img
+                                        src={a.foto_url}
+                                        alt={a.fornecedor_nome}
+                                        className="w-full h-auto rounded"
+                                      />
+                                    </PopoverContent>
+                                  </Popover>
+                                )}
                                 <span className="font-medium text-foreground">{a.fornecedor_nome}</span>
+                                {rankBadge && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-marinho text-white font-semibold">
+                                    {rankBadge}
+                                  </span>
+                                )}
                                 {ehMenor && (
                                   <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-primary text-primary-foreground font-semibold">
                                     <Sparkles className="w-3 h-3" /> melhor preço
                                   </span>
                                 )}
-                                {ehRecente && !ehMenor && (
+                                {ehMelhorNota && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-amber-500 text-white font-semibold">
+                                    ★ melhor nota
+                                  </span>
+                                )}
+                                {ehRecente && !ehMenor && !ehMelhorNota && (
                                   <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground font-semibold">
                                     mais recente
                                   </span>
@@ -965,6 +1005,14 @@ function LinhaItem({
                               </div>
                               {a.estrelas != null && (
                                 <div className="text-[11px] text-muted-foreground">★ {a.estrelas.toFixed(1)}</div>
+                              )}
+                              {a.observacao && (
+                                <div
+                                  className="mt-1 text-[11px] text-marinho/90 bg-marinho/5 border border-marinho/20 rounded px-1.5 py-0.5 inline-block max-w-full truncate"
+                                  title={a.observacao}
+                                >
+                                  💬 {a.observacao}
+                                </div>
                               )}
                             </td>
                             <td className="py-2 pr-3 align-middle text-muted-foreground">{a.mercado || "—"}</td>
@@ -977,7 +1025,7 @@ function LinhaItem({
                             </td>
                             <td className="py-2 pr-3 align-middle text-muted-foreground">{fmtData(a.data)}</td>
                             <td className="py-2 pr-3 align-middle">
-                              <div className="flex items-center gap-1 justify-end">
+                              <div className="flex items-center gap-1 justify-end flex-wrap">
                                 {onEditarCotacao && (
                                   <Button
                                     type="button"
@@ -991,21 +1039,63 @@ function LinhaItem({
                                   </Button>
                                 )}
                                 {a.selecionado ? (
-                                  <span className="inline-flex items-center gap-1 px-2 py-1.5 rounded-md bg-marinho/10 text-marinho text-xs font-semibold">
-                                    <CheckCircle2 className="w-3.5 h-3.5" /> Selecionado
-                                  </span>
-                                ) : onSelecionarFornecedor ? (
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="terracota"
-                                    className="h-9"
-                                    onClick={() => onSelecionarFornecedor(a)}
-                                  >
-                                    <Check className="w-4 h-4" />
-                                    Selecionar
-                                  </Button>
-                                ) : null}
+                                  <div className="flex items-center gap-1">
+                                    <span className="inline-flex items-center gap-1 px-2 py-1.5 rounded-md bg-marinho/10 text-marinho text-xs font-semibold">
+                                      <CheckCircle2 className="w-3.5 h-3.5" /> {rankBadge}
+                                    </span>
+                                    {onRemoverFornecedor && (
+                                      <Button
+                                        type="button"
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                        title="Remover este fornecedor da seleção"
+                                        onClick={() => onRemoverFornecedor(a)}
+                                      >
+                                        <X className="w-3.5 h-3.5" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <>
+                                    {onSelecionarFornecedor && escolhidos.length === 0 && (
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="terracota"
+                                        className="h-9"
+                                        onClick={() => onSelecionarFornecedor(a)}
+                                      >
+                                        <Check className="w-4 h-4" />
+                                        Selecionar
+                                      </Button>
+                                    )}
+                                    {onSelecionarFornecedor && escolhidos.length > 0 && (
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-9 border-marinho/40 text-marinho hover:bg-marinho/10"
+                                        title="Tornar este o fornecedor principal (move o atual para reserva)"
+                                        onClick={() => onSelecionarFornecedor(a)}
+                                      >
+                                        <Check className="w-4 h-4" />
+                                        Tornar principal
+                                      </Button>
+                                    )}
+                                    {onAdicionarReserva && escolhidos.length > 0 && (
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-9 text-marinho hover:bg-marinho/10"
+                                        onClick={() => onAdicionarReserva(a)}
+                                      >
+                                        <Plus className="w-3.5 h-3.5" /> Reserva
+                                      </Button>
+                                    )}
+                                  </>
+                                )}
                               </div>
                             </td>
                           </tr>
