@@ -341,6 +341,12 @@ export function TabelaItensProjeto({
                 onSelecionarFornecedor?.(it, alt);
                 setAberto(it.chave, false);
               }}
+              onAdicionarReserva={
+                onAdicionarReserva ? (alt) => onAdicionarReserva(it, alt) : undefined
+              }
+              onRemoverFornecedor={
+                onRemoverFornecedor ? (alt) => onRemoverFornecedor(it, alt) : undefined
+              }
               onAtualizarQuantidade={
                 onAtualizarQuantidade ? (q) => onAtualizarQuantidade(it, q) : undefined
               }
@@ -352,6 +358,8 @@ export function TabelaItensProjeto({
               onMesclarFornecedores={
                 onMesclarFornecedores ? (alts) => onMesclarFornecedores(it, alts) : undefined
               }
+              markupPct={getMarkupPct ? getMarkupPct(it) : 0}
+              observacaoArquitetura={getObservacaoArquitetura ? getObservacaoArquitetura(it) : null}
             />
           ))
         )}
