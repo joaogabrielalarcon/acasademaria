@@ -194,14 +194,12 @@ interface TipoProposta {
   nome_completo: string;
 }
 
-// Refatoração: fluxo de 7 → 6 etapas.
-// "Insumos" deixou de ser etapa separada (foi fundido em Fornecedores).
-// "Cotação" foi substituída por "Markup e Margens" (placeholder até nova lógica).
+// Refatoração: fluxo agora em 4 etapas.
+// Markup & margens vivem dentro de "Informações Iniciais" (cadastro geral do orçamento).
 const ETAPAS = [
   "Informações Iniciais",
   "Fornecedores",
-  "Markup e Margens",
-  "Mão de Obra, Fretes e Transporte",
+  "Mão de Obra e Fretes",
   "Resumo Final",
 ];
 
