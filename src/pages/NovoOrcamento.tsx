@@ -3916,10 +3916,8 @@ export default function NovoOrcamento() {
                 </div>
               </div>
             </Card>
-          )}
 
-          {/* Etapa 2 — Memorial Descritivo */}
-          {etapaAtual === 2 && (
+          {/* Memorial Descritivo — agora integrado à Etapa 1 */}
             <Card className="p-6 space-y-6">
               <div>
                 <h2 className="font-display text-xl text-foreground">Memorial Descritivo</h2>
