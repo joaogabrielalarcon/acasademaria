@@ -380,6 +380,24 @@ export default function NovoOrcamento() {
   const [insumosCalculados, setInsumosCalculados] = useState(false);
   const [insumoPickerOpen, setInsumoPickerOpen] = useState<number | null>(null);
 
+  // Itens (insumos) removidos manualmente da Etapa 3 — não reaparecem por base/memorial.
+  const [insumosExcluidos, setInsumosExcluidos] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const raw = localStorage.getItem(`orc-insumos-excluidos:${id || "novo"}`);
+      return new Set(raw ? JSON.parse(raw) : []);
+    } catch { return new Set(); }
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem(
+        `orc-insumos-excluidos:${id || "novo"}`,
+        JSON.stringify(Array.from(insumosExcluidos)),
+      );
+    } catch { /* ignore */ }
+  }, [insumosExcluidos, id]);
+
   const { data: coeficientes = [] } = useQuery({
     queryKey: ["coeficientes-insumos-vigentes"],
     queryFn: async () => {
@@ -603,6 +621,7 @@ export default function NovoOrcamento() {
     const nomesNaLista = new Set<string>();
 
     baseSorted.forEach((ins) => {
+      if (insumosExcluidos.has(norm(ins.nome))) return;
       const jaNoMemorial = itensInsumoExtra.some((e) => norm(e.nome) === norm(ins.nome));
       if (jaNoMemorial) return;
       if (nomesNaLista.has(norm(ins.nome))) return;
@@ -633,6 +652,7 @@ export default function NovoOrcamento() {
 
     // 3) Insumos extraordinários do memorial — dedup por nome
     itensInsumoExtra.forEach((e, idx) => {
+      if (insumosExcluidos.has(norm(e.nome))) return;
       if (nomesNaLista.has(norm(e.nome))) return;
       const match = (insumosFull || []).find((i) => norm(i.nome) === norm(e.nome));
       const adicMatch = insumosAdicionais.find(
@@ -665,6 +685,7 @@ export default function NovoOrcamento() {
     // 4) Insumos adicionais manuais (que não casam com base nem memorial) — dedup por nome
     insumosAdicionais.forEach((ad, idx) => {
       if (!ad.nome) return;
+      if (insumosExcluidos.has(norm(ad.nome))) return;
       if (nomesNaLista.has(norm(ad.nome))) return;
       out.push({
         tipo: "insumo",
@@ -686,7 +707,7 @@ export default function NovoOrcamento() {
     });
 
     return out;
-  }, [itensMaterial, itensInsumoExtra, insumosAdicionais, insumosFull, coeficientes, margensSeg, fornecedoresSelecionados, cotacoes, fornecedoresLista]);
+  }, [itensMaterial, itensInsumoExtra, insumosAdicionais, insumosFull, coeficientes, margensSeg, fornecedoresSelecionados, cotacoes, fornecedoresLista, insumosExcluidos]);
 
   // Log de verificação para a Sub-fase 3A (sem mudança visual).
   useEffect(() => {
@@ -4426,6 +4447,48 @@ export default function NovoOrcamento() {
                       }
                       return next;
                     });
+                  }}
+                  onAtualizarUnidade={(item, unidade) => {
+                    if (item.tipo !== "insumo") return;
+                    const insumoId = item.ref?.insumoCatalogoId || null;
+                    setInsumosAdicionais((prev) => {
+                      const next = [...prev];
+                      const i = next.findIndex((a) =>
+                        (insumoId && a.insumo_id === insumoId) ||
+                        a.nome.trim().toLowerCase() === item.nome.trim().toLowerCase(),
+                      );
+                      if (i >= 0) {
+                        next[i] = { ...next[i], unidade };
+                      } else {
+                        next.push({
+                          insumo_id: insumoId || undefined,
+                          nome: item.nome,
+                          fornecedor_id: item.fornecedor_id || "",
+                          quantidade_esperada: String(item.quantidade ?? 0),
+                          unidade,
+                          margem: "0",
+                          valor_unitario: item.valor_unitario != null ? String(item.valor_unitario) : "",
+                          obs_interna: "",
+                          obs_proposta: "",
+                        });
+                      }
+                      return next;
+                    });
+                  }}
+                  onRemoverItem={(item) => {
+                    if (item.tipo !== "insumo") return;
+                    const chaveNome = item.nome.trim().toLowerCase();
+                    // Remove de insumosAdicionais (manual/upsert)
+                    setInsumosAdicionais((prev) =>
+                      prev.filter((a) => a.nome.trim().toLowerCase() !== chaveNome),
+                    );
+                    // Marca como excluído (impede que base/memorial reapareça)
+                    setInsumosExcluidos((prev) => {
+                      const next = new Set(prev);
+                      next.add(chaveNome);
+                      return next;
+                    });
+                    toast({ title: "Item removido", description: item.nome });
                   }}
                   onAdicionarItem={() => {
                     toast({

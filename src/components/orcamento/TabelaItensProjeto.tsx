@@ -17,7 +17,9 @@ import {
   ChevronsUpDown,
   Pencil,
   GitMerge,
+  Trash2,
 } from "lucide-react";
+import { UNIDADES_COTACAO } from "@/lib/unidades";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -69,6 +71,8 @@ interface Props {
   getAlternativas?: (item: ItemProjeto) => AlternativaFornecedor[];
   onSelecionarFornecedor?: (item: ItemProjeto, alt: AlternativaFornecedor) => void;
   onAtualizarQuantidade?: (item: ItemProjeto, quantidade: number) => void;
+  onAtualizarUnidade?: (item: ItemProjeto, unidade: string) => void;
+  onRemoverItem?: (item: ItemProjeto) => void;
   onEditarCotacao?: (item: ItemProjeto, alt: AlternativaFornecedor) => void;
   onMesclarFornecedores?: (item: ItemProjeto, alts: AlternativaFornecedor[]) => void;
   onAdicionarItem?: () => void;
@@ -107,6 +111,8 @@ export function TabelaItensProjeto({
   getAlternativas,
   onSelecionarFornecedor,
   onAtualizarQuantidade,
+  onAtualizarUnidade,
+  onRemoverItem,
   onEditarCotacao,
   onMesclarFornecedores,
   onAdicionarItem,
@@ -327,6 +333,10 @@ export function TabelaItensProjeto({
               onAtualizarQuantidade={
                 onAtualizarQuantidade ? (q) => onAtualizarQuantidade(it, q) : undefined
               }
+              onAtualizarUnidade={
+                onAtualizarUnidade ? (u) => onAtualizarUnidade(it, u) : undefined
+              }
+              onRemoverItem={onRemoverItem ? () => onRemoverItem(it) : undefined}
               onEditarCotacao={onEditarCotacao ? (alt) => onEditarCotacao(it, alt) : undefined}
               onMesclarFornecedores={
                 onMesclarFornecedores ? (alts) => onMesclarFornecedores(it, alts) : undefined
@@ -348,6 +358,8 @@ function LinhaItem({
   getAlternativas,
   onSelecionarFornecedor,
   onAtualizarQuantidade,
+  onAtualizarUnidade,
+  onRemoverItem,
   onEditarCotacao,
   onMesclarFornecedores,
 }: {
@@ -359,6 +371,8 @@ function LinhaItem({
   getAlternativas?: (item: ItemProjeto) => AlternativaFornecedor[];
   onSelecionarFornecedor?: (alt: AlternativaFornecedor) => void;
   onAtualizarQuantidade?: (q: number) => void;
+  onAtualizarUnidade?: (u: string) => void;
+  onRemoverItem?: () => void;
   onEditarCotacao?: (alt: AlternativaFornecedor) => void;
   onMesclarFornecedores?: (alts: AlternativaFornecedor[]) => void;
 }) {
@@ -513,7 +527,26 @@ function LinhaItem({
                     }}
                     className="h-7 w-20 text-right tabular-nums bg-background px-2 py-0"
                   />
-                  <span>{item.unidade || ""}</span>
+                  {onAtualizarUnidade ? (
+                    <Select
+                      value={item.unidade || ""}
+                      onValueChange={(v) => onAtualizarUnidade(v)}
+                    >
+                      <SelectTrigger className="h-7 w-[88px] bg-background px-2 py-0 text-xs">
+                        <SelectValue placeholder="unid." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {UNIDADES_COTACAO.map((u) => (
+                          <SelectItem key={u} value={u} className="text-xs">{u}</SelectItem>
+                        ))}
+                        {item.unidade && !UNIDADES_COTACAO.includes(item.unidade) && (
+                          <SelectItem value={item.unidade} className="text-xs">{item.unidade}</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <span>{item.unidade || ""}</span>
+                  )}
                 </span>
               ) : (
                 <span className="tabular-nums">
@@ -558,6 +591,20 @@ function LinhaItem({
               >
                 <AlertCircle className="w-4 h-4" />
                 Escolher fornecedor
+              </Button>
+            )}
+            {onRemoverItem && (
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                title="Remover item do orçamento"
+                onClick={() => {
+                  if (window.confirm(`Remover "${item.nome}" deste orçamento?`)) onRemoverItem();
+                }}
+              >
+                <Trash2 className="w-4 h-4" />
               </Button>
             )}
           </div>
