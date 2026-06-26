@@ -4268,7 +4268,24 @@ export default function NovoOrcamento() {
           {/* Etapa 3 — Seleção de Fornecedores (refatorada) */}
           {etapaAtual === 2 && (
             <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 border rounded-lg p-3 bg-muted/20">
+                <div className="flex items-center gap-2 text-sm">
+                  <FileText className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-foreground font-medium">Memorial descritivo</span>
+                  <span className="text-muted-foreground">
+                    {itensMaterial.length > 0
+                      ? `${itensMaterial.length} ${itensMaterial.length === 1 ? "item importado" : "itens importados"}`
+                      : "nenhum item importado ainda"}
+                  </span>
+                </div>
+                <Button variant="terracota" size="sm" onClick={() => setMemorialDialogOpen(true)}>
+                  <Upload className="w-4 h-4" />
+                  {itensMaterial.length > 0 ? "Revisar memorial" : "Importar memorial"}
+                </Button>
+              </div>
+
               <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border rounded-lg p-3 flex flex-wrap gap-3 items-center text-sm">
+
                 <button
                   type="button"
                   onClick={() => setSoSemFornecedor((v) => !v)}
