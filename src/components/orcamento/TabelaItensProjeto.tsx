@@ -44,7 +44,10 @@ export interface AlternativaFornecedor {
   data?: string | null;
   estrelas?: number | null;
   mercado?: string | null;
+  observacao?: string | null;
+  foto_url?: string | null;
   selecionado?: boolean;
+  rank?: number | null; // 1 = principal; 2+ = reservas
 }
 
 type SortKey = "data" | "preco" | "nota" | "mercado" | "porte";
