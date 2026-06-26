@@ -2,6 +2,8 @@ import { useRef, useState, useMemo } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+
 import {
   Select,
   SelectContent,
