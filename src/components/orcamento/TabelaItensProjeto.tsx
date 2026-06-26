@@ -117,12 +117,16 @@ export function TabelaItensProjeto({
   itens,
   getAlternativas,
   onSelecionarFornecedor,
+  onAdicionarReserva,
+  onRemoverFornecedor,
   onAtualizarQuantidade,
   onAtualizarUnidade,
   onRemoverItem,
   onEditarCotacao,
   onMesclarFornecedores,
   onAdicionarItem,
+  getMarkupPct,
+  getObservacaoArquitetura,
 }: Props) {
   const [busca, setBusca] = useState("");
   const [tipoFiltro, setTipoFiltro] = useState<"todos" | "planta" | "insumo">("todos");
