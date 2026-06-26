@@ -3613,6 +3613,7 @@ export default function NovoOrcamento() {
 
           {/* Etapa 1 - Informações Iniciais */}
           {etapaAtual === 1 && (
+            <div className="space-y-6">
             <Card className="p-6 space-y-6">
               <div>
                 <h2 className="font-display text-xl text-foreground">Informações Iniciais</h2>
