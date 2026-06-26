@@ -4415,13 +4415,44 @@ export default function NovoOrcamento() {
                       const idx = item.ref?.itemMemorialIdx;
                       if (idx == null || !itensMaterial[idx]) return [];
                       const rows = fornecedoresDoItem(itensMaterial[idx]) as any[];
-                      const sel = new Set(fornecedoresSelecionados[idx] || []);
-                      return rows.map((r: any) => ({
+                      const selArr = fornecedoresSelecionados[idx] || [];
+                      const sel = new Set(selArr);
+                      return rows.map((r: any) => {
+                        const selecionado = sel.has(r.fornecedor_id);
+                        const rank = selecionado ? selArr.indexOf(r.fornecedor_id) + 1 : null;
+                        return {
+                          fornecedor_id: r.fornecedor_id,
+                          fornecedor_nome: r.fornecedores?.nome || "Fornecedor",
+                          porte: r.porte,
+                          preco: r.preco != null ? Number(r.preco) : null,
+                          unidade: r.unidade || itensMaterial[idx].unidade || null,
+                          data: r.data_orcamento,
+                          estrelas:
+                            r.nota_media != null
+                              ? Number(r.nota_media)
+                              : r.fornecedores?.nota_media != null
+                              ? Number(r.fornecedores.nota_media)
+                              : null,
+                          mercado: r.fornecedores?.mercado || null,
+                          observacao: r.observacao || r.obs_interna || null,
+                          foto_url: r.foto_url || r.fornecedores?.foto_url || null,
+                          selecionado,
+                          rank,
+                        };
+                      });
+                    }
+                    // INSUMO — busca em historicoPorItem pelo nome normalizado
+                    const hist = historicoPorItem as Record<string, any[]>;
+                    const k = normNome(item.nome);
+                    const rows = (hist[k] || []) as any[];
+                    return rows.map((r: any) => {
+                      const selecionado = item.fornecedor_id === r.fornecedor_id;
+                      return {
                         fornecedor_id: r.fornecedor_id,
                         fornecedor_nome: r.fornecedores?.nome || "Fornecedor",
                         porte: r.porte,
                         preco: r.preco != null ? Number(r.preco) : null,
-                        unidade: r.unidade || itensMaterial[idx].unidade || null,
+                        unidade: r.unidade || item.unidade || null,
                         data: r.data_orcamento,
                         estrelas:
                           r.nota_media != null
@@ -4430,41 +4461,29 @@ export default function NovoOrcamento() {
                             ? Number(r.fornecedores.nota_media)
                             : null,
                         mercado: r.fornecedores?.mercado || null,
-                        selecionado: sel.has(r.fornecedor_id),
-                      }));
-                    }
-                    // INSUMO — busca em historicoPorItem pelo nome normalizado
-                    const hist = historicoPorItem as Record<string, any[]>;
-                    const k = normNome(item.nome);
-                    const rows = (hist[k] || []) as any[];
-                    return rows.map((r: any) => ({
-                      fornecedor_id: r.fornecedor_id,
-                      fornecedor_nome: r.fornecedores?.nome || "Fornecedor",
-                      porte: r.porte,
-                      preco: r.preco != null ? Number(r.preco) : null,
-                      unidade: r.unidade || item.unidade || null,
-                      data: r.data_orcamento,
-                      estrelas:
-                        r.nota_media != null
-                          ? Number(r.nota_media)
-                          : r.fornecedores?.nota_media != null
-                          ? Number(r.fornecedores.nota_media)
-                          : null,
-                      mercado: r.fornecedores?.mercado || null,
-                      selecionado: item.fornecedor_id === r.fornecedor_id,
-                    }));
+                        observacao: r.observacao || r.obs_interna || null,
+                        foto_url: r.foto_url || r.fornecedores?.foto_url || null,
+                        selecionado,
+                        rank: selecionado ? 1 : null,
+                      };
+                    });
                   }}
                   onSelecionarFornecedor={(item, alt) => {
                     if (item.tipo === "planta") {
                       const idx = item.ref?.itemMemorialIdx;
                       if (idx == null) return;
-                      setFornecedoresSelecionados((prev) => ({ ...prev, [idx]: [alt.fornecedor_id] }));
+                      setFornecedoresSelecionados((prev) => {
+                        const atual = prev[idx] || [];
+                        // Promove para principal: remove se já estava e coloca na frente
+                        const semEste = atual.filter((f) => f !== alt.fornecedor_id);
+                        return { ...prev, [idx]: [alt.fornecedor_id, ...semEste] };
+                      });
                       setCotacao(idx, alt.fornecedor_id, {
                         status_selecao: "principal",
                         valor_unitario: alt.preco != null ? String(alt.preco) : "",
                         porte_ofertado: alt.porte || item.porte || "",
                       });
-                      toast({ title: "Fornecedor selecionado", description: `${item.nome}: ${alt.fornecedor_nome}` });
+                      toast({ title: "Fornecedor principal definido", description: `${item.nome}: ${alt.fornecedor_nome}` });
                       return;
                     }
                     // INSUMO — upsert em insumosAdicionais
@@ -4495,6 +4514,38 @@ export default function NovoOrcamento() {
                     });
                     toast({ title: "Fornecedor selecionado", description: `${item.nome}: ${alt.fornecedor_nome}` });
                   }}
+                  onAdicionarReserva={(item, alt) => {
+                    if (item.tipo !== "planta") {
+                      toast({
+                        title: "Reservas em breve para insumos",
+                        description: "Por enquanto só plantas suportam fornecedores reservas.",
+                      });
+                      return;
+                    }
+                    const idx = item.ref?.itemMemorialIdx;
+                    if (idx == null) return;
+                    setFornecedoresSelecionados((prev) => {
+                      const atual = prev[idx] || [];
+                      if (atual.includes(alt.fornecedor_id)) return prev;
+                      return { ...prev, [idx]: [...atual, alt.fornecedor_id] };
+                    });
+                    setCotacao(idx, alt.fornecedor_id, {
+                      status_selecao: "reserva",
+                      valor_unitario: alt.preco != null ? String(alt.preco) : "",
+                      porte_ofertado: alt.porte || item.porte || "",
+                    });
+                    toast({ title: "Reserva adicionada", description: `${item.nome}: ${alt.fornecedor_nome}` });
+                  }}
+                  onRemoverFornecedor={(item, alt) => {
+                    if (item.tipo !== "planta") return;
+                    const idx = item.ref?.itemMemorialIdx;
+                    if (idx == null) return;
+                    setFornecedoresSelecionados((prev) => {
+                      const atual = prev[idx] || [];
+                      return { ...prev, [idx]: atual.filter((f) => f !== alt.fornecedor_id) };
+                    });
+                  }}
+                  getMarkupPct={() => 0}
                   onAtualizarQuantidade={(item, quantidade) => {
                     if (item.tipo !== "insumo") return;
                     const insumoId = item.ref?.insumoCatalogoId || null;
