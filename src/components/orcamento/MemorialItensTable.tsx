@@ -64,11 +64,10 @@ interface Props {
   virtualizeThreshold?: number;
 }
 
-// Layout enxuto, sem rolagem horizontal em viewports >= ~960px.
-// Coluna 1 = barra de confiança (4px) · 2 = # · 3 = item (nome popular + científico) · 4 = categoria
-// 5 = porte · 6 = qtd · 7 = unidade · 8 = catálogo · 9 = ações
+// Linha enxuta: barra confiança · # · nome popular · nome científico · categoria · porte · qtd · unidade · catálogo (ícone) · excluir
 const COLS =
-  "grid-cols-[0.25rem_2.25rem_minmax(13rem,2.2fr)_minmax(8.5rem,0.9fr)_4.5rem_4.5rem_minmax(6.5rem,0.7fr)_minmax(10.5rem,1fr)_2.25rem]";
+  "grid-cols-[0.25rem_2rem_minmax(11rem,1.6fr)_minmax(10rem,1.4fr)_minmax(7.5rem,0.8fr)_4.5rem_4.5rem_minmax(6rem,0.6fr)_1.75rem_1.75rem]";
+
 
 function normalizar(s: string) {
   return (s || "")
