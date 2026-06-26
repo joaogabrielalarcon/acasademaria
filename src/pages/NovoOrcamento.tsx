@@ -1802,6 +1802,12 @@ export default function NovoOrcamento() {
       if (orcamento.tipo_nf) setTipoNf(orcamento.tipo_nf);
       if (orcamento.margem_negociacao_pct != null) setMargemNegPct(Number(orcamento.margem_negociacao_pct));
       if ((orcamento as any).negociacao_valor != null) setNegociacaoValor(Number((orcamento as any).negociacao_valor));
+      // Restaura snapshot do memorial (texto bruto, modo, nome do arquivo).
+      const snap = (orcamento as any).memorial_snapshot;
+      if (snap && typeof snap === "object") {
+        if (snap.modo === "texto" || snap.modo === "pdf") setMemorialModo(snap.modo);
+        if (typeof snap.texto === "string") setMemorialTexto(snap.texto);
+      }
     }
   }, [orcamento, tipos]);
 
