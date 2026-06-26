@@ -4261,8 +4261,9 @@ export default function NovoOrcamento() {
               )}
 
             </Card>
-            </div>
-          )}
+            </DialogContent>
+          </Dialog>
+
 
           {/* Etapa 3 — Seleção de Fornecedores (refatorada) */}
           {etapaAtual === 2 && (
