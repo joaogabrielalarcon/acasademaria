@@ -1867,6 +1867,27 @@ export default function NovoOrcamento() {
       // markup vem de orcamento_categorias_markup via markupCategoriasQuery
       if (novosItens.length > 0) setPdfCarregado(true);
 
+      // Snapshot do memorial — sobrescreve com metadados ricos (confiança, sugestões, insumos extras).
+      try {
+        const { data: orcRow } = await (supabase as any)
+          .from("orcamentos")
+          .select("memorial_snapshot")
+          .eq("id", id)
+          .maybeSingle();
+        const snap = orcRow?.memorial_snapshot;
+        if (snap && typeof snap === "object") {
+          if (Array.isArray(snap.itens) && snap.itens.length > 0) {
+            setItensMaterial(snap.itens as ItemMemorial[]);
+            setPdfCarregado(true);
+          }
+          if (Array.isArray(snap.insumos)) {
+            setItensInsumoExtra(snap.insumos as InsumoMemorial[]);
+          }
+        }
+      } catch (err) {
+        console.warn("Falha ao restaurar snapshot do memorial:", err);
+      }
+
 
       // cotacoes + fornecedoresSelecionados (por idx)
       const novasCot: Record<number, Record<string, CotacaoLinha>> = {};
