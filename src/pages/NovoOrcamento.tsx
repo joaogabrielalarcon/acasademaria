@@ -259,6 +259,7 @@ export default function NovoOrcamento() {
 
   // Etapa 2 — Memorial
   const [memorialModo, setMemorialModo] = useState<"pdf" | "texto">("pdf");
+  const [memorialDialogOpen, setMemorialDialogOpen] = useState(false);
   const [memorialTexto, setMemorialTexto] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfCarregado, setPdfCarregado] = useState(false);
