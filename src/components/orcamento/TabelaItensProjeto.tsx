@@ -524,8 +524,12 @@ function LinhaItem({
   return (
     <div
       className={cn(
-        "rounded-lg border bg-card overflow-hidden flex transition-colors",
-        aberto ? "border-primary/30" : "border-primary/20 hover:bg-accent/20",
+        "rounded-lg border overflow-hidden flex transition-colors",
+        resolvido
+          ? "border-marinho/40 bg-marinho/[0.06] hover:bg-marinho/[0.09]"
+          : aberto
+            ? "border-primary/30 bg-card"
+            : "border-primary/20 bg-card hover:bg-accent/20",
       )}
     >
       <span
@@ -537,18 +541,30 @@ function LinhaItem({
           className="flex items-center gap-3 cursor-pointer"
           onClick={() => setAberto(!aberto)}
         >
-          <span className="text-muted-foreground shrink-0">
+          <span className={cn("shrink-0", resolvido ? "text-marinho" : "text-muted-foreground")}>
             {aberto ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </span>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-medium text-foreground truncate">{item.nome}</span>
-              <Badge variant={item.tipo === "planta" ? "default" : "secondary"} className="text-[10px] capitalize">
+              <Badge
+                variant={item.tipo === "planta" ? "default" : "secondary"}
+                className="text-[10px] capitalize"
+              >
                 {item.tipo}
               </Badge>
               {item.badges.includes("baixa confiança") && (
                 <Badge variant="outline" className="text-[10px]">conferir</Badge>
+              )}
+              {escolhidos.length > 1 && (
+                <Badge
+                  variant="outline"
+                  className="text-[10px] border-marinho/40 text-marinho"
+                  title="Principal + reservas selecionadas"
+                >
+                  +{escolhidos.length - 1} reserva{escolhidos.length - 1 > 1 ? "s" : ""}
+                </Badge>
               )}
             </div>
             {item.tipo === "planta" && item.nome_cientifico && (
@@ -601,11 +617,26 @@ function LinhaItem({
               )}
               <span>·</span>
               {resolvido ? (
-                <span className="text-foreground truncate max-w-[180px]">{item.fornecedor_nome || ""}</span>
+                <span className="text-foreground truncate max-w-[200px] font-medium">
+                  {item.fornecedor_nome || ""}
+                </span>
               ) : (
                 <span className="text-primary font-medium">em aberto</span>
               )}
             </div>
+
+            {/* Observação da arquitetura */}
+            {observacaoArquitetura && (
+              <div
+                className="mt-1.5 text-[11px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-2 py-1 inline-flex items-start gap-1.5 max-w-full"
+                title="Observação do time de arquitetura"
+              >
+                <span className="font-semibold uppercase tracking-wide text-[9px] text-amber-700 shrink-0 mt-0.5">
+                  Arquitetura
+                </span>
+                <span className="truncate">{observacaoArquitetura}</span>
+              </div>
+            )}
           </div>
 
           <div
@@ -614,17 +645,24 @@ function LinhaItem({
           >
             {resolvido ? (
               <>
-                <span className="text-base font-medium tabular-nums text-foreground">
-                  {brl(item.valor_unitario)}
-                </span>
+                <div className="text-right leading-tight">
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Compra</div>
+                  <div className="text-sm font-semibold tabular-nums text-foreground">{brl(compraTotal)}</div>
+                  {markupPct > 0 && (
+                    <>
+                      <div className="text-[10px] uppercase tracking-wide text-marinho mt-0.5">Venda</div>
+                      <div className="text-sm font-semibold tabular-nums text-marinho">{brl(vendaTotal)}</div>
+                    </>
+                  )}
+                </div>
                 <Button
                   type="button"
                   size="sm"
                   variant="ghost"
-                  className="h-8 text-xs"
+                  className="h-8 text-xs text-marinho hover:bg-marinho/10"
                   onClick={() => setAberto(!aberto)}
                 >
-                  Trocar
+                  {aberto ? "Fechar" : "Gerenciar"}
                 </Button>
               </>
             ) : (
@@ -655,6 +693,7 @@ function LinhaItem({
             )}
           </div>
         </div>
+
 
         {aberto && (
           <div className="mt-3">
