@@ -288,6 +288,10 @@ export default function NovoOrcamento() {
   const [cotacoes, setCotacoes] = useState<Record<number, Record<string, CotacaoLinha>>>({});
   const [margensSeg, setMargensSeg] = useState<Record<number, number>>({});
   const [cardsColapsados, setCardsColapsados] = useState<Record<number, boolean>>({});
+  // Mapa idx -> id da linha em orcamento_itens (preenchido na hidratação em modo edição).
+  // Usado para persistir seleção de fornecedores principal/reservas automaticamente,
+  // sem depender do "Salvar" global da etapa.
+  const [itemIdByIdx, setItemIdByIdx] = useState<Record<number, string>>({});
 
   // Filtros e ações da Etapa 3 / 4
   type OrdemForn = "preco" | "data" | "porte" | "nota";
