@@ -3967,15 +3967,22 @@ export default function NovoOrcamento() {
                 </div>
               </div>
             </Card>
+            </div>
+          )}
 
-          {/* Memorial Descritivo — agora integrado à Etapa 1 */}
-            <Card className="p-6 space-y-6">
+          {/* Memorial Descritivo — modal acionado pela Etapa 2 (Fornecedores) */}
+          <Dialog open={memorialDialogOpen} onOpenChange={setMemorialDialogOpen}>
+            <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="font-display text-xl">Memorial Descritivo</DialogTitle>
+              </DialogHeader>
+            <Card className="p-6 space-y-6 border-0 shadow-none">
               <div>
-                <h2 className="font-display text-xl text-foreground">Memorial Descritivo</h2>
                 <p className="text-sm text-muted-foreground">
-                  Envie o PDF, cole o texto do memorial, ou pule esta etapa se a proposta não tiver memorial (ex.: desenvolvimento de projeto).
+                  Envie o PDF, cole o texto do memorial, ou feche se a proposta não tiver memorial (ex.: desenvolvimento de projeto). Os itens extraídos entram direto na lista de fornecedores.
                 </p>
               </div>
+
 
               {/* Alternador PDF / Texto */}
               <div className="inline-flex rounded-md border border-border p-1 bg-muted/30 w-fit">
