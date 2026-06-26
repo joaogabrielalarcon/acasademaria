@@ -4517,6 +4517,8 @@ export type Database = {
           local_endereco: string | null
           local_id: string | null
           margem_negociacao_pct: number | null
+          memorial_atualizado_em: string | null
+          memorial_snapshot: Json | null
           motivo_nao_aprovacao: string | null
           negociacao_valor: number
           obs_interna: string | null
@@ -4553,6 +4555,8 @@ export type Database = {
           local_endereco?: string | null
           local_id?: string | null
           margem_negociacao_pct?: number | null
+          memorial_atualizado_em?: string | null
+          memorial_snapshot?: Json | null
           motivo_nao_aprovacao?: string | null
           negociacao_valor?: number
           obs_interna?: string | null
@@ -4589,6 +4593,8 @@ export type Database = {
           local_endereco?: string | null
           local_id?: string | null
           margem_negociacao_pct?: number | null
+          memorial_atualizado_em?: string | null
+          memorial_snapshot?: Json | null
           motivo_nao_aprovacao?: string | null
           negociacao_valor?: number
           obs_interna?: string | null
