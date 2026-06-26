@@ -4529,8 +4529,14 @@ export default function NovoOrcamento() {
                       if (atual.includes(alt.fornecedor_id)) return prev;
                       return { ...prev, [idx]: [...atual, alt.fornecedor_id] };
                     });
+                    const reservaStatus = (item.tipo === "planta" && (fornecedoresSelecionados[idx]?.length || 0) >= 2)
+                      ? "backup2"
+                      : "backup1";
                     setCotacao(idx, alt.fornecedor_id, {
-                      status_selecao: "reserva",
+                      status_selecao: reservaStatus as "backup1" | "backup2",
+                      valor_unitario: alt.preco != null ? String(alt.preco) : "",
+                      porte_ofertado: alt.porte || item.porte || "",
+                    });
                       valor_unitario: alt.preco != null ? String(alt.preco) : "",
                       porte_ofertado: alt.porte || item.porte || "",
                     });
