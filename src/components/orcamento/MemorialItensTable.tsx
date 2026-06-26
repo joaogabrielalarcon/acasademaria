@@ -526,9 +526,13 @@ export function MemorialItensTable({
       <div className="text-center">Porte</div>
       <div className="text-right pr-1">Qtd</div>
       <div className="px-1.5">Unidade</div>
+      <div className="text-center" title="Observação">
+        <MessageSquare className="w-3 h-3 inline opacity-60" aria-label="Observação" />
+      </div>
       <div className="text-center" title="Catálogo">
         <Link2 className="w-3 h-3 inline opacity-60" aria-label="Catálogo" />
       </div>
+
       <div />
     </div>
   );
