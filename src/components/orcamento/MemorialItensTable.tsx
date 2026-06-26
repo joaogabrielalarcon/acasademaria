@@ -20,7 +20,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { AlertTriangle, Check, CircleHelp, Link2, Plus, Sparkles, Trash2, X } from "lucide-react";
+import { AlertTriangle, Check, CircleHelp, Link2, MessageSquare, MessageSquareText, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UnidadeCell } from "./UnidadeCell";
 
