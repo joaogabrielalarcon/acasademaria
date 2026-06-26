@@ -451,6 +451,15 @@ function Row({
         />
       </div>
 
+      {/* Observação (ícone) */}
+      <div className="flex items-center justify-center">
+        <ObservacaoCell
+          value={it.observacao}
+          nomeItem={it.nome_popular}
+          onChange={(v) => onUpdate(realIdx, { observacao: v })}
+        />
+      </div>
+
       {/* Catálogo (ícone) */}
       <div className="flex items-center justify-center">
         <CatalogoCell
@@ -461,6 +470,7 @@ function Row({
           onOpenCadastro={onOpenCadastro}
         />
       </div>
+
 
       {/* Excluir */}
       <div className="flex items-center justify-center">
