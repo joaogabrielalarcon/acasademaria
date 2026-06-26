@@ -194,14 +194,12 @@ interface TipoProposta {
   nome_completo: string;
 }
 
-// Refatoração: fluxo de 7 → 6 etapas.
-// "Insumos" deixou de ser etapa separada (foi fundido em Fornecedores).
-// "Cotação" foi substituída por "Markup e Margens" (placeholder até nova lógica).
+// Refatoração: fluxo agora em 4 etapas.
+// Markup & margens vivem dentro de "Informações Iniciais" (cadastro geral do orçamento).
 const ETAPAS = [
   "Informações Iniciais",
   "Fornecedores",
-  "Markup e Margens",
-  "Mão de Obra, Fretes e Transporte",
+  "Mão de Obra e Fretes",
   "Resumo Final",
 ];
 
@@ -3148,13 +3146,13 @@ export default function NovoOrcamento() {
       });
       return;
     }
-    // Validação ao sair da Etapa 3 (Fornecedores) para Etapa 4 (Markup)
+    // Validação ao sair da Etapa 2 (Fornecedores) para Etapa 3 (MO/Fretes)
     if (etapaAtual === 2 && pendenciasEtapa3.bloqueia) {
       setValidacaoEtapa4Open(true);
       return;
     }
-    // Validação ao sair da Etapa 4 (Markup) para Etapa 5 (MO/Fretes/Transporte)
-    if (etapaAtual === 2 && validacaoEtapa4 && !validacaoEtapa4.ok) {
+    // Validação de Markup ao sair da Etapa 1 (que agora inclui Markup) para Etapa 2
+    if (etapaAtual === 1 && validacaoEtapa4 && !validacaoEtapa4.ok) {
       toast({
         title: "Não é possível avançar",
         description: validacaoEtapa4.motivo,
@@ -4417,13 +4415,44 @@ export default function NovoOrcamento() {
                       const idx = item.ref?.itemMemorialIdx;
                       if (idx == null || !itensMaterial[idx]) return [];
                       const rows = fornecedoresDoItem(itensMaterial[idx]) as any[];
-                      const sel = new Set(fornecedoresSelecionados[idx] || []);
-                      return rows.map((r: any) => ({
+                      const selArr = fornecedoresSelecionados[idx] || [];
+                      const sel = new Set(selArr);
+                      return rows.map((r: any) => {
+                        const selecionado = sel.has(r.fornecedor_id);
+                        const rank = selecionado ? selArr.indexOf(r.fornecedor_id) + 1 : null;
+                        return {
+                          fornecedor_id: r.fornecedor_id,
+                          fornecedor_nome: r.fornecedores?.nome || "Fornecedor",
+                          porte: r.porte,
+                          preco: r.preco != null ? Number(r.preco) : null,
+                          unidade: r.unidade || itensMaterial[idx].unidade || null,
+                          data: r.data_orcamento,
+                          estrelas:
+                            r.nota_media != null
+                              ? Number(r.nota_media)
+                              : r.fornecedores?.nota_media != null
+                              ? Number(r.fornecedores.nota_media)
+                              : null,
+                          mercado: r.fornecedores?.mercado || null,
+                          observacao: r.observacao || r.obs_interna || null,
+                          foto_url: r.foto_url || r.fornecedores?.foto_url || null,
+                          selecionado,
+                          rank,
+                        };
+                      });
+                    }
+                    // INSUMO — busca em historicoPorItem pelo nome normalizado
+                    const hist = historicoPorItem as Record<string, any[]>;
+                    const k = normNome(item.nome);
+                    const rows = (hist[k] || []) as any[];
+                    return rows.map((r: any) => {
+                      const selecionado = item.fornecedor_id === r.fornecedor_id;
+                      return {
                         fornecedor_id: r.fornecedor_id,
                         fornecedor_nome: r.fornecedores?.nome || "Fornecedor",
                         porte: r.porte,
                         preco: r.preco != null ? Number(r.preco) : null,
-                        unidade: r.unidade || itensMaterial[idx].unidade || null,
+                        unidade: r.unidade || item.unidade || null,
                         data: r.data_orcamento,
                         estrelas:
                           r.nota_media != null
@@ -4432,41 +4461,29 @@ export default function NovoOrcamento() {
                             ? Number(r.fornecedores.nota_media)
                             : null,
                         mercado: r.fornecedores?.mercado || null,
-                        selecionado: sel.has(r.fornecedor_id),
-                      }));
-                    }
-                    // INSUMO — busca em historicoPorItem pelo nome normalizado
-                    const hist = historicoPorItem as Record<string, any[]>;
-                    const k = normNome(item.nome);
-                    const rows = (hist[k] || []) as any[];
-                    return rows.map((r: any) => ({
-                      fornecedor_id: r.fornecedor_id,
-                      fornecedor_nome: r.fornecedores?.nome || "Fornecedor",
-                      porte: r.porte,
-                      preco: r.preco != null ? Number(r.preco) : null,
-                      unidade: r.unidade || item.unidade || null,
-                      data: r.data_orcamento,
-                      estrelas:
-                        r.nota_media != null
-                          ? Number(r.nota_media)
-                          : r.fornecedores?.nota_media != null
-                          ? Number(r.fornecedores.nota_media)
-                          : null,
-                      mercado: r.fornecedores?.mercado || null,
-                      selecionado: item.fornecedor_id === r.fornecedor_id,
-                    }));
+                        observacao: r.observacao || r.obs_interna || null,
+                        foto_url: r.foto_url || r.fornecedores?.foto_url || null,
+                        selecionado,
+                        rank: selecionado ? 1 : null,
+                      };
+                    });
                   }}
                   onSelecionarFornecedor={(item, alt) => {
                     if (item.tipo === "planta") {
                       const idx = item.ref?.itemMemorialIdx;
                       if (idx == null) return;
-                      setFornecedoresSelecionados((prev) => ({ ...prev, [idx]: [alt.fornecedor_id] }));
+                      setFornecedoresSelecionados((prev) => {
+                        const atual = prev[idx] || [];
+                        // Promove para principal: remove se já estava e coloca na frente
+                        const semEste = atual.filter((f) => f !== alt.fornecedor_id);
+                        return { ...prev, [idx]: [alt.fornecedor_id, ...semEste] };
+                      });
                       setCotacao(idx, alt.fornecedor_id, {
                         status_selecao: "principal",
                         valor_unitario: alt.preco != null ? String(alt.preco) : "",
                         porte_ofertado: alt.porte || item.porte || "",
                       });
-                      toast({ title: "Fornecedor selecionado", description: `${item.nome}: ${alt.fornecedor_nome}` });
+                      toast({ title: "Fornecedor principal definido", description: `${item.nome}: ${alt.fornecedor_nome}` });
                       return;
                     }
                     // INSUMO — upsert em insumosAdicionais
@@ -4497,6 +4514,41 @@ export default function NovoOrcamento() {
                     });
                     toast({ title: "Fornecedor selecionado", description: `${item.nome}: ${alt.fornecedor_nome}` });
                   }}
+                  onAdicionarReserva={(item, alt) => {
+                    if (item.tipo !== "planta") {
+                      toast({
+                        title: "Reservas em breve para insumos",
+                        description: "Por enquanto só plantas suportam fornecedores reservas.",
+                      });
+                      return;
+                    }
+                    const idx = item.ref?.itemMemorialIdx;
+                    if (idx == null) return;
+                    setFornecedoresSelecionados((prev) => {
+                      const atual = prev[idx] || [];
+                      if (atual.includes(alt.fornecedor_id)) return prev;
+                      return { ...prev, [idx]: [...atual, alt.fornecedor_id] };
+                    });
+                    const reservaStatus = (item.tipo === "planta" && (fornecedoresSelecionados[idx]?.length || 0) >= 2)
+                      ? "backup2"
+                      : "backup1";
+                    setCotacao(idx, alt.fornecedor_id, {
+                      status_selecao: reservaStatus as "backup1" | "backup2",
+                      valor_unitario: alt.preco != null ? String(alt.preco) : "",
+                      porte_ofertado: alt.porte || item.porte || "",
+                    });
+                    toast({ title: "Reserva adicionada", description: `${item.nome}: ${alt.fornecedor_nome}` });
+                  }}
+                  onRemoverFornecedor={(item, alt) => {
+                    if (item.tipo !== "planta") return;
+                    const idx = item.ref?.itemMemorialIdx;
+                    if (idx == null) return;
+                    setFornecedoresSelecionados((prev) => {
+                      const atual = prev[idx] || [];
+                      return { ...prev, [idx]: atual.filter((f) => f !== alt.fornecedor_id) };
+                    });
+                  }}
+                  getMarkupPct={() => 0}
                   onAtualizarQuantidade={(item, quantidade) => {
                     if (item.tipo !== "insumo") return;
                     const insumoId = item.ref?.insumoCatalogoId || null;
@@ -4749,7 +4801,8 @@ export default function NovoOrcamento() {
               </Dialog>
 
           {/* Etapa 4 - Markup e Margens */}
-          {etapaAtual === 2 && (
+          {/* Markup e Margens — agora dentro da Etapa 1 (Informações Iniciais) */}
+          {etapaAtual === 1 && (
             <div className="space-y-4">
               <ResumoCorrenteRail
                 etapa={4}
@@ -5118,7 +5171,8 @@ export default function NovoOrcamento() {
 
 
           {/* Etapa 5 - Mão de Obra, Fretes e Transporte */}
-          {etapaAtual === 2 && (
+          {/* Etapa 3 - Mão de Obra e Fretes */}
+          {etapaAtual === 3 && (
             <div className="space-y-6 pb-24">
               <ResumoCorrenteRail
                 etapa={5}
@@ -5735,7 +5789,8 @@ export default function NovoOrcamento() {
           )}
 
           {/* Etapa 6 - Resumo Final */}
-          {etapaAtual === 2 && (
+          {/* Etapa 4 - Resumo Final */}
+          {etapaAtual === 4 && (
             <div className="space-y-6 pb-32">
               <ResumoCorrenteRail
                 etapa={6}

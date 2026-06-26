@@ -44,7 +44,10 @@ export interface AlternativaFornecedor {
   data?: string | null;
   estrelas?: number | null;
   mercado?: string | null;
+  observacao?: string | null;
+  foto_url?: string | null;
   selecionado?: boolean;
+  rank?: number | null; // 1 = principal; 2+ = reservas
 }
 
 type SortKey = "data" | "preco" | "nota" | "mercado" | "porte";
@@ -70,12 +73,16 @@ interface Props {
   itens: ItemProjeto[];
   getAlternativas?: (item: ItemProjeto) => AlternativaFornecedor[];
   onSelecionarFornecedor?: (item: ItemProjeto, alt: AlternativaFornecedor) => void;
+  onAdicionarReserva?: (item: ItemProjeto, alt: AlternativaFornecedor) => void;
+  onRemoverFornecedor?: (item: ItemProjeto, alt: AlternativaFornecedor) => void;
   onAtualizarQuantidade?: (item: ItemProjeto, quantidade: number) => void;
   onAtualizarUnidade?: (item: ItemProjeto, unidade: string) => void;
   onRemoverItem?: (item: ItemProjeto) => void;
   onEditarCotacao?: (item: ItemProjeto, alt: AlternativaFornecedor) => void;
   onMesclarFornecedores?: (item: ItemProjeto, alts: AlternativaFornecedor[]) => void;
   onAdicionarItem?: () => void;
+  getMarkupPct?: (item: ItemProjeto) => number;
+  getObservacaoArquitetura?: (item: ItemProjeto) => string | null;
 }
 
 const brl = (n: number | null | undefined) =>
@@ -110,12 +117,16 @@ export function TabelaItensProjeto({
   itens,
   getAlternativas,
   onSelecionarFornecedor,
+  onAdicionarReserva,
+  onRemoverFornecedor,
   onAtualizarQuantidade,
   onAtualizarUnidade,
   onRemoverItem,
   onEditarCotacao,
   onMesclarFornecedores,
   onAdicionarItem,
+  getMarkupPct,
+  getObservacaoArquitetura,
 }: Props) {
   const [busca, setBusca] = useState("");
   const [tipoFiltro, setTipoFiltro] = useState<"todos" | "planta" | "insumo">("todos");
@@ -330,6 +341,12 @@ export function TabelaItensProjeto({
                 onSelecionarFornecedor?.(it, alt);
                 setAberto(it.chave, false);
               }}
+              onAdicionarReserva={
+                onAdicionarReserva ? (alt) => onAdicionarReserva(it, alt) : undefined
+              }
+              onRemoverFornecedor={
+                onRemoverFornecedor ? (alt) => onRemoverFornecedor(it, alt) : undefined
+              }
               onAtualizarQuantidade={
                 onAtualizarQuantidade ? (q) => onAtualizarQuantidade(it, q) : undefined
               }
@@ -341,6 +358,8 @@ export function TabelaItensProjeto({
               onMesclarFornecedores={
                 onMesclarFornecedores ? (alts) => onMesclarFornecedores(it, alts) : undefined
               }
+              markupPct={getMarkupPct ? getMarkupPct(it) : 0}
+              observacaoArquitetura={getObservacaoArquitetura ? getObservacaoArquitetura(it) : null}
             />
           ))
         )}
@@ -357,11 +376,15 @@ function LinhaItem({
   setFiltros,
   getAlternativas,
   onSelecionarFornecedor,
+  onAdicionarReserva,
+  onRemoverFornecedor,
   onAtualizarQuantidade,
   onAtualizarUnidade,
   onRemoverItem,
   onEditarCotacao,
   onMesclarFornecedores,
+  markupPct = 0,
+  observacaoArquitetura = null,
 }: {
   item: ItemProjeto;
   aberto: boolean;
@@ -370,11 +393,15 @@ function LinhaItem({
   setFiltros: (patch: Partial<FiltrosLinha>) => void;
   getAlternativas?: (item: ItemProjeto) => AlternativaFornecedor[];
   onSelecionarFornecedor?: (alt: AlternativaFornecedor) => void;
+  onAdicionarReserva?: (alt: AlternativaFornecedor) => void;
+  onRemoverFornecedor?: (alt: AlternativaFornecedor) => void;
   onAtualizarQuantidade?: (q: number) => void;
   onAtualizarUnidade?: (u: string) => void;
   onRemoverItem?: () => void;
   onEditarCotacao?: (alt: AlternativaFornecedor) => void;
   onMesclarFornecedores?: (alts: AlternativaFornecedor[]) => void;
+  markupPct?: number;
+  observacaoArquitetura?: string | null;
 }) {
   const resolvido = !!item.fornecedor_id;
   const [qtdLocal, setQtdLocal] = useState<string>(String(item.quantidade ?? 0));
@@ -454,6 +481,13 @@ function LinhaItem({
     return `${min.fornecedor_id}-${min.preco}`;
   }, [altsFiltradas]);
 
+  const melhorNotaId = useMemo(() => {
+    const comNota = altsFiltradas.filter((a) => a.estrelas != null);
+    if (comNota.length === 0) return null;
+    const max = comNota.reduce((m, a) => ((a.estrelas ?? -Infinity) > (m.estrelas ?? -Infinity) ? a : m), comNota[0]);
+    return `${max.fornecedor_id}-${max.estrelas}`;
+  }, [altsFiltradas]);
+
   const maisRecenteId = useMemo(() => {
     const comData = altsFiltradas.filter((a) => a.data);
     if (comData.length === 0) return null;
@@ -475,11 +509,27 @@ function LinhaItem({
 
   const editavelQtd = !!onAtualizarQuantidade && item.tipo === "insumo";
 
+  // Fornecedores escolhidos (principal + reservas)
+  const escolhidos = useMemo(
+    () => altsBrutas.filter((a) => a.selecionado).sort((a, b) => (a.rank ?? 99) - (b.rank ?? 99)),
+    [altsBrutas],
+  );
+
+  // Totais compra/venda (multiplicador de markup vem de fora)
+  const compraTotal = resolvido && item.valor_unitario != null
+    ? Number(item.valor_unitario) * Number(item.quantidade || 0)
+    : 0;
+  const vendaTotal = compraTotal * (1 + (Number(markupPct) || 0) / 100);
+
   return (
     <div
       className={cn(
-        "rounded-lg border bg-card overflow-hidden flex transition-colors",
-        aberto ? "border-primary/30" : "border-primary/20 hover:bg-accent/20",
+        "rounded-lg border overflow-hidden flex transition-colors",
+        resolvido
+          ? "border-marinho/40 bg-marinho/[0.06] hover:bg-marinho/[0.09]"
+          : aberto
+            ? "border-primary/30 bg-card"
+            : "border-primary/20 bg-card hover:bg-accent/20",
       )}
     >
       <span
@@ -491,18 +541,30 @@ function LinhaItem({
           className="flex items-center gap-3 cursor-pointer"
           onClick={() => setAberto(!aberto)}
         >
-          <span className="text-muted-foreground shrink-0">
+          <span className={cn("shrink-0", resolvido ? "text-marinho" : "text-muted-foreground")}>
             {aberto ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </span>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-medium text-foreground truncate">{item.nome}</span>
-              <Badge variant={item.tipo === "planta" ? "default" : "secondary"} className="text-[10px] capitalize">
+              <Badge
+                variant={item.tipo === "planta" ? "default" : "secondary"}
+                className="text-[10px] capitalize"
+              >
                 {item.tipo}
               </Badge>
               {item.badges.includes("baixa confiança") && (
                 <Badge variant="outline" className="text-[10px]">conferir</Badge>
+              )}
+              {escolhidos.length > 1 && (
+                <Badge
+                  variant="outline"
+                  className="text-[10px] border-marinho/40 text-marinho"
+                  title="Principal + reservas selecionadas"
+                >
+                  +{escolhidos.length - 1} reserva{escolhidos.length - 1 > 1 ? "s" : ""}
+                </Badge>
               )}
             </div>
             {item.tipo === "planta" && item.nome_cientifico && (
@@ -555,11 +617,26 @@ function LinhaItem({
               )}
               <span>·</span>
               {resolvido ? (
-                <span className="text-foreground truncate max-w-[180px]">{item.fornecedor_nome || ""}</span>
+                <span className="text-foreground truncate max-w-[200px] font-medium">
+                  {item.fornecedor_nome || ""}
+                </span>
               ) : (
                 <span className="text-primary font-medium">em aberto</span>
               )}
             </div>
+
+            {/* Observação da arquitetura */}
+            {observacaoArquitetura && (
+              <div
+                className="mt-1.5 text-[11px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-2 py-1 inline-flex items-start gap-1.5 max-w-full"
+                title="Observação do time de arquitetura"
+              >
+                <span className="font-semibold uppercase tracking-wide text-[9px] text-amber-700 shrink-0 mt-0.5">
+                  Arquitetura
+                </span>
+                <span className="truncate">{observacaoArquitetura}</span>
+              </div>
+            )}
           </div>
 
           <div
@@ -568,17 +645,24 @@ function LinhaItem({
           >
             {resolvido ? (
               <>
-                <span className="text-base font-medium tabular-nums text-foreground">
-                  {brl(item.valor_unitario)}
-                </span>
+                <div className="text-right leading-tight">
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Compra</div>
+                  <div className="text-sm font-semibold tabular-nums text-foreground">{brl(compraTotal)}</div>
+                  {markupPct > 0 && (
+                    <>
+                      <div className="text-[10px] uppercase tracking-wide text-marinho mt-0.5">Venda</div>
+                      <div className="text-sm font-semibold tabular-nums text-marinho">{brl(vendaTotal)}</div>
+                    </>
+                  )}
+                </div>
                 <Button
                   type="button"
                   size="sm"
                   variant="ghost"
-                  className="h-8 text-xs"
+                  className="h-8 text-xs text-marinho hover:bg-marinho/10"
                   onClick={() => setAberto(!aberto)}
                 >
-                  Trocar
+                  {aberto ? "Fechar" : "Gerenciar"}
                 </Button>
               </>
             ) : (
@@ -609,6 +693,7 @@ function LinhaItem({
             )}
           </div>
         </div>
+
 
         {aberto && (
           <div className="mt-3">
@@ -856,6 +941,12 @@ function LinhaItem({
                       {altsFiltradas.map((a, i) => {
                         const ehMenor = menorPrecoId === `${a.fornecedor_id}-${a.preco}`;
                         const ehRecente = maisRecenteId === `${a.fornecedor_id}-${a.data}`;
+                        const ehMelhorNota = melhorNotaId === `${a.fornecedor_id}-${a.estrelas}`;
+                        const rankBadge = a.selecionado
+                          ? a.rank === 1 || a.rank == null
+                            ? "Principal"
+                            : `Reserva ${a.rank - 1}`
+                          : null;
                         return (
                           <tr
                             key={`${a.fornecedor_id}-${i}`}
@@ -866,13 +957,47 @@ function LinhaItem({
                           >
                             <td className="py-2 pr-3 align-middle">
                               <div className="flex items-center gap-2 flex-wrap">
+                                {a.foto_url && (
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <button
+                                        type="button"
+                                        className="w-8 h-8 rounded border border-primary/20 overflow-hidden shrink-0 hover:ring-2 hover:ring-marinho/40 transition"
+                                        title="Ver foto"
+                                      >
+                                        <img
+                                          src={a.foto_url}
+                                          alt={a.fornecedor_nome}
+                                          className="w-full h-full object-cover"
+                                        />
+                                      </button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="p-1 w-64">
+                                      <img
+                                        src={a.foto_url}
+                                        alt={a.fornecedor_nome}
+                                        className="w-full h-auto rounded"
+                                      />
+                                    </PopoverContent>
+                                  </Popover>
+                                )}
                                 <span className="font-medium text-foreground">{a.fornecedor_nome}</span>
+                                {rankBadge && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-marinho text-white font-semibold">
+                                    {rankBadge}
+                                  </span>
+                                )}
                                 {ehMenor && (
                                   <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-primary text-primary-foreground font-semibold">
                                     <Sparkles className="w-3 h-3" /> melhor preço
                                   </span>
                                 )}
-                                {ehRecente && !ehMenor && (
+                                {ehMelhorNota && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-amber-500 text-white font-semibold">
+                                    ★ melhor nota
+                                  </span>
+                                )}
+                                {ehRecente && !ehMenor && !ehMelhorNota && (
                                   <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground font-semibold">
                                     mais recente
                                   </span>
@@ -880,6 +1005,14 @@ function LinhaItem({
                               </div>
                               {a.estrelas != null && (
                                 <div className="text-[11px] text-muted-foreground">★ {a.estrelas.toFixed(1)}</div>
+                              )}
+                              {a.observacao && (
+                                <div
+                                  className="mt-1 text-[11px] text-marinho/90 bg-marinho/5 border border-marinho/20 rounded px-1.5 py-0.5 inline-block max-w-full truncate"
+                                  title={a.observacao}
+                                >
+                                  💬 {a.observacao}
+                                </div>
                               )}
                             </td>
                             <td className="py-2 pr-3 align-middle text-muted-foreground">{a.mercado || "—"}</td>
@@ -892,7 +1025,7 @@ function LinhaItem({
                             </td>
                             <td className="py-2 pr-3 align-middle text-muted-foreground">{fmtData(a.data)}</td>
                             <td className="py-2 pr-3 align-middle">
-                              <div className="flex items-center gap-1 justify-end">
+                              <div className="flex items-center gap-1 justify-end flex-wrap">
                                 {onEditarCotacao && (
                                   <Button
                                     type="button"
@@ -906,21 +1039,63 @@ function LinhaItem({
                                   </Button>
                                 )}
                                 {a.selecionado ? (
-                                  <span className="inline-flex items-center gap-1 px-2 py-1.5 rounded-md bg-marinho/10 text-marinho text-xs font-semibold">
-                                    <CheckCircle2 className="w-3.5 h-3.5" /> Selecionado
-                                  </span>
-                                ) : onSelecionarFornecedor ? (
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="terracota"
-                                    className="h-9"
-                                    onClick={() => onSelecionarFornecedor(a)}
-                                  >
-                                    <Check className="w-4 h-4" />
-                                    Selecionar
-                                  </Button>
-                                ) : null}
+                                  <div className="flex items-center gap-1">
+                                    <span className="inline-flex items-center gap-1 px-2 py-1.5 rounded-md bg-marinho/10 text-marinho text-xs font-semibold">
+                                      <CheckCircle2 className="w-3.5 h-3.5" /> {rankBadge}
+                                    </span>
+                                    {onRemoverFornecedor && (
+                                      <Button
+                                        type="button"
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                        title="Remover este fornecedor da seleção"
+                                        onClick={() => onRemoverFornecedor(a)}
+                                      >
+                                        <X className="w-3.5 h-3.5" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <>
+                                    {onSelecionarFornecedor && escolhidos.length === 0 && (
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="terracota"
+                                        className="h-9"
+                                        onClick={() => onSelecionarFornecedor(a)}
+                                      >
+                                        <Check className="w-4 h-4" />
+                                        Selecionar
+                                      </Button>
+                                    )}
+                                    {onSelecionarFornecedor && escolhidos.length > 0 && (
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-9 border-marinho/40 text-marinho hover:bg-marinho/10"
+                                        title="Tornar este o fornecedor principal (move o atual para reserva)"
+                                        onClick={() => onSelecionarFornecedor(a)}
+                                      >
+                                        <Check className="w-4 h-4" />
+                                        Tornar principal
+                                      </Button>
+                                    )}
+                                    {onAdicionarReserva && escolhidos.length > 0 && (
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-9 text-marinho hover:bg-marinho/10"
+                                        onClick={() => onAdicionarReserva(a)}
+                                      >
+                                        <Plus className="w-3.5 h-3.5" /> Reserva
+                                      </Button>
+                                    )}
+                                  </>
+                                )}
                               </div>
                             </td>
                           </tr>
