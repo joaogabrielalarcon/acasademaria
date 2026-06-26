@@ -548,8 +548,8 @@ export function MemorialItensTable({
   if (!shouldVirtualize) {
     return (
       <div className="border rounded-lg overflow-hidden bg-card shadow-sm">
-        <div className="overflow-x-auto">
-          <div className="min-w-[58rem]">
+      <div className="overflow-x-auto">
+          <div className="min-w-[61rem]">
             {Header}
             {indexed.map(({ it, realIdx }, displayIdx) => (
               <Row
