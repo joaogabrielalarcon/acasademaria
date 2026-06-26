@@ -142,101 +142,102 @@ function CatalogoCell({
   };
 
   return (
-    <div className="flex flex-col gap-1 min-w-0">
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            className={cn(
-              "inline-flex items-center gap-1.5 h-7 px-2 rounded-md text-xs font-medium border transition-colors w-full min-w-0",
-              ligadaAoCatalogo
-                ? "border-primary/30 bg-primary/10 text-primary hover:bg-primary/15"
-                : "border-dashed border-muted-foreground/40 text-muted-foreground hover:bg-muted",
-            )}
-            title={ligadaAoCatalogo ? "Vinculado ao catálogo · clique para trocar" : "Vincular ao catálogo"}
-          >
-            <Link2 className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate">{ligadaAoCatalogo ? "No catálogo" : "A vincular"}</span>
-          </button>
-        </PopoverTrigger>
-        <PopoverContent className="p-0 w-[22rem]" align="start">
-          <Command shouldFilter={false}>
-            <CommandInput placeholder="Buscar no catálogo..." value={query} onValueChange={setQuery} />
-            <CommandList>
-              <CommandEmpty>Nada encontrado.</CommandEmpty>
-              {ligadaAoCatalogo && (
-                <CommandGroup heading="Vínculo atual">
-                  <CommandItem
-                    onSelect={() => { onLinkPlanta?.(realIdx, null); setOpen(false); }}
-                    className="text-destructive"
-                  >
-                    <X className="w-4 h-4" />
-                    Desvincular do catálogo
-                  </CommandItem>
-                </CommandGroup>
-              )}
-              {it.sugestoes && it.sugestoes.length > 0 && !ligadaAoCatalogo && (
-                <CommandGroup heading="Sugestões da Mafe">
-                  {it.sugestoes.map((s) => {
-                    const p = plantasCatalogo?.find((x) => x.id === s.item_id);
-                    return (
-                      <CommandItem
-                        key={s.item_id}
-                        onSelect={() => { if (p) { onLinkPlanta?.(realIdx, p); setOpen(false); } }}
-                      >
-                        <Sparkles className="w-4 h-4 text-primary" />
-                        <div className="flex flex-col">
-                          <span>{s.nome}</span>
-                          {s.nome_secundario && (
-                            <span className="text-xs italic text-muted-foreground">{s.nome_secundario}</span>
-                          )}
-                        </div>
-                        <span className="ml-auto text-[10px] text-muted-foreground">{Math.round(s.score * 100)}%</span>
-                      </CommandItem>
-                    );
-                  })}
-                </CommandGroup>
-              )}
-              <CommandGroup heading="Plantas">
-                {sugestoesLista.map((p) => (
-                  <CommandItem
-                    key={p.id}
-                    value={`${p.nome_popular} ${p.nome_cientifico || ""}`}
-                    onSelect={() => { onLinkPlanta?.(realIdx, p); setOpen(false); }}
-                  >
-                    <div className="flex flex-col">
-                      <span>{p.nome_popular}</span>
-                      {p.nome_cientifico && (
-                        <span className="text-xs italic text-muted-foreground">{p.nome_cientifico}</span>
-                      )}
-                    </div>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-              {onOpenCadastro && (
-                <CommandGroup heading="Não está aqui?">
-                  <CommandItem onSelect={() => { onOpenCadastro(realIdx); setOpen(false); }}>
-                    <Plus className="w-4 h-4" />
-                    Cadastrar "{it.nome_popular || "novo item"}" no catálogo
-                  </CommandItem>
-                </CommandGroup>
-              )}
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
-      {sugestaoTop && (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
         <button
           type="button"
-          onClick={aplicarSugestao}
-          className="text-[11px] text-left text-primary hover:underline truncate"
-          title={`Vincular a "${sugestaoTop.nome}" (${Math.round(sugestaoTop.score * 100)}% · ${sugestaoTop.fonte})`}
+          className={cn(
+            "inline-flex items-center justify-center h-6 w-6 rounded-full transition-colors",
+            ligadaAoCatalogo
+              ? "text-primary hover:bg-primary/10"
+              : sugestaoTop
+                ? "text-yellow-600 hover:bg-yellow-500/10"
+                : "text-muted-foreground/50 hover:bg-muted hover:text-foreground",
+          )}
+          title={
+            ligadaAoCatalogo
+              ? "No catálogo · clique para trocar"
+              : sugestaoTop
+                ? `Parece: ${sugestaoTop.nome} · clique para vincular`
+                : "Não vinculado ao catálogo"
+          }
+          aria-label={ligadaAoCatalogo ? "No catálogo" : "A vincular ao catálogo"}
         >
-          Parece: <strong>{sugestaoTop.nome}</strong> · vincular
+          {ligadaAoCatalogo ? (
+            <Check className="w-3.5 h-3.5" />
+          ) : (
+            <Link2 className="w-3.5 h-3.5" />
+          )}
         </button>
-      )}
-    </div>
+      </PopoverTrigger>
+      <PopoverContent className="p-0 w-[22rem]" align="end">
+        <Command shouldFilter={false}>
+          <CommandInput placeholder="Buscar no catálogo..." value={query} onValueChange={setQuery} />
+          <CommandList>
+            <CommandEmpty>Nada encontrado.</CommandEmpty>
+            {ligadaAoCatalogo && (
+              <CommandGroup heading="Vínculo atual">
+                <CommandItem
+                  onSelect={() => { onLinkPlanta?.(realIdx, null); setOpen(false); }}
+                  className="text-destructive"
+                >
+                  <X className="w-4 h-4" />
+                  Desvincular do catálogo
+                </CommandItem>
+              </CommandGroup>
+            )}
+            {it.sugestoes && it.sugestoes.length > 0 && !ligadaAoCatalogo && (
+              <CommandGroup heading="Sugestões da Mafe">
+                {it.sugestoes.map((s) => {
+                  const p = plantasCatalogo?.find((x) => x.id === s.item_id);
+                  return (
+                    <CommandItem
+                      key={s.item_id}
+                      onSelect={() => { if (p) { onLinkPlanta?.(realIdx, p); setOpen(false); } }}
+                    >
+                      <Sparkles className="w-4 h-4 text-primary" />
+                      <div className="flex flex-col">
+                        <span>{s.nome}</span>
+                        {s.nome_secundario && (
+                          <span className="text-xs italic text-muted-foreground">{s.nome_secundario}</span>
+                        )}
+                      </div>
+                      <span className="ml-auto text-[10px] text-muted-foreground">{Math.round(s.score * 100)}%</span>
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            )}
+            <CommandGroup heading="Plantas">
+              {sugestoesLista.map((p) => (
+                <CommandItem
+                  key={p.id}
+                  value={`${p.nome_popular} ${p.nome_cientifico || ""}`}
+                  onSelect={() => { onLinkPlanta?.(realIdx, p); setOpen(false); }}
+                >
+                  <div className="flex flex-col">
+                    <span>{p.nome_popular}</span>
+                    {p.nome_cientifico && (
+                      <span className="text-xs italic text-muted-foreground">{p.nome_cientifico}</span>
+                    )}
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            {onOpenCadastro && (
+              <CommandGroup heading="Não está aqui?">
+                <CommandItem onSelect={() => { onOpenCadastro(realIdx); setOpen(false); }}>
+                  <Plus className="w-4 h-4" />
+                  Cadastrar "{it.nome_popular || "novo item"}" no catálogo
+                </CommandItem>
+              </CommandGroup>
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
+
 }
 
 function Row({
