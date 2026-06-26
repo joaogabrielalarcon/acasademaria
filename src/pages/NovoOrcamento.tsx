@@ -1802,6 +1802,12 @@ export default function NovoOrcamento() {
       if (orcamento.tipo_nf) setTipoNf(orcamento.tipo_nf);
       if (orcamento.margem_negociacao_pct != null) setMargemNegPct(Number(orcamento.margem_negociacao_pct));
       if ((orcamento as any).negociacao_valor != null) setNegociacaoValor(Number((orcamento as any).negociacao_valor));
+      // Restaura snapshot do memorial (texto bruto, modo, nome do arquivo).
+      const snap = (orcamento as any).memorial_snapshot;
+      if (snap && typeof snap === "object") {
+        if (snap.modo === "texto" || snap.modo === "pdf") setMemorialModo(snap.modo);
+        if (typeof snap.texto === "string") setMemorialTexto(snap.texto);
+      }
     }
   }, [orcamento, tipos]);
 
@@ -1860,6 +1866,27 @@ export default function NovoOrcamento() {
       setMargensSeg(novasMargens);
       // markup vem de orcamento_categorias_markup via markupCategoriasQuery
       if (novosItens.length > 0) setPdfCarregado(true);
+
+      // Snapshot do memorial — sobrescreve com metadados ricos (confiança, sugestões, insumos extras).
+      try {
+        const { data: orcRow } = await (supabase as any)
+          .from("orcamentos")
+          .select("memorial_snapshot")
+          .eq("id", id)
+          .maybeSingle();
+        const snap = orcRow?.memorial_snapshot;
+        if (snap && typeof snap === "object") {
+          if (Array.isArray(snap.itens) && snap.itens.length > 0) {
+            setItensMaterial(snap.itens as ItemMemorial[]);
+            setPdfCarregado(true);
+          }
+          if (Array.isArray(snap.insumos)) {
+            setItensInsumoExtra(snap.insumos as InsumoMemorial[]);
+          }
+        }
+      } catch (err) {
+        console.warn("Falha ao restaurar snapshot do memorial:", err);
+      }
 
 
       // cotacoes + fornecedoresSelecionados (por idx)
@@ -3297,6 +3324,28 @@ export default function NovoOrcamento() {
       const partes = [`${itens.length} plantas`];
       if (insumosNorm.length) partes.push(`${insumosNorm.length} insumos`);
       toast({ title: `${partes.join(" + ")} extraídos` });
+      // Persiste imediatamente o snapshot do memorial no orçamento (não perde dados).
+      if (id) {
+        try {
+          await (supabase as any)
+            .from("orcamentos")
+            .update({
+              memorial_snapshot: {
+                itens: itensCasados,
+                insumos: insumosNorm,
+                texto: memorialModo === "texto" ? memorialTexto : null,
+                arquivo_nome: memorialModo === "pdf" ? (pdfFile?.name || null) : null,
+                arquivo_tamanho: memorialModo === "pdf" ? (pdfFile?.size || null) : null,
+                modo: memorialModo,
+                extraido_em: new Date().toISOString(),
+              },
+              memorial_atualizado_em: new Date().toISOString(),
+            })
+            .eq("id", id);
+        } catch (err) {
+          console.warn("Falha ao salvar snapshot do memorial:", err);
+        }
+      }
     } catch (e: any) {
       const msg = e?.message || `Erro inesperado ao processar o ${tipoLabel}`;
       setExtracaoErro(msg);
