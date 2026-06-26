@@ -244,6 +244,97 @@ function CatalogoCell({
 
 }
 
+function ObservacaoCell({
+  value,
+  onChange,
+  nomeItem,
+}: {
+  value: string | null | undefined;
+  onChange: (v: string | null) => void;
+  nomeItem: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState(value ?? "");
+  const tem = !!(value && value.trim().length > 0);
+
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) setDraft(value ?? "");
+      }}
+    >
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            "inline-flex items-center justify-center h-6 w-6 rounded-full transition-colors",
+            tem
+              ? "text-primary hover:bg-primary/10"
+              : "text-muted-foreground/40 hover:bg-muted hover:text-foreground opacity-60 group-hover:opacity-100",
+          )}
+          title={tem ? `Observação: ${value}` : "Adicionar observação"}
+          aria-label={tem ? "Tem observação" : "Sem observação"}
+        >
+          {tem ? <MessageSquareText className="w-3.5 h-3.5" /> : <MessageSquare className="w-3.5 h-3.5" />}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[22rem] p-3" align="end">
+        <div className="space-y-2">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Observação {nomeItem ? `· ${nomeItem}` : ""}
+          </div>
+          <Textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="Particularidades do item (porte específico, condição, exigência da arquitetura...)"
+            rows={5}
+            className="text-sm resize-y"
+            autoFocus
+          />
+          <div className="flex items-center justify-between gap-2">
+            {tem ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                onClick={() => {
+                  onChange(null);
+                  setDraft("");
+                  setOpen(false);
+                }}
+              >
+                Remover
+              </Button>
+            ) : (
+              <span />
+            )}
+            <div className="flex gap-2">
+              <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  const v = draft.trim();
+                  onChange(v.length > 0 ? v : null);
+                  setOpen(false);
+                }}
+              >
+                Salvar
+              </Button>
+            </div>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+
 function Row({
   it,
   idx,
