@@ -4537,9 +4537,6 @@ export default function NovoOrcamento() {
                       valor_unitario: alt.preco != null ? String(alt.preco) : "",
                       porte_ofertado: alt.porte || item.porte || "",
                     });
-                      valor_unitario: alt.preco != null ? String(alt.preco) : "",
-                      porte_ofertado: alt.porte || item.porte || "",
-                    });
                     toast({ title: "Reserva adicionada", description: `${item.nome}: ${alt.fornecedor_nome}` });
                   }}
                   onRemoverFornecedor={(item, alt) => {
