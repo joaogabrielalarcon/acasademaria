@@ -4448,6 +4448,48 @@ export default function NovoOrcamento() {
                       return next;
                     });
                   }}
+                  onAtualizarUnidade={(item, unidade) => {
+                    if (item.tipo !== "insumo") return;
+                    const insumoId = item.ref?.insumoCatalogoId || null;
+                    setInsumosAdicionais((prev) => {
+                      const next = [...prev];
+                      const i = next.findIndex((a) =>
+                        (insumoId && a.insumo_id === insumoId) ||
+                        a.nome.trim().toLowerCase() === item.nome.trim().toLowerCase(),
+                      );
+                      if (i >= 0) {
+                        next[i] = { ...next[i], unidade };
+                      } else {
+                        next.push({
+                          insumo_id: insumoId || undefined,
+                          nome: item.nome,
+                          fornecedor_id: item.fornecedor_id || "",
+                          quantidade_esperada: String(item.quantidade ?? 0),
+                          unidade,
+                          margem: "0",
+                          valor_unitario: item.valor_unitario != null ? String(item.valor_unitario) : "",
+                          obs_interna: "",
+                          obs_proposta: "",
+                        });
+                      }
+                      return next;
+                    });
+                  }}
+                  onRemoverItem={(item) => {
+                    if (item.tipo !== "insumo") return;
+                    const chaveNome = item.nome.trim().toLowerCase();
+                    // Remove de insumosAdicionais (manual/upsert)
+                    setInsumosAdicionais((prev) =>
+                      prev.filter((a) => a.nome.trim().toLowerCase() !== chaveNome),
+                    );
+                    // Marca como excluído (impede que base/memorial reapareça)
+                    setInsumosExcluidos((prev) => {
+                      const next = new Set(prev);
+                      next.add(chaveNome);
+                      return next;
+                    });
+                    toast({ title: "Item removido", description: item.nome });
+                  }}
                   onAdicionarItem={() => {
                     toast({
                       title: "Adicionar item",
