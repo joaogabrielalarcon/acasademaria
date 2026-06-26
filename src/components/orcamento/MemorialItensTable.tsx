@@ -2,6 +2,8 @@ import { useRef, useState, useMemo } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+
 import {
   Select,
   SelectContent,
@@ -18,7 +20,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { AlertTriangle, Check, CircleHelp, Link2, Plus, Sparkles, Trash2, X } from "lucide-react";
+import { AlertTriangle, Check, CircleHelp, Link2, MessageSquare, MessageSquareText, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UnidadeCell } from "./UnidadeCell";
 
@@ -41,6 +43,7 @@ export interface ItemMemorialLike {
   confianca: "alta" | "media" | "baixa";
   planta_id?: string | null;
   insumo_id?: string | null;
+  observacao?: string | null;
   sugestoes?: SugestaoCatalogoLite[];
 }
 
@@ -64,9 +67,10 @@ interface Props {
   virtualizeThreshold?: number;
 }
 
-// Linha enxuta: barra confiança · # · nome popular · nome científico · categoria · porte · qtd · unidade · catálogo (ícone) · excluir
+// Linha enxuta: barra confiança · # · nome popular · nome científico · categoria · porte · qtd · unidade · obs (ícone) · catálogo (ícone) · excluir
 const COLS =
-  "grid-cols-[0.25rem_2rem_minmax(11rem,1.6fr)_minmax(10rem,1.4fr)_minmax(7.5rem,0.8fr)_4.5rem_4.5rem_minmax(6rem,0.6fr)_1.75rem_1.75rem]";
+  "grid-cols-[0.25rem_2rem_minmax(11rem,1.6fr)_minmax(10rem,1.4fr)_minmax(7.5rem,0.8fr)_4.5rem_4.5rem_minmax(6rem,0.6fr)_1.75rem_1.75rem_1.75rem]";
+
 
 
 function normalizar(s: string) {
@@ -240,6 +244,97 @@ function CatalogoCell({
 
 }
 
+function ObservacaoCell({
+  value,
+  onChange,
+  nomeItem,
+}: {
+  value: string | null | undefined;
+  onChange: (v: string | null) => void;
+  nomeItem: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState(value ?? "");
+  const tem = !!(value && value.trim().length > 0);
+
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) setDraft(value ?? "");
+      }}
+    >
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            "inline-flex items-center justify-center h-6 w-6 rounded-full transition-colors",
+            tem
+              ? "text-primary hover:bg-primary/10"
+              : "text-muted-foreground/40 hover:bg-muted hover:text-foreground opacity-60 group-hover:opacity-100",
+          )}
+          title={tem ? `Observação: ${value}` : "Adicionar observação"}
+          aria-label={tem ? "Tem observação" : "Sem observação"}
+        >
+          {tem ? <MessageSquareText className="w-3.5 h-3.5" /> : <MessageSquare className="w-3.5 h-3.5" />}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[22rem] p-3" align="end">
+        <div className="space-y-2">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Observação {nomeItem ? `· ${nomeItem}` : ""}
+          </div>
+          <Textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="Particularidades do item (porte específico, condição, exigência da arquitetura...)"
+            rows={5}
+            className="text-sm resize-y"
+            autoFocus
+          />
+          <div className="flex items-center justify-between gap-2">
+            {tem ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                onClick={() => {
+                  onChange(null);
+                  setDraft("");
+                  setOpen(false);
+                }}
+              >
+                Remover
+              </Button>
+            ) : (
+              <span />
+            )}
+            <div className="flex gap-2">
+              <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  const v = draft.trim();
+                  onChange(v.length > 0 ? v : null);
+                  setOpen(false);
+                }}
+              >
+                Salvar
+              </Button>
+            </div>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+
 function Row({
   it,
   idx,
@@ -356,6 +451,15 @@ function Row({
         />
       </div>
 
+      {/* Observação (ícone) */}
+      <div className="flex items-center justify-center">
+        <ObservacaoCell
+          value={it.observacao}
+          nomeItem={it.nome_popular}
+          onChange={(v) => onUpdate(realIdx, { observacao: v })}
+        />
+      </div>
+
       {/* Catálogo (ícone) */}
       <div className="flex items-center justify-center">
         <CatalogoCell
@@ -366,6 +470,7 @@ function Row({
           onOpenCadastro={onOpenCadastro}
         />
       </div>
+
 
       {/* Excluir */}
       <div className="flex items-center justify-center">
@@ -421,9 +526,13 @@ export function MemorialItensTable({
       <div className="text-center">Porte</div>
       <div className="text-right pr-1">Qtd</div>
       <div className="px-1.5">Unidade</div>
+      <div className="text-center" title="Observação">
+        <MessageSquare className="w-3 h-3 inline opacity-60" aria-label="Observação" />
+      </div>
       <div className="text-center" title="Catálogo">
         <Link2 className="w-3 h-3 inline opacity-60" aria-label="Catálogo" />
       </div>
+
       <div />
     </div>
   );
