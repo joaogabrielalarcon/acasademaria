@@ -288,6 +288,10 @@ export default function NovoOrcamento() {
   const [cotacoes, setCotacoes] = useState<Record<number, Record<string, CotacaoLinha>>>({});
   const [margensSeg, setMargensSeg] = useState<Record<number, number>>({});
   const [cardsColapsados, setCardsColapsados] = useState<Record<number, boolean>>({});
+  // Mapa idx -> id da linha em orcamento_itens (preenchido na hidratação em modo edição).
+  // Usado para persistir seleção de fornecedores principal/reservas automaticamente,
+  // sem depender do "Salvar" global da etapa.
+  const [itemIdByIdx, setItemIdByIdx] = useState<Record<number, string>>({});
 
   // Filtros e ações da Etapa 3 / 4
   type OrdemForn = "preco" | "data" | "porte" | "nota";
@@ -1890,10 +1894,12 @@ export default function NovoOrcamento() {
       }
 
 
-      // cotacoes + fornecedoresSelecionados (por idx)
+      // cotacoes + fornecedoresSelecionados (por idx) + mapa idx -> item_id
       const novasCot: Record<number, Record<string, CotacaoLinha>> = {};
       const novosForn: Record<number, string[]> = {};
+      const novoIdMap: Record<number, string> = {};
       itensList.forEach((it: any, idx: number) => {
+        novoIdMap[idx] = it.id;
         const linhas = cotacoesDb.filter((c) => c.item_id === it.id);
         if (linhas.length === 0) return;
         novasCot[idx] = {};
@@ -1914,6 +1920,7 @@ export default function NovoOrcamento() {
       });
       setCotacoes(novasCot);
       setFornecedoresSelecionados(novosForn);
+      setItemIdByIdx(novoIdMap);
 
       // insumos
       const insAuto: InsumoCalc[] = [];
@@ -2013,6 +2020,60 @@ export default function NovoOrcamento() {
       return true;
     },
   });
+
+  // Autosave dedicado da seleção de fornecedores (principal + reservas) por item.
+  // Persiste em orcamento_cotacoes assim que o usuário escolhe/altera, sem depender
+  // do "Salvar" global. Só roda em modo edição (precisa de item_id existente).
+  const cotacoesAutosaveRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!isEdit || !id || !hidratadoRef.current) return;
+    if (Object.keys(itemIdByIdx).length === 0) return;
+    if (cotacoesAutosaveRef.current) window.clearTimeout(cotacoesAutosaveRef.current);
+    cotacoesAutosaveRef.current = window.setTimeout(async () => {
+      try {
+        for (const [idxStr, itemId] of Object.entries(itemIdByIdx)) {
+          const idx = Number(idxStr);
+          const itemCot = cotacoes[idx];
+          if (!itemCot) continue;
+          // Substitui o conjunto de cotações desse item.
+          await (supabase as any).from("orcamento_cotacoes").delete().eq("item_id", itemId);
+          const rows = Object.entries(itemCot)
+            .filter(([fid]) => !!fid)
+            .map(([fid, l]) => ({
+              item_id: itemId,
+              fornecedor_id: fid,
+              valor_unitario_cotado: Number(l.valor_unitario) || 0,
+              porte_ofertado: l.porte_ofertado || null,
+              disponivel: l.disponivel,
+              status_selecao: l.status_selecao,
+              obs: l.obs || null,
+            }));
+          if (rows.length > 0) {
+            await (supabase as any).from("orcamento_cotacoes").insert(rows);
+          }
+          // Atualiza fornecedor_escolhido_id e custo na linha do item.
+          const principal = Object.entries(itemCot).find(
+            ([, l]) => l.status_selecao === "principal",
+          );
+          await (supabase as any)
+            .from("orcamento_itens")
+            .update({
+              fornecedor_escolhido_id: principal ? principal[0] : null,
+              custo_unitario: principal ? Number(principal[1].valor_unitario) || 0 : 0,
+            })
+            .eq("id", itemId);
+        }
+      } catch (err) {
+        console.warn("[autosave-cotacoes] falhou:", err);
+      }
+    }, 1200);
+    return () => {
+      if (cotacoesAutosaveRef.current) window.clearTimeout(cotacoesAutosaveRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(cotacoes), JSON.stringify(fornecedoresSelecionados), JSON.stringify(itemIdByIdx), isEdit, id]);
+
+
 
   // Geração automática do código — atômica, sem duplicação.
   // Usa RPC `gerar_codigo_orcamento(sigla)` que aplica advisory lock e calcula o próximo
