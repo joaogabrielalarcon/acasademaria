@@ -5117,7 +5117,8 @@ export default function NovoOrcamento() {
 
 
           {/* Etapa 5 - Mão de Obra, Fretes e Transporte */}
-          {etapaAtual === 2 && (
+          {/* Etapa 3 - Mão de Obra e Fretes */}
+          {etapaAtual === 3 && (
             <div className="space-y-6 pb-24">
               <ResumoCorrenteRail
                 etapa={5}
