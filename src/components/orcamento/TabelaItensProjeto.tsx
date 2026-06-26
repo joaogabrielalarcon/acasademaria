@@ -481,6 +481,13 @@ function LinhaItem({
     return `${min.fornecedor_id}-${min.preco}`;
   }, [altsFiltradas]);
 
+  const melhorNotaId = useMemo(() => {
+    const comNota = altsFiltradas.filter((a) => a.estrelas != null);
+    if (comNota.length === 0) return null;
+    const max = comNota.reduce((m, a) => ((a.estrelas ?? -Infinity) > (m.estrelas ?? -Infinity) ? a : m), comNota[0]);
+    return `${max.fornecedor_id}-${max.estrelas}`;
+  }, [altsFiltradas]);
+
   const maisRecenteId = useMemo(() => {
     const comData = altsFiltradas.filter((a) => a.data);
     if (comData.length === 0) return null;
@@ -501,6 +508,18 @@ function LinhaItem({
   }, [altsBrutas]);
 
   const editavelQtd = !!onAtualizarQuantidade && item.tipo === "insumo";
+
+  // Fornecedores escolhidos (principal + reservas)
+  const escolhidos = useMemo(
+    () => altsBrutas.filter((a) => a.selecionado).sort((a, b) => (a.rank ?? 99) - (b.rank ?? 99)),
+    [altsBrutas],
+  );
+
+  // Totais compra/venda (multiplicador de markup vem de fora)
+  const compraTotal = resolvido && item.valor_unitario != null
+    ? Number(item.valor_unitario) * Number(item.quantidade || 0)
+    : 0;
+  const vendaTotal = compraTotal * (1 + (Number(markupPct) || 0) / 100);
 
   return (
     <div
