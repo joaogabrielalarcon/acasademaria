@@ -73,12 +73,16 @@ interface Props {
   itens: ItemProjeto[];
   getAlternativas?: (item: ItemProjeto) => AlternativaFornecedor[];
   onSelecionarFornecedor?: (item: ItemProjeto, alt: AlternativaFornecedor) => void;
+  onAdicionarReserva?: (item: ItemProjeto, alt: AlternativaFornecedor) => void;
+  onRemoverFornecedor?: (item: ItemProjeto, alt: AlternativaFornecedor) => void;
   onAtualizarQuantidade?: (item: ItemProjeto, quantidade: number) => void;
   onAtualizarUnidade?: (item: ItemProjeto, unidade: string) => void;
   onRemoverItem?: (item: ItemProjeto) => void;
   onEditarCotacao?: (item: ItemProjeto, alt: AlternativaFornecedor) => void;
   onMesclarFornecedores?: (item: ItemProjeto, alts: AlternativaFornecedor[]) => void;
   onAdicionarItem?: () => void;
+  getMarkupPct?: (item: ItemProjeto) => number;
+  getObservacaoArquitetura?: (item: ItemProjeto) => string | null;
 }
 
 const brl = (n: number | null | undefined) =>
