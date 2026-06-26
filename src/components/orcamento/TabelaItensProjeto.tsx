@@ -527,7 +527,26 @@ function LinhaItem({
                     }}
                     className="h-7 w-20 text-right tabular-nums bg-background px-2 py-0"
                   />
-                  <span>{item.unidade || ""}</span>
+                  {onAtualizarUnidade ? (
+                    <Select
+                      value={item.unidade || ""}
+                      onValueChange={(v) => onAtualizarUnidade(v)}
+                    >
+                      <SelectTrigger className="h-7 w-[88px] bg-background px-2 py-0 text-xs">
+                        <SelectValue placeholder="unid." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {UNIDADES_COTACAO.map((u) => (
+                          <SelectItem key={u} value={u} className="text-xs">{u}</SelectItem>
+                        ))}
+                        {item.unidade && !UNIDADES_COTACAO.includes(item.unidade) && (
+                          <SelectItem value={item.unidade} className="text-xs">{item.unidade}</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <span>{item.unidade || ""}</span>
+                  )}
                 </span>
               ) : (
                 <span className="tabular-nums">
