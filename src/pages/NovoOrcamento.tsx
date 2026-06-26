@@ -1894,10 +1894,12 @@ export default function NovoOrcamento() {
       }
 
 
-      // cotacoes + fornecedoresSelecionados (por idx)
+      // cotacoes + fornecedoresSelecionados (por idx) + mapa idx -> item_id
       const novasCot: Record<number, Record<string, CotacaoLinha>> = {};
       const novosForn: Record<number, string[]> = {};
+      const novoIdMap: Record<number, string> = {};
       itensList.forEach((it: any, idx: number) => {
+        novoIdMap[idx] = it.id;
         const linhas = cotacoesDb.filter((c) => c.item_id === it.id);
         if (linhas.length === 0) return;
         novasCot[idx] = {};
@@ -1918,6 +1920,7 @@ export default function NovoOrcamento() {
       });
       setCotacoes(novasCot);
       setFornecedoresSelecionados(novosForn);
+      setItemIdByIdx(novoIdMap);
 
       // insumos
       const insAuto: InsumoCalc[] = [];
