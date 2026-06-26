@@ -20,7 +20,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { AlertTriangle, Check, CircleHelp, Link2, MessageSquare, MessageSquareText, Plus, Sparkles, Trash2, X } from "lucide-react";
+import { AlertTriangle, Check, CircleHelp, Link2, MessageSquareText, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UnidadeCell } from "./UnidadeCell";
 
@@ -67,9 +67,9 @@ interface Props {
   virtualizeThreshold?: number;
 }
 
-// Linha enxuta: barra confiança · # · nome popular · nome científico · categoria · porte · qtd · unidade · obs (ícone) · catálogo (ícone) · excluir
+// Linha enxuta: barra confiança · # · nome popular · nome científico · categoria · porte · qtd · unidade · obs · catálogo (ícone) · excluir
 const COLS =
-  "grid-cols-[0.25rem_2rem_minmax(11rem,1.6fr)_minmax(10rem,1.4fr)_minmax(7.5rem,0.8fr)_4.5rem_4.5rem_minmax(6rem,0.6fr)_1.75rem_1.75rem_1.75rem]";
+  "grid-cols-[0.25rem_2rem_minmax(10rem,1.5fr)_minmax(9.5rem,1.3fr)_minmax(7.5rem,0.8fr)_4.5rem_4.5rem_minmax(6rem,0.6fr)_5rem_1.75rem_1.75rem]";
 
 
 
@@ -269,15 +269,22 @@ function ObservacaoCell({
         <button
           type="button"
           className={cn(
-            "inline-flex items-center justify-center h-6 w-6 rounded-full transition-colors",
+            "w-full h-7 rounded-md flex items-center justify-center gap-1 text-[10px] font-semibold uppercase tracking-wide transition-all",
             tem
-              ? "text-primary hover:bg-primary/10"
-              : "text-muted-foreground/40 hover:bg-muted hover:text-foreground opacity-60 group-hover:opacity-100",
+              ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+              : "border border-dashed border-muted-foreground/30 text-muted-foreground/60 hover:border-primary/50 hover:text-primary",
           )}
           title={tem ? `Observação: ${value}` : "Adicionar observação"}
-          aria-label={tem ? "Tem observação" : "Sem observação"}
+          aria-label={tem ? "Tem observação" : "Adicionar observação"}
         >
-          {tem ? <MessageSquareText className="w-3.5 h-3.5" /> : <MessageSquare className="w-3.5 h-3.5" />}
+          {tem ? (
+            <>
+              <MessageSquareText className="w-3.5 h-3.5" />
+              <span>Obs</span>
+            </>
+          ) : (
+            <Plus className="w-3.5 h-3.5" />
+          )}
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-[22rem] p-3" align="end">
@@ -525,9 +532,9 @@ export function MemorialItensTable({
       <div className="px-1.5">Categoria</div>
       <div className="text-center">Porte</div>
       <div className="text-right pr-1">Qtd</div>
-      <div className="px-1.5">Unidade</div>
-      <div className="text-center" title="Observação">
-        <MessageSquare className="w-3 h-3 inline opacity-60" aria-label="Observação" />
+      <div className="px-1">Unidade</div>
+      <div className="text-center px-1" title="Observação">
+        <span className="text-[10px] font-semibold">Obs</span>
       </div>
       <div className="text-center" title="Catálogo">
         <Link2 className="w-3 h-3 inline opacity-60" aria-label="Catálogo" />
@@ -541,8 +548,8 @@ export function MemorialItensTable({
   if (!shouldVirtualize) {
     return (
       <div className="border rounded-lg overflow-hidden bg-card shadow-sm">
-        <div className="overflow-x-auto">
-          <div className="min-w-[58rem]">
+      <div className="overflow-x-auto">
+          <div className="min-w-[61rem]">
             {Header}
             {indexed.map(({ it, realIdx }, displayIdx) => (
               <Row
@@ -569,7 +576,7 @@ export function MemorialItensTable({
   return (
     <div className="border rounded-lg overflow-hidden bg-card shadow-sm">
       <div className="overflow-x-auto">
-        <div className="min-w-[58rem]">
+        <div className="min-w-[61rem]">
           {Header}
           <div ref={parentRef} className="overflow-y-auto" style={{ maxHeight: 560 }}>
             <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
