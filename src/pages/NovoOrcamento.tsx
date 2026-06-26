@@ -707,7 +707,7 @@ export default function NovoOrcamento() {
     });
 
     return out;
-  }, [itensMaterial, itensInsumoExtra, insumosAdicionais, insumosFull, coeficientes, margensSeg, fornecedoresSelecionados, cotacoes, fornecedoresLista]);
+  }, [itensMaterial, itensInsumoExtra, insumosAdicionais, insumosFull, coeficientes, margensSeg, fornecedoresSelecionados, cotacoes, fornecedoresLista, insumosExcluidos]);
 
   // Log de verificação para a Sub-fase 3A (sem mudança visual).
   useEffect(() => {
