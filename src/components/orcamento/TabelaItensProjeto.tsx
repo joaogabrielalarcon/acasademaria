@@ -376,11 +376,15 @@ function LinhaItem({
   setFiltros,
   getAlternativas,
   onSelecionarFornecedor,
+  onAdicionarReserva,
+  onRemoverFornecedor,
   onAtualizarQuantidade,
   onAtualizarUnidade,
   onRemoverItem,
   onEditarCotacao,
   onMesclarFornecedores,
+  markupPct = 0,
+  observacaoArquitetura = null,
 }: {
   item: ItemProjeto;
   aberto: boolean;
@@ -389,11 +393,15 @@ function LinhaItem({
   setFiltros: (patch: Partial<FiltrosLinha>) => void;
   getAlternativas?: (item: ItemProjeto) => AlternativaFornecedor[];
   onSelecionarFornecedor?: (alt: AlternativaFornecedor) => void;
+  onAdicionarReserva?: (alt: AlternativaFornecedor) => void;
+  onRemoverFornecedor?: (alt: AlternativaFornecedor) => void;
   onAtualizarQuantidade?: (q: number) => void;
   onAtualizarUnidade?: (u: string) => void;
   onRemoverItem?: () => void;
   onEditarCotacao?: (alt: AlternativaFornecedor) => void;
   onMesclarFornecedores?: (alts: AlternativaFornecedor[]) => void;
+  markupPct?: number;
+  observacaoArquitetura?: string | null;
 }) {
   const resolvido = !!item.fornecedor_id;
   const [qtdLocal, setQtdLocal] = useState<string>(String(item.quantidade ?? 0));
