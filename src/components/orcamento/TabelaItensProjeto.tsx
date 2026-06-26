@@ -111,6 +111,8 @@ export function TabelaItensProjeto({
   getAlternativas,
   onSelecionarFornecedor,
   onAtualizarQuantidade,
+  onAtualizarUnidade,
+  onRemoverItem,
   onEditarCotacao,
   onMesclarFornecedores,
   onAdicionarItem,
