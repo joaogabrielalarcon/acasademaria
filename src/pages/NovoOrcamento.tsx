@@ -4747,7 +4747,8 @@ export default function NovoOrcamento() {
               </Dialog>
 
           {/* Etapa 4 - Markup e Margens */}
-          {etapaAtual === 2 && (
+          {/* Markup e Margens — agora dentro da Etapa 1 (Informações Iniciais) */}
+          {etapaAtual === 1 && (
             <div className="space-y-4">
               <ResumoCorrenteRail
                 etapa={4}
