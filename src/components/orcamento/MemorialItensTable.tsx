@@ -576,7 +576,7 @@ export function MemorialItensTable({
   return (
     <div className="border rounded-lg overflow-hidden bg-card shadow-sm">
       <div className="overflow-x-auto">
-        <div className="min-w-[58rem]">
+        <div className="min-w-[61rem]">
           {Header}
           <div ref={parentRef} className="overflow-y-auto" style={{ maxHeight: 560 }}>
             <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
