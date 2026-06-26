@@ -380,6 +380,24 @@ export default function NovoOrcamento() {
   const [insumosCalculados, setInsumosCalculados] = useState(false);
   const [insumoPickerOpen, setInsumoPickerOpen] = useState<number | null>(null);
 
+  // Itens (insumos) removidos manualmente da Etapa 3 — não reaparecem por base/memorial.
+  const [insumosExcluidos, setInsumosExcluidos] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const raw = localStorage.getItem(`orc-insumos-excluidos:${id || "novo"}`);
+      return new Set(raw ? JSON.parse(raw) : []);
+    } catch { return new Set(); }
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem(
+        `orc-insumos-excluidos:${id || "novo"}`,
+        JSON.stringify(Array.from(insumosExcluidos)),
+      );
+    } catch { /* ignore */ }
+  }, [insumosExcluidos, id]);
+
   const { data: coeficientes = [] } = useQuery({
     queryKey: ["coeficientes-insumos-vigentes"],
     queryFn: async () => {
