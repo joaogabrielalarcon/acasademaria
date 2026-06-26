@@ -685,6 +685,7 @@ export default function NovoOrcamento() {
     // 4) Insumos adicionais manuais (que não casam com base nem memorial) — dedup por nome
     insumosAdicionais.forEach((ad, idx) => {
       if (!ad.nome) return;
+      if (insumosExcluidos.has(norm(ad.nome))) return;
       if (nomesNaLista.has(norm(ad.nome))) return;
       out.push({
         tipo: "insumo",
