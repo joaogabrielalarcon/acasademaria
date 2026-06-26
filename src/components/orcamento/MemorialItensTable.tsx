@@ -409,23 +409,25 @@ export function MemorialItensTable({
   const Header = (
     <div
       className={cn(
-        "grid gap-2 pl-0 pr-2 py-2 bg-muted/50 text-muted-foreground text-[11px] font-semibold uppercase tracking-wide border-b sticky top-0 z-10",
+        "grid gap-1 pl-0 pr-1 py-2 bg-muted/40 text-muted-foreground text-[10px] font-semibold uppercase tracking-wider border-b sticky top-0 z-10",
         COLS,
       )}
     >
       <div />
       <div className="text-right pr-1">#</div>
-      <div>Item</div>
-      <div>Categoria</div>
+      <div className="px-1.5">Nome popular</div>
+      <div className="px-1.5">Nome científico</div>
+      <div className="px-1.5">Categoria</div>
       <div className="text-center">Porte</div>
       <div className="text-right pr-1">Qtd</div>
-      <div>Unidade</div>
-      <div>Catálogo</div>
-      <div className="text-center">
-        <Trash2 className="w-3 h-3 inline opacity-60" aria-label="Excluir" />
+      <div className="px-1.5">Unidade</div>
+      <div className="text-center" title="Catálogo">
+        <Link2 className="w-3 h-3 inline opacity-60" aria-label="Catálogo" />
       </div>
+      <div />
     </div>
   );
+
 
   if (!shouldVirtualize) {
     return (
