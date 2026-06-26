@@ -197,7 +197,6 @@ interface TipoProposta {
 // "Cotação" foi substituída por "Markup e Margens" (placeholder até nova lógica).
 const ETAPAS = [
   "Informações Iniciais",
-  "Memorial Descritivo",
   "Fornecedores",
   "Markup e Margens",
   "Mão de Obra, Fretes e Transporte",
@@ -471,7 +470,7 @@ export default function NovoOrcamento() {
   // Adubo também NÃO entra como linha fechada: os adubos são escolhidos como itens
   // individuais do catálogo na lista de insumos abaixo.
   useEffect(() => {
-    if (etapaAtual !== 3 || insumosCalculados) return;
+    if (etapaAtual !== 2 || insumosCalculados) return;
     if (!coeficientes || coeficientes.length === 0) return;
 
     const acc = { terra: 0, munck: 0, corda: 0 };
@@ -501,7 +500,7 @@ export default function NovoOrcamento() {
   // Injeta a base de insumos sugeridos na lista única (Torta de mamona, Yoorin, K-forte etc.).
   // Roda uma vez por orçamento: se o usuário excluir uma linha, ela só volta se for adicionada manualmente.
   useEffect(() => {
-    if (etapaAtual !== 3) return;
+    if (etapaAtual !== 2) return;
     const key = `orc-sugeridos-injetados:${id || "novo"}`;
     if (typeof window === "undefined") return;
     if (localStorage.getItem(key)) return;
@@ -711,7 +710,7 @@ export default function NovoOrcamento() {
 
   // Log de verificação para a Sub-fase 3A (sem mudança visual).
   useEffect(() => {
-    if (etapaAtual !== 3) return;
+    if (etapaAtual !== 2) return;
     // eslint-disable-next-line no-console
     console.log("[Etapa3/Sub-fase 3A] itensProjeto:", itensProjeto);
   }, [etapaAtual, itensProjeto]);
@@ -975,7 +974,7 @@ export default function NovoOrcamento() {
   // com valor_unitario puxado de cargos_mo. Roda apenas uma vez por sessão.
   const indiretosSeedRef = useRef(false);
   useEffect(() => {
-    if (etapaAtual !== 5) return;
+    if (etapaAtual !== 4) return;
     if (indiretosSeedRef.current) return;
     if ((cargosMo as any[]).length === 0) return;
     indiretosSeedRef.current = true;
@@ -2210,7 +2209,7 @@ export default function NovoOrcamento() {
 
   const { data: historicoPorItem = {}, refetch: refetchHistorico } = useQuery({
     queryKey: ["historico-fornecedores-orc", nomesItens],
-    enabled: etapaAtual === 3 && nomesItens.length > 0,
+    enabled: etapaAtual === 2 && nomesItens.length > 0,
     queryFn: async () => {
       const norm = normalizarNomeCatalogo;
       const nomesNorm = new Set(nomesItens.map(norm).filter(Boolean));
@@ -2450,7 +2449,7 @@ export default function NovoOrcamento() {
   // Cotação foi fundida na etapa Fornecedores (etapa 3 no novo fluxo).
   const lastSavedPrecoRef = useRef<Record<string, number>>({});
   useEffect(() => {
-    if (etapaAtual !== 3) return;
+    if (etapaAtual !== 2) return;
     const t = setTimeout(async () => {
       const inserts: any[] = [];
       Object.entries(cotacoes).forEach(([idxStr, linhas]) => {
@@ -3120,12 +3119,12 @@ export default function NovoOrcamento() {
       return;
     }
     // Validação ao sair da Etapa 3 (Fornecedores) para Etapa 4 (Markup)
-    if (etapaAtual === 3 && pendenciasEtapa3.bloqueia) {
+    if (etapaAtual === 2 && pendenciasEtapa3.bloqueia) {
       setValidacaoEtapa4Open(true);
       return;
     }
     // Validação ao sair da Etapa 4 (Markup) para Etapa 5 (MO/Fretes/Transporte)
-    if (etapaAtual === 4 && validacaoEtapa4 && !validacaoEtapa4.ok) {
+    if (etapaAtual === 2 && validacaoEtapa4 && !validacaoEtapa4.ok) {
       toast({
         title: "Não é possível avançar",
         description: validacaoEtapa4.motivo,
@@ -4207,7 +4206,7 @@ export default function NovoOrcamento() {
           )}
 
           {/* Etapa 3 — Seleção de Fornecedores (refatorada) */}
-          {etapaAtual === 3 && (
+          {etapaAtual === 2 && (
             <div className="space-y-4">
               <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border rounded-lg p-3 flex flex-wrap gap-3 items-center text-sm">
                 <button
@@ -4327,7 +4326,7 @@ export default function NovoOrcamento() {
                   title="Sem itens no projeto"
                   description="Volte à Etapa 2 para adicionar plantas e insumos antes de selecionar fornecedores."
                   action={
-                    <Button variant="outline" size="sm" onClick={() => irParaEtapa(2)}>
+                    <Button variant="outline" size="sm" onClick={() => irParaEtapa(1)}>
                       <ArrowLeft className="w-4 h-4" /> Voltar à Etapa 2
                     </Button>
                   }
@@ -4663,7 +4662,7 @@ export default function NovoOrcamento() {
                       disabled={pendenciasEtapa3.bloqueia}
                       onClick={() => {
                         setValidacaoEtapa4Open(false);
-                        irParaEtapa(4);
+                        irParaEtapa(3);
                       }}
                     >
                       Avançar para Markup
@@ -4673,7 +4672,7 @@ export default function NovoOrcamento() {
               </Dialog>
 
           {/* Etapa 4 - Markup e Margens */}
-          {etapaAtual === 4 && (
+          {etapaAtual === 2 && (
             <div className="space-y-4">
               <ResumoCorrenteRail
                 etapa={4}
@@ -5042,7 +5041,7 @@ export default function NovoOrcamento() {
 
 
           {/* Etapa 5 - Mão de Obra, Fretes e Transporte */}
-          {etapaAtual === 5 && (
+          {etapaAtual === 2 && (
             <div className="space-y-6 pb-24">
               <ResumoCorrenteRail
                 etapa={5}
@@ -5659,7 +5658,7 @@ export default function NovoOrcamento() {
           )}
 
           {/* Etapa 6 - Resumo Final */}
-          {etapaAtual === 6 && (
+          {etapaAtual === 2 && (
             <div className="space-y-6 pb-32">
               <ResumoCorrenteRail
                 etapa={6}
@@ -5705,7 +5704,7 @@ export default function NovoOrcamento() {
                     <p className="text-sm font-medium">Markup, piso e comissão</p>
                     <p className="text-xs text-muted-foreground">Editar na Etapa 4</p>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => setEtapaAtual(4)}>
+                  <Button variant="outline" size="sm" onClick={() => setEtapaAtual(1)}>
                     Abrir Etapa 4
                   </Button>
                 </Card>
@@ -5714,7 +5713,7 @@ export default function NovoOrcamento() {
                     <p className="text-sm font-medium">Mão de Obra, Fretes, Transporte</p>
                     <p className="text-xs text-muted-foreground">Editar na Etapa 5</p>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => setEtapaAtual(5)}>
+                  <Button variant="outline" size="sm" onClick={() => setEtapaAtual(1)}>
                     Abrir Etapa 5
                   </Button>
                 </Card>
@@ -6110,7 +6109,7 @@ export default function NovoOrcamento() {
             </div>
           )}
 
-          {etapaAtual === 2 && itensMaterial.length === 0 && (
+          {false && itensMaterial.length === 0 && (
             <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
               Nenhum item de memorial cadastrado. Se a proposta não tiver memorial (ex.: desenvolvimento de projeto), você pode pular esta etapa normalmente.
             </div>
