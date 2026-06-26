@@ -3297,6 +3297,28 @@ export default function NovoOrcamento() {
       const partes = [`${itens.length} plantas`];
       if (insumosNorm.length) partes.push(`${insumosNorm.length} insumos`);
       toast({ title: `${partes.join(" + ")} extraídos` });
+      // Persiste imediatamente o snapshot do memorial no orçamento (não perde dados).
+      if (id) {
+        try {
+          await (supabase as any)
+            .from("orcamentos")
+            .update({
+              memorial_snapshot: {
+                itens: itensCasados,
+                insumos: insumosNorm,
+                texto: memorialModo === "texto" ? memorialTexto : null,
+                arquivo_nome: memorialModo === "pdf" ? (pdfFile?.name || null) : null,
+                arquivo_tamanho: memorialModo === "pdf" ? (pdfFile?.size || null) : null,
+                modo: memorialModo,
+                extraido_em: new Date().toISOString(),
+              },
+              memorial_atualizado_em: new Date().toISOString(),
+            })
+            .eq("id", id);
+        } catch (err) {
+          console.warn("Falha ao salvar snapshot do memorial:", err);
+        }
+      }
     } catch (e: any) {
       const msg = e?.message || `Erro inesperado ao processar o ${tipoLabel}`;
       setExtracaoErro(msg);
