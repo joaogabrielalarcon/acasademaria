@@ -5735,7 +5735,8 @@ export default function NovoOrcamento() {
           )}
 
           {/* Etapa 6 - Resumo Final */}
-          {etapaAtual === 2 && (
+          {/* Etapa 4 - Resumo Final */}
+          {etapaAtual === 4 && (
             <div className="space-y-6 pb-32">
               <ResumoCorrenteRail
                 etapa={6}
