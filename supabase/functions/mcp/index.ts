@@ -9,10 +9,19 @@ import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@0.24.0";
 import { defineTool } from "npm:@lovable.dev/mcp-js@0.24.0";
 
 // src/lib/mcp/_supabase.ts
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@^2.90.1";
+function getEnv(name) {
+  try {
+    const g = globalThis;
+    if (g?.process?.env?.[name]) return g.process.env[name];
+    if (g?.Deno?.env?.get) return g.Deno.env.get(name);
+  } catch {
+  }
+  return void 0;
+}
 function supabaseForUser(ctx) {
-  const url = (typeof process !== "undefined" ? process.env.SUPABASE_URL : void 0) || "https://placeholder.supabase.co";
-  const anon = (typeof process !== "undefined" ? process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY : void 0) || "placeholder";
+  const url = getEnv("SUPABASE_URL") || "https://placeholder.supabase.co";
+  const anon = getEnv("SUPABASE_PUBLISHABLE_KEY") || getEnv("SUPABASE_ANON_KEY") || "placeholder";
   const token = ctx.getToken();
   return createClient(url, anon, {
     global: {
