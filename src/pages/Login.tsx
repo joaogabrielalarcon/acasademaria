@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,12 @@ const REMEMBER_KEY = "mfm_remember_user";
 
 export default function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
+
+  // Return target after login. Must be a same-origin relative path.
+  const rawNext = searchParams.get("next");
+  const nextPath = rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
   
   const [isLoading, setIsLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
@@ -33,11 +38,11 @@ export default function Login() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session && remembered) {
         // User has active session and chose to be remembered
-        navigate("/", { replace: true });
+        navigate(nextPath, { replace: true });
       }
       setCheckingSession(false);
     });
-  }, [navigate]);
+  }, [navigate, nextPath]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,7 +88,7 @@ export default function Login() {
         title: "Bem-vindo!",
         description: "Login realizado com sucesso.",
       });
-      navigate("/");
+      navigate(nextPath);
     } catch (error: any) {
       toast({
         title: "Erro",
