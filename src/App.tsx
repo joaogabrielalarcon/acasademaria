@@ -7,6 +7,7 @@ import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { RealtimeInvalidationBridge } from "@/hooks/useRealtimeInvalidation";
 import Login from "./pages/Login";
+import OAuthConsent from "./pages/OAuthConsent";
 import MenuCentral from "./pages/MenuCentral";
 
 // Wrap dynamic imports so a stale chunk (after a new deploy) doesn't crash
@@ -104,6 +105,7 @@ const App = () => (
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
             <Route path="/esqueci-senha" element={<EsqueciSenha />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/bootstrap" element={<BootstrapAdmin />} />
