@@ -8,6 +8,8 @@ import createCrmCard from "./tools/create-crm-card";
 import describeSchema from "./tools/describe-schema";
 import readTable from "./tools/read-table";
 import listStorage from "./tools/list-storage";
+import criarRegistros from "./tools/criar-registros";
+import atualizarRegistro from "./tools/atualizar-registro";
 
 // Direct Supabase issuer (never the .lovable.cloud proxy). Vite inlines this
 // at build time so no runtime env read happens at module top level.
@@ -33,5 +35,7 @@ export default defineMcp({
     describeSchema,
     readTable,
     listStorage,
+    criarRegistros,
+    atualizarRegistro,
   ],
 });

@@ -386,6 +386,115 @@
           }
         },
         "outputSchema": null
+      },
+      {
+        "name": "criar_registros",
+        "title": "Criar registros em lote",
+        "description": "Cria linhas em lote em tabelas de cadastro (whitelist). Roda deduplicação para plantas, insumos e fornecedores (match_catalogo/norm_catalogo com nome). Match >= 0.90 é reportado como possível duplicado e NÃO cria (a menos que forcar=true). Máx 50 linhas por chamada. Escreve com o token do usuário (RLS ativa).",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "tabela": {
+              "type": "string",
+              "enum": [
+                "clientes",
+                "locais_cliente",
+                "colaboradores",
+                "maquinas",
+                "insumos",
+                "insumo_unidades",
+                "plantas",
+                "fornecedores",
+                "fornecedor_atendentes",
+                "estoque_movimentacoes"
+              ],
+              "description": "Tabela alvo. Aceita apenas: clientes, locais_cliente, colaboradores, maquinas, insumos, insumo_unidades, plantas, fornecedores, fornecedor_atendentes, estoque_movimentacoes"
+            },
+            "linhas": {
+              "minItems": 1,
+              "maxItems": 50,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              },
+              "description": "Array de objetos (máx 50)."
+            },
+            "forcar": {
+              "description": "Se true, cria mesmo quando houver possível duplicado.",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "tabela",
+            "linhas"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "atualizar_registro",
+        "title": "Atualizar registro por id",
+        "description": "Atualiza UMA linha por id em tabelas de cadastro (whitelist). Em 'projetos' só permite corrigir tipo, status, titulo, responsavel_id e datas (data_inicio, data_fim, data_previsao, data_conclusao). Escreve com o token do usuário (RLS ativa). Retorna antes → depois.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "tabela": {
+              "type": "string",
+              "enum": [
+                "clientes",
+                "locais_cliente",
+                "colaboradores",
+                "maquinas",
+                "insumos",
+                "insumo_unidades",
+                "plantas",
+                "fornecedores",
+                "fornecedor_atendentes",
+                "estoque_movimentacoes",
+                "projetos"
+              ],
+              "description": "Tabela alvo. Aceita: clientes, locais_cliente, colaboradores, maquinas, insumos, insumo_unidades, plantas, fornecedores, fornecedor_atendentes, estoque_movimentacoes, projetos"
+            },
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "UUID da linha."
+            },
+            "campos": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {},
+              "description": "Campos a atualizar (objeto). Não passe id."
+            }
+          },
+          "required": [
+            "tabela",
+            "id",
+            "campos"
+          ]
+        },
+        "outputSchema": null
       }
     ]
   }
