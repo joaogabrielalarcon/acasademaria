@@ -607,22 +607,39 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
 
       const uploadedMedia: MafeDiarioMediaDraft[] = [];
 
+      // Descobre cliente_id do projeto para montar o path padronizado do helper.
+      const { data: projetoRow } = await supabase
+        .from("projetos")
+        .select("cliente_id")
+        .eq("id", projetoId)
+        .maybeSingle();
+      const clienteIdParaUpload = projetoRow?.cliente_id || projetoId;
+
+      const { uploadMidia } = await import("@/lib/uploadMidia");
+
       for (const attachment of attachments) {
-        const extension = attachment.file.name.split(".").pop() || "bin";
-        const filePath = `${projetoId}/${reviewSummary.data_visita}/${Date.now()}-${attachment.id}.${extension}`;
-        const { data, error } = await supabase.storage.from("diario-midias").upload(filePath, attachment.file, {
-          cacheControl: "3600",
-          upsert: false,
-        });
-
-        if (error) throw error;
-
-        uploadedMedia.push({
-          tipo: attachment.tipo,
-          url: data.path,
-          thumbnail_url: attachment.tipo === "foto" ? data.path : null,
-          descricao: attachment.nome,
-        });
+        try {
+          const result = await uploadMidia({
+            file: attachment.file,
+            clienteId: clienteIdParaUpload,
+            contexto: `diario-${projetoId}`,
+            bucket: "midia-interna",
+            ano: new Date(reviewSummary.data_visita).getFullYear() || new Date().getFullYear(),
+          });
+          uploadedMedia.push({
+            tipo: attachment.tipo,
+            url: result.path,
+            thumbnail_url: result.thumbnailPath ?? result.path,
+            descricao: attachment.nome,
+          });
+        } catch (uploadErr: any) {
+          toast({
+            title: "Falha ao enviar mídia",
+            description: uploadErr?.message ?? "Erro desconhecido no upload.",
+            variant: "destructive",
+          });
+          throw uploadErr;
+        }
       }
 
       const payload = {
