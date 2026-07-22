@@ -273,6 +273,119 @@
           ]
         },
         "outputSchema": null
+      },
+      {
+        "name": "describe_schema",
+        "title": "Descrever schema",
+        "description": "Introspecção só-leitura do schema public. Sem parâmetro, lista todas as tabelas com contagem de colunas e status de RLS. Com 'tabela', devolve colunas, chave primária, chaves estrangeiras e status de RLS. Nunca lê dados.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "tabela": {
+              "description": "Nome da tabela do schema public. Omita para listar todas.",
+              "type": "string"
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "read_table",
+        "title": "Ler tabela",
+        "description": "Leitura genérica de qualquer tabela do schema public, respeitando as permissões (RLS) do usuário autenticado. Só retorna o que o usuário tem permissão para ver.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "tabela": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Nome da tabela do schema public."
+            },
+            "colunas": {
+              "description": "Lista de colunas separadas por vírgula (padrão '*').",
+              "type": "string"
+            },
+            "filtros": {
+              "description": "Objeto campo→valor para igualdade estrita.",
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "ordenar_por": {
+              "description": "Coluna para ordenar. Prefixe com '-' para descendente (ex.: '-created_at').",
+              "type": "string"
+            },
+            "limite": {
+              "description": "Padrão 25, máximo 100.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "offset": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "tabela"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_storage",
+        "title": "Listar Storage",
+        "description": "Lista buckets ou arquivos do Storage. Sem parâmetro, devolve buckets (nome, público/privado). Com 'bucket' (e 'prefixo' opcional), lista arquivos (nome, tamanho, criado em), máximo 100. Não devolve conteúdo nem URLs assinadas.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "bucket": {
+              "description": "Nome do bucket.",
+              "type": "string"
+            },
+            "prefixo": {
+              "description": "Prefixo (pasta) dentro do bucket.",
+              "type": "string"
+            }
+          }
+        },
+        "outputSchema": null
       }
     ]
   }

@@ -5,6 +5,9 @@ import getCliente from "./tools/get-cliente";
 import listProjetos from "./tools/list-projetos";
 import listCrmCards from "./tools/list-crm-cards";
 import createCrmCard from "./tools/create-crm-card";
+import describeSchema from "./tools/describe-schema";
+import readTable from "./tools/read-table";
+import listStorage from "./tools/list-storage";
 
 // Direct Supabase issuer (never the .lovable.cloud proxy). Vite inlines this
 // at build time so no runtime env read happens at module top level.
@@ -15,10 +18,20 @@ export default defineMcp({
   title: "MFM Paisagismo",
   version: "0.1.0",
   instructions:
-    "Ferramentas do sistema MFM Paisagismo. Permite consultar clientes, projetos e cards do CRM, e criar novos leads. Toda operação executa como o usuário autenticado e respeita as permissões (RLS).",
+    "Ferramentas do sistema MFM Paisagismo. Permite consultar clientes, projetos e cards do CRM, criar leads, e leitura genérica de tabelas/schema/storage para auditoria e arquitetura. Toda operação executa como o usuário autenticado e respeita as permissões (RLS).",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated",
   }),
-  tools: [whoami, listClientes, getCliente, listProjetos, listCrmCards, createCrmCard],
+  tools: [
+    whoami,
+    listClientes,
+    getCliente,
+    listProjetos,
+    listCrmCards,
+    createCrmCard,
+    describeSchema,
+    readTable,
+    listStorage,
+  ],
 });
