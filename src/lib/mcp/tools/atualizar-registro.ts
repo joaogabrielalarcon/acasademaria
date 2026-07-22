@@ -115,9 +115,11 @@ export default defineTool({
     }
 
     const diff: Record<string, { antes: unknown; depois: unknown }> = {};
+    const antesObj = antes as unknown as Record<string, unknown>;
+    const depoisObj = (depois ?? {}) as unknown as Record<string, unknown>;
     for (const [k] of entries) {
-      const a = (antes as Record<string, unknown>)[k];
-      const d = (depois as Record<string, unknown> | null)?.[k];
+      const a = antesObj[k];
+      const d = depoisObj[k];
       if (JSON.stringify(a) !== JSON.stringify(d)) {
         diff[k] = { antes: a, depois: d };
       }
