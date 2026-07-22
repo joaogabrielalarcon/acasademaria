@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
  *   "diario-<id>", "recebimento-<id>", etc.
  */
 
-export type MidiaBucket = "midia-interna" | "midia-cliente";
+export type MidiaBucket = "midia-interna" | "midia-cliente" | (string & {});
 
 export type MidiaTipo = "foto" | "video";
 
