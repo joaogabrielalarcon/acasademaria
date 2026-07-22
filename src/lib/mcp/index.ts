@@ -35,5 +35,7 @@ export default defineMcp({
     describeSchema,
     readTable,
     listStorage,
+    criarRegistros,
+    atualizarRegistro,
   ],
 });

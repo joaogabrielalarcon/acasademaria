@@ -383,6 +383,267 @@ var list_storage_default = defineTool9({
   }
 });
 
+// src/lib/mcp/tools/criar-registros.ts
+import { defineTool as defineTool10 } from "npm:@lovable.dev/mcp-js@0.24.0";
+import { z as z9 } from "npm:zod@^4.4.3";
+var TABELAS = [
+  "clientes",
+  "locais_cliente",
+  "colaboradores",
+  "maquinas",
+  "insumos",
+  "insumo_unidades",
+  "plantas",
+  "fornecedores",
+  "fornecedor_atendentes",
+  "estoque_movimentacoes"
+];
+var TEM_CREATED_BY = /* @__PURE__ */ new Set([
+  "clientes",
+  "colaboradores",
+  "fornecedor_atendentes",
+  "fornecedores",
+  "insumo_unidades",
+  "insumos",
+  "maquinas",
+  "plantas"
+]);
+var DEDUP_CAT = {
+  plantas: "planta",
+  insumos: "insumo"
+};
+var criar_registros_default = defineTool10({
+  name: "criar_registros",
+  title: "Criar registros em lote",
+  description: "Cria linhas em lote em tabelas de cadastro (whitelist). Roda deduplica\xE7\xE3o para plantas, insumos e fornecedores (match_catalogo/norm_catalogo com nome). Match >= 0.90 \xE9 reportado como poss\xEDvel duplicado e N\xC3O cria (a menos que forcar=true). M\xE1x 50 linhas por chamada. Escreve com o token do usu\xE1rio (RLS ativa).",
+  inputSchema: {
+    tabela: z9.enum(TABELAS).describe(
+      "Tabela alvo. Aceita apenas: " + TABELAS.join(", ")
+    ),
+    linhas: z9.array(z9.record(z9.string(), z9.unknown())).min(1).max(50).describe("Array de objetos (m\xE1x 50)."),
+    forcar: z9.boolean().optional().describe("Se true, cria mesmo quando houver poss\xEDvel duplicado.")
+  },
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+    openWorldHint: false
+  },
+  handler: async ({ tabela, linhas, forcar }, ctx) => {
+    const unauth = requireAuth(ctx);
+    if (unauth) return unauth;
+    const supabase = supabaseForUser(ctx);
+    const userId = ctx.getUserId();
+    const tbl = tabela;
+    const dedupTipo = DEDUP_CAT[tbl];
+    const isFornecedor = tbl === "fornecedores";
+    const resultados = [];
+    for (let i = 0; i < linhas.length; i++) {
+      const raw = linhas[i];
+      try {
+        const nome = typeof raw.nome === "string" ? raw.nome.trim() : "";
+        if (!forcar && dedupTipo && nome) {
+          const { data: matches, error: eMatch } = await supabase.rpc(
+            "match_catalogo",
+            { p_tipo: dedupTipo, p_query: nome, p_limit: 1 }
+          );
+          if (eMatch) {
+            resultados.push({
+              indice: i,
+              status: "erro",
+              motivo: `dedup falhou: ${eMatch.message}`
+            });
+            continue;
+          }
+          const top = matches?.[0];
+          if (top && top.score >= 0.9) {
+            resultados.push({
+              indice: i,
+              status: "pulada",
+              motivo: "poss\xEDvel duplicado (score >= 0.90)",
+              duplicado: {
+                id: top.item_id,
+                nome: top.nome,
+                score: top.score,
+                fonte: top.fonte
+              }
+            });
+            continue;
+          }
+        }
+        if (!forcar && isFornecedor && nome) {
+          const { data: norm } = await supabase.rpc(
+            "norm_catalogo",
+            { t: nome }
+          );
+          const chave = norm ?? nome.toLowerCase().trim();
+          const { data: cand } = await supabase.from("fornecedores").select("id, nome").ilike("nome", `%${nome}%`).limit(5);
+          const hit = (cand ?? []).find(
+            (c) => (c.nome ?? "").trim().toLowerCase() === nome.toLowerCase() || (c.nome ?? "").trim().toLowerCase() === String(chave).toLowerCase()
+          );
+          if (hit) {
+            resultados.push({
+              indice: i,
+              status: "pulada",
+              motivo: "fornecedor com nome id\xEAntico j\xE1 existe",
+              duplicado: { id: hit.id, nome: hit.nome, score: 1, fonte: "exato" }
+            });
+            continue;
+          }
+        }
+        const payload = { ...raw };
+        if (TEM_CREATED_BY.has(tbl) && payload.created_by === void 0) {
+          payload.created_by = userId;
+        }
+        const { data, error } = await supabase.from(tbl).insert(payload).select("id").maybeSingle();
+        if (error) {
+          const msg = /permission denied|row-level security/i.test(error.message) ? `acesso negado por RLS: ${error.message}` : error.message;
+          resultados.push({ indice: i, status: "erro", motivo: msg });
+          continue;
+        }
+        resultados.push({
+          indice: i,
+          status: "criada",
+          id: data?.id
+        });
+      } catch (e) {
+        resultados.push({
+          indice: i,
+          status: "erro",
+          motivo: e instanceof Error ? e.message : String(e)
+        });
+      }
+    }
+    const sumario = {
+      criadas: resultados.filter((r) => r.status === "criada").length,
+      puladas: resultados.filter((r) => r.status === "pulada").length,
+      erros: resultados.filter((r) => r.status === "erro").length
+    };
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Tabela ${tbl}: ${sumario.criadas} criadas, ${sumario.puladas} puladas (duplicadas), ${sumario.erros} com erro.`
+        }
+      ],
+      structuredContent: { tabela: tbl, sumario, resultados }
+    };
+  }
+});
+
+// src/lib/mcp/tools/atualizar-registro.ts
+import { defineTool as defineTool11 } from "npm:@lovable.dev/mcp-js@0.24.0";
+import { z as z10 } from "npm:zod@^4.4.3";
+var TABELAS2 = [
+  "clientes",
+  "locais_cliente",
+  "colaboradores",
+  "maquinas",
+  "insumos",
+  "insumo_unidades",
+  "plantas",
+  "fornecedores",
+  "fornecedor_atendentes",
+  "estoque_movimentacoes",
+  "projetos"
+];
+var PROJETOS_CAMPOS = /* @__PURE__ */ new Set([
+  "tipo",
+  "status",
+  "titulo",
+  "responsavel_id",
+  "data_inicio",
+  "data_fim",
+  "data_previsao",
+  "data_conclusao"
+]);
+var atualizar_registro_default = defineTool11({
+  name: "atualizar_registro",
+  title: "Atualizar registro por id",
+  description: "Atualiza UMA linha por id em tabelas de cadastro (whitelist). Em 'projetos' s\xF3 permite corrigir tipo, status, titulo, responsavel_id e datas (data_inicio, data_fim, data_previsao, data_conclusao). Escreve com o token do usu\xE1rio (RLS ativa). Retorna antes \u2192 depois.",
+  inputSchema: {
+    tabela: z10.enum(TABELAS2).describe("Tabela alvo. Aceita: " + TABELAS2.join(", ")),
+    id: z10.string().uuid().describe("UUID da linha."),
+    campos: z10.record(z10.string(), z10.unknown()).describe("Campos a atualizar (objeto). N\xE3o passe id.")
+  },
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: false
+  },
+  handler: async ({ tabela, id, campos }, ctx) => {
+    const unauth = requireAuth(ctx);
+    if (unauth) return unauth;
+    const supabase = supabaseForUser(ctx);
+    const tbl = tabela;
+    const entries = Object.entries(campos).filter(
+      ([k]) => k !== "id"
+    );
+    if (entries.length === 0) {
+      return {
+        content: [{ type: "text", text: "Nenhum campo para atualizar." }],
+        isError: true
+      };
+    }
+    if (tbl === "projetos") {
+      const invalidos = entries.filter(([k]) => !PROJETOS_CAMPOS.has(k)).map(([k]) => k);
+      if (invalidos.length) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Em 'projetos' s\xF3 \xE9 permitido: ${Array.from(PROJETOS_CAMPOS).join(", ")}. Rejeitados: ${invalidos.join(", ")}.`
+            }
+          ],
+          isError: true
+        };
+      }
+    }
+    const colunas = entries.map(([k]) => k).join(",");
+    const { data: antes, error: eAntes } = await supabase.from(tbl).select(`id,${colunas}`).eq("id", id).maybeSingle();
+    if (eAntes) {
+      return { content: [{ type: "text", text: eAntes.message }], isError: true };
+    }
+    if (!antes) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Registro ${id} n\xE3o encontrado em ${tbl} (ou sem permiss\xE3o de leitura).`
+          }
+        ],
+        isError: true
+      };
+    }
+    const patch = Object.fromEntries(entries);
+    const { data: depois, error } = await supabase.from(tbl).update(patch).eq("id", id).select(`id,${colunas}`).maybeSingle();
+    if (error) {
+      const msg = /permission denied|row-level security/i.test(error.message) ? `acesso negado por RLS: ${error.message}` : error.message;
+      return { content: [{ type: "text", text: msg }], isError: true };
+    }
+    const diff = {};
+    const antesObj = antes;
+    const depoisObj = depois ?? {};
+    for (const [k] of entries) {
+      const a = antesObj[k];
+      const d = depoisObj[k];
+      if (JSON.stringify(a) !== JSON.stringify(d)) {
+        diff[k] = { antes: a, depois: d };
+      }
+    }
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Registro ${id} em ${tbl} atualizado (${Object.keys(diff).length} campo(s) alterado(s)).`
+        }
+      ],
+      structuredContent: { tabela: tbl, id, alteracoes: diff }
+    };
+  }
+});
+
 // src/lib/mcp/index.ts
 var projectRef = "lelteebbziredzfamkzb";
 var mcp_default = defineMcp({
@@ -403,7 +664,9 @@ var mcp_default = defineMcp({
     create_crm_card_default,
     describe_schema_default,
     read_table_default,
-    list_storage_default
+    list_storage_default,
+    criar_registros_default,
+    atualizar_registro_default
   ]
 });
 
