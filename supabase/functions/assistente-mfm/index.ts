@@ -446,11 +446,20 @@ serve(async (req) => {
 
     const { messages, userRole, currentPage, currentRoute } = await req.json();
     const authHeader = req.headers.get("Authorization") || "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     // User-scoped client (for context queries respecting RLS)
     const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: { headers: authHeader ? { Authorization: authHeader } : {} },
+      global: { headers: { Authorization: authHeader } },
     });
+
+    const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(authHeader.replace("Bearer ", ""));
+    if (claimsErr || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
 
     // Admin client (for tool operations)
     const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
