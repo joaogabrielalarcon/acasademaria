@@ -244,18 +244,167 @@ var create_crm_card_default = defineTool6({
   }
 });
 
+// src/lib/mcp/tools/describe-schema.ts
+import { defineTool as defineTool7 } from "npm:@lovable.dev/mcp-js@0.24.0";
+import { z as z6 } from "npm:zod@^4.4.3";
+var describe_schema_default = defineTool7({
+  name: "describe_schema",
+  title: "Descrever schema",
+  description: "Introspec\xE7\xE3o s\xF3-leitura do schema public. Sem par\xE2metro, lista todas as tabelas com contagem de colunas e status de RLS. Com 'tabela', devolve colunas, chave prim\xE1ria, chaves estrangeiras e status de RLS. Nunca l\xEA dados.",
+  inputSchema: {
+    tabela: z6.string().trim().optional().describe("Nome da tabela do schema public. Omita para listar todas.")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ tabela }, ctx) => {
+    const unauth = requireAuth(ctx);
+    if (unauth) return unauth;
+    const supabase = supabaseForUser(ctx);
+    if (!tabela) {
+      const { data: data2, error: error2 } = await supabase.rpc("mcp_list_public_tables");
+      if (error2) return { content: [{ type: "text", text: error2.message }], isError: true };
+      return {
+        content: [{ type: "text", text: JSON.stringify(data2, null, 2) }],
+        structuredContent: { tabelas: data2 ?? [] }
+      };
+    }
+    const { data, error } = await supabase.rpc("mcp_describe_table", { p_tabela: tabela });
+    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
+    if (data && typeof data === "object" && "erro" in data) {
+      return {
+        content: [{ type: "text", text: String(data.erro) }],
+        isError: true
+      };
+    }
+    return {
+      content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+      structuredContent: data
+    };
+  }
+});
+
+// src/lib/mcp/tools/read-table.ts
+import { defineTool as defineTool8 } from "npm:@lovable.dev/mcp-js@0.24.0";
+import { z as z7 } from "npm:zod@^4.4.3";
+var read_table_default = defineTool8({
+  name: "read_table",
+  title: "Ler tabela",
+  description: "Leitura gen\xE9rica de qualquer tabela do schema public, respeitando as permiss\xF5es (RLS) do usu\xE1rio autenticado. S\xF3 retorna o que o usu\xE1rio tem permiss\xE3o para ver.",
+  inputSchema: {
+    tabela: z7.string().trim().min(1).describe("Nome da tabela do schema public."),
+    colunas: z7.string().trim().optional().describe("Lista de colunas separadas por v\xEDrgula (padr\xE3o '*')."),
+    filtros: z7.record(z7.string(), z7.union([z7.string(), z7.number(), z7.boolean(), z7.null()])).optional().describe("Objeto campo\u2192valor para igualdade estrita."),
+    ordenar_por: z7.string().trim().optional().describe("Coluna para ordenar. Prefixe com '-' para descendente (ex.: '-created_at')."),
+    limite: z7.number().int().min(1).max(100).optional().describe("Padr\xE3o 25, m\xE1ximo 100."),
+    offset: z7.number().int().min(0).optional()
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ tabela, colunas, filtros, ordenar_por, limite, offset }, ctx) => {
+    const unauth = requireAuth(ctx);
+    if (unauth) return unauth;
+    const supabase = supabaseForUser(ctx);
+    const { data: tabelas, error: eList } = await supabase.rpc("mcp_list_public_tables");
+    if (eList) return { content: [{ type: "text", text: eList.message }], isError: true };
+    const nomes = new Set(
+      tabelas?.map((t) => t.tabela) ?? []
+    );
+    if (!nomes.has(tabela)) {
+      return {
+        content: [{ type: "text", text: `Tabela "${tabela}" n\xE3o existe no schema public.` }],
+        isError: true
+      };
+    }
+    const lim = Math.min(limite ?? 25, 100);
+    const off = offset ?? 0;
+    let q = supabase.from(tabela).select(colunas ?? "*").range(off, off + lim - 1);
+    if (filtros && typeof filtros === "object") {
+      for (const [k, v] of Object.entries(filtros)) {
+        q = v === null ? q.is(k, null) : q.eq(k, v);
+      }
+    }
+    if (ordenar_por) {
+      const desc = ordenar_por.startsWith("-");
+      const col = desc ? ordenar_por.slice(1) : ordenar_por;
+      q = q.order(col, { ascending: !desc });
+    }
+    const { data, error } = await q;
+    if (error) {
+      const msg = /permission denied|row-level security/i.test(error.message) ? `Acesso negado \xE0 tabela "${tabela}" para o usu\xE1rio atual (RLS).` : error.message;
+      return { content: [{ type: "text", text: msg }], isError: true };
+    }
+    return {
+      content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+      structuredContent: { tabela, count: data?.length ?? 0, linhas: data ?? [] }
+    };
+  }
+});
+
+// src/lib/mcp/tools/list-storage.ts
+import { defineTool as defineTool9 } from "npm:@lovable.dev/mcp-js@0.24.0";
+import { z as z8 } from "npm:zod@^4.4.3";
+var list_storage_default = defineTool9({
+  name: "list_storage",
+  title: "Listar Storage",
+  description: "Lista buckets ou arquivos do Storage. Sem par\xE2metro, devolve buckets (nome, p\xFAblico/privado). Com 'bucket' (e 'prefixo' opcional), lista arquivos (nome, tamanho, criado em), m\xE1ximo 100. N\xE3o devolve conte\xFAdo nem URLs assinadas.",
+  inputSchema: {
+    bucket: z8.string().trim().optional().describe("Nome do bucket."),
+    prefixo: z8.string().trim().optional().describe("Prefixo (pasta) dentro do bucket.")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ bucket, prefixo }, ctx) => {
+    const unauth = requireAuth(ctx);
+    if (unauth) return unauth;
+    const supabase = supabaseForUser(ctx);
+    if (!bucket) {
+      const { data: data2, error: error2 } = await supabase.storage.listBuckets();
+      if (error2) return { content: [{ type: "text", text: error2.message }], isError: true };
+      const buckets = (data2 ?? []).map((b) => ({
+        nome: b.name,
+        publico: b.public,
+        criado_em: b.created_at
+      }));
+      return {
+        content: [{ type: "text", text: JSON.stringify(buckets, null, 2) }],
+        structuredContent: { buckets }
+      };
+    }
+    const { data, error } = await supabase.storage.from(bucket).list(prefixo ?? "", { limit: 100, sortBy: { column: "name", order: "asc" } });
+    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
+    const arquivos = (data ?? []).map((f) => ({
+      nome: f.name,
+      tamanho: f.metadata?.size ?? null,
+      mimetype: f.metadata?.mimetype ?? null,
+      criado_em: f.created_at,
+      atualizado_em: f.updated_at
+    }));
+    return {
+      content: [{ type: "text", text: JSON.stringify(arquivos, null, 2) }],
+      structuredContent: { bucket, prefixo: prefixo ?? "", count: arquivos.length, arquivos }
+    };
+  }
+});
+
 // src/lib/mcp/index.ts
 var projectRef = "lelteebbziredzfamkzb";
 var mcp_default = defineMcp({
   name: "mfm-paisagismo-mcp",
   title: "MFM Paisagismo",
   version: "0.1.0",
-  instructions: "Ferramentas do sistema MFM Paisagismo. Permite consultar clientes, projetos e cards do CRM, e criar novos leads. Toda opera\xE7\xE3o executa como o usu\xE1rio autenticado e respeita as permiss\xF5es (RLS).",
+  instructions: "Ferramentas do sistema MFM Paisagismo. Permite consultar clientes, projetos e cards do CRM, criar leads, e leitura gen\xE9rica de tabelas/schema/storage para auditoria e arquitetura. Toda opera\xE7\xE3o executa como o usu\xE1rio autenticado e respeita as permiss\xF5es (RLS).",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated"
   }),
-  tools: [whoami_default, list_clientes_default, get_cliente_default, list_projetos_default, list_crm_cards_default, create_crm_card_default]
+  tools: [
+    whoami_default,
+    list_clientes_default,
+    get_cliente_default,
+    list_projetos_default,
+    list_crm_cards_default,
+    create_crm_card_default,
+    describe_schema_default,
+    read_table_default,
+    list_storage_default
+  ]
 });
 
 // lovable-mcp-supabase-entry.ts

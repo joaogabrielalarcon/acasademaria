@@ -5999,6 +5999,8 @@ export type Database = {
           status: string
         }[]
       }
+      mcp_describe_table: { Args: { p_tabela: string }; Returns: Json }
+      mcp_list_public_tables: { Args: never; Returns: Json }
       merge_fornecedores: {
         Args: { p_duplicado_ids: string[]; p_principal_id: string }
         Returns: Json
