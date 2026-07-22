@@ -623,7 +623,7 @@ export function MafeDiarioChat({ open, onOpenChange, projetoId, projetoNome, cli
             file: attachment.file,
             clienteId: clienteIdParaUpload,
             contexto: `diario-${projetoId}`,
-            bucket: "midia-interna",
+            bucket: "diario-midias",
             ano: new Date(reviewSummary.data_visita).getFullYear() || new Date().getFullYear(),
           });
           uploadedMedia.push({
