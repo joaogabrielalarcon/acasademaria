@@ -1,5 +1,8 @@
 import Anthropic from "npm:@anthropic-ai/sdk@0.32.1";
 import * as XLSX from "npm:xlsx@0.18.5";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
