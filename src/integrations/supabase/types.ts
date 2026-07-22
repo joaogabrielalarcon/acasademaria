@@ -5952,6 +5952,10 @@ export type Database = {
         Args: { _cliente_id: string; _user_id: string }
         Returns: boolean
       }
+      can_access_midia_path: {
+        Args: { _name: string; _user_id: string }
+        Returns: boolean
+      }
       can_manage_users: { Args: { _user_id: string }; Returns: boolean }
       can_view_demanda: {
         Args: { _demanda_id: string; _user_id: string }
