@@ -26,6 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Pencil, Camera, Loader2, Check, X, MessageCircle, ChevronDown,
   FileText, Upload, Paperclip, Car, Bike, ChevronRight, AlertCircle, RotateCw,
+  ImageIcon, MessageSquare, Plus,
 } from "lucide-react";
 import { formatCPF, formatPhone, formatCEP } from "@/hooks/useInputMasks";
 import { format, differenceInYears, differenceInMonths, formatDistanceToNow, differenceInDays } from "date-fns";
