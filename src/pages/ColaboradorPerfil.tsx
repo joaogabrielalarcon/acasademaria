@@ -754,11 +754,11 @@ export default function ColaboradorPerfil() {
 
   return (
     <AppLayout>
-      <div className="p-4 md:p-6 max-w-6xl mx-auto pb-24">
+      <div className="px-4 md:px-10 py-6 max-w-7xl mx-auto pb-24">
         {/* Breadcrumb */}
-        <nav className="text-sm text-muted-foreground mb-3">
-          <Link to="/equipe" className="hover:text-terracota">Equipe</Link>
-          <span className="mx-2">/</span>
+        <nav className="text-sm mb-6">
+          <Link to="/equipe" className="text-terracota hover:underline">Equipe</Link>
+          <span className="mx-2 text-muted-foreground">/</span>
           <span className="text-foreground">{colab.nome}</span>
         </nav>
 
@@ -770,25 +770,31 @@ export default function ColaboradorPerfil() {
           onPhotoUploaded={onSaved}
         />
 
-        <div className="mt-6">
+        <div className="mt-10">
           <TooltipProvider>
             <Tabs defaultValue="dados">
-              <TabsList className="flex flex-wrap gap-1 bg-transparent h-auto p-0">
-                <TabsTrigger value="dados">Dados</TabsTrigger>
-                <TabsTrigger value="uniforme">Uniforme & EPI</TabsTrigger>
-                <TabsTrigger value="maquinas">Máquinas</TabsTrigger>
-                <TabsTrigger value="liberacoes" className="relative">
+              <TabsList className="flex flex-wrap gap-8 bg-transparent h-auto p-0 border-b border-border/60 rounded-none w-full justify-start">
+                {[
+                  { v: "dados", l: "Dados" },
+                  { v: "uniforme", l: "Uniforme & EPI" },
+                  { v: "maquinas", l: "Máquinas" },
+                ].map((t) => (
+                  <TabsTrigger key={t.v} value={t.v}
+                    className="relative rounded-none border-0 bg-transparent px-0 pb-3 text-base font-normal text-muted-foreground data-[state=active]:text-terracota data-[state=active]:font-semibold data-[state=active]:shadow-none data-[state=active]:after:content-[''] data-[state=active]:after:absolute data-[state=active]:after:left-0 data-[state=active]:after:right-0 data-[state=active]:after:-bottom-px data-[state=active]:after:h-[2px] data-[state=active]:after:bg-terracota">
+                    {t.l}
+                  </TabsTrigger>
+                ))}
+                <TabsTrigger value="liberacoes"
+                  className="relative rounded-none border-0 bg-transparent px-0 pb-3 text-base font-normal text-muted-foreground data-[state=active]:text-terracota data-[state=active]:font-semibold data-[state=active]:shadow-none data-[state=active]:after:content-[''] data-[state=active]:after:absolute data-[state=active]:after:left-0 data-[state=active]:after:right-0 data-[state=active]:after:-bottom-px data-[state=active]:after:h-[2px] data-[state=active]:after:bg-terracota">
                   Liberações
-                  {alertaLiberacao && (
-                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-terracota" />
-                  )}
+                  {alertaLiberacao && <span className="ml-1.5 inline-block w-2 h-2 rounded-full bg-terracota" />}
                 </TabsTrigger>
-                <TabsTrigger value="historico">Histórico</TabsTrigger>
                 {["diarias", "adiantamentos", "deslocamento"].map((k) => (
                   <Tooltip key={k}>
                     <TooltipTrigger asChild>
                       <span>
-                        <TabsTrigger value={k} disabled className="opacity-50 cursor-not-allowed">
+                        <TabsTrigger value={k} disabled
+                          className="rounded-none border-0 bg-transparent px-0 pb-3 text-base font-normal text-muted-foreground/50 cursor-not-allowed">
                           {k === "diarias" ? "Diárias & Escala" : k === "adiantamentos" ? "Adiantamentos" : "Deslocamento"}
                         </TabsTrigger>
                       </span>
@@ -798,9 +804,9 @@ export default function ColaboradorPerfil() {
                 ))}
               </TabsList>
 
-              <TabsContent value="dados" className="mt-4 space-y-4">
+              <TabsContent value="dados" className="mt-8 space-y-6">
                 <NotaCoordenacao colab={colab} canEdit={isManager} onSaved={onSaved} />
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <DadosPessoaisCard key={`dp-${editKick}`} colab={colab} canEdit={isManager} onSaved={onSaved} />
                     <CargoCard colab={colab} />
