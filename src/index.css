@@ -9,81 +9,82 @@
 
 @layer base {
   :root {
-    /* Brand Colors — #9e3722 = 10 65% 38%, #fff0e5 = 27 100% 95% */
-    --terracota: 10 65% 38%; /* #9e3722 */
-    --terracota-dark: 10 65% 30%;
-    --terracota-darker: 10 65% 22%;
-    --creme: 27 100% 95%; /* #fff0e5 */
-    --creme-alt: 27 80% 96%;
-    --creme-active: 20 60% 88%;
-    
+    /* Brand — terracota #B04A2C, marinho #312B5E, tinta #231A12 */
+    --terracota: 13 60% 43%;
+    --terracota-dark: 13 62% 37%;
+    --terracota-darker: 13 62% 28%;
+    --creme: 31 46% 94%;      /* fundo areia #F7EFE6 */
+    --creme-alt: 38 60% 98%;  /* card off-white #FDFAF5 */
+    --creme-active: 22 45% 88%;
+
     /* Semantic Tokens */
-    --background: 27 100% 95%; /* #fff0e5 */
-    --foreground: 10 65% 38%; /* #9e3722 */
-    
-    --card: 27 100% 97%;
-    --card-foreground: 10 65% 38%;
-    
-    --popover: 27 100% 97%;
-    --popover-foreground: 10 65% 38%;
-    
-    --primary: 10 65% 38%; /* #9e3722 */
-    --primary-foreground: 27 100% 97%;
-    
-    --secondary: 22 50% 89%;
-    --secondary-foreground: 10 65% 38%;
-    
-    --muted: 27 60% 94%;
-    --muted-foreground: 10 50% 35% / 0.78;
-    
-    --accent: 22 50% 89%;
-    --accent-foreground: 10 65% 38%;
-    
-    /* Success — variação escura terracota */
-    --success: 10 65% 30%;
-    --success-foreground: 27 100% 97%;
-    --diario-area-bg: 22 50% 92%;
-    --diario-area-fg: 10 65% 30%;
-    --diario-service-bg: 10 65% 38% / 0.12;
-    --diario-service-fg: 10 65% 38%;
-    --diario-team-bg: 22 50% 90%;
-    --diario-team-fg: 10 65% 24%;
-    --diario-typing: 10 50% 45%;
-    --mafe-diario-collecting: 10 65% 45%;
-    --mafe-diario-awaiting: 10 50% 50%;
-    --mafe-diario-ready: 10 65% 24%;
-    --mafe-diario-typing: 10 50% 50%;
-    
-    /* Accent colors — marca marinho e rosé */
-    --marinho: 263 47% 18%; /* azul-marinho da marca, ~#281842 */
-    --marinho-foreground: 27 100% 95%; /* texto sobre marinho = creme */
-    --rose: 15 41% 55%; /* rosé da marca, ~#BC755D */
-    --rose-foreground: 15 50% 18%; /* texto sobre rosé */
-    
-    /* Destructive — terracota */
-    --destructive: 10 65% 38%;
-    --destructive-foreground: 27 100% 97%;
-    
-    --border: 10 65% 38% / 0.18;
-    --input: 10 65% 38% / 0.25;
-    --ring: 10 65% 38%;
-    
-    --radius: 0.5rem;
-    
-    /* Sidebar — nude levemente mais escuro */
-    --sidebar-background: 25 60% 92%;
-    --sidebar-foreground: 10 65% 38%;
-    --sidebar-primary: 10 65% 38%;
-    --sidebar-primary-foreground: 27 100% 97%;
-    --sidebar-accent: 22 50% 87%;
-    --sidebar-accent-foreground: 10 65% 38%;
-    --sidebar-border: 10 65% 38% / 0.15;
-    --sidebar-ring: 10 65% 38%;
-    
-    /* Custom Properties */
-    --shadow-subtle: 0 2px 8px -2px hsl(10 65% 38% / 0.08);
-    --shadow-card: 0 4px 16px -4px hsl(10 65% 38% / 0.1);
-    --shadow-elevated: 0 8px 32px -8px hsl(10 65% 38% / 0.15);
+    --background: 31 46% 94%;      /* #F7EFE6 */
+    --foreground: 28 34% 11%;      /* tinta #231A12 */
+
+    --card: 38 60% 98%;            /* #FDFAF5 */
+    --card-foreground: 28 34% 11%;
+
+    --popover: 38 60% 98%;
+    --popover-foreground: 28 34% 11%;
+
+    --primary: 13 60% 43%;         /* terracota #B04A2C */
+    --primary-foreground: 38 60% 98%;
+    --primary-hover: 13 62% 37%;   /* #9A3F24 */
+    --primary-soft: 13 60% 43%;    /* usar com alpha: hsl(var(--primary-soft) / 0.08) */
+
+    --secondary: 31 30% 90%;
+    --secondary-foreground: 28 34% 11%;
+
+    --muted: 31 40% 92%;
+    --muted-foreground: 28 15% 48%; /* #8A7B6C */
+
+    --accent: 31 30% 90%;
+    --accent-foreground: 28 34% 11%;
+
+    --success: 247 37% 27%;
+    --success-foreground: 38 60% 98%;
+    --diario-area-bg: 31 30% 90%;
+    --diario-area-fg: 247 37% 27%;
+    --diario-service-bg: 13 60% 43% / 0.12;
+    --diario-service-fg: 13 60% 43%;
+    --diario-team-bg: 31 30% 88%;
+    --diario-team-fg: 247 37% 22%;
+    --diario-typing: 13 50% 45%;
+    --mafe-diario-collecting: 13 60% 45%;
+    --mafe-diario-awaiting: 13 50% 50%;
+    --mafe-diario-ready: 247 37% 27%;
+    --mafe-diario-typing: 13 50% 50%;
+
+    /* Marinho (estável/ativo) e rosé */
+    --marinho: 247 37% 27%;        /* #312B5E */
+    --marinho-foreground: 38 60% 98%;
+    --accent-navy: 247 37% 27%;
+    --rose: 15 41% 55%;
+    --rose-foreground: 15 50% 18%;
+
+    --destructive: 13 60% 43%;
+    --destructive-foreground: 38 60% 98%;
+
+    --border: 28 20% 84%;
+    --input: 28 20% 84%;
+    --ring: 13 60% 43%;
+
+    --radius: 0.625rem; /* 10px botões/inputs; cartões usam rounded-[14px] */
+
+    /* Sidebar */
+    --sidebar-background: 31 40% 92%;
+    --sidebar-foreground: 28 34% 11%;
+    --sidebar-primary: 13 60% 43%;
+    --sidebar-primary-foreground: 38 60% 98%;
+    --sidebar-accent: 13 60% 43%;   /* usar com alpha em classes */
+    --sidebar-accent-foreground: 13 60% 43%;
+    --sidebar-border: 28 20% 84%;
+    --sidebar-ring: 13 60% 43%;
+
+    /* Sombra padrão de cartão */
+    --shadow-subtle: 0 1px 2px hsl(28 34% 11% / 0.05), 0 4px 16px hsl(28 34% 11% / 0.06);
+    --shadow-card: 0 1px 2px hsl(28 34% 11% / 0.05), 0 4px 16px hsl(28 34% 11% / 0.06);
+    --shadow-elevated: 0 6px 24px hsl(28 34% 11% / 0.12);
     --transition-smooth: 250ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
