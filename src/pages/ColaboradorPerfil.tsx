@@ -807,11 +807,11 @@ export default function ColaboradorPerfil() {
               <TabsContent value="dados" className="mt-8 space-y-6">
                 <NotaCoordenacao colab={colab} canEdit={isManager} onSaved={onSaved} />
                 <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     <DadosPessoaisCard key={`dp-${editKick}`} colab={colab} canEdit={isManager} onSaved={onSaved} />
                     <CargoCard colab={colab} />
                   </div>
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     <CnhCard colab={colab} canEdit={isManager} onSaved={onSaved} docs={docs} refetchDocs={refetchDocs} />
                     <TransporteCard colab={colab} />
                     <DocumentosCard colabId={colab.id} docs={docs} refetch={refetchDocs} canEdit={isManager} />
