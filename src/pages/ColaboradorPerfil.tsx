@@ -627,12 +627,26 @@ function HeaderColab({ colab, lider, tempoCasa, onEdit, onPhotoUploaded }: {
       </div>
 
       <div className="flex items-center gap-3 pt-2">
-        <button onClick={openWhatsApp}
-          className="inline-flex items-center gap-2 rounded-full border border-border bg-background hover:border-foreground text-foreground text-sm px-5 py-2.5 transition-colors">
-          <MessageCircle className="w-4 h-4" /> WhatsApp
-        </button>
+        {(() => {
+          const hasPhone = !!(colab.telefone || "").replace(/\D/g, "");
+          const btn = (
+            <button
+              onClick={hasPhone ? openWhatsApp : undefined}
+              disabled={!hasPhone}
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-background hover:border-foreground text-foreground text-sm px-5 py-2.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <MessageCircle className="w-4 h-4" /> WhatsApp
+            </button>
+          );
+          return hasPhone ? btn : (
+            <Tooltip>
+              <TooltipTrigger asChild><span>{btn}</span></TooltipTrigger>
+              <TooltipContent>Cadastre o celular</TooltipContent>
+            </Tooltip>
+          );
+        })()}
         <button onClick={onEdit}
-          className="inline-flex items-center gap-2 rounded-full bg-terracota hover:bg-terracota/90 text-white text-sm font-medium px-6 py-2.5 transition-colors">
+          className="inline-flex items-center gap-2 rounded-[10px] bg-primary hover:bg-primary/90 text-primary-foreground text-[15px] font-semibold px-6 py-2.5 transition-colors">
           Editar
         </button>
       </div>
