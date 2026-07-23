@@ -89,48 +89,34 @@
   }
 
   .dark {
-    --background: 27 100% 95%;
-    --foreground: 10 65% 38%;
-    --card: 27 100% 97%;
-    --card-foreground: 10 65% 38%;
-    --popover: 27 100% 97%;
-    --popover-foreground: 10 65% 38%;
-    --primary: 10 65% 38%;
-    --primary-foreground: 27 100% 97%;
-    --secondary: 22 50% 89%;
-    --secondary-foreground: 10 65% 38%;
-    --muted: 27 60% 94%;
-    --muted-foreground: 10 50% 35% / 0.78;
-    --accent: 22 50% 89%;
-    --accent-foreground: 10 65% 38%;
-    --diario-area-bg: 22 50% 92%;
-    --diario-area-fg: 10 65% 30%;
-    --diario-service-bg: 10 65% 38% / 0.12;
-    --diario-service-fg: 10 65% 38%;
-    --diario-team-bg: 22 50% 90%;
-    --diario-team-fg: 10 65% 24%;
-    --diario-typing: 10 50% 45%;
-    --mafe-diario-collecting: 10 65% 45%;
-    --mafe-diario-awaiting: 10 50% 50%;
-    --mafe-diario-ready: 10 65% 24%;
-    --mafe-diario-typing: 10 50% 50%;
-    
-    /* Accent colors — marca marinho e rosé */
-    --marinho: 263 47% 18%; /* azul-marinho da marca, ~#281842 */
-    --marinho-foreground: 27 100% 95%; /* texto sobre marinho = creme */
-    --rose: 15 41% 55%; /* rosé da marca, ~#BC755D */
-    --rose-foreground: 15 50% 18%; /* texto sobre rosé */
-    
-    --border: 10 65% 38% / 0.18;
-    --input: 10 65% 38% / 0.25;
-    --ring: 10 65% 38%;
-    --sidebar-background: 25 60% 92%;
-    --sidebar-foreground: 10 65% 38%;
-    --sidebar-primary: 10 65% 38%;
-    --sidebar-primary-foreground: 27 100% 97%;
-    --sidebar-accent: 22 50% 87%;
-    --sidebar-accent-foreground: 10 65% 38%;
-    --sidebar-border: 10 65% 38% / 0.15;
+    --background: 31 46% 94%;
+    --foreground: 28 34% 11%;
+    --card: 38 60% 98%;
+    --card-foreground: 28 34% 11%;
+    --popover: 38 60% 98%;
+    --popover-foreground: 28 34% 11%;
+    --primary: 13 60% 43%;
+    --primary-foreground: 38 60% 98%;
+    --secondary: 31 30% 90%;
+    --secondary-foreground: 28 34% 11%;
+    --muted: 31 40% 92%;
+    --muted-foreground: 28 15% 48%;
+    --accent: 31 30% 90%;
+    --accent-foreground: 28 34% 11%;
+    --marinho: 247 37% 27%;
+    --marinho-foreground: 38 60% 98%;
+    --rose: 15 41% 55%;
+    --rose-foreground: 15 50% 18%;
+    --border: 28 20% 84%;
+    --input: 28 20% 84%;
+    --ring: 13 60% 43%;
+    --sidebar-background: 31 40% 92%;
+    --sidebar-foreground: 28 34% 11%;
+    --sidebar-primary: 13 60% 43%;
+    --sidebar-primary-foreground: 38 60% 98%;
+    --sidebar-accent: 13 60% 43%;
+    --sidebar-accent-foreground: 13 60% 43%;
+    --sidebar-border: 28 20% 84%;
   }
 }
 
