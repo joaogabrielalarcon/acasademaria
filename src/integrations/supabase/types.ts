@@ -687,6 +687,7 @@ export type Database = {
       }
       colaborador_documentos: {
         Row: {
+          categoria: string | null
           colaborador_id: string
           created_at: string
           created_by: string | null
@@ -697,6 +698,7 @@ export type Database = {
           url: string
         }
         Insert: {
+          categoria?: string | null
           colaborador_id: string
           created_at?: string
           created_by?: string | null
@@ -707,6 +709,7 @@ export type Database = {
           url: string
         }
         Update: {
+          categoria?: string | null
           colaborador_id?: string
           created_at?: string
           created_by?: string | null
@@ -896,9 +899,11 @@ export type Database = {
           cargo: string | null
           cep: string | null
           cidade: string | null
+          cnh_validade: string | null
           cpf: string | null
           created_at: string
           created_by: string | null
+          data_admissao: string | null
           data_nascimento: string | null
           email: string | null
           endereco: string | null
@@ -907,6 +912,9 @@ export type Database = {
           id: string
           maquinas_ids: string[] | null
           nome: string
+          nota_coordenacao: string | null
+          nota_coordenacao_updated_at: string | null
+          nota_coordenacao_updated_by: string | null
           observacoes: string | null
           possui_cnh: boolean | null
           possui_conducao: boolean | null
@@ -931,9 +939,11 @@ export type Database = {
           cargo?: string | null
           cep?: string | null
           cidade?: string | null
+          cnh_validade?: string | null
           cpf?: string | null
           created_at?: string
           created_by?: string | null
+          data_admissao?: string | null
           data_nascimento?: string | null
           email?: string | null
           endereco?: string | null
@@ -942,6 +952,9 @@ export type Database = {
           id?: string
           maquinas_ids?: string[] | null
           nome: string
+          nota_coordenacao?: string | null
+          nota_coordenacao_updated_at?: string | null
+          nota_coordenacao_updated_by?: string | null
           observacoes?: string | null
           possui_cnh?: boolean | null
           possui_conducao?: boolean | null
@@ -966,9 +979,11 @@ export type Database = {
           cargo?: string | null
           cep?: string | null
           cidade?: string | null
+          cnh_validade?: string | null
           cpf?: string | null
           created_at?: string
           created_by?: string | null
+          data_admissao?: string | null
           data_nascimento?: string | null
           email?: string | null
           endereco?: string | null
@@ -977,6 +992,9 @@ export type Database = {
           id?: string
           maquinas_ids?: string[] | null
           nome?: string
+          nota_coordenacao?: string | null
+          nota_coordenacao_updated_at?: string | null
+          nota_coordenacao_updated_by?: string | null
           observacoes?: string | null
           possui_cnh?: boolean | null
           possui_conducao?: boolean | null
