@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Search, Plus, UserCircle, MoreVertical, Pencil, ChevronDown, ChevronRight, Package, Trash2, Calendar, Key, RefreshCw, Upload, FileText, Car, Sparkles, X, LayoutList, Network, MessageSquare, UserX } from "lucide-react";
 import { useAuth, useIsManager, useIsAdmin, useIsAdminOrAdministrativo, useHighestRole } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -732,22 +733,24 @@ export default function Equipe() {
       key={colaborador.id}
       className="flex items-center gap-4 p-4 hover:bg-muted/30 transition-colors"
     >
-      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
-        {colaborador.foto_url ? (
-          <img src={colaborador.foto_url} alt={colaborador.nome} className="w-full h-full object-cover" />
-        ) : (
-          <UserCircle className="w-6 h-6 text-primary" />
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <h3 className="font-medium text-foreground">{colaborador.nome}</h3>
-        <p className="text-sm text-muted-foreground">
-          {[
-            colaborador.sub_equipe === 'implantacao' ? 'Implantação' : colaborador.sub_equipe === 'manutencao' ? 'Manutenção' : null,
-            colaborador.cargo,
-          ].filter(Boolean).join(" • ") || "—"}
-        </p>
-      </div>
+      <Link to={`/equipe/${colaborador.id}`} className="flex items-center gap-4 flex-1 min-w-0 group">
+        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+          {colaborador.foto_url ? (
+            <img src={colaborador.foto_url} alt={colaborador.nome} className="w-full h-full object-cover" />
+          ) : (
+            <UserCircle className="w-6 h-6 text-primary" />
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-medium text-foreground group-hover:text-terracota transition-colors">{colaborador.nome}</h3>
+          <p className="text-sm text-muted-foreground">
+            {[
+              colaborador.sub_equipe === 'implantacao' ? 'Implantação' : colaborador.sub_equipe === 'manutencao' ? 'Manutenção' : null,
+              colaborador.cargo,
+            ].filter(Boolean).join(" • ") || "—"}
+          </p>
+        </div>
+      </Link>
       <div className="flex items-center gap-2">
         {colaborador.possui_cnh && (
           <Badge variant="outline" className="text-xs gap-1">
@@ -779,8 +782,13 @@ export default function Equipe() {
             <Button variant="ghost" size="icon-sm"><MoreVertical className="w-4 h-4" /></Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <Link to={`/equipe/${colaborador.id}`}>
+                <UserCircle className="w-4 h-4 mr-2" />Abrir ficha
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleEdit(colaborador)}>
-              <Pencil className="w-4 h-4 mr-2" />Editar
+              <Pencil className="w-4 h-4 mr-2" />Edição rápida
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleOpenEntregas(colaborador)}>
               <Package className="w-4 h-4 mr-2" />Entregas

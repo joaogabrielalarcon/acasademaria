@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import { UserCircle, Car } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Colaborador } from "@/hooks/useColaboradores";
@@ -11,8 +12,9 @@ interface OrgChartProps {
 
 function PersonCard({ person }: { person: Colaborador }) {
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-card border border-border">
+    <Link to={`/equipe/${person.id}`} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-card border border-border hover:bg-muted/40 transition-colors cursor-pointer">
       <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+
         {person.foto_url ? (
           <img src={person.foto_url} alt={person.nome} className="w-full h-full object-cover" />
         ) : (
@@ -31,7 +33,8 @@ function PersonCard({ person }: { person: Colaborador }) {
       {!person.ativo && (
         <Badge variant="secondary" className="text-[10px] py-0 flex-shrink-0">Inativo</Badge>
       )}
-    </div>
+    </Link>
+
   );
 }
 
