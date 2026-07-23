@@ -774,27 +774,36 @@ export default function ColaboradorPerfil() {
           <TooltipProvider>
             <Tabs defaultValue="dados">
               <TabsList className="flex flex-wrap gap-8 bg-transparent h-auto p-0 border-b border-border/60 rounded-none w-full justify-start">
-                {[
-                  { v: "dados", l: "Dados" },
-                  { v: "uniforme", l: "Uniforme & EPI" },
-                  { v: "maquinas", l: "Máquinas" },
-                ].map((t) => (
-                  <TabsTrigger key={t.v} value={t.v}
-                    className="relative rounded-none border-0 bg-transparent px-0 pb-3 text-base font-normal text-muted-foreground data-[state=active]:text-terracota data-[state=active]:font-semibold data-[state=active]:shadow-none data-[state=active]:after:content-[''] data-[state=active]:after:absolute data-[state=active]:after:left-0 data-[state=active]:after:right-0 data-[state=active]:after:-bottom-px data-[state=active]:after:h-[2px] data-[state=active]:after:bg-terracota">
-                    {t.l}
-                  </TabsTrigger>
-                ))}
+                {(() => {
+                  const isTerceiro = (colab.vinculo || "").toLowerCase() === "terceiro";
+                  const baseTabs = [
+                    { v: "dados", l: "Dados", always: true },
+                    { v: "uniforme", l: "Uniforme & EPI", hideForTerceiro: true },
+                    { v: "maquinas", l: "Máquinas", always: true },
+                  ];
+                  const visible = baseTabs.filter((t) => t.always || !(isTerceiro && t.hideForTerceiro));
+                  return visible.map((t) => (
+                    <TabsTrigger key={t.v} value={t.v}
+                      className="relative rounded-none border-0 bg-transparent px-0 pb-3 text-[15px] font-semibold text-muted-foreground data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:after:content-[''] data-[state=active]:after:absolute data-[state=active]:after:left-0 data-[state=active]:after:right-0 data-[state=active]:after:-bottom-px data-[state=active]:after:h-[3px] data-[state=active]:after:bg-primary">
+                      {t.l}
+                    </TabsTrigger>
+                  ));
+                })()}
                 <TabsTrigger value="liberacoes"
-                  className="relative rounded-none border-0 bg-transparent px-0 pb-3 text-base font-normal text-muted-foreground data-[state=active]:text-terracota data-[state=active]:font-semibold data-[state=active]:shadow-none data-[state=active]:after:content-[''] data-[state=active]:after:absolute data-[state=active]:after:left-0 data-[state=active]:after:right-0 data-[state=active]:after:-bottom-px data-[state=active]:after:h-[2px] data-[state=active]:after:bg-terracota">
+                  className="relative rounded-none border-0 bg-transparent px-0 pb-3 text-[15px] font-semibold text-muted-foreground data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:after:content-[''] data-[state=active]:after:absolute data-[state=active]:after:left-0 data-[state=active]:after:right-0 data-[state=active]:after:-bottom-px data-[state=active]:after:h-[3px] data-[state=active]:after:bg-primary">
                   Liberações
-                  {alertaLiberacao && <span className="ml-1.5 inline-block w-2 h-2 rounded-full bg-terracota" />}
+                  {alertaLiberacao && <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-primary" />}
                 </TabsTrigger>
-                {["diarias", "adiantamentos", "deslocamento"].map((k) => (
+                <TabsTrigger value="historico"
+                  className="relative rounded-none border-0 bg-transparent px-0 pb-3 text-[15px] font-semibold text-muted-foreground data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:after:content-[''] data-[state=active]:after:absolute data-[state=active]:after:left-0 data-[state=active]:after:right-0 data-[state=active]:after:-bottom-px data-[state=active]:after:h-[3px] data-[state=active]:after:bg-primary">
+                  Histórico
+                </TabsTrigger>
+                {(colab.vinculo || "").toLowerCase() !== "terceiro" && ["diarias", "adiantamentos", "deslocamento"].map((k) => (
                   <Tooltip key={k}>
                     <TooltipTrigger asChild>
                       <span>
                         <TabsTrigger value={k} disabled
-                          className="rounded-none border-0 bg-transparent px-0 pb-3 text-base font-normal text-muted-foreground/50 cursor-not-allowed">
+                          className="rounded-none border-0 bg-transparent px-0 pb-3 text-[15px] font-semibold text-muted-foreground/40 cursor-not-allowed">
                           {k === "diarias" ? "Diárias & Escala" : k === "adiantamentos" ? "Adiantamentos" : "Deslocamento"}
                         </TabsTrigger>
                       </span>
