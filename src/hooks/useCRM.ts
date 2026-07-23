@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase as _supabase } from "@/integrations/supabase/client";
+// crm_cards foi depreciada (renomeada para crm_cards_deprecated). Cast solto até a reconstrução do CRM sobre projetos.
+const supabase = _supabase as any;
 
 export type CrmCardTipo = "Obra" | "Proposta" | "Manutencao" | "Tarefa";
 export type CrmCardStatus = "Lead" | "Proposta Enviada" | "Aprovado" | "Em Execucao" | "Concluido" | "Pos-venda" | "Nao Aprovado";
