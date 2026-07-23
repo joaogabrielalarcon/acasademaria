@@ -1390,7 +1390,7 @@ export type Database = {
           },
         ]
       }
-      crm_cards: {
+      crm_cards_deprecated: {
         Row: {
           cliente_id: string | null
           contato_cargo: string | null
@@ -1548,7 +1548,7 @@ export type Database = {
             foreignKeyName: "crm_followups_card_id_fkey"
             columns: ["card_id"]
             isOneToOne: false
-            referencedRelation: "crm_cards"
+            referencedRelation: "crm_cards_deprecated"
             referencedColumns: ["id"]
           },
         ]
@@ -1580,7 +1580,7 @@ export type Database = {
             foreignKeyName: "crm_historico_card_id_fkey"
             columns: ["card_id"]
             isOneToOne: false
-            referencedRelation: "crm_cards"
+            referencedRelation: "crm_cards_deprecated"
             referencedColumns: ["id"]
           },
           {
@@ -5648,9 +5648,12 @@ export type Database = {
           cliente_id: string
           created_at: string
           created_by: string | null
+          data_alvo_interna: string | null
           data_conclusao: string | null
           data_inicio: string | null
           data_previsao: string | null
+          data_prometida_cliente: string | null
+          data_retorno_prometida: string | null
           descricao: string | null
           dia_vencimento: number | null
           escala_dias_semana: number[] | null
@@ -5661,9 +5664,13 @@ export type Database = {
           lider_responsavel_id: string | null
           local_id: string | null
           observacoes: string | null
+          origem: string | null
           parcelas_config: Json | null
+          proximo_contato_em: string | null
           responsavel_id: string | null
           status: string
+          substatus: string | null
+          temperatura: string | null
           tipo: string
           titulo: string
           updated_at: string
@@ -5676,9 +5683,12 @@ export type Database = {
           cliente_id: string
           created_at?: string
           created_by?: string | null
+          data_alvo_interna?: string | null
           data_conclusao?: string | null
           data_inicio?: string | null
           data_previsao?: string | null
+          data_prometida_cliente?: string | null
+          data_retorno_prometida?: string | null
           descricao?: string | null
           dia_vencimento?: number | null
           escala_dias_semana?: number[] | null
@@ -5689,9 +5699,13 @@ export type Database = {
           lider_responsavel_id?: string | null
           local_id?: string | null
           observacoes?: string | null
+          origem?: string | null
           parcelas_config?: Json | null
+          proximo_contato_em?: string | null
           responsavel_id?: string | null
           status?: string
+          substatus?: string | null
+          temperatura?: string | null
           tipo?: string
           titulo: string
           updated_at?: string
@@ -5704,9 +5718,12 @@ export type Database = {
           cliente_id?: string
           created_at?: string
           created_by?: string | null
+          data_alvo_interna?: string | null
           data_conclusao?: string | null
           data_inicio?: string | null
           data_previsao?: string | null
+          data_prometida_cliente?: string | null
+          data_retorno_prometida?: string | null
           descricao?: string | null
           dia_vencimento?: number | null
           escala_dias_semana?: number[] | null
@@ -5717,9 +5734,13 @@ export type Database = {
           lider_responsavel_id?: string | null
           local_id?: string | null
           observacoes?: string | null
+          origem?: string | null
           parcelas_config?: Json | null
+          proximo_contato_em?: string | null
           responsavel_id?: string | null
           status?: string
+          substatus?: string | null
+          temperatura?: string | null
           tipo?: string
           titulo?: string
           updated_at?: string
@@ -5770,6 +5791,7 @@ export type Database = {
           descricao: string | null
           id: string
           observacoes: string | null
+          projeto_id: string | null
           status: string
           titulo: string
           updated_at: string
@@ -5786,6 +5808,7 @@ export type Database = {
           descricao?: string | null
           id?: string
           observacoes?: string | null
+          projeto_id?: string | null
           status?: string
           titulo: string
           updated_at?: string
@@ -5802,6 +5825,7 @@ export type Database = {
           descricao?: string | null
           id?: string
           observacoes?: string | null
+          projeto_id?: string | null
           status?: string
           titulo?: string
           updated_at?: string
@@ -5814,6 +5838,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "propostas_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
             referencedColumns: ["id"]
           },
         ]

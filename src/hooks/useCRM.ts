@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase as _supabase } from "@/integrations/supabase/client";
+// crm_cards foi depreciada (renomeada para crm_cards_deprecated). Cast solto até a reconstrução do CRM sobre projetos.
+const supabase = _supabase as any;
 
 export type CrmCardTipo = "Obra" | "Proposta" | "Manutencao" | "Tarefa";
 export type CrmCardStatus = "Lead" | "Proposta Enviada" | "Aprovado" | "Em Execucao" | "Concluido" | "Pos-venda" | "Nao Aprovado";
@@ -49,7 +51,7 @@ export function useCrmCards() {
     queryKey: ["crm-cards"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("crm_cards")
+        .from("crm_cards_deprecated")
         .select("*, clientes(nome), colaboradores(nome)")
         .order("updated_at", { ascending: false });
       if (error) throw error;
@@ -106,7 +108,7 @@ export function useCreateCrmCard() {
   return useMutation({
     mutationFn: async (card: Partial<CrmCard>) => {
       const { data, error } = await supabase
-        .from("crm_cards")
+        .from("crm_cards_deprecated")
         .insert(card as any)
         .select()
         .single();
@@ -127,7 +129,7 @@ export function useUpdateCrmCard() {
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<CrmCard> & { id: string }) => {
       const { data, error } = await supabase
-        .from("crm_cards")
+        .from("crm_cards_deprecated")
         .update(updates as any)
         .eq("id", id)
         .select()
