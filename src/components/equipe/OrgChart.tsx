@@ -33,7 +33,8 @@ function PersonCard({ person }: { person: Colaborador }) {
       {!person.ativo && (
         <Badge variant="secondary" className="text-[10px] py-0 flex-shrink-0">Inativo</Badge>
       )}
-    </div>
+    </Link>
+
   );
 }
 
