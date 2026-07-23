@@ -209,14 +209,14 @@ function DadosPessoaisCard({ colab, canEdit, onSaved }: { colab: Colab; canEdit:
     <Card
       title="Dados Pessoais"
       action={canEdit && (editing ? (
-        <div className="flex gap-1">
-          <Button size="sm" variant="ghost" onClick={() => setEditing(false)}><X className="w-4 h-4" /></Button>
-          <Button size="sm" onClick={save} disabled={saving} className="bg-terracota hover:bg-terracota-dark text-white">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-          </Button>
+        <div className="flex gap-2">
+          <button onClick={() => setEditing(false)} className="text-xs text-muted-foreground hover:text-foreground">cancelar</button>
+          <button onClick={save} disabled={saving} className="text-xs text-terracota hover:underline inline-flex items-center gap-1">
+            {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />} salvar
+          </button>
         </div>
       ) : (
-        <Button size="sm" variant="ghost" onClick={() => setEditing(true)}><Pencil className="w-4 h-4" /></Button>
+        <EditLink onClick={() => setEditing(true)} />
       ))}
     >
       {editing ? (
@@ -233,20 +233,20 @@ function DadosPessoaisCard({ colab, canEdit, onSaved }: { colab: Colab; canEdit:
           <Textarea className="col-span-2" placeholder="Contato de emergência / observações" value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} />
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-x-4">
+        <div className="grid grid-cols-3 gap-x-6">
           <Field label="CPF">{colab.cpf}</Field>
           <Field label="Nascimento">
             {colab.data_nascimento
-              ? `${format(new Date(colab.data_nascimento), "dd/MM/yyyy")}${idade !== null ? ` · ${idade} anos` : ""}`
+              ? `${format(new Date(colab.data_nascimento), "dd MMM yyyy", { locale: ptBR })}${idade !== null ? ` · ${idade} anos` : ""}`
               : null}
           </Field>
           <Field label="Desde">
             {colab.data_admissao ? format(new Date(colab.data_admissao), "MMM yyyy", { locale: ptBR }) : null}
           </Field>
-          <Field label="Celular / WhatsApp">{colab.telefone}</Field>
+          <Field label="Celular · WhatsApp">{colab.telefone}</Field>
           <Field label="E-mail">{colab.email}</Field>
           <Field label="Contato de emergência">{colab.observacoes}</Field>
-          <div className="col-span-2">
+          <div className="col-span-3">
             <Field label="Endereço">
               {[colab.endereco, colab.cidade, colab.estado, colab.cep].filter(Boolean).join(" · ")}
             </Field>
