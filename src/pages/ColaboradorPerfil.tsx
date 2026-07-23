@@ -852,7 +852,7 @@ export default function ColaboradorPerfil() {
           </TooltipProvider>
         </div>
 
-        <MafeFab colabId={colab.id} />
+        
       </div>
     </AppLayout>
   );
