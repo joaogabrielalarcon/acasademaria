@@ -9,12 +9,11 @@ import {
   DollarSign,
   Lock,
   UserCircle,
+  MoreVertical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { AlertasPendentesDialog } from "@/components/diario/AlertasPendentesDialog";
 import {
   Tooltip,
   TooltipContent,
@@ -25,14 +24,18 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useAuth, useHighestRole } from "@/hooks/useAuth";
-import { usePendingDiarioAlertas } from "@/hooks/useDiarioAlertas";
 import {
-  alertNavigationItem,
-  appNavigationItems,
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { useAuth, useHighestRole } from "@/hooks/useAuth";
+import {
+  navigationGroups,
   comprasNavigationItems,
   comprasIcon as ComprasIcon,
-  comprasRoles,
   configNavigationItems,
   financeiroNavigationItems,
   type NavigationItem,
@@ -47,38 +50,21 @@ export function AppSidebar({ className }: AppSidebarProps) {
   const [configOpen, setConfigOpen] = useState(false);
   const [financeiroOpen, setFinanceiroOpen] = useState(false);
   const [comprasOpen, setComprasOpen] = useState(false);
-  const [alertsOpen, setAlertsOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const userRole = useHighestRole(user?.id);
-  const canAccessAlerts = alertNavigationItem.roles.includes(userRole);
-  const { data: pendingAlerts = [] } = usePendingDiarioAlertas(canAccessAlerts);
 
-  const visibleNavigationItems = appNavigationItems.filter(
-    item => item.roles.includes(userRole)
-  );
-
-  const visibleConfigItems = configNavigationItems.filter(
-    item => item.roles.includes(userRole)
-  );
-
-  const visibleFinanceiroItems = financeiroNavigationItems.filter(
-    item => item.roles.includes(userRole)
-  );
-
-  const visibleComprasItems = comprasNavigationItems.filter(
-    item => item.roles.includes(userRole)
-  );
+  const visibleConfigItems = configNavigationItems.filter((i) => i.roles.includes(userRole));
+  const visibleFinanceiroItems = financeiroNavigationItems.filter((i) => i.roles.includes(userRole));
+  const visibleComprasItems = comprasNavigationItems.filter((i) => i.roles.includes(userRole));
 
   const isComprasActive = location.pathname.startsWith("/compras");
-
   const isFinanceiroActive = visibleFinanceiroItems.some(
-    item => location.pathname === item.href || location.pathname.startsWith(item.href)
+    (item) => location.pathname === item.href || location.pathname.startsWith(item.href),
   );
-
   const isConfigActive = visibleConfigItems.some(
-    item => location.pathname === item.href || location.pathname.startsWith(item.href)
+    (item) => location.pathname === item.href || location.pathname.startsWith(item.href),
   );
 
   const handleLogout = async () => {
@@ -86,27 +72,36 @@ export function AppSidebar({ className }: AppSidebarProps) {
     navigate("/login");
   };
 
-  const renderNavItem = (item: NavigationItem, isSubItem = false) => {
-    const hrefPath = item.href.split("?")[0];
-    const isActive = item.href.includes("?")
-      ? location.pathname + location.search === item.href
-      : location.pathname === item.href || (item.href !== "/" && location.pathname.startsWith(item.href));
-    
+  const isItemActive = (item: NavigationItem) => {
+    if (item.href.includes("?")) return location.pathname + location.search === item.href;
+    if (item.href === "/") return location.pathname === "/";
+    return location.pathname === item.href || location.pathname.startsWith(item.href + "/");
+  };
+
+  const renderNavItem = (item: NavigationItem, opts?: { subItem?: boolean }) => {
+    const active = isItemActive(item);
+    const isSub = opts?.subItem;
+
     const linkContent = (
       <Link
         to={item.href}
         className={cn(
-          "flex items-center gap-3 rounded-lg transition-all duration-200",
-          isSubItem ? "px-3 py-2 text-sm" : "px-3 py-2.5",
-          isActive 
-            ? "bg-secondary text-foreground font-bold" 
-            : "text-foreground hover:bg-secondary/50"
+          "relative flex items-center gap-3 rounded-md transition-colors duration-150 h-10 px-3",
+          isSub && "h-9 text-[13px]",
+          active
+            ? "text-primary font-semibold"
+            : "text-foreground/80 hover:bg-foreground/5 hover:text-foreground",
         )}
+        style={active ? { backgroundColor: "hsl(var(--primary-soft) / 0.10)" } : undefined}
       >
-        <item.icon className={cn("flex-shrink-0", isSubItem ? "w-4 h-4" : "w-5 h-5")} />
-        {!collapsed && (
-          <span className="font-medium text-sm">{item.title}</span>
+        {active && (
+          <span
+            aria-hidden
+            className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-r bg-primary"
+          />
         )}
+        <item.icon className={cn("flex-shrink-0", isSub ? "w-4 h-4" : "w-[18px] h-[18px]")} />
+        {!collapsed && <span className="text-[14px] font-medium">{item.title}</span>}
       </Link>
     );
 
@@ -114,310 +109,294 @@ export function AppSidebar({ className }: AppSidebarProps) {
       return (
         <li key={item.title}>
           <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-              {linkContent}
-            </TooltipTrigger>
-            <TooltipContent side="right" className="ml-2">
-              {item.title}
-            </TooltipContent>
+            <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+            <TooltipContent side="right" className="ml-2">{item.title}</TooltipContent>
           </Tooltip>
         </li>
       );
     }
-
     return <li key={item.title}>{linkContent}</li>;
   };
+
+  const GroupLabel = ({ label }: { label: string }) =>
+    collapsed ? null : (
+      <div className="mt-5 mb-2 px-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+        {label}
+      </div>
+    );
+
+  const userName = user?.email?.split("@")[0] || "Usuário";
 
   return (
     <aside
       className={cn(
         "fixed left-0 top-0 h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col transition-all duration-300 z-40",
         collapsed ? "w-16" : "w-60",
-        className
+        className,
       )}
     >
-      {/* Logo */}
-      <Link to="/" className={cn(
-        "flex items-center justify-center py-6 border-b border-sidebar-border hover:bg-secondary/50 transition-colors cursor-pointer",
-        collapsed ? "px-2" : "px-4"
-      )}
-        onClick={(e) => {
-          e.preventDefault();
-          window.location.href = "/";
-        }}
+      {/* Logo → Início */}
+      <Link
+        to="/"
+        className={cn(
+          "flex items-center justify-center py-6 border-b border-sidebar-border hover:bg-foreground/5 transition-colors",
+          collapsed ? "px-2" : "px-4",
+        )}
       >
         <Logo variant={collapsed ? "icon" : "compact"} />
       </Link>
 
       {/* Navigation */}
-      <nav className="flex-1 py-6 overflow-y-auto">
-        <ul className="space-y-1 px-2">
-          {visibleNavigationItems.map((item) => renderNavItem(item))}
-        </ul>
+      <nav className="flex-1 py-4 overflow-y-auto">
+        {navigationGroups.map((group, gi) => {
+          const items = group.items.filter((i) => i.roles.includes(userRole));
+          if (!items.length) return null;
+          return (
+            <div key={gi}>
+              {group.label && <GroupLabel label={group.label} />}
+              <ul className="space-y-0.5 px-2">
+                {items.map((item) => renderNavItem(item))}
+              </ul>
+            </div>
+          );
+        })}
 
-        {/* Compras Collapsible Section */}
+        {/* Compras */}
         {visibleComprasItems.length > 0 && (
-          <div className="mt-4 px-2">
-            <Collapsible 
-              open={collapsed ? false : (comprasOpen || isComprasActive)} 
-              onOpenChange={setComprasOpen}
-            >
-              {collapsed ? (
-                <Tooltip delayDuration={0}>
-                  <TooltipTrigger asChild>
-                    <Link
-                      to="/compras"
+          <>
+            <GroupLabel label="Compras" />
+            <div className="px-2">
+              <Collapsible
+                open={collapsed ? false : comprasOpen || isComprasActive}
+                onOpenChange={setComprasOpen}
+              >
+                {collapsed ? (
+                  <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <Link
+                        to="/compras"
+                        className={cn(
+                          "flex items-center justify-center h-10 rounded-md transition-colors",
+                          isComprasActive ? "text-primary" : "text-foreground/80 hover:bg-foreground/5",
+                        )}
+                        style={isComprasActive ? { backgroundColor: "hsl(var(--primary-soft) / 0.10)" } : undefined}
+                      >
+                        <ComprasIcon className="w-[18px] h-[18px]" />
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="ml-2">Compras</TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <CollapsibleTrigger asChild>
+                    <button
                       className={cn(
-                        "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
-                        isComprasActive 
-                          ? "bg-secondary text-foreground font-bold" 
-                          : "text-foreground hover:bg-secondary/50"
+                        "flex items-center justify-between w-full h-10 px-3 rounded-md transition-colors",
+                        isComprasActive
+                          ? "text-primary font-semibold"
+                          : "text-foreground/80 hover:bg-foreground/5",
                       )}
                     >
-                      <ComprasIcon className="w-5 h-5 flex-shrink-0" />
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" className="ml-2">
-                    Compras
-                  </TooltipContent>
-                </Tooltip>
-              ) : (
-                <CollapsibleTrigger asChild>
-                  <button
-                    className={cn(
-                      "flex items-center justify-between w-full px-3 py-2.5 rounded-lg transition-all duration-200",
-                      isComprasActive 
-                        ? "bg-secondary/50 text-foreground" 
-                        : "text-foreground hover:bg-secondary/50"
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <ComprasIcon className="w-5 h-5 flex-shrink-0" />
-                      <span className="font-medium text-sm">Compras</span>
-                    </div>
-                    <ChevronDown 
-                      className={cn(
-                        "w-4 h-4 transition-transform duration-200",
-                        (comprasOpen || isComprasActive) && "rotate-180"
-                      )} 
-                    />
-                  </button>
-                </CollapsibleTrigger>
-              )}
-              
-              <CollapsibleContent className="mt-1">
-                <ul className="space-y-1 pl-4">
-                  {visibleComprasItems.map((item) => renderNavItem(item, true))}
-                </ul>
-              </CollapsibleContent>
-            </Collapsible>
-          </div>
+                      <div className="flex items-center gap-3">
+                        <ComprasIcon className="w-[18px] h-[18px]" />
+                        <span className="text-[14px] font-medium">Compras</span>
+                      </div>
+                      <ChevronDown
+                        className={cn(
+                          "w-4 h-4 transition-transform duration-200",
+                          (comprasOpen || isComprasActive) && "rotate-180",
+                        )}
+                      />
+                    </button>
+                  </CollapsibleTrigger>
+                )}
+                <CollapsibleContent className="mt-1">
+                  <ul className="space-y-0.5 pl-6 pr-2">
+                    {visibleComprasItems.map((item) => renderNavItem(item, { subItem: true }))}
+                  </ul>
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
+          </>
         )}
 
-        {/* Financeiro Collapsible Section */}
+        {/* Financeiro */}
         {visibleFinanceiroItems.length > 0 && (
-          <div className="mt-4 px-2">
-            <Collapsible 
-              open={collapsed ? false : (financeiroOpen || isFinanceiroActive)} 
-              onOpenChange={setFinanceiroOpen}
-            >
-              {collapsed ? (
-                <Tooltip delayDuration={0}>
-                  <TooltipTrigger asChild>
-                    <Link
-                      to="/financeiro/a-receber"
+          <>
+            <GroupLabel label="Financeiro" />
+            <div className="px-2">
+              <Collapsible
+                open={collapsed ? false : financeiroOpen || isFinanceiroActive}
+                onOpenChange={setFinanceiroOpen}
+              >
+                {collapsed ? (
+                  <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <Link
+                        to="/financeiro/a-receber"
+                        className={cn(
+                          "flex items-center justify-center h-10 rounded-md transition-colors",
+                          isFinanceiroActive ? "text-primary" : "text-foreground/80 hover:bg-foreground/5",
+                        )}
+                      >
+                        <DollarSign className="w-[18px] h-[18px]" />
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="ml-2">Financeiro</TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <CollapsibleTrigger asChild>
+                    <button
                       className={cn(
-                        "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
-                        isFinanceiroActive 
-                          ? "bg-secondary text-foreground font-bold" 
-                          : "text-foreground hover:bg-secondary/50"
+                        "flex items-center justify-between w-full h-10 px-3 rounded-md transition-colors",
+                        isFinanceiroActive
+                          ? "text-primary font-semibold"
+                          : "text-foreground/80 hover:bg-foreground/5",
                       )}
                     >
-                      <DollarSign className="w-5 h-5 flex-shrink-0" />
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" className="ml-2">
-                    Financeiro
-                  </TooltipContent>
-                </Tooltip>
-              ) : (
-                <CollapsibleTrigger asChild>
-                  <button
-                    className={cn(
-                      "flex items-center justify-between w-full px-3 py-2.5 rounded-lg transition-all duration-200",
-                      isFinanceiroActive 
-                        ? "bg-secondary/50 text-foreground" 
-                        : "text-foreground hover:bg-secondary/50"
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <DollarSign className="w-5 h-5 flex-shrink-0" />
-                      <span className="font-medium text-sm">Financeiro</span>
-                    </div>
-                    <ChevronDown 
-                      className={cn(
-                        "w-4 h-4 transition-transform duration-200",
-                        (financeiroOpen || isFinanceiroActive) && "rotate-180"
-                      )} 
-                    />
-                  </button>
-                </CollapsibleTrigger>
-              )}
-              
-              <CollapsibleContent className="mt-1">
-                <ul className="space-y-1 pl-4">
-                  {visibleFinanceiroItems.map((item) => renderNavItem(item, true))}
-                </ul>
-              </CollapsibleContent>
-            </Collapsible>
-          </div>
+                      <div className="flex items-center gap-3">
+                        <DollarSign className="w-[18px] h-[18px]" />
+                        <span className="text-[14px] font-medium">Financeiro</span>
+                      </div>
+                      <ChevronDown
+                        className={cn(
+                          "w-4 h-4 transition-transform duration-200",
+                          (financeiroOpen || isFinanceiroActive) && "rotate-180",
+                        )}
+                      />
+                    </button>
+                  </CollapsibleTrigger>
+                )}
+                <CollapsibleContent className="mt-1">
+                  <ul className="space-y-0.5 pl-6 pr-2">
+                    {visibleFinanceiroItems.map((item) => renderNavItem(item, { subItem: true }))}
+                  </ul>
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
+          </>
         )}
 
+        {/* Configurações (admin) */}
         {visibleConfigItems.length > 0 && (
-          <div className="mt-6 px-2">
-            <Collapsible 
-              open={collapsed ? false : (configOpen || isConfigActive)} 
-              onOpenChange={setConfigOpen}
-            >
-              {collapsed ? (
-                <Tooltip delayDuration={0}>
-                  <TooltipTrigger asChild>
-                    <Link
-                      to="/areas"
+          <>
+            <GroupLabel label="Configurações" />
+            <div className="px-2">
+              <Collapsible
+                open={collapsed ? false : configOpen || isConfigActive}
+                onOpenChange={setConfigOpen}
+              >
+                {collapsed ? (
+                  <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <Link
+                        to="/areas"
+                        className={cn(
+                          "flex items-center justify-center h-10 rounded-md transition-colors",
+                          isConfigActive ? "text-primary" : "text-foreground/80 hover:bg-foreground/5",
+                        )}
+                      >
+                        <Settings className="w-[18px] h-[18px]" />
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="ml-2">Configurações</TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <CollapsibleTrigger asChild>
+                    <button
                       className={cn(
-                        "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
-                        isConfigActive 
-                          ? "bg-secondary text-foreground font-bold" 
-                          : "text-foreground hover:bg-secondary/50"
+                        "flex items-center justify-between w-full h-10 px-3 rounded-md transition-colors",
+                        isConfigActive
+                          ? "text-primary font-semibold"
+                          : "text-foreground/80 hover:bg-foreground/5",
                       )}
                     >
-                      <Settings className="w-5 h-5 flex-shrink-0" />
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" className="ml-2">
-                    Configurações
-                  </TooltipContent>
-                </Tooltip>
-              ) : (
-                <CollapsibleTrigger asChild>
-                  <button
-                    className={cn(
-                      "flex items-center justify-between w-full px-3 py-2.5 rounded-lg transition-all duration-200",
-                      isConfigActive 
-                        ? "bg-secondary/50 text-foreground" 
-                        : "text-foreground hover:bg-secondary/50"
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Settings className="w-5 h-5 flex-shrink-0" />
-                      <span className="font-medium text-sm">Configurações</span>
-                    </div>
-                    <ChevronDown 
-                      className={cn(
-                        "w-4 h-4 transition-transform duration-200",
-                        (configOpen || isConfigActive) && "rotate-180"
-                      )} 
-                    />
-                  </button>
-                </CollapsibleTrigger>
-              )}
-              
-              <CollapsibleContent className="mt-1">
-                <ul className="space-y-1 pl-4">
-                  {visibleConfigItems.map((item) => renderNavItem(item, true))}
-                </ul>
-              </CollapsibleContent>
-            </Collapsible>
-          </div>
+                      <div className="flex items-center gap-3">
+                        <Settings className="w-[18px] h-[18px]" />
+                        <span className="text-[14px] font-medium">Configurações</span>
+                      </div>
+                      <ChevronDown
+                        className={cn(
+                          "w-4 h-4 transition-transform duration-200",
+                          (configOpen || isConfigActive) && "rotate-180",
+                        )}
+                      />
+                    </button>
+                  </CollapsibleTrigger>
+                )}
+                <CollapsibleContent className="mt-1">
+                  <ul className="space-y-0.5 pl-6 pr-2">
+                    {visibleConfigItems.map((item) => renderNavItem(item, { subItem: true }))}
+                  </ul>
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
+          </>
         )}
       </nav>
 
-      {/* Footer */}
-      <div className="border-t border-sidebar-border p-3">
-        {canAccessAlerts && (
-          <div className="mb-2">
-            {collapsed ? (
-              <Tooltip delayDuration={0}>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => setAlertsOpen(true)}
-                    className="relative w-full text-foreground/70 hover:bg-secondary/50 hover:text-foreground"
-                  >
-                    <alertNavigationItem.icon className="w-4 h-4" />
-                    {pendingAlerts.length > 0 && (
-                      <span className="absolute right-2 top-1.5 h-2.5 w-2.5 rounded-full bg-primary" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right" className="ml-2">
-                  Alertas pendentes
-                </TooltipContent>
-              </Tooltip>
-            ) : (
-              <Button variant="outline" className="w-full justify-between" onClick={() => setAlertsOpen(true)}>
-                <span className="flex items-center gap-2">
-                  <alertNavigationItem.icon className="w-4 h-4" />
-                  Alertas pendentes
-                </span>
-                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                  {pendingAlerts.length}
-                </Badge>
-              </Button>
-            )}
-          </div>
-        )}
-
-        {/* Collapse Toggle */}
+      {/* Footer — só usuário + recolher */}
+      <div className="border-t border-sidebar-border p-2 space-y-1">
         <Button
           variant="ghost"
           size="icon-sm"
           onClick={() => setCollapsed(!collapsed)}
-          className="w-full text-foreground/70 hover:text-foreground hover:bg-secondary/50 mb-2"
+          className="w-full text-foreground/60 hover:text-foreground hover:bg-foreground/5"
         >
           {collapsed ? (
             <ChevronRight className="w-4 h-4" />
           ) : (
-            <div className="flex items-center gap-2 w-full justify-center">
+            <div className="flex items-center gap-2 justify-center">
               <ChevronLeft className="w-4 h-4" />
-              {!collapsed && <span className="text-xs">Recolher</span>}
+              <span className="text-xs">Recolher</span>
             </div>
           )}
         </Button>
 
-        {!collapsed && (
-          <Button variant="outline" className="w-full mb-2 justify-start" asChild>
-            <Link to="/alterar-senha">
-              <Lock className="w-4 h-4" />
-              Alterar senha
-            </Link>
-          </Button>
-        )}
-
-        {!collapsed && (
-          <div className="flex items-center gap-3 px-2 py-2 rounded-lg bg-secondary/50">
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <UserCircle className="w-5 h-5 text-foreground" />
+        {collapsed ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="w-full h-10 flex items-center justify-center rounded-md hover:bg-foreground/5">
+                <UserCircle className="w-5 h-5 text-foreground/70" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="right" align="end">
+              <DropdownMenuItem asChild>
+                <Link to="/alterar-senha"><Lock className="w-4 h-4 mr-2" /> Alterar senha</Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="w-4 h-4 mr-2" /> Sair
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <div className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-foreground/5">
+            <div className="w-8 h-8 rounded-full bg-foreground/5 flex items-center justify-center flex-shrink-0">
+              <UserCircle className="w-5 h-5 text-foreground/70" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate text-foreground">{user?.email?.split('@')[0] || "Usuário"}</p>
-              <p className="text-xs text-foreground/60 truncate">{user?.email || "Não logado"}</p>
+              <p className="text-[13px] font-medium truncate text-foreground capitalize">{userName}</p>
+              <p className="text-[11px] text-muted-foreground truncate">{user?.email || "—"}</p>
             </div>
-            <Button 
-              variant="ghost" 
-              size="icon-sm" 
-              className="text-foreground/50 hover:text-foreground"
-              onClick={handleLogout}
-            >
-              <LogOut className="w-4 h-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon-sm" className="text-foreground/50 hover:text-foreground flex-shrink-0">
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link to="/alterar-senha"><Lock className="w-4 h-4 mr-2" /> Alterar senha</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="w-4 h-4 mr-2" /> Sair
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         )}
       </div>
-
-      <AlertasPendentesDialog open={alertsOpen} onOpenChange={setAlertsOpen} />
     </aside>
   );
 }
-
