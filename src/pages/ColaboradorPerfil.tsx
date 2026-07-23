@@ -268,16 +268,15 @@ function CargoCard({ colab }: { colab: Colab }) {
   });
 
   return (
-    <Card title="Cargo">
-      <p className="text-lg font-serif text-foreground">{colab.cargo || "—"}</p>
-      {colab.sub_equipe && <p className="text-sm text-muted-foreground mt-1">Sub-equipe · {colab.sub_equipe}</p>}
+    <Card title="Cargo" action={<EditLink onClick={() => {}} />}>
+      <p className="font-serif text-3xl text-foreground leading-tight">{colab.cargo || "—"}</p>
       {projetos.length > 0 && (
-        <div className="mt-4">
-          <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2">Líder nos projetos</div>
+        <div className="mt-5">
+          <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground/80 mb-2">Líder nos projetos</div>
           <div className="flex flex-wrap gap-2">
             {projetos.map((p: any) => (
               <Link key={p.id} to={`/projetos/${p.id}`}
-                className="inline-flex items-center rounded-full bg-marinho/10 hover:bg-marinho/20 text-marinho px-3 py-1 text-xs font-medium transition-colors">
+                className="inline-flex items-center rounded-full border border-border/60 bg-background hover:border-terracota hover:text-terracota text-foreground px-4 py-1.5 text-sm transition-colors">
                 {p.titulo}
               </Link>
             ))}
