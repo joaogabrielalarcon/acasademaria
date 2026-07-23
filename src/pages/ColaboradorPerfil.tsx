@@ -798,7 +798,7 @@ export default function ColaboradorPerfil() {
                   className="relative rounded-none border-0 bg-transparent px-0 pb-3 text-[15px] font-semibold text-muted-foreground data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:after:content-[''] data-[state=active]:after:absolute data-[state=active]:after:left-0 data-[state=active]:after:right-0 data-[state=active]:after:-bottom-px data-[state=active]:after:h-[3px] data-[state=active]:after:bg-primary">
                   Histórico
                 </TabsTrigger>
-                {(colab.vinculo || "").toLowerCase() !== "terceiro" && ["diarias", "adiantamentos", "deslocamento"].map((k) => (
+                {((colab as any).vinculo || "").toLowerCase() !== "terceiro" && ["diarias", "adiantamentos", "deslocamento"].map((k) => (
                   <Tooltip key={k}>
                     <TooltipTrigger asChild>
                       <span>
