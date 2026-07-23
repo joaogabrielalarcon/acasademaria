@@ -411,19 +411,19 @@ function CnhCard({ colab, canEdit, onSaved, docs, refetchDocs }: {
 function TransporteCard({ colab }: { colab: Colab }) {
   const Icon = colab.tipo_conducao?.toLowerCase().includes("moto") ? Bike : Car;
   return (
-    <Card title="Transporte próprio">
+    <Card title="Transporte próprio" action={<EditLink onClick={() => {}} />}>
       {colab.possui_conducao ? (
-        <div className="flex items-center gap-3">
-          <Icon className="w-8 h-8 text-marinho" />
-          <div>
-            <p className="text-sm text-foreground">{colab.tipo_conducao || "Sim"}</p>
-            {colab.updated_at && (
-              <p className="text-xs text-muted-foreground">
-                Atualizado {formatDistanceToNow(new Date(colab.updated_at), { locale: ptBR, addSuffix: true })}
-              </p>
-            )}
+        <>
+          <div className="flex items-center gap-3">
+            <Icon className="w-5 h-5 text-terracota" strokeWidth={1.5} />
+            <p className="text-[15px] text-foreground">{colab.tipo_conducao || "Sim"}</p>
           </div>
-        </div>
+          {colab.updated_at && (
+            <p className="text-xs text-muted-foreground mt-4">
+              Atualizado <span className="font-semibold text-foreground">{formatDistanceToNow(new Date(colab.updated_at), { locale: ptBR })}</span>
+            </p>
+          )}
+        </>
       ) : (
         <p className="text-sm text-muted-foreground italic">Não possui transporte próprio</p>
       )}
