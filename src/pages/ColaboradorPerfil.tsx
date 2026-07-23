@@ -575,57 +575,66 @@ function HeaderColab({ colab, lider, tempoCasa, onEdit, onPhotoUploaded }: {
   };
 
   return (
-    <div className="sticky top-0 z-30 -mx-4 md:-mx-6 px-4 md:px-6 py-4 bg-background/95 backdrop-blur border-b border-border">
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => fileRef.current?.click()}
-          className="relative group w-20 h-20 rounded-full overflow-hidden border-2 border-terracota/30 bg-muted flex-shrink-0"
-        >
-          {uploading ? (
-            <div className="w-full h-full flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-terracota" /></div>
-          ) : fotoUrl ? (
-            <img src={fotoUrl} alt={colab.nome} className="w-full h-full object-cover" />
+    <div className="flex items-start gap-6">
+      <button
+        onClick={() => fileRef.current?.click()}
+        className="relative group w-28 h-28 rounded-full overflow-hidden border-2 border-dashed border-terracota/40 bg-transparent flex-shrink-0"
+      >
+        {uploading ? (
+          <div className="w-full h-full flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-terracota" /></div>
+        ) : fotoUrl ? (
+          <img src={fotoUrl} alt={colab.nome} className="w-full h-full object-cover rounded-full" />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center text-terracota/60 gap-0.5">
+            <ImageIcon className="w-5 h-5" strokeWidth={1.5} />
+            <span className="text-[11px]">Foto</span>
+            <span className="text-[10px] leading-none">or <span className="underline">browse</span></span>
+            <span className="text-[10px] leading-none">files</span>
+          </div>
+        )}
+        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center rounded-full">
+          <Camera className="w-5 h-5 text-white" />
+        </div>
+      </button>
+      <input ref={fileRef} type="file" hidden accept="image/*" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
+
+      <div className="min-w-0 flex-1 pt-1">
+        <div className="flex items-center gap-3 flex-wrap">
+          <h1 className="font-serif text-5xl md:text-6xl text-foreground truncate leading-none">{colab.nome}</h1>
+          <span className="inline-flex items-center rounded-full border border-marinho/40 text-marinho text-[11px] font-semibold tracking-wider px-3 py-1">
+            {(colab.tipo_vinculo || "interno").toUpperCase()}
+          </span>
+          {colab.ativo ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-marinho text-marinho-foreground text-[11px] font-semibold tracking-wider px-3 py-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-marinho-foreground" /> ATIVO
+            </span>
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-2xl font-serif text-muted-foreground">
-              {colab.nome?.[0]?.toUpperCase() ?? "?"}
-            </div>
+            <span className="inline-flex items-center rounded-full bg-muted text-muted-foreground text-[11px] font-semibold tracking-wider px-3 py-1">
+              INATIVO
+            </span>
           )}
-          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-            <Camera className="w-5 h-5 text-white" />
-          </div>
+        </div>
+        <p className="text-lg text-foreground mt-3">
+          {colab.cargo || "—"}{colab.sub_equipe ? ` · Sub-equipe ${colab.sub_equipe}` : ""}
+        </p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {lider ? (
+            <>responde a: <Link to={`/equipe/${lider.id}`} className="text-terracota font-medium hover:underline">{lider.nome}</Link></>
+          ) : null}
+          {lider && tempoCasa ? " · " : null}
+          {tempoCasa ? `na equipe há ${tempoCasa}` : null}
+        </p>
+      </div>
+
+      <div className="flex items-center gap-3 pt-2">
+        <button onClick={openWhatsApp}
+          className="inline-flex items-center gap-2 rounded-full border border-border bg-background hover:border-foreground text-foreground text-sm px-5 py-2.5 transition-colors">
+          <MessageCircle className="w-4 h-4" /> WhatsApp
         </button>
-        <input ref={fileRef} type="file" hidden accept="image/*" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="font-serif text-2xl md:text-3xl text-foreground truncate">{colab.nome}</h1>
-            <Badge variant="outline" className="border-marinho text-marinho">
-              {(colab.tipo_vinculo || "interno").toUpperCase()}
-            </Badge>
-            <Badge className={colab.ativo ? "bg-marinho text-marinho-foreground" : "bg-muted text-muted-foreground"}>
-              {colab.ativo ? "ATIVO" : "INATIVO"}
-            </Badge>
-          </div>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {colab.cargo || "—"}{colab.sub_equipe ? ` · Sub-equipe ${colab.sub_equipe}` : ""}
-          </p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {lider ? (
-              <>responde a: <Link to={`/equipe/${lider.id}`} className="text-marinho hover:underline">{lider.nome}</Link></>
-            ) : null}
-            {lider && tempoCasa ? " · " : null}
-            {tempoCasa ? `na equipe há ${tempoCasa}` : null}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={openWhatsApp} className="gap-1">
-            <MessageCircle className="w-4 h-4" /> WhatsApp
-          </Button>
-          <Button size="sm" onClick={onEdit} className="bg-terracota hover:bg-terracota-dark text-white gap-1">
-            <Pencil className="w-4 h-4" /> Editar
-          </Button>
-        </div>
+        <button onClick={onEdit}
+          className="inline-flex items-center gap-2 rounded-full bg-terracota hover:bg-terracota/90 text-white text-sm font-medium px-6 py-2.5 transition-colors">
+          Editar
+        </button>
       </div>
     </div>
   );
@@ -639,9 +648,9 @@ function MafeFab({ colabId }: { colabId: string }) {
       <button
         onClick={() => setOpen(true)}
         aria-label="Abrir Mafe"
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-terracota hover:bg-terracota-dark text-white shadow-lg flex items-center justify-center z-40"
+        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-terracota hover:bg-terracota/90 text-white shadow-lg flex items-center justify-center z-40"
       >
-        <span className="font-serif text-xl">M</span>
+        <MessageSquare className="w-6 h-6" strokeWidth={1.75} />
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
