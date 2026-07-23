@@ -629,20 +629,15 @@ function HeaderColab({ colab, lider, tempoCasa, onEdit, onPhotoUploaded }: {
       <div className="flex items-center gap-3 pt-2">
         {(() => {
           const hasPhone = !!(colab.telefone || "").replace(/\D/g, "");
-          const btn = (
+          return (
             <button
               onClick={hasPhone ? openWhatsApp : undefined}
               disabled={!hasPhone}
+              title={hasPhone ? undefined : "Cadastre o celular"}
               className="inline-flex items-center gap-2 rounded-full border border-border bg-background hover:border-foreground text-foreground text-sm px-5 py-2.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <MessageCircle className="w-4 h-4" /> WhatsApp
             </button>
-          );
-          return hasPhone ? btn : (
-            <Tooltip>
-              <TooltipTrigger asChild><span>{btn}</span></TooltipTrigger>
-              <TooltipContent>Cadastre o celular</TooltipContent>
-            </Tooltip>
           );
         })()}
         <button onClick={onEdit}
