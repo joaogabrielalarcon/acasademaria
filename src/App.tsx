@@ -117,6 +117,7 @@ const App = () => (
             <Route path="/clientes/:id" element={<ProtectedRoute><ClientePerfil /></ProtectedRoute>} />
             <Route path="/clientes/:id/editar" element={<ProtectedRoute><NovoCliente /></ProtectedRoute>} />
             <Route path="/equipe" element={<ProtectedRoute><Equipe /></ProtectedRoute>} />
+            <Route path="/equipe/:id" element={<ProtectedRoute><ColaboradorPerfil /></ProtectedRoute>} />
             <Route path="/registros/novo" element={<ProtectedRoute><NovoRegistro /></ProtectedRoute>} />
             <Route path="/registros/:id" element={<ProtectedRoute><RegistroDetalhe /></ProtectedRoute>} />
             <Route path="/registros/:id/editar" element={<ProtectedRoute><RegistroDetalhe /></ProtectedRoute>} />
