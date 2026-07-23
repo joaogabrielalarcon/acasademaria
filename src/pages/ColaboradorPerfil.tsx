@@ -344,14 +344,14 @@ function CnhCard({ colab, canEdit, onSaved, docs, refetchDocs }: {
     <Card
       title="CNH"
       action={canEdit && (editing ? (
-        <div className="flex gap-1">
-          <Button size="sm" variant="ghost" onClick={() => setEditing(false)}><X className="w-4 h-4" /></Button>
-          <Button size="sm" onClick={save} disabled={saving} className="bg-terracota hover:bg-terracota-dark text-white">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-          </Button>
+        <div className="flex gap-2">
+          <button onClick={() => setEditing(false)} className="text-xs text-muted-foreground hover:text-foreground">cancelar</button>
+          <button onClick={save} disabled={saving} className="text-xs text-terracota hover:underline inline-flex items-center gap-1">
+            {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />} salvar
+          </button>
         </div>
       ) : (
-        <Button size="sm" variant="ghost" onClick={() => setEditing(true)}><Pencil className="w-4 h-4" /></Button>
+        <EditLink onClick={() => setEditing(true)} />
       ))}
     >
       {editing ? (
@@ -365,17 +365,18 @@ function CnhCard({ colab, canEdit, onSaved, docs, refetchDocs }: {
         </div>
       ) : colab.possui_cnh ? (
         <div className="space-y-3">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-[15px] text-foreground">Possui</span>
             {categorias.length > 0 ? categorias.map((c: string) => (
-              <span key={c} className="rounded bg-marinho text-marinho-foreground text-xs px-2 py-1 font-semibold">{c}</span>
+              <span key={c} className="rounded-md bg-marinho text-marinho-foreground text-sm px-3 py-1 font-semibold min-w-[34px] text-center">{c}</span>
             )) : <span className="text-sm text-muted-foreground">Categorias não informadas</span>}
           </div>
           {validade && (
-            <div className={`flex items-center gap-2 text-sm ${vencido || vencendo ? "text-terracota" : "text-marinho"}`}>
-              <span className={`w-2 h-2 rounded-full ${vencido || vencendo ? "bg-terracota" : "bg-marinho"}`} />
-              {vencido ? `Vencida há ${Math.abs(diasParaVencer!)}d` :
-                vencendo ? `Vence em ${diasParaVencer}d` :
-                  `Em dia — vence ${format(validade, "dd/MM/yyyy")}`}
+            <div className="text-sm text-muted-foreground">
+              Validade da CNH: <span className="text-foreground">{format(validade, "dd MMM yyyy", { locale: ptBR })}</span> ·{" "}
+              <span className={`font-semibold ${vencido || vencendo ? "text-terracota" : "text-marinho"}`}>
+                {vencido ? `vencida há ${Math.abs(diasParaVencer!)}d` : vencendo ? `vence em ${diasParaVencer}d` : "em dia"}
+              </span>
             </div>
           )}
           {cnhDoc ? (
@@ -391,10 +392,11 @@ function CnhCard({ colab, canEdit, onSaved, docs, refetchDocs }: {
           ) : canEdit ? (
             <>
               <input ref={fileRef} type="file" hidden accept="image/*,application/pdf" onChange={(e) => e.target.files?.[0] && uploadCnh(e.target.files[0])} />
-              <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading}>
-                {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Paperclip className="w-4 h-4 mr-1" />}
-                Anexar CNH
-              </Button>
+              <button onClick={() => fileRef.current?.click()} disabled={uploading}
+                className="inline-flex items-center gap-1 text-xs text-terracota hover:underline">
+                {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Paperclip className="w-3 h-3" />}
+                anexar CNH
+              </button>
             </>
           ) : null}
         </div>
