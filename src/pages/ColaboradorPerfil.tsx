@@ -98,42 +98,39 @@ function NotaCoordenacao({ colab, canEdit, onSaved }: { colab: Colab; canEdit: b
   };
 
   return (
-    <div className="rounded-lg border-l-4 border-terracota bg-terracota/5 p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="text-xs font-semibold uppercase tracking-wide text-terracota mb-1">
-            Nota da Coordenação
-          </div>
-          {editing ? (
-            <Textarea value={value} onChange={(e) => setValue(e.target.value)} rows={3} autoFocus />
-          ) : colab.nota_coordenacao ? (
-            <p className="text-sm text-foreground whitespace-pre-wrap">{colab.nota_coordenacao}</p>
-          ) : (
-            <p className="text-sm text-muted-foreground italic">Sem nota registrada.</p>
-          )}
-          {colab.nota_coordenacao_updated_at && !editing && (
-            <p className="text-xs text-muted-foreground mt-2">
-              {autor ?? "—"} · {formatDistanceToNow(new Date(colab.nota_coordenacao_updated_at), { locale: ptBR, addSuffix: true })}
-            </p>
-          )}
+    <div className="rounded-2xl border border-terracota/20 border-l-4 border-l-terracota bg-terracota/[0.06] px-6 py-5">
+      <div className="flex items-start justify-between gap-3 mb-2">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-terracota">
+          Nota da Coordenação
         </div>
-        {canEdit && (
-          editing ? (
-            <div className="flex gap-1">
-              <Button size="sm" variant="ghost" onClick={() => { setValue(colab.nota_coordenacao || ""); setEditing(false); }}>
-                <X className="w-4 h-4" />
-              </Button>
-              <Button size="sm" onClick={save} disabled={saving} className="bg-terracota hover:bg-terracota-dark text-white">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-              </Button>
-            </div>
-          ) : (
-            <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>
-              <Pencil className="w-4 h-4" />
-            </Button>
-          )
+        {canEdit && !editing && (
+          <button onClick={() => setEditing(true)} className="text-xs text-terracota/80 hover:text-terracota inline-flex items-center gap-1">
+            <Pencil className="w-3 h-3" /> editar
+          </button>
         )}
       </div>
+      {editing ? (
+        <div className="space-y-2">
+          <Textarea value={value} onChange={(e) => setValue(e.target.value)} rows={3} autoFocus />
+          <div className="flex justify-end gap-2">
+            <Button size="sm" variant="ghost" onClick={() => { setValue(colab.nota_coordenacao || ""); setEditing(false); }}>Cancelar</Button>
+            <Button size="sm" onClick={save} disabled={saving} className="bg-terracota hover:bg-terracota/90 text-white">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar"}
+            </Button>
+          </div>
+        </div>
+      ) : colab.nota_coordenacao ? (
+        <>
+          <p className="text-[15px] leading-relaxed text-foreground">{colab.nota_coordenacao}</p>
+          {colab.nota_coordenacao_updated_at && (
+            <p className="text-xs text-muted-foreground mt-3">
+              <span className="text-terracota font-medium">{autor ?? "—"}</span> · {formatDistanceToNow(new Date(colab.nota_coordenacao_updated_at), { locale: ptBR, addSuffix: true })}
+            </p>
+          )}
+        </>
+      ) : (
+        <p className="text-sm text-muted-foreground italic">Sem nota registrada.</p>
+      )}
     </div>
   );
 }
@@ -141,9 +138,9 @@ function NotaCoordenacao({ colab, canEdit, onSaved }: { colab: Colab; canEdit: b
 // ---------- Card generic ----------
 function Card({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</h3>
+    <div className="rounded-2xl border border-border/60 bg-card px-6 py-5">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-terracota">{title}</h3>
         {action}
       </div>
       {children}
@@ -151,11 +148,19 @@ function Card({ title, action, children }: { title: string; action?: React.React
   );
 }
 
+function EditLink({ onClick }: { onClick: () => void }) {
+  return (
+    <button onClick={onClick} className="text-xs text-terracota/80 hover:text-terracota inline-flex items-center gap-1">
+      <Pencil className="w-3 h-3" /> editar
+    </button>
+  );
+}
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-0.5 py-1.5">
-      <span className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</span>
-      <div className="text-sm text-foreground">{children || <span className="text-muted-foreground italic">—</span>}</div>
+    <div className="flex flex-col gap-1 py-2">
+      <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground/80">{label}</span>
+      <div className="text-[15px] text-foreground">{children || <span className="text-muted-foreground italic">—</span>}</div>
     </div>
   );
 }
