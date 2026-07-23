@@ -666,16 +666,8 @@ export default function ColaboradorPerfil() {
     enabled: !!id,
   });
 
-  const { data: lider } = useQuery({
-    queryKey: ["lider", (colab as any)?.responde_a_id],
-    queryFn: async () => {
-      const rid = (colab as any)?.responde_a_id;
-      if (!rid) return null;
-      const { data } = await supabase.from("colaboradores").select("id, nome").eq("id", rid).maybeSingle();
-      return data;
-    },
-    enabled: !!colab,
-  });
+  const lider = null as { id: string; nome: string } | null;
+
 
   const { data: docs = [], refetch: refetchDocs } = useQuery({
     queryKey: ["colab-docs", id],
