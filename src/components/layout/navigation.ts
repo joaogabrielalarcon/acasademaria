@@ -3,11 +3,11 @@ import {
   BellRing,
   BookOpen,
   Building2,
-  CalendarCheck,
   CalendarDays,
   DollarSign,
   FileText,
   GitBranch,
+  Home,
   Landmark,
   Leaf,
   Package,
@@ -17,7 +17,6 @@ import {
   ShoppingCart,
   Tags,
   Truck,
-  UserCircle,
   Users,
   Wrench,
   type LucideIcon,
@@ -31,16 +30,50 @@ export interface NavigationItem {
   roles: AppRole[];
 }
 
-export const appNavigationItems: NavigationItem[] = [
+export interface NavigationGroup {
+  label?: string; // sem label = itens soltos no topo
+  items: NavigationItem[];
+}
+
+// Início (renomeado de "Minha Agenda")
+export const inicioNavigationItem: NavigationItem = {
+  title: "Início",
+  icon: Home,
+  href: "/agenda",
+  roles: ["admin", "administrativo", "gestao_campo", "arquitetura", "responsavel_obra", "operador_campo"],
+};
+
+const operacaoItems: NavigationItem[] = [
   { title: "Clientes", icon: Users, href: "/clientes", roles: ["admin", "administrativo", "gestao_campo", "arquitetura", "responsavel_obra"] },
-  { title: "Equipe", icon: UserCircle, href: "/equipe", roles: ["admin", "administrativo", "gestao_campo"] },
+  { title: "Equipe", icon: Users, href: "/equipe", roles: ["admin", "administrativo", "gestao_campo"] },
   { title: "Calendário", icon: CalendarDays, href: "/calendario", roles: ["admin", "administrativo", "gestao_campo", "arquitetura", "responsavel_obra"] },
   { title: "Máquinas", icon: Wrench, href: "/maquinas", roles: ["admin", "administrativo", "gestao_campo"] },
-  { title: "Processos Internos", icon: BookOpen, href: "/processos", roles: ["admin", "administrativo"] },
+];
+
+const comercialItems: NavigationItem[] = [
   { title: "CRM", icon: GitBranch, href: "/crm", roles: ["admin", "administrativo", "gestao_campo", "arquitetura"] },
   { title: "Orçamentos", icon: FileText, href: "/orcamentos", roles: ["admin", "administrativo", "gestao_campo"] },
+];
+
+const gestaoItems: NavigationItem[] = [
   { title: "Indicadores", icon: BarChart3, href: "/indicadores", roles: ["admin", "administrativo"] },
-  { title: "Minha Agenda", icon: CalendarCheck, href: "/agenda", roles: ["admin", "administrativo", "gestao_campo", "arquitetura", "responsavel_obra", "operador_campo"] },
+  { title: "Processos Internos", icon: BookOpen, href: "/processos", roles: ["admin", "administrativo"] },
+];
+
+// Grupos ordenados exatamente conforme especificação
+export const navigationGroups: NavigationGroup[] = [
+  { items: [inicioNavigationItem] },
+  { label: "Operação", items: operacaoItems },
+  { label: "Comercial", items: comercialItems },
+  { label: "Gestão", items: gestaoItems },
+];
+
+// Retrocompat (usado por MobileNav e outros)
+export const appNavigationItems: NavigationItem[] = [
+  inicioNavigationItem,
+  ...operacaoItems,
+  ...comercialItems,
+  ...gestaoItems,
 ];
 
 export const comprasNavigationItems: NavigationItem[] = [
