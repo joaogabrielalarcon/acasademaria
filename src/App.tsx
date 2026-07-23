@@ -52,6 +52,7 @@ const Clientes = lazyWithRetry(() => import("./pages/Clientes"));
 const ClientePerfil = lazyWithRetry(() => import("./pages/ClientePerfil"));
 const NovoCliente = lazyWithRetry(() => import("./pages/NovoCliente"));
 const Equipe = lazyWithRetry(() => import("./pages/Equipe"));
+const ColaboradorPerfil = lazyWithRetry(() => import("./pages/ColaboradorPerfil"));
 const NovoRegistro = lazyWithRetry(() => import("./pages/NovoRegistro"));
 const RegistroDetalhe = lazyWithRetry(() => import("./pages/RegistroDetalhe"));
 const NovaProposta = lazyWithRetry(() => import("./pages/NovaProposta"));
@@ -116,6 +117,7 @@ const App = () => (
             <Route path="/clientes/:id" element={<ProtectedRoute><ClientePerfil /></ProtectedRoute>} />
             <Route path="/clientes/:id/editar" element={<ProtectedRoute><NovoCliente /></ProtectedRoute>} />
             <Route path="/equipe" element={<ProtectedRoute><Equipe /></ProtectedRoute>} />
+            <Route path="/equipe/:id" element={<ProtectedRoute><ColaboradorPerfil /></ProtectedRoute>} />
             <Route path="/registros/novo" element={<ProtectedRoute><NovoRegistro /></ProtectedRoute>} />
             <Route path="/registros/:id" element={<ProtectedRoute><RegistroDetalhe /></ProtectedRoute>} />
             <Route path="/registros/:id/editar" element={<ProtectedRoute><RegistroDetalhe /></ProtectedRoute>} />
