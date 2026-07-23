@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import { UserCircle, Car } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Colaborador } from "@/hooks/useColaboradores";
