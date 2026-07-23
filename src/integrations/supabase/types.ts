@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      aprovadores_config: {
+        Row: {
+          colaborador_id: string | null
+          created_at: string
+          id: string
+          papel_aprovador: Database["public"]["Enums"]["user_role"]
+          tipo_projeto: string
+          updated_at: string
+        }
+        Insert: {
+          colaborador_id?: string | null
+          created_at?: string
+          id?: string
+          papel_aprovador: Database["public"]["Enums"]["user_role"]
+          tipo_projeto: string
+          updated_at?: string
+        }
+        Update: {
+          colaborador_id?: string | null
+          created_at?: string
+          id?: string
+          papel_aprovador?: Database["public"]["Enums"]["user_role"]
+          tipo_projeto?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aprovadores_config_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aprovadores_config_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       areas: {
         Row: {
           ativo: boolean
@@ -736,6 +778,116 @@ export type Database = {
           },
         ]
       }
+      colaborador_liberacoes: {
+        Row: {
+          colaborador_id: string
+          condominio_id: string
+          created_at: string
+          data_emissao: string | null
+          data_validade: string | null
+          documento_path: string | null
+          id: string
+          observacoes: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          colaborador_id: string
+          condominio_id: string
+          created_at?: string
+          data_emissao?: string | null
+          data_validade?: string | null
+          documento_path?: string | null
+          id?: string
+          observacoes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          colaborador_id?: string
+          condominio_id?: string
+          created_at?: string
+          data_emissao?: string | null
+          data_validade?: string | null
+          documento_path?: string | null
+          id?: string
+          observacoes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "colaborador_liberacoes_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "colaborador_liberacoes_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "colaborador_liberacoes_condominio_id_fkey"
+            columns: ["condominio_id"]
+            isOneToOne: false
+            referencedRelation: "condominios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      colaborador_maquinas: {
+        Row: {
+          colaborador_id: string
+          created_at: string
+          desde: string | null
+          id: string
+          maquina_id: string
+          qualificacao: string | null
+        }
+        Insert: {
+          colaborador_id: string
+          created_at?: string
+          desde?: string | null
+          id?: string
+          maquina_id: string
+          qualificacao?: string | null
+        }
+        Update: {
+          colaborador_id?: string
+          created_at?: string
+          desde?: string | null
+          id?: string
+          maquina_id?: string
+          qualificacao?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "colaborador_maquinas_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "colaborador_maquinas_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "colaborador_maquinas_maquina_id_fkey"
+            columns: ["maquina_id"]
+            isOneToOne: false
+            referencedRelation: "maquinas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       colaboradores: {
         Row: {
           area: string | null
@@ -762,9 +914,11 @@ export type Database = {
           tamanho_calca: string | null
           tamanho_calcado: string | null
           tamanho_camiseta: string | null
+          tamanho_luva: string | null
           telefone: string | null
           tipo_cnh: string | null
           tipo_conducao: string | null
+          tipo_vinculo: string
           updated_at: string
           updated_by: string | null
           user_id: string | null
@@ -795,9 +949,11 @@ export type Database = {
           tamanho_calca?: string | null
           tamanho_calcado?: string | null
           tamanho_camiseta?: string | null
+          tamanho_luva?: string | null
           telefone?: string | null
           tipo_cnh?: string | null
           tipo_conducao?: string | null
+          tipo_vinculo?: string
           updated_at?: string
           updated_by?: string | null
           user_id?: string | null
@@ -828,9 +984,11 @@ export type Database = {
           tamanho_calca?: string | null
           tamanho_calcado?: string | null
           tamanho_camiseta?: string | null
+          tamanho_luva?: string | null
           telefone?: string | null
           tipo_cnh?: string | null
           tipo_conducao?: string | null
+          tipo_vinculo?: string
           updated_at?: string
           updated_by?: string | null
           user_id?: string | null
@@ -988,6 +1146,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      condominios: {
+        Row: {
+          ativo: boolean
+          contatos: Json
+          created_at: string
+          horario_entrada: string | null
+          horario_saida: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          regras_internas: string | null
+          responsaveis_areas: Json
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          contatos?: Json
+          created_at?: string
+          horario_entrada?: string | null
+          horario_saida?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          regras_internas?: string | null
+          responsaveis_areas?: Json
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          contatos?: Json
+          created_at?: string
+          horario_entrada?: string | null
+          horario_saida?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          regras_internas?: string | null
+          responsaveis_areas?: Json
+          updated_at?: string
+        }
+        Relationships: []
       }
       cotacao_disparos: {
         Row: {
@@ -1429,6 +1629,42 @@ export type Database = {
           },
         ]
       }
+      demanda_dependencias: {
+        Row: {
+          created_at: string
+          demanda_id: string
+          depende_de_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          demanda_id: string
+          depende_de_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          demanda_id?: string
+          depende_de_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demanda_dependencias_demanda_id_fkey"
+            columns: ["demanda_id"]
+            isOneToOne: false
+            referencedRelation: "demandas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demanda_dependencias_depende_de_id_fkey"
+            columns: ["depende_de_id"]
+            isOneToOne: false
+            referencedRelation: "demandas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demanda_etapas_historico: {
         Row: {
           created_at: string | null
@@ -1565,11 +1801,15 @@ export type Database = {
           data_entrada: string | null
           etapa_atual_id: string | null
           id: string
+          lado: string | null
+          local_id: string | null
           notas: string | null
           orcamento_id: string | null
           pipeline_id: string | null
           prazo_final: string | null
           prioridade: string | null
+          projeto_id: string | null
+          registro_origem_id: string | null
           responsavel_atual_id: string | null
           status_saida: string | null
           tipo: string
@@ -1587,11 +1827,15 @@ export type Database = {
           data_entrada?: string | null
           etapa_atual_id?: string | null
           id?: string
+          lado?: string | null
+          local_id?: string | null
           notas?: string | null
           orcamento_id?: string | null
           pipeline_id?: string | null
           prazo_final?: string | null
           prioridade?: string | null
+          projeto_id?: string | null
+          registro_origem_id?: string | null
           responsavel_atual_id?: string | null
           status_saida?: string | null
           tipo: string
@@ -1609,11 +1853,15 @@ export type Database = {
           data_entrada?: string | null
           etapa_atual_id?: string | null
           id?: string
+          lado?: string | null
+          local_id?: string | null
           notas?: string | null
           orcamento_id?: string | null
           pipeline_id?: string | null
           prazo_final?: string | null
           prioridade?: string | null
+          projeto_id?: string | null
+          registro_origem_id?: string | null
           responsavel_atual_id?: string | null
           status_saida?: string | null
           tipo?: string
@@ -1637,6 +1885,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "demandas_local_id_fkey"
+            columns: ["local_id"]
+            isOneToOne: false
+            referencedRelation: "locais_cliente"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "demandas_orcamento_id_fkey"
             columns: ["orcamento_id"]
             isOneToOne: false
@@ -1648,6 +1903,20 @@ export type Database = {
             columns: ["pipeline_id"]
             isOneToOne: false
             referencedRelation: "pipelines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandas_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandas_registro_origem_id_fkey"
+            columns: ["registro_origem_id"]
+            isOneToOne: false
+            referencedRelation: "registros"
             referencedColumns: ["id"]
           },
           {
@@ -2223,6 +2492,101 @@ export type Database = {
             columns: ["insumo_id"]
             isOneToOne: false
             referencedRelation: "insumos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      escala_alocacoes: {
+        Row: {
+          colaborador_id: string
+          created_at: string
+          data: string
+          diaria_id: string | null
+          id: string
+          lider_id: string | null
+          local_id: string | null
+          observacoes: string | null
+          projeto_id: string | null
+          status: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          colaborador_id: string
+          created_at?: string
+          data: string
+          diaria_id?: string | null
+          id?: string
+          lider_id?: string | null
+          local_id?: string | null
+          observacoes?: string | null
+          projeto_id?: string | null
+          status?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          colaborador_id?: string
+          created_at?: string
+          data?: string
+          diaria_id?: string | null
+          id?: string
+          lider_id?: string | null
+          local_id?: string | null
+          observacoes?: string | null
+          projeto_id?: string | null
+          status?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "escala_alocacoes_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escala_alocacoes_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escala_alocacoes_diaria_id_fkey"
+            columns: ["diaria_id"]
+            isOneToOne: false
+            referencedRelation: "diarias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escala_alocacoes_lider_id_fkey"
+            columns: ["lider_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escala_alocacoes_lider_id_fkey"
+            columns: ["lider_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escala_alocacoes_local_id_fkey"
+            columns: ["local_id"]
+            isOneToOne: false
+            referencedRelation: "locais_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escala_alocacoes_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
             referencedColumns: ["id"]
           },
         ]
@@ -3105,6 +3469,7 @@ export type Database = {
           cidade: string | null
           cliente_id: string
           cnpj: string | null
+          condominio_id: string | null
           contato_principal: string | null
           cpf: string | null
           created_at: string | null
@@ -3130,6 +3495,7 @@ export type Database = {
           cidade?: string | null
           cliente_id: string
           cnpj?: string | null
+          condominio_id?: string | null
           contato_principal?: string | null
           cpf?: string | null
           created_at?: string | null
@@ -3155,6 +3521,7 @@ export type Database = {
           cidade?: string | null
           cliente_id?: string
           cnpj?: string | null
+          condominio_id?: string | null
           contato_principal?: string | null
           cpf?: string | null
           created_at?: string | null
@@ -3179,6 +3546,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "locais_cliente_condominio_id_fkey"
+            columns: ["condominio_id"]
+            isOneToOne: false
+            referencedRelation: "condominios"
             referencedColumns: ["id"]
           },
         ]
@@ -5261,7 +5635,12 @@ export type Database = {
           data_previsao: string | null
           descricao: string | null
           dia_vencimento: number | null
+          escala_dias_semana: number[] | null
+          escala_duracao_dias: number | null
+          escala_equipe_qtd: number | null
+          escala_periodicidade: string | null
           id: string
+          lider_responsavel_id: string | null
           local_id: string | null
           observacoes: string | null
           parcelas_config: Json | null
@@ -5271,6 +5650,7 @@ export type Database = {
           titulo: string
           updated_at: string
           updated_by: string | null
+          usa_mao_de_obra_campo: boolean
           valor_mensal: number | null
           valor_total: number | null
         }
@@ -5283,7 +5663,12 @@ export type Database = {
           data_previsao?: string | null
           descricao?: string | null
           dia_vencimento?: number | null
+          escala_dias_semana?: number[] | null
+          escala_duracao_dias?: number | null
+          escala_equipe_qtd?: number | null
+          escala_periodicidade?: string | null
           id?: string
+          lider_responsavel_id?: string | null
           local_id?: string | null
           observacoes?: string | null
           parcelas_config?: Json | null
@@ -5293,6 +5678,7 @@ export type Database = {
           titulo: string
           updated_at?: string
           updated_by?: string | null
+          usa_mao_de_obra_campo?: boolean
           valor_mensal?: number | null
           valor_total?: number | null
         }
@@ -5305,7 +5691,12 @@ export type Database = {
           data_previsao?: string | null
           descricao?: string | null
           dia_vencimento?: number | null
+          escala_dias_semana?: number[] | null
+          escala_duracao_dias?: number | null
+          escala_equipe_qtd?: number | null
+          escala_periodicidade?: string | null
           id?: string
+          lider_responsavel_id?: string | null
           local_id?: string | null
           observacoes?: string | null
           parcelas_config?: Json | null
@@ -5315,6 +5706,7 @@ export type Database = {
           titulo?: string
           updated_at?: string
           updated_by?: string | null
+          usa_mao_de_obra_campo?: boolean
           valor_mensal?: number | null
           valor_total?: number | null
         }
@@ -5324,6 +5716,20 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projetos_lider_responsavel_id_fkey"
+            columns: ["lider_responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projetos_lider_responsavel_id_fkey"
+            columns: ["lider_responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
             referencedColumns: ["id"]
           },
           {
@@ -5565,6 +5971,7 @@ export type Database = {
           hora_servico: string | null
           humor_do_jardim: string | null
           id: string
+          local_id: string | null
           midia: Json | null
           observacoes_internas: string | null
           prioridade: string | null
@@ -5595,6 +6002,7 @@ export type Database = {
           hora_servico?: string | null
           humor_do_jardim?: string | null
           id?: string
+          local_id?: string | null
           midia?: Json | null
           observacoes_internas?: string | null
           prioridade?: string | null
@@ -5625,6 +6033,7 @@ export type Database = {
           hora_servico?: string | null
           humor_do_jardim?: string | null
           id?: string
+          local_id?: string | null
           midia?: Json | null
           observacoes_internas?: string | null
           prioridade?: string | null
@@ -5652,6 +6061,13 @@ export type Database = {
             columns: ["diaria_id"]
             isOneToOne: false
             referencedRelation: "diarias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_local_id_fkey"
+            columns: ["local_id"]
+            isOneToOne: false
+            referencedRelation: "locais_cliente"
             referencedColumns: ["id"]
           },
           {
