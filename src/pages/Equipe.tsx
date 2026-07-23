@@ -782,8 +782,13 @@ export default function Equipe() {
             <Button variant="ghost" size="icon-sm"><MoreVertical className="w-4 h-4" /></Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <Link to={`/equipe/${colaborador.id}`}>
+                <UserCircle className="w-4 h-4 mr-2" />Abrir ficha
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleEdit(colaborador)}>
-              <Pencil className="w-4 h-4 mr-2" />Editar
+              <Pencil className="w-4 h-4 mr-2" />Edição rápida
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleOpenEntregas(colaborador)}>
               <Package className="w-4 h-4 mr-2" />Entregas
