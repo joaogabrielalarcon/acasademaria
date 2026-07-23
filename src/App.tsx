@@ -52,6 +52,7 @@ const Clientes = lazyWithRetry(() => import("./pages/Clientes"));
 const ClientePerfil = lazyWithRetry(() => import("./pages/ClientePerfil"));
 const NovoCliente = lazyWithRetry(() => import("./pages/NovoCliente"));
 const Equipe = lazyWithRetry(() => import("./pages/Equipe"));
+const ColaboradorPerfil = lazyWithRetry(() => import("./pages/ColaboradorPerfil"));
 const NovoRegistro = lazyWithRetry(() => import("./pages/NovoRegistro"));
 const RegistroDetalhe = lazyWithRetry(() => import("./pages/RegistroDetalhe"));
 const NovaProposta = lazyWithRetry(() => import("./pages/NovaProposta"));
