@@ -476,9 +476,10 @@ function DocumentosCard({ colabId, docs, refetch, canEdit }: {
     <Card
       title="Documentos"
       action={canEdit && (
-        <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
-          <Upload className="w-4 h-4 mr-1" /> Arquivar
-        </Button>
+        <button onClick={() => setOpen(true)}
+          className="inline-flex items-center gap-1 rounded-full border border-terracota text-terracota text-xs px-3 py-1.5 hover:bg-terracota hover:text-white transition-colors">
+          <Plus className="w-3 h-3" /> Arquivar documento
+        </button>
       )}
     >
       {docs.length === 0 ? (
