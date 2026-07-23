@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Search, Plus, UserCircle, MoreVertical, Pencil, ChevronDown, ChevronRight, Package, Trash2, Calendar, Key, RefreshCw, Upload, FileText, Car, Sparkles, X, LayoutList, Network, MessageSquare, UserX } from "lucide-react";
 import { useAuth, useIsManager, useIsAdmin, useIsAdminOrAdministrativo, useHighestRole } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
