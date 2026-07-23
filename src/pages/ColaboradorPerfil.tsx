@@ -775,7 +775,7 @@ export default function ColaboradorPerfil() {
             <Tabs defaultValue="dados">
               <TabsList className="flex flex-wrap gap-8 bg-transparent h-auto p-0 border-b border-border/60 rounded-none w-full justify-start">
                 {(() => {
-                  const isTerceiro = (colab.vinculo || "").toLowerCase() === "terceiro";
+                  const isTerceiro = ((colab as any).vinculo || "").toLowerCase() === "terceiro";
                   const baseTabs = [
                     { v: "dados", l: "Dados", always: true },
                     { v: "uniforme", l: "Uniforme & EPI", hideForTerceiro: true },
