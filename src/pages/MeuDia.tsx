@@ -183,9 +183,11 @@ export default function MeuDia() {
         >
           <BotanicalMark />
 
-          <div className="relative flex items-start gap-5 max-w-4xl">
-            <MafeAvatar size={72} />
-            <div className="flex-1 min-w-0">
+          <div className="relative flex flex-col gap-5 max-w-4xl">
+            <div className="flex items-start gap-5">
+              <MafeAvatar size={72} />
+              <div className="flex-1 min-w-0">
+
               <h1
                 className="type-h1"
                 style={{ color: "hsl(var(--hero-band-fg))", fontSize: "40px", lineHeight: 1.1 }}
