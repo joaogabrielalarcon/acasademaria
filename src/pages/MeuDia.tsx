@@ -9,6 +9,7 @@ import { MinhasTarefas } from "@/components/inicio/MinhasTarefas";
 import { AlertasProativos } from "@/components/inicio/AlertasProativos";
 import { AgendaDoDia } from "@/components/inicio/AgendaDoDia";
 import { AtalhosFixados } from "@/components/inicio/AtalhosFixados";
+import { MafeAvatar } from "@/components/inicio/MafeAvatar";
 
 const REFLEXOES = [
   "Hoje é um ótimo dia para plantar boas sementes — no jardim e na vida.",
