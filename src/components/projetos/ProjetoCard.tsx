@@ -136,18 +136,35 @@ export function ProjetoCard({ projeto, onOpen, onMoverClick, draggable }: Projet
         )}
       </div>
 
-      {/* Retorno pill full-width */}
-      {ret.kind !== "vazio" && (
-        <div
-          className={cn(
-            "flex items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium",
-            ret.kind === "atrasado" && "bg-primary text-primary-foreground",
-            ret.kind === "hoje" && "bg-primary-soft text-primary",
-            ret.kind === "futuro" && "border border-border/70 text-muted-foreground bg-transparent",
+      {/* Retorno + Entrega pills */}
+      {(ret.kind !== "vazio" || entrega.kind !== "vazio") && (
+        <div className="space-y-1.5">
+          {ret.kind !== "vazio" && (
+            <div
+              className={cn(
+                "flex items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium",
+                ret.kind === "atrasado" && "bg-primary text-primary-foreground",
+                ret.kind === "hoje" && "bg-primary-soft text-primary",
+                ret.kind === "futuro" && "border border-border/70 text-muted-foreground bg-transparent",
+              )}
+            >
+              <Clock className="w-3.5 h-3.5" />
+              {ret.texto}
+            </div>
           )}
-        >
-          <Clock className="w-3.5 h-3.5" />
-          {ret.texto}
+          {entrega.kind !== "vazio" && (
+            <div
+              className={cn(
+                "flex items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium",
+                entrega.kind === "atrasado" && "bg-primary text-primary-foreground",
+                entrega.kind === "hoje" && "bg-primary-soft text-primary",
+                entrega.kind === "futuro" && "border border-border/70 text-muted-foreground bg-transparent",
+              )}
+            >
+              <Clock className="w-3.5 h-3.5" />
+              {entrega.texto}
+            </div>
+          )}
         </div>
       )}
     </motion.article>
