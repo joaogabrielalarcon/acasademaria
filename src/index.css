@@ -121,7 +121,99 @@
     --mafe-diario-awaiting: 11 65% 50%;
     --mafe-diario-ready: 263 47% 18%;
     --mafe-diario-typing: 11 65% 45%;
+
+    /* ── Escalas OKLCH 50→950 (perceptualmente uniformes) ─────────────
+       Uso: bg-[color:var(--terracota-100)], text-[color:var(--marinho-700)],
+       border-[color:var(--neutral-200)]. Ancoras oficiais preservadas em ~700.
+       Nunca criar cores fora dessas famílias. */
+
+    /* Terracota — ação, texto, alertas (âncora #9E3722 ≈ 700) */
+    --terracota-50:  oklch(0.972 0.014 40);
+    --terracota-100: oklch(0.945 0.028 38);
+    --terracota-200: oklch(0.885 0.055 36);
+    --terracota-300: oklch(0.795 0.088 34);
+    --terracota-400: oklch(0.665 0.128 33);
+    --terracota-500: oklch(0.560 0.148 32);
+    --terracota-600: oklch(0.485 0.150 32);
+    --terracota-700: oklch(0.420 0.140 32);   /* #9E3722 */
+    --terracota-800: oklch(0.350 0.118 32);
+    --terracota-900: oklch(0.275 0.092 32);
+    --terracota-950: oklch(0.185 0.062 32);
+
+    /* Marinho — concluído, info, Mafe (âncora #281842 ≈ 800) */
+    --marinho-50:  oklch(0.970 0.014 295);
+    --marinho-100: oklch(0.935 0.028 295);
+    --marinho-200: oklch(0.865 0.052 295);
+    --marinho-300: oklch(0.765 0.082 295);
+    --marinho-400: oklch(0.625 0.118 295);
+    --marinho-500: oklch(0.485 0.138 295);
+    --marinho-600: oklch(0.385 0.128 295);
+    --marinho-700: oklch(0.305 0.112 295);
+    --marinho-800: oklch(0.245 0.100 295);   /* #281842 */
+    --marinho-900: oklch(0.185 0.080 295);
+    --marinho-950: oklch(0.125 0.060 295);
+
+    /* Verde — SÓ natureza e faixa-herói. Sálvia ≈ 500, Floresta ≈ 900. */
+    --verde-50:  oklch(0.972 0.014 150);
+    --verde-100: oklch(0.940 0.026 148);
+    --verde-200: oklch(0.870 0.045 148);
+    --verde-300: oklch(0.780 0.058 148);
+    --verde-400: oklch(0.700 0.058 148);
+    --verde-500: oklch(0.625 0.050 148);   /* #7A9776 sálvia */
+    --verde-600: oklch(0.525 0.052 152);
+    --verde-700: oklch(0.425 0.054 154);
+    --verde-800: oklch(0.345 0.052 156);
+    --verde-900: oklch(0.285 0.048 156);   /* #193527 floresta */
+    --verde-950: oklch(0.190 0.038 156);
+
+    /* Argila-rosé — calor gentil (âncora #BC755D ≈ 500) */
+    --argila-50:  oklch(0.975 0.012 42);
+    --argila-100: oklch(0.945 0.024 42);
+    --argila-200: oklch(0.890 0.045 42);
+    --argila-300: oklch(0.810 0.068 42);
+    --argila-400: oklch(0.720 0.082 40);
+    --argila-500: oklch(0.640 0.088 40);   /* #BC755D */
+    --argila-600: oklch(0.545 0.086 38);
+    --argila-700: oklch(0.450 0.078 36);
+    --argila-800: oklch(0.365 0.062 34);
+    --argila-900: oklch(0.285 0.048 32);
+    --argila-950: oklch(0.195 0.032 30);
+
+    /* Neutros QUENTES — 80% da UI (creme #FFF0E5 → tinta #231F20) */
+    --neutral-50:  oklch(0.985 0.008 55);
+    --neutral-100: oklch(0.960 0.020 55);   /* #FFF0E5 bg */
+    --neutral-150: oklch(0.975 0.014 50);   /* #FFF7EE surface/card */
+    --neutral-200: oklch(0.925 0.024 50);   /* #F7E7D8 sunken */
+    --neutral-300: oklch(0.870 0.022 45);
+    --neutral-400: oklch(0.755 0.018 40);
+    --neutral-500: oklch(0.625 0.015 38);
+    --neutral-600: oklch(0.505 0.014 38);
+    --neutral-700: oklch(0.405 0.012 38);
+    --neutral-800: oklch(0.320 0.010 38);
+    --neutral-900: oklch(0.245 0.008 38);   /* #231F20 ink */
+    --neutral-950: oklch(0.160 0.006 38);
+
+    /* ── Superfícies (degrau semântico creme → branco quente) ───────── */
+    --surface-bg:        var(--neutral-100);   /* fundo da página */
+    --surface-card:      var(--neutral-150);   /* cartões (off-white quente) */
+    --surface-elevated:  oklch(0.995 0.004 50);/* popover / drawer topo */
+    --surface-sunken:    var(--neutral-200);   /* inputs, tabelas listradas */
+
+    /* ── Estados semânticos (por INTENÇÃO, nunca "green-100") ───────── */
+    --success-fg: oklch(0.470 0.078 150);      /* verde natural (família sálvia) */
+    --success-bg: oklch(0.945 0.028 150);
+    --warning-fg: oklch(0.585 0.128 68);       /* âmbar quente */
+    --warning-bg: oklch(0.955 0.038 72);
+    --danger-fg:  oklch(0.505 0.170 28);       /* vermelho distinto do terracota */
+    --danger-bg:  oklch(0.955 0.036 28);
+    --info-fg:    var(--marinho-700);
+    --info-bg:    var(--marinho-100);
+
+    /* ── Faixa-herói de marca (verde floresta com texto creme) ──────── */
+    --hero-band-bg: var(--verde-900);          /* #193527 */
+    --hero-band-fg: var(--neutral-100);
   }
+
 
   .dark {
     --background: 24 100% 95%;
