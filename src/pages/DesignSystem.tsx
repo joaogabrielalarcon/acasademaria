@@ -15,9 +15,9 @@ import { AlertBar } from "@/components/blocks/AlertBar";
 import { FeedItem } from "@/components/blocks/FeedItem";
 import { CommandPalette } from "@/components/blocks/CommandPalette";
 
-const STEPS = [50, 100, 150, 200, 300, 400, 500, 600, 700, 800, 900, 950] as const;
 const NEUTRAL_STEPS = [50, 100, 150, 200, 300, 400, 500, 600, 700, 800, 900, 950] as const;
 const BRAND_STEPS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950] as const;
+
 
 const Section = ({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) => (
   <motion.section
