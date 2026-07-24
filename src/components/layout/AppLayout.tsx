@@ -1,7 +1,6 @@
 import { ReactNode } from "react";
 import { AppSidebar } from "./AppSidebar";
 import { MobileHeader } from "./MobileHeader";
-import { TopBar } from "./TopBar";
 import { cn } from "@/lib/utils";
 import { useSidebarPinned } from "@/lib/sidebar-store";
 
@@ -18,7 +17,6 @@ export function AppLayout({ children }: AppLayoutProps) {
       </div>
 
       <MobileHeader />
-      <TopBar />
 
       <main
         className={cn(
