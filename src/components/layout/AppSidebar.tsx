@@ -147,7 +147,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
       onMouseLeave={() => setHovered(false)}
       className={cn(
         "fixed left-0 top-0 h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col transition-[width] duration-200 ease-out z-40",
-        expanded ? "w-60 shadow-e2" : "w-10",
+        expanded ? "w-60 shadow-e2" : "w-14",
         className,
       )}
     >
