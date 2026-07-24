@@ -97,8 +97,8 @@ export default function DesignSystem() {
             <Badge variant="secondary">Secondary</Badge>
             <Badge variant="outline">Outline</Badge>
             <Chip>Neutro</Chip>
-            <Chip tone="accent">Marinho</Chip>
-            <Chip active>Ativo</Chip>
+            <Chip variant="navy">Marinho</Chip>
+            <Chip variant="active">Ativo</Chip>
           </div>
         </Section>
 
