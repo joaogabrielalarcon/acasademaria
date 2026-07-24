@@ -12,15 +12,15 @@
   :root {
     /* ── Brand base (creme monocromático) ─────────────────── */
     --background: 24 100% 95%;            /* #FFF0E5 creme */
-    --foreground: 11 65% 38%;             /* terracota #9E3722 — TEXTO padrão */
+    --foreground: 345 6% 13%;             /* tinta escura #231F20 — TEXTO padrão */
 
     --card: 30 100% 97%;                  /* #FFF7EE creme claro */
-    --card-foreground: 11 65% 38%;        /* terracota sobre o cartão */
+    --card-foreground: 345 6% 13%;        /* tinta escura sobre o cartão */
 
     --popover: 30 100% 97%;
-    --popover-foreground: 11 65% 38%;
+    --popover-foreground: 345 6% 13%;
 
-    /* Terracota — cor principal (ação, texto, ícones) */
+    /* Terracota — cor principal (ação, alertas, foco) */
     --primary: 11 65% 38%;                /* #9E3722 */
     --primary-foreground: 24 100% 95%;    /* #FFF0E5 */
     --primary-hover: 11 65% 30%;          /* #7E2C1B */
@@ -29,11 +29,11 @@
 
     /* Superfície secundária: nude morno */
     --secondary: 24 39% 87%;              /* #EBDBD0 */
-    --secondary-foreground: 11 65% 38%;
+    --secondary-foreground: 345 6% 13%;
     --surface-2: 24 39% 87%;              /* alias */
 
     --muted: 24 60% 92%;                  /* muted quente */
-    --muted-foreground: 11 30% 45%;       /* terracota suave */
+    --muted-foreground: 30 6% 45%;        /* cinza quente neutro — texto secundário */
 
     /* Marinho — concluído / selecionado / info / Mafe */
     --accent: 263 47% 18%;                /* #281842 */
@@ -218,17 +218,17 @@
 
   .dark {
     --background: 24 100% 95%;
-    --foreground: 11 65% 38%;
+    --foreground: 345 6% 13%;
     --card: 30 100% 97%;
-    --card-foreground: 11 65% 38%;
+    --card-foreground: 345 6% 13%;
     --popover: 30 100% 97%;
-    --popover-foreground: 11 65% 38%;
+    --popover-foreground: 345 6% 13%;
     --primary: 11 65% 38%;
     --primary-foreground: 24 100% 95%;
     --secondary: 24 39% 87%;
-    --secondary-foreground: 11 65% 38%;
+    --secondary-foreground: 345 6% 13%;
     --muted: 24 60% 92%;
-    --muted-foreground: 11 30% 45%;
+    --muted-foreground: 30 6% 45%;
     --accent: 263 47% 18%;
     --accent-foreground: 24 100% 95%;
     --destructive: 8 58% 40%;
