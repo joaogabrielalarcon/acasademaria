@@ -210,10 +210,6 @@ function PrazoChip({ farol }: { farol: ReturnType<typeof farolDoPrazo> }) {
     </span>
   );
 }
-  urgencia: "Prazo",
-  prioridade: "Prioridade",
-  status: "Status",
-};
 
 function FilterGroup({
   label, options, selected, onToggle,
