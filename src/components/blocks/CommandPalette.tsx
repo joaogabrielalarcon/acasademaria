@@ -47,8 +47,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        hideClose
-        className="p-0 max-w-[640px] bg-popover shadow-e3 border-0 overflow-hidden"
+        className="p-0 max-w-[640px] bg-popover shadow-e3 border-0 overflow-hidden [&>button.absolute]:hidden"
       >
         <Command className="[&_[cmdk-input]]:h-14 [&_[cmdk-input]]:px-5 [&_[cmdk-input]]:text-[15px] [&_[cmdk-input]]:border-b [&_[cmdk-input]]:border-border [&_[cmdk-input]]:bg-transparent [&_[cmdk-input]]:outline-none [&_[cmdk-input]]:w-full [&_[cmdk-input]]:font-sans">
           <Command.Input placeholder="Buscar clientes, negócios, ações..." />
