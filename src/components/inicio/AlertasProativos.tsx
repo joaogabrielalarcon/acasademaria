@@ -107,7 +107,7 @@ export function AlertasProativos() {
       return {
         id: "lib-" + l.id,
         icon: AlertTriangle,
-        tone: (dias === 0 ? "danger" : "attention") as const,
+        tone: (dias === 0 ? "danger" : "attention") as "danger" | "attention",
         title: `Liberação em ${l.condominios?.nome || "condomínio"}`,
         countdown: contagemLabel(l.data_validade),
         onClick: () => navigate("/equipe"),
