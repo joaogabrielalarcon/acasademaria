@@ -8,7 +8,8 @@ import { AreasLauncher } from "@/components/inicio/AreasLauncher";
 import { MinhasTarefas } from "@/components/inicio/MinhasTarefas";
 import { AlertasProativos } from "@/components/inicio/AlertasProativos";
 import { AgendaDoDia } from "@/components/inicio/AgendaDoDia";
-import { AtalhosFixados } from "@/components/inicio/AtalhosFixados";
+import { RetomadaRapida } from "@/components/inicio/RetomadaRapida";
+import { Lembretes } from "@/components/inicio/Lembretes";
 import { MafeAvatar } from "@/components/inicio/MafeAvatar";
 
 const REFLEXOES = [
