@@ -336,6 +336,11 @@ export function MinhasTarefas() {
             <span className="text-[12px] font-sans tabular-nums text-muted-foreground">
               {tarefas.length} {tarefas.length === 1 ? "item" : "itens"}
             </span>
+            {isDemo && (
+              <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider bg-surface-sunken text-muted-foreground border border-border/60">
+                dados de exemplo
+              </span>
+            )}
           </div>
         }
       />
