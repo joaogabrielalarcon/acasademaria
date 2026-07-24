@@ -232,8 +232,8 @@ export default function MenuCentral() {
                       "transition-all duration-200 text-center group"
                     )}
                   >
-                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                      <item.icon className="w-8 h-8 text-foreground" />
+                    <div className="w-16 h-16 rounded-full bg-navy-soft text-accent flex items-center justify-center transition-colors">
+                      <item.icon className="w-8 h-8" />
                     </div>
                     <div>
                       <p className="font-semibold text-base text-foreground">{item.title}</p>
