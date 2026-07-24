@@ -5,38 +5,95 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Chip } from "@/components/primitives/Chip";
-import { AlertBar } from "@/components/blocks/AlertBar";
 import {
   LayoutGrid,
   List as ListIcon,
   Plus,
   Search,
-  SlidersHorizontal,
-  X,
+  ArrowRight,
+  AlertCircle,
   AlertTriangle,
+  Clock,
+  PauseCircle,
+  ChevronDown,
+  X,
 } from "lucide-react";
 import {
   useProjetosPipeline,
+  PIPELINE_STATUSES,
   PIPELINE_STATUS_VALUES,
   TIPO_OPTIONS,
   TEMPERATURA_OPTIONS,
   tipoLabel,
   temperaturaLabel,
-  type ProjetoPipeline,
 } from "@/hooks/useProjetosPipeline";
 import { ProjetosKanban } from "@/components/projetos/ProjetosKanban";
 import { ProjetosLista } from "@/components/projetos/ProjetosLista";
 import { NovoProjetoDialog } from "@/components/projetos/NovoProjetoDialog";
 import { cn } from "@/lib/utils";
 
-type AlertaKind = null | "retorno_vencido" | "sem_contato" | "propostas_paradas";
+type AlertaKind = null | "retorno_vencido" | "vencendo_semana" | "sem_contato" | "parado_semana";
 
-function isPast(dt?: string | null) {
-  if (!dt) return false;
+function daysDiff(dt?: string | null) {
+  if (!dt) return null;
   const d = new Date(dt); d.setHours(0, 0, 0, 0);
   const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
-  return d.getTime() < hoje.getTime();
+  return Math.round((hoje.getTime() - d.getTime()) / 86400000);
+}
+const isPast = (dt?: string | null) => { const d = daysDiff(dt); return d != null && d > 0; };
+const inNextDays = (dt?: string | null, n = 7) => { const d = daysDiff(dt); return d != null && d <= 0 && d >= -n; };
+
+interface StatCardProps {
+  count: number;
+  label: string;
+  Icon: React.ComponentType<{ className?: string }>;
+  active?: boolean;
+  onClick?: () => void;
+}
+function StatCard({ count, label, Icon, active, onClick }: StatCardProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "group flex items-center gap-3 rounded-lg bg-card px-4 py-3.5 text-left shadow-e1 transition-all hover:shadow-e2 hover:-translate-y-[1px] w-full",
+        active && "ring-2 ring-primary/40 shadow-e2",
+      )}
+    >
+      <Icon className="w-4 h-4 text-primary flex-shrink-0" />
+      <span className="font-sans text-[24px] font-semibold text-foreground tabular-nums leading-none">{count}</span>
+      <span className="flex-1 text-[12.5px] text-muted-foreground leading-tight">{label}</span>
+      <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:translate-x-0.5 group-hover:text-primary transition-all" />
+    </button>
+  );
+}
+
+interface FilterPillProps {
+  label: string;
+  count?: number;
+  children: React.ReactNode;
+}
+function FilterPill({ label, count, children }: FilterPillProps) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-full bg-card px-3.5 py-1.5 text-[12.5px] text-foreground shadow-e1 hover:shadow-e2 transition-shadow",
+            count && "text-primary",
+          )}
+        >
+          {label}
+          {count ? (
+            <span className="tabular-nums bg-primary text-primary-foreground rounded-full px-1.5 text-[10px] font-semibold">{count}</span>
+          ) : null}
+          <ChevronDown className="w-3 h-3 opacity-60" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-56 p-3" align="start">{children}</PopoverContent>
+    </Popover>
+  );
 }
 
 export default function Projetos() {
@@ -47,6 +104,7 @@ export default function Projetos() {
   const [tipoFiltro, setTipoFiltro] = useState<string[]>([]);
   const [tempFiltro, setTempFiltro] = useState<string[]>([]);
   const [respFiltro, setRespFiltro] = useState<string[]>([]);
+  const [clienteFiltro, setClienteFiltro] = useState<string[]>([]);
   const [alerta, setAlerta] = useState<AlertaKind>(null);
 
   const projetosVisiveis = useMemo(
@@ -56,24 +114,23 @@ export default function Projetos() {
 
   const responsaveis = useMemo(() => {
     const map = new Map<string, string>();
-    projetos.forEach((p) => {
-      if (p.responsavel_id && p.responsavel_nome) map.set(p.responsavel_id, p.responsavel_nome);
-    });
-    return Array.from(map.entries()).map(([id, nome]) => ({ id, nome }));
+    projetos.forEach((p) => { if (p.responsavel_id && p.responsavel_nome) map.set(p.responsavel_id, p.responsavel_nome); });
+    return Array.from(map.entries()).map(([id, nome]) => ({ id, nome })).sort((a, b) => a.nome.localeCompare(b.nome));
   }, [projetos]);
 
-  const retornoVencidoCount = useMemo(
-    () => projetosVisiveis.filter((p) => isPast(p.data_retorno_prometida)).length,
-    [projetosVisiveis],
-  );
-  const semContatoCount = useMemo(
-    () => projetosVisiveis.filter((p) => isPast(p.proximo_contato_em)).length,
-    [projetosVisiveis],
-  );
-  const propostasParadasCount = useMemo(
-    () => projetosVisiveis.filter((p) => p.status === "proposta" && isPast(p.updated_at)).length,
-    [projetosVisiveis],
-  );
+  const clientesOpts = useMemo(() => {
+    const map = new Map<string, string>();
+    projetos.forEach((p) => { if (p.cliente_id && p.cliente_nome) map.set(p.cliente_id, p.cliente_nome); });
+    return Array.from(map.entries()).map(([id, nome]) => ({ id, nome })).sort((a, b) => a.nome.localeCompare(b.nome));
+  }, [projetos]);
+
+  const retornoVencido = useMemo(() => projetosVisiveis.filter((p) => isPast(p.data_retorno_prometida)).length, [projetosVisiveis]);
+  const vencendoSemana = useMemo(() => projetosVisiveis.filter((p) => inNextDays(p.data_retorno_prometida, 7)).length, [projetosVisiveis]);
+  const semContato = useMemo(() => projetosVisiveis.filter((p) => !p.proximo_contato_em && !p.data_retorno_prometida).length, [projetosVisiveis]);
+  const paradoSemana = useMemo(() => {
+    return projetosVisiveis.filter((p) => { const d = daysDiff(p.updated_at); return d != null && d >= 7; }).length;
+  }, [projetosVisiveis]);
+  const aguardandoRetorno = retornoVencido + vencendoSemana;
 
   const filtrados = useMemo(() => {
     return projetosVisiveis.filter((p) => {
@@ -84,178 +141,198 @@ export default function Projetos() {
       if (tipoFiltro.length && !tipoFiltro.includes(p.tipo)) return false;
       if (tempFiltro.length && (!p.temperatura || !tempFiltro.includes(p.temperatura))) return false;
       if (respFiltro.length && (!p.responsavel_id || !respFiltro.includes(p.responsavel_id))) return false;
+      if (clienteFiltro.length && !clienteFiltro.includes(p.cliente_id)) return false;
       if (alerta === "retorno_vencido" && !isPast(p.data_retorno_prometida)) return false;
-      if (alerta === "sem_contato" && !isPast(p.proximo_contato_em)) return false;
-      if (alerta === "propostas_paradas" && !(p.status === "proposta" && isPast(p.updated_at))) return false;
+      if (alerta === "vencendo_semana" && !inNextDays(p.data_retorno_prometida, 7)) return false;
+      if (alerta === "sem_contato" && (p.proximo_contato_em || p.data_retorno_prometida)) return false;
+      if (alerta === "parado_semana") { const d = daysDiff(p.updated_at); if (d == null || d < 7) return false; }
       return true;
     });
-  }, [projetosVisiveis, busca, tipoFiltro, tempFiltro, respFiltro, alerta]);
+  }, [projetosVisiveis, busca, tipoFiltro, tempFiltro, respFiltro, clienteFiltro, alerta]);
 
   const toggle = (arr: string[], v: string, setter: (a: string[]) => void) =>
     setter(arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
 
-  const filtrosAtivos = tipoFiltro.length + tempFiltro.length + respFiltro.length + (alerta ? 1 : 0);
-  const limparFiltros = () => { setTipoFiltro([]); setTempFiltro([]); setRespFiltro([]); setAlerta(null); };
+  const filtrosAtivos = tipoFiltro.length + tempFiltro.length + respFiltro.length + clienteFiltro.length + (alerta ? 1 : 0);
+  const limparFiltros = () => { setTipoFiltro([]); setTempFiltro([]); setRespFiltro([]); setClienteFiltro([]); setAlerta(null); };
 
   return (
     <AppLayout>
-      <div className="flex flex-col gap-4 py-4">
+      <div className="flex flex-col gap-6 py-6 max-w-[1400px]">
         {/* Cabeçalho */}
-        <div className="flex items-end justify-between gap-3 flex-wrap">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
-            <h1 className="font-serif text-[36px] leading-none text-foreground">Projetos</h1>
-            <p className="text-[13px] text-muted-foreground mt-1.5 tabular-nums">
-              {isLoading ? "carregando…" : `${projetosVisiveis.length} ${projetosVisiveis.length === 1 ? "projeto ativo" : "projetos ativos"}`}
+            <h1 className="font-serif text-[44px] leading-none text-foreground">Projetos</h1>
+            <p className="text-[13px] text-muted-foreground mt-2 tabular-nums">
+              {isLoading
+                ? "carregando…"
+                : `${projetosVisiveis.length} ${projetosVisiveis.length === 1 ? "projeto ativo" : "projetos ativos"}${aguardandoRetorno ? ` · ${aguardandoRetorno} aguardando retorno` : ""}`}
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex bg-muted/60 rounded-md p-0.5 border border-border/50">
-              <Button
-                size="sm"
-                variant={view === "kanban" ? "default" : "ghost"}
+            <div className="inline-flex rounded-full bg-foreground/95 p-1">
+              <button
                 onClick={() => setView("kanban")}
-                className="gap-1.5 h-8"
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12.5px] font-medium transition-colors",
+                  view === "kanban" ? "bg-background text-foreground shadow-e1" : "text-background/80 hover:text-background",
+                )}
               >
-                <LayoutGrid className="w-4 h-4" /> Kanban
-              </Button>
-              <Button
-                size="sm"
-                variant={view === "lista" ? "default" : "ghost"}
+                <LayoutGrid className="w-3.5 h-3.5" /> Kanban
+              </button>
+              <button
                 onClick={() => setView("lista")}
-                className="gap-1.5 h-8"
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12.5px] font-medium transition-colors",
+                  view === "lista" ? "bg-background text-foreground shadow-e1" : "text-background/80 hover:text-background",
+                )}
               >
-                <ListIcon className="w-4 h-4" /> Lista
-              </Button>
+                <ListIcon className="w-3.5 h-3.5" /> Lista
+              </button>
             </div>
-            <Button onClick={() => setShowNovo(true)} className="gap-1.5">
+            <Button onClick={() => setShowNovo(true)} className="gap-1.5 rounded-full">
               <Plus className="w-4 h-4" /> Novo projeto
             </Button>
           </div>
         </div>
 
-        {/* Alertas */}
-        {!isLoading && (retornoVencidoCount + semContatoCount + propostasParadasCount) > 0 && (
-          <div className="grid gap-2 md:grid-cols-3">
-            {retornoVencidoCount > 0 && (
-              <AlertBar
-                tone="attention"
-                count={retornoVencidoCount}
-                title="com retorno atrasado"
-                onClick={() => setAlerta(alerta === "retorno_vencido" ? null : "retorno_vencido")}
-              />
-            )}
-            {semContatoCount > 0 && (
-              <AlertBar
-                tone="warn"
-                count={semContatoCount}
-                title="sem próximo contato agendado"
-                onClick={() => setAlerta(alerta === "sem_contato" ? null : "sem_contato")}
-              />
-            )}
-            {propostasParadasCount > 0 && (
-              <AlertBar
-                tone="attention"
-                count={propostasParadasCount}
-                title="propostas paradas há tempo"
-                onClick={() => setAlerta(alerta === "propostas_paradas" ? null : "propostas_paradas")}
-              />
-            )}
+        {/* Stats row */}
+        {!isLoading && (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard count={retornoVencido} label="com retorno vencido" Icon={AlertCircle}
+              active={alerta === "retorno_vencido"}
+              onClick={() => setAlerta(alerta === "retorno_vencido" ? null : "retorno_vencido")} />
+            <StatCard count={vencendoSemana} label="retornos vencendo esta semana" Icon={AlertTriangle}
+              active={alerta === "vencendo_semana"}
+              onClick={() => setAlerta(alerta === "vencendo_semana" ? null : "vencendo_semana")} />
+            <StatCard count={semContato} label="sem próximo contato definido" Icon={Clock}
+              active={alerta === "sem_contato"}
+              onClick={() => setAlerta(alerta === "sem_contato" ? null : "sem_contato")} />
+            <StatCard count={paradoSemana} label="parado há mais de uma semana" Icon={PauseCircle}
+              active={alerta === "parado_semana"}
+              onClick={() => setAlerta(alerta === "parado_semana" ? null : "parado_semana")} />
+          </div>
+        )}
+
+        {/* Funil label + legenda */}
+        {view === "kanban" && (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-baseline justify-between">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">Funil de projetos</span>
+              <span className="text-[11.5px] text-muted-foreground italic hidden md:block">arraste um card para mudar a etapa</span>
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+              {PIPELINE_STATUSES.map((s) => (
+                <span key={s.value} className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.1em] text-muted-foreground">
+                  <span className={cn("w-2 h-2 rounded-full", s.dot)} />
+                  {s.label}
+                </span>
+              ))}
+            </div>
           </div>
         )}
 
         {/* Busca + filtros */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative flex-1 min-w-[220px] max-w-md">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              placeholder="Buscar por projeto ou cliente…"
-              className="pl-9 h-9"
-            />
-          </div>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1.5 h-9">
-                <SlidersHorizontal className="w-4 h-4" /> Filtros
-                {filtrosAtivos > 0 && (
-                  <span className="ml-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold px-1.5 py-0.5 tabular-nums">
-                    {filtrosAtivos}
-                  </span>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80" align="start">
-              <div className="space-y-4">
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.14em] font-semibold text-muted-foreground mb-2">Tipo</p>
-                  <div className="space-y-1.5">
-                    {TIPO_OPTIONS.map((t) => (
-                      <label key={t.value} className="flex items-center gap-2 text-[13px] cursor-pointer">
-                        <Checkbox checked={tipoFiltro.includes(t.value)} onCheckedChange={() => toggle(tipoFiltro, t.value, setTipoFiltro)} />
-                        {t.label}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.14em] font-semibold text-muted-foreground mb-2">Temperatura</p>
-                  <div className="space-y-1.5">
-                    {TEMPERATURA_OPTIONS.map((t) => (
-                      <label key={t.value} className="flex items-center gap-2 text-[13px] cursor-pointer">
-                        <Checkbox checked={tempFiltro.includes(t.value)} onCheckedChange={() => toggle(tempFiltro, t.value, setTempFiltro)} />
-                        {t.label}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                {responsaveis.length > 0 && (
-                  <div>
-                    <p className="text-[11px] uppercase tracking-[0.14em] font-semibold text-muted-foreground mb-2">Responsável</p>
-                    <div className="space-y-1.5 max-h-40 overflow-y-auto">
-                      {responsaveis.map((r) => (
-                        <label key={r.id} className="flex items-center gap-2 text-[13px] cursor-pointer">
-                          <Checkbox checked={respFiltro.includes(r.id)} onCheckedChange={() => toggle(respFiltro, r.id, setRespFiltro)} />
-                          {r.nome}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {filtrosAtivos > 0 && (
-                  <Button variant="ghost" size="sm" onClick={limparFiltros} className="w-full">Limpar filtros</Button>
-                )}
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative flex-1 min-w-[260px]">
+              <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                placeholder="Buscar por projeto ou cliente…"
+                className="pl-10 h-10 rounded-full bg-card border-transparent shadow-e1 focus-visible:ring-primary/30"
+              />
+            </div>
+            <FilterPill label="Tipo" count={tipoFiltro.length}>
+              <div className="space-y-1.5">
+                {TIPO_OPTIONS.map((t) => (
+                  <label key={t.value} className="flex items-center gap-2 text-[13px] cursor-pointer py-0.5">
+                    <Checkbox checked={tipoFiltro.includes(t.value)} onCheckedChange={() => toggle(tipoFiltro, t.value, setTipoFiltro)} />
+                    {t.label}
+                  </label>
+                ))}
               </div>
-            </PopoverContent>
-          </Popover>
+            </FilterPill>
+            <FilterPill label="Temperatura" count={tempFiltro.length}>
+              <div className="space-y-1.5">
+                {TEMPERATURA_OPTIONS.map((t) => (
+                  <label key={t.value} className="flex items-center gap-2 text-[13px] cursor-pointer py-0.5">
+                    <Checkbox checked={tempFiltro.includes(t.value)} onCheckedChange={() => toggle(tempFiltro, t.value, setTempFiltro)} />
+                    {t.label}
+                  </label>
+                ))}
+              </div>
+            </FilterPill>
+            <FilterPill label="Responsável" count={respFiltro.length}>
+              <div className="space-y-1.5 max-h-56 overflow-y-auto">
+                {responsaveis.length ? responsaveis.map((r) => (
+                  <label key={r.id} className="flex items-center gap-2 text-[13px] cursor-pointer py-0.5">
+                    <Checkbox checked={respFiltro.includes(r.id)} onCheckedChange={() => toggle(respFiltro, r.id, setRespFiltro)} />
+                    <span className="truncate">{r.nome}</span>
+                  </label>
+                )) : <p className="text-[12px] text-muted-foreground italic">Nenhum responsável</p>}
+              </div>
+            </FilterPill>
+            <FilterPill label="Cliente" count={clienteFiltro.length}>
+              <div className="space-y-1.5 max-h-56 overflow-y-auto">
+                {clientesOpts.length ? clientesOpts.map((c) => (
+                  <label key={c.id} className="flex items-center gap-2 text-[13px] cursor-pointer py-0.5">
+                    <Checkbox checked={clienteFiltro.includes(c.id)} onCheckedChange={() => toggle(clienteFiltro, c.id, setClienteFiltro)} />
+                    <span className="truncate">{c.nome}</span>
+                  </label>
+                )) : <p className="text-[12px] text-muted-foreground italic">Nenhum cliente</p>}
+              </div>
+            </FilterPill>
+          </div>
 
-          {/* Chips ativos */}
-          {tipoFiltro.map((v) => (
-            <Chip key={"t" + v} variant="active" onClick={() => toggle(tipoFiltro, v, setTipoFiltro)}>
-              {tipoLabel(v)} <X className="w-3 h-3 ml-1" />
-            </Chip>
-          ))}
-          {tempFiltro.map((v) => (
-            <Chip key={"tp" + v} variant="active" onClick={() => toggle(tempFiltro, v, setTempFiltro)}>
-              {temperaturaLabel(v) ?? v} <X className="w-3 h-3 ml-1" />
-            </Chip>
-          ))}
-          {respFiltro.map((v) => {
-            const r = responsaveis.find((x) => x.id === v);
-            return (
-              <Chip key={"r" + v} variant="active" onClick={() => toggle(respFiltro, v, setRespFiltro)}>
-                {r?.nome ?? "—"} <X className="w-3 h-3 ml-1" />
-              </Chip>
-            );
-          })}
-          {alerta && (
-            <Chip variant="active" onClick={() => setAlerta(null)}>
-              <AlertTriangle className="w-3 h-3 mr-1" />
-              {alerta === "retorno_vencido" && "Retorno atrasado"}
-              {alerta === "sem_contato" && "Sem contato"}
-              {alerta === "propostas_paradas" && "Proposta parada"}
-              <X className="w-3 h-3 ml-1" />
-            </Chip>
+          {filtrosAtivos > 0 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Filtros ativos</span>
+              {tipoFiltro.map((v) => (
+                <button key={"t" + v} onClick={() => toggle(tipoFiltro, v, setTipoFiltro)}
+                  className="inline-flex items-center gap-1 rounded-full bg-card text-foreground text-[12px] px-2.5 py-1 shadow-e1 hover:shadow-e2">
+                  Tipo: {tipoLabel(v).toLowerCase()} <X className="w-3 h-3 opacity-60" />
+                </button>
+              ))}
+              {tempFiltro.map((v) => (
+                <button key={"tp" + v} onClick={() => toggle(tempFiltro, v, setTempFiltro)}
+                  className="inline-flex items-center gap-1 rounded-full bg-card text-foreground text-[12px] px-2.5 py-1 shadow-e1 hover:shadow-e2">
+                  Temperatura: {(temperaturaLabel(v) ?? v).toLowerCase()} <X className="w-3 h-3 opacity-60" />
+                </button>
+              ))}
+              {respFiltro.map((v) => {
+                const r = responsaveis.find((x) => x.id === v);
+                return (
+                  <button key={"r" + v} onClick={() => toggle(respFiltro, v, setRespFiltro)}
+                    className="inline-flex items-center gap-1 rounded-full bg-card text-foreground text-[12px] px-2.5 py-1 shadow-e1 hover:shadow-e2">
+                    Responsável: {r?.nome ?? "—"} <X className="w-3 h-3 opacity-60" />
+                  </button>
+                );
+              })}
+              {clienteFiltro.map((v) => {
+                const c = clientesOpts.find((x) => x.id === v);
+                return (
+                  <button key={"c" + v} onClick={() => toggle(clienteFiltro, v, setClienteFiltro)}
+                    className="inline-flex items-center gap-1 rounded-full bg-card text-foreground text-[12px] px-2.5 py-1 shadow-e1 hover:shadow-e2">
+                    Cliente: {c?.nome ?? "—"} <X className="w-3 h-3 opacity-60" />
+                  </button>
+                );
+              })}
+              {alerta && (
+                <button onClick={() => setAlerta(null)}
+                  className="inline-flex items-center gap-1 rounded-full bg-card text-foreground text-[12px] px-2.5 py-1 shadow-e1 hover:shadow-e2">
+                  {alerta === "retorno_vencido" && "Retorno vencido"}
+                  {alerta === "vencendo_semana" && "Vencendo esta semana"}
+                  {alerta === "sem_contato" && "Sem próximo contato"}
+                  {alerta === "parado_semana" && "Parado há +7d"}
+                  <X className="w-3 h-3 opacity-60" />
+                </button>
+              )}
+              <button onClick={limparFiltros} className="text-[12px] font-medium text-primary hover:underline underline-offset-2 ml-1">
+                Limpar filtros
+              </button>
+            </div>
           )}
         </div>
 
@@ -267,18 +344,23 @@ export default function Projetos() {
             ))}
           </div>
         ) : error ? (
-          <div className="rounded-lg border border-danger/40 bg-danger-soft p-6 text-center">
-            <p className="font-serif text-[18px] text-danger">Algo deu errado ao carregar</p>
-            <Button variant="outline" size="sm" onClick={() => refetch()} className="mt-3">Tentar de novo</Button>
+          <div className="rounded-lg bg-card shadow-e1 p-6 flex items-center gap-4">
+            <AlertCircle className="w-5 h-5 text-primary flex-shrink-0" />
+            <div className="flex-1">
+              <p className="font-serif text-[16px] text-foreground">Não conseguimos carregar os projetos agora</p>
+              <p className="text-[13px] text-muted-foreground mt-0.5">A conexão falhou no meio do caminho. Seus dados estão salvos.</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => refetch()}>Ver detalhes</Button>
+            <Button size="sm" onClick={() => refetch()}>Tentar de novo</Button>
           </div>
         ) : filtrados.length === 0 ? (
-          <div className="rounded-lg border border-border/60 bg-card p-10 text-center shadow-e1">
+          <div className="rounded-lg bg-card p-10 text-center shadow-e1">
             <p className="font-serif text-[20px] text-foreground">Nada por aqui ainda</p>
             <p className="text-[13.5px] text-muted-foreground mt-1.5">
               {filtrosAtivos > 0 ? "Ajuste os filtros para ver mais projetos." : "Crie o primeiro projeto para começar."}
             </p>
             {filtrosAtivos === 0 && (
-              <Button onClick={() => setShowNovo(true)} className="mt-4 gap-1.5">
+              <Button onClick={() => setShowNovo(true)} className="mt-4 gap-1.5 rounded-full">
                 <Plus className="w-4 h-4" /> Novo projeto
               </Button>
             )}

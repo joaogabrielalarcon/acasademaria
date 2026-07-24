@@ -24,22 +24,25 @@ export interface ProjetoPipeline {
   responsavel_foto?: string | null;
 }
 
-export const PIPELINE_STATUSES: Array<{ value: string; label: string }> = [
-  { value: "prospeccao", label: "Prospecção" },
-  { value: "qualificacao", label: "Qualificação" },
-  { value: "projeto", label: "Projeto" },
-  { value: "orcamento", label: "Orçamento" },
-  { value: "proposta", label: "Proposta" },
-  { value: "aprovado", label: "Aprovado" },
-  { value: "em_execucao", label: "Execução" },
-  { value: "concluido", label: "Concluído" },
-  { value: "pos_venda", label: "Pós-venda" },
+export const PIPELINE_STATUSES: Array<{ value: string; label: string; dot: string }> = [
+  { value: "prospeccao",   label: "Prospecção",   dot: "bg-warn" },
+  { value: "qualificacao", label: "Qualificação", dot: "bg-warn/70" },
+  { value: "projeto",      label: "Projeto",      dot: "bg-accent" },
+  { value: "orcamento",    label: "Orçamento",    dot: "bg-primary/80" },
+  { value: "proposta",     label: "Em negociação", dot: "bg-primary" },
+  { value: "aprovado",     label: "Aprovado",     dot: "bg-accent" },
+  { value: "em_execucao",  label: "Execução",     dot: "bg-primary" },
+  { value: "concluido",    label: "Concluído",    dot: "bg-accent" },
+  { value: "pos_venda",    label: "Pós-venda",    dot: "bg-accent" },
 ];
 
 export const PIPELINE_STATUS_VALUES = PIPELINE_STATUSES.map((s) => s.value);
 
 export function statusLabel(v?: string | null) {
   return PIPELINE_STATUSES.find((s) => s.value === v)?.label ?? (v ?? "—");
+}
+export function statusDot(v?: string | null) {
+  return PIPELINE_STATUSES.find((s) => s.value === v)?.dot ?? "bg-muted-foreground/40";
 }
 
 export const TIPO_OPTIONS = [
