@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import {
   statusLabel,
-  statusDot,
+  statusColor,
   tipoLabel,
   temperaturaLabel,
   type ProjetoPipeline,
