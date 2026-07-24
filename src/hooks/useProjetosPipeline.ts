@@ -102,6 +102,7 @@ export function useProjetosPipeline() {
 
       return rows.map((r) => ({
         ...r,
+        status: normalizeStatus(r.status), // funde pos_venda em concluido
         cliente_nome: clientes.get(r.cliente_id) ?? null,
         local_apelido: r.local_id ? locais.get(r.local_id) ?? null : null,
         responsavel_nome: r.responsavel_id ? cols.get(r.responsavel_id)?.nome ?? null : null,
