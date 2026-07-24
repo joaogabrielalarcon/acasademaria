@@ -68,27 +68,32 @@ function saudacao(): string {
   return "Boa noite";
 }
 
-/** Marca d'água botânica em SVG — linhas ultra-finas no canto da faixa-herói */
+/** Marca d'água botânica em SVG — folhagem sutil à direita da faixa-herói */
 function BotanicalMark() {
   return (
     <svg
       aria-hidden
-      className="absolute -right-16 -bottom-24 w-[360px] h-[360px] pointer-events-none opacity-[0.035] motion-reduce:hidden"
+      className="absolute -right-10 -top-10 w-[520px] h-[520px] pointer-events-none opacity-[0.06] motion-reduce:hidden"
       viewBox="0 0 400 400"
       fill="none"
       stroke="currentColor"
-      strokeWidth="0.6"
+      strokeWidth="0.5"
+      style={{ color: "hsl(var(--hero-band-fg))" }}
     >
       <path d="M200 380 C 200 260, 200 180, 200 60" />
       <path d="M200 300 C 140 300, 100 260, 90 210" />
       <path d="M200 300 C 260 300, 300 260, 310 210" />
       <path d="M200 240 C 155 240, 125 210, 118 175" />
       <path d="M200 240 C 245 240, 275 210, 282 175" />
-      <ellipse cx="90" cy="210" rx="22" ry="8" transform="rotate(-30 90 210)" />
-      <ellipse cx="310" cy="210" rx="22" ry="8" transform="rotate(30 310 210)" />
-      <ellipse cx="118" cy="175" rx="18" ry="6" transform="rotate(-25 118 175)" />
-      <ellipse cx="282" cy="175" rx="18" ry="6" transform="rotate(25 282 175)" />
-      <circle cx="200" cy="60" r="12" />
+      <path d="M200 180 C 165 180, 140 155, 135 128" />
+      <path d="M200 180 C 235 180, 260 155, 265 128" />
+      <ellipse cx="90" cy="210" rx="26" ry="9" transform="rotate(-30 90 210)" />
+      <ellipse cx="310" cy="210" rx="26" ry="9" transform="rotate(30 310 210)" />
+      <ellipse cx="118" cy="175" rx="20" ry="7" transform="rotate(-25 118 175)" />
+      <ellipse cx="282" cy="175" rx="20" ry="7" transform="rotate(25 282 175)" />
+      <ellipse cx="135" cy="128" rx="16" ry="6" transform="rotate(-22 135 128)" />
+      <ellipse cx="265" cy="128" rx="16" ry="6" transform="rotate(22 265 128)" />
+      <circle cx="200" cy="60" r="14" />
     </svg>
   );
 }
@@ -153,12 +158,38 @@ export default function MeuDia() {
   return (
     <AppLayout>
       <div className="flex flex-col gap-6 py-2">
+        {/* ── Barra superior da página (fora da faixa-herói) ── */}
+        <div className="flex items-center justify-between gap-3">
+          <ClimaHeroInline />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label="Novo registro"
+                className="h-9 w-9 rounded-full flex items-center justify-center bg-card text-foreground border border-border shadow-e1 hover:bg-primary-soft transition-colors"
+              >
+                <Plus className="w-[18px] h-[18px]" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                Criar novo
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate("/projetos/novo")}>Projeto</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/clientes/novo")}>Cliente</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/orcamentos/novo")}>Orçamento</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/registros/novo")}>Registro</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
         {/* ── FAIXA 1 — Herói ────────────────────────────────── */}
         <motion.section
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.24, ease: [0.2, 0.8, 0.2, 1] }}
-          className="relative overflow-hidden rounded-xl shadow-e2 px-8 py-8 lg:px-10 lg:py-9"
+          className="relative overflow-hidden rounded-xl shadow-e2 px-8 py-6 lg:px-10 lg:py-7"
           style={{
             background:
               "linear-gradient(135deg, #193527 0%, #12271D 55%, #0E1F17 100%)",
@@ -167,10 +198,10 @@ export default function MeuDia() {
         >
           <BotanicalMark />
 
-          <div className="relative flex flex-col gap-5 max-w-4xl">
+          <div className="relative flex flex-col gap-5">
             <div className="flex items-start gap-6">
               <MafeAvatar size={160} />
-              <div className="flex-1 min-w-0 flex flex-col gap-3">
+              <div className="flex-1 min-w-0 flex flex-col gap-4">
                 <div>
                   <h1
                     className="type-h1"
@@ -187,10 +218,10 @@ export default function MeuDia() {
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.15, duration: 0.35 }}
-                    className="text-[16px] italic mt-3 max-w-2xl font-medium pl-3 border-l-2"
+                    className="text-[16.5px] italic mt-3 max-w-2xl font-medium pl-3 border-l-2"
                     style={{
-                      color: "#FBD9C4",
-                      borderColor: "#FBD9C4",
+                      color: "hsl(var(--hero-band-fg) / 0.92)",
+                      borderColor: "hsl(var(--hero-band-fg) / 0.55)",
                     }}
                   >
                     {reflexao}
@@ -199,46 +230,10 @@ export default function MeuDia() {
 
                 <Aniversariantes />
               </div>
-
-              {/* Coluna direita: + universal + Clima inline */}
-              <div className="shrink-0 flex flex-col items-end gap-4">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      aria-label="Novo registro"
-                      className="h-10 w-10 rounded-full flex items-center justify-center bg-white/[0.10] hover:bg-white/[0.18] border border-white/[0.14] transition-colors"
-                      style={{ color: "hsl(var(--hero-band-fg))" }}
-                    >
-                      <Plus className="w-5 h-5" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                      Criar novo
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate("/projetos/novo")}>
-                      Projeto
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/clientes/novo")}>
-                      Cliente
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/orcamentos/novo")}>
-                      Orçamento
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/registros/novo")}>
-                      Registro
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-
-                <ClimaHeroInline />
-              </div>
             </div>
 
             {/* Campo da Mafe — field elevado com brilho no foco */}
-            <form onSubmit={send} className="relative flex items-end gap-2 max-w-3xl">
+            <form onSubmit={send} className="relative flex items-end gap-2">
               <motion.div
                 animate={{
                   boxShadow: focus
