@@ -51,7 +51,7 @@ export function AgendaDoDia() {
   });
 
   const hojeEventos = eventos.filter((e) => isSameDay(parseISO(e.data), hoje));
-  const dias = eachDayOfInterval(intervalo);
+  const dias = eachDayOfInterval({ start: intervalo.ini, end: intervalo.fim });
 
   return (
     <SurfaceCard padded>

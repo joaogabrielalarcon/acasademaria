@@ -5,7 +5,7 @@ import { ChevronDown, Sprout } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { SurfaceCard, SurfaceCardHeader } from "@/components/primitives/SurfaceCard";
-import { Chip } from "@/components/primitives/Chip";
+
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
