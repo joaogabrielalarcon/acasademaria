@@ -77,7 +77,7 @@ const BootstrapAdmin = lazyWithRetry(() => import("./pages/BootstrapAdmin"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 const ProcessosInternos = lazyWithRetry(() => import("./pages/ProcessosInternos"));
 const Calendario = lazyWithRetry(() => import("./pages/Calendario"));
-const CRM = lazyWithRetry(() => import("./pages/CRM"));
+const Projetos = lazyWithRetry(() => import("./pages/Projetos"));
 const MinhaAgenda = lazyWithRetry(() => import("./pages/MinhaAgenda"));
 const Conciliacao = lazyWithRetry(() => import("./pages/Conciliacao"));
 const AReceber = lazyWithRetry(() => import("./pages/AReceber"));
