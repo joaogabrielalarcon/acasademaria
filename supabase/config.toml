@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.extract-cotacao-resposta]
 verify_jwt = false
+
+[functions.clima]
+verify_jwt = false

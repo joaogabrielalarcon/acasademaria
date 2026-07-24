@@ -8,12 +8,12 @@ import {
   BarChart3,
   Leaf,
   Wrench,
-  Package,
-  Settings2,
+  Pencil,
   History,
   Folder,
   type LucideIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 /** Faixa 2 — retomada rápida.
@@ -84,16 +84,17 @@ export function RetomadaRapida() {
         ))}
         <button
           type="button"
-          disabled
-          aria-label="Personalizar favoritos"
-          title="Personalizar (em breve)"
-          className="ml-1 h-7 w-7 rounded-full flex items-center justify-center text-muted-foreground/60 hover:text-foreground/70 hover:bg-surface-sunken transition-colors disabled:opacity-60"
+          onClick={() =>
+            toast("Editar favoritos", {
+              description: "Em breve: escolher quais áreas ficam à mão.",
+            })
+          }
+          aria-label="Editar favoritos"
+          title="Editar favoritos"
+          className="ml-1 h-7 w-7 rounded-full flex items-center justify-center text-muted-foreground/70 hover:text-primary hover:bg-surface-sunken transition-colors"
         >
-          <Settings2 className="w-3.5 h-3.5" />
+          <Pencil className="w-3.5 h-3.5" />
         </button>
-        <span className="ml-auto inline-flex items-center rounded-full px-1.5 py-px text-[9px] uppercase tracking-wider bg-surface-sunken text-muted-foreground border border-border/50">
-          exemplo
-        </span>
       </div>
 
       {/* Continuar trabalhando — mini-cards */}

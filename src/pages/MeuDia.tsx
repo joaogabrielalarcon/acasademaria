@@ -1,26 +1,36 @@
-import { useState, useRef, useMemo, useEffect } from "react";
+import { useState, useRef, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Send, Mic, Square } from "lucide-react";
+import { Send, Mic, Square, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth, useProfile } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
 import { AreasLauncher } from "@/components/inicio/AreasLauncher";
 import { MinhasTarefas } from "@/components/inicio/MinhasTarefas";
 import { AlertasProativos } from "@/components/inicio/AlertasProativos";
 import { AgendaDoDia } from "@/components/inicio/AgendaDoDia";
 import { RetomadaRapida } from "@/components/inicio/RetomadaRapida";
-import { Lembretes } from "@/components/inicio/Lembretes";
+import { LembretesPostits } from "@/components/inicio/LembretesPostits";
+import { ClimaHoje } from "@/components/inicio/ClimaHoje";
+import { Aniversariantes } from "@/components/inicio/Aniversariantes";
 import { MafeAvatar } from "@/components/inicio/MafeAvatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const REFLEXOES = [
-  "Hoje é um ótimo dia para plantar boas sementes — no jardim e na vida.",
+  "Hoje é um ótimo dia para plantar boas sementes, no jardim e na vida.",
   "Que a sua energia hoje contagie todos ao seu redor.",
   "Jardins não crescem com pressa. Confie no seu tempo e siga plantando.",
   "Cuidar do detalhe hoje é colher beleza amanhã.",
   "Toda grande obra começa com um pequeno gesto. Comece.",
   "Respire fundo. O que é essencial cabe em um dia de cada vez.",
   "A raiz que não se vê sustenta tudo o que floresce.",
-  "Faça com carinho — o cliente sente o cuidado nas entrelinhas.",
+  "Faça com carinho, o cliente sente o cuidado nas entrelinhas.",
   "Persistência é o adubo dos sonhos. Continue.",
   "O sol nasce pra todo mundo, mas quem madruga rega o jardim primeiro.",
   "Cada estação tem sua beleza. Confie no ciclo.",
@@ -58,30 +68,12 @@ function saudacao(): string {
   return "Boa noite";
 }
 
-/** Count-up animado para o número de tarefas/alertas do resumo */
-function useCountUp(target: number, duration = 700) {
-  const [n, setN] = useState(0);
-  useEffect(() => {
-    let raf = 0;
-    const start = performance.now();
-    const tick = (t: number) => {
-      const p = Math.min(1, (t - start) / duration);
-      const eased = 1 - Math.pow(1 - p, 3);
-      setN(Math.round(target * eased));
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target, duration]);
-  return n;
-}
-
 /** Marca d'água botânica em SVG — linhas ultra-finas no canto da faixa-herói */
 function BotanicalMark() {
   return (
     <svg
       aria-hidden
-      className="absolute -right-6 -top-6 w-[420px] h-[420px] pointer-events-none opacity-[0.06]"
+      className="absolute -right-8 -top-8 w-[380px] h-[380px] pointer-events-none opacity-[0.06] motion-reduce:hidden"
       viewBox="0 0 400 400"
       fill="none"
       stroke="currentColor"
@@ -92,16 +84,10 @@ function BotanicalMark() {
       <path d="M200 300 C 260 300, 300 260, 310 210" />
       <path d="M200 240 C 155 240, 125 210, 118 175" />
       <path d="M200 240 C 245 240, 275 210, 282 175" />
-      <path d="M200 180 C 165 180, 140 155, 135 125" />
-      <path d="M200 180 C 235 180, 260 155, 265 125" />
-      <path d="M200 120 C 180 120, 165 105, 162 85" />
-      <path d="M200 120 C 220 120, 235 105, 238 85" />
       <ellipse cx="90" cy="210" rx="22" ry="8" transform="rotate(-30 90 210)" />
       <ellipse cx="310" cy="210" rx="22" ry="8" transform="rotate(30 310 210)" />
       <ellipse cx="118" cy="175" rx="18" ry="6" transform="rotate(-25 118 175)" />
       <ellipse cx="282" cy="175" rx="18" ry="6" transform="rotate(25 282 175)" />
-      <ellipse cx="135" cy="125" rx="15" ry="5" transform="rotate(-20 135 125)" />
-      <ellipse cx="265" cy="125" rx="15" ry="5" transform="rotate(20 265 125)" />
       <circle cx="200" cy="60" r="12" />
     </svg>
   );
@@ -110,17 +96,14 @@ function BotanicalMark() {
 export default function MeuDia() {
   const { user } = useAuth();
   const { data: profile } = useProfile(user?.id);
+  const navigate = useNavigate();
   const primeiroNome =
-    profile?.nome?.split(" ")[0] || user?.email?.split("@")[0] || "Você";
+    profile?.nome?.split(" ")[0] || user?.email?.split("@")[0] || "você";
   const [input, setInput] = useState("");
   const [recording, setRecording] = useState(false);
   const [focus, setFocus] = useState(false);
   const recognitionRef = useRef<any>(null);
   const reflexao = useMemo(() => pegarReflexao(), []);
-
-  // Números resumo (usam os mocks: 5 tarefas / 3 alertas — count-up)
-  const tarefasN = useCountUp(5);
-  const alertasN = useCountUp(3);
 
   const send = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -170,9 +153,9 @@ export default function MeuDia() {
   return (
     <AppLayout>
       <div className="flex flex-col gap-6 py-2">
-        {/* ── Faixa-herói de marca ────────────────────────────── */}
+        {/* ── FAIXA 1 — Herói ────────────────────────────────── */}
         <motion.section
-          initial={{ opacity: 0, y: 8 }}
+          initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.24, ease: [0.2, 0.8, 0.2, 1] }}
           className="relative overflow-hidden rounded-xl shadow-e2 px-8 py-8 lg:px-10 lg:py-9"
@@ -185,55 +168,70 @@ export default function MeuDia() {
           <BotanicalMark />
 
           <div className="relative flex flex-col gap-5 max-w-4xl">
-            <div className="flex items-start gap-5">
-              <MafeAvatar size={112} />
-              <div className="flex-1 min-w-0">
+            <div className="flex items-start gap-6">
+              <MafeAvatar size={160} />
+              <div className="flex-1 min-w-0 flex flex-col gap-3">
+                <div>
+                  <h1
+                    className="type-h1"
+                    style={{
+                      color: "hsl(var(--hero-band-fg))",
+                      fontSize: "44px",
+                      lineHeight: 1.1,
+                    }}
+                  >
+                    {saudacao()}, {primeiroNome}.
+                  </h1>
+                  <motion.p
+                    key={reflexao}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.15, duration: 0.35 }}
+                    className="text-[15px] italic mt-3 max-w-2xl"
+                    style={{ color: "hsl(var(--hero-band-fg) / 0.86)" }}
+                  >
+                    {reflexao}
+                  </motion.p>
+                </div>
 
-              <h1
-                className="type-h1"
-                style={{ color: "hsl(var(--hero-band-fg))", fontSize: "40px", lineHeight: 1.1 }}
-              >
-                {saudacao()}, {primeiroNome}.
-              </h1>
-              <p
-                className="text-[15px] mt-2"
-                style={{ color: "hsl(var(--hero-band-fg) / 0.92)" }}
-              >
-                Você tem{" "}
-                <span
-                  className="font-sans tabular-nums font-bold"
-                  style={{ color: "hsl(var(--hero-band-fg))" }}
-                >
-                  {tarefasN} tarefa{tarefasN === 1 ? "" : "s"}
-                </span>{" "}
-                e{" "}
-                <span
-                  className="font-sans tabular-nums font-bold"
-                  style={{ color: "hsl(var(--hero-band-fg))" }}
-                >
-                  {alertasN} alerta{alertasN === 1 ? "" : "s"}
-                </span>{" "}
-                aguardando você.
-              </p>
-              <motion.p
-                key={reflexao}
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.35 }}
-                className="text-[14px] italic mt-2 max-w-2xl"
-                style={{ color: "hsl(var(--hero-band-fg) / 0.78)" }}
-              >
-                {reflexao}
-              </motion.p>
+                <Aniversariantes />
+              </div>
+
+              {/* + universal, no topo */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Novo registro"
+                    className="shrink-0 h-10 w-10 rounded-full flex items-center justify-center bg-white/[0.10] hover:bg-white/[0.18] border border-white/[0.14] transition-colors"
+                    style={{ color: "hsl(var(--hero-band-fg))" }}
+                  >
+                    <Plus className="w-5 h-5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    Criar novo
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate("/projetos/novo")}>
+                    Projeto
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/clientes/novo")}>
+                    Cliente
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/orcamentos/novo")}>
+                    Orçamento
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/registros/novo")}>
+                    Registro
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-          </div>
-
 
             {/* Campo da Mafe — field elevado com brilho no foco */}
-            <form
-              onSubmit={send}
-              className="relative flex items-end gap-2 max-w-3xl"
-            >
+            <form onSubmit={send} className="relative flex items-end gap-2 max-w-3xl">
               <motion.div
                 animate={{
                   boxShadow: focus
@@ -259,31 +257,35 @@ export default function MeuDia() {
                   className="flex-1 resize-none bg-transparent py-2 text-[15px] placeholder:text-white/45 focus:outline-none"
                   style={{ color: "hsl(var(--hero-band-fg))" }}
                 />
-                <motion.button
+                <button
                   type="button"
                   onClick={toggleRec}
-                  whileTap={{ scale: 0.92 }}
-                  animate={recording ? { scale: [1, 1.08, 1] } : { scale: 1 }}
-                  transition={recording ? { repeat: Infinity, duration: 1.4 } : { duration: 0.15 }}
+                  aria-label={recording ? "Parar gravação" : "Ditar mensagem"}
                   className="h-9 w-9 shrink-0 rounded-lg flex items-center justify-center text-white/75 hover:text-white hover:bg-white/10 transition-colors"
                 >
-                  {recording ? <Square className="w-4.5 h-4.5" /> : <Mic className="w-[18px] h-[18px]" />}
-                </motion.button>
-                <motion.button
+                  {recording ? <Square className="w-[18px] h-[18px]" /> : <Mic className="w-[18px] h-[18px]" />}
+                </button>
+                <button
                   type="submit"
                   disabled={!input.trim()}
-                  whileTap={{ scale: 0.92 }}
+                  aria-label="Enviar mensagem"
                   className="h-9 w-9 shrink-0 rounded-lg flex items-center justify-center text-white/75 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-40"
                 >
                   <Send className="w-[18px] h-[18px]" />
-                </motion.button>
+                </button>
               </motion.div>
             </form>
           </div>
         </motion.section>
 
-        {/* ── Faixa 2 — Retomada rápida ────────────────────── */}
-        <RetomadaRapida />
+        {/* ── FAIXA 2 — Retomada rápida + Lembretes + Clima ── */}
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] items-start">
+          <div className="flex flex-col gap-3 min-w-0">
+            <RetomadaRapida />
+            <LembretesPostits />
+          </div>
+          <ClimaHoje />
+        </div>
 
         {/* Barra do launcher */}
         <div className="flex items-center justify-between">
@@ -294,7 +296,7 @@ export default function MeuDia() {
           <AreasLauncher />
         </div>
 
-        {/* ── Faixa 3 — Núcleo de trabalho (62/38) ─────────── */}
+        {/* ── FAIXA 3 — Núcleo de trabalho (62/38) ─────────── */}
         <motion.div
           initial="hidden"
           animate="show"
@@ -303,7 +305,6 @@ export default function MeuDia() {
           }}
           className="grid gap-5 lg:grid-cols-[62%_38%] xl:grid-cols-[63%_37%]"
         >
-          {/* Coluna principal — Suas tarefas */}
           <motion.div
             variants={{
               hidden: { opacity: 0, y: 8 },
@@ -313,7 +314,6 @@ export default function MeuDia() {
             <MinhasTarefas />
           </motion.div>
 
-          {/* Coluna direita — empilhada */}
           <div className="flex flex-col gap-5 min-w-0">
             <motion.div
               variants={{
@@ -333,10 +333,6 @@ export default function MeuDia() {
             </motion.div>
           </div>
         </motion.div>
-
-        {/* ── Faixa 4 — Lembretes ──────────────────────────── */}
-        <Lembretes />
-
       </div>
     </AppLayout>
   );
