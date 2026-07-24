@@ -338,7 +338,7 @@ export default function Projetos() {
           </div>
         ) : filtrados.length === 0 ? (
           <div className="rounded-lg bg-card p-10 text-center shadow-e1">
-            <p className="font-serif text-[20px] text-foreground">Nada por aqui ainda</p>
+            <p className="text-[17px] font-semibold text-foreground">Nada por aqui ainda</p>
             <p className="text-[13.5px] text-muted-foreground mt-1.5">
               {filtrosAtivos > 0 ? "Ajuste os filtros para ver mais projetos." : "Crie o primeiro projeto para começar."}
             </p>
