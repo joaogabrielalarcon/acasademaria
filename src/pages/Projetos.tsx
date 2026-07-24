@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import {
   useProjetosPipeline,
-  PIPELINE_STATUSES,
+  
   PIPELINE_STATUS_VALUES,
   TIPO_OPTIONS,
   TEMPERATURA_OPTIONS,
