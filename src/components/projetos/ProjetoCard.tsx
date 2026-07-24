@@ -80,7 +80,7 @@ export function ProjetoCard({ projeto, onOpen, onMoverClick, draggable }: Projet
             </HoverCardContent>
           </HoverCard>
         ) : (
-          <span className="text-[13px] text-muted-foreground/70 italic">Sem cliente</span>
+          <span className="text-[14px] text-muted-foreground/70 italic">Sem cliente</span>
         )}
         {onMoverClick && (
           <button
