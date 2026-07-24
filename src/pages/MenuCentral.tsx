@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { Send, Mic, Square } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
+
 import { useAuth, useProfile, useHighestRole, type AppRole } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
