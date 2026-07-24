@@ -63,6 +63,7 @@ const Plantas = lazyWithRetry(() => import("./pages/Plantas"));
 const NovaPlanta = lazyWithRetry(() => import("./pages/NovaPlanta"));
 const NovoProjeto = lazyWithRetry(() => import("./pages/NovoProjeto"));
 const ProjetoDetalhe = lazyWithRetry(() => import("./pages/ProjetoDetalhe"));
+const PainelProjeto = lazyWithRetry(() => import("./pages/PainelProjeto"));
 const Insumos = lazyWithRetry(() => import("./pages/Insumos"));
 const Compras = lazyWithRetry(() => import("./pages/Compras"));
 const CustosEquipe = lazyWithRetry(() => import("./pages/CustosEquipe"));
