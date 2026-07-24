@@ -155,6 +155,9 @@ export function MinhasTarefas() {
   const { data: colab } = useColaboradorId(user?.id);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [sortMode, setSortMode] = useState<SortMode>("urgencia");
+  const [selStatus, setSelStatus] = useState<string[]>([]);
+  const [selCliente, setSelCliente] = useState<string[]>([]);
+  const [selTipo, setSelTipo] = useState<string[]>([]);
 
   const { data: tarefasReais = [], isLoading } = useQuery({
     queryKey: ["minhas-tarefas", colab?.id],
@@ -179,6 +182,8 @@ export function MinhasTarefas() {
           id: t.id,
           titulo: t.titulo,
           vinculo: t.projetos?.titulo || t.clientes?.nome || "",
+          cliente: t.clientes?.nome || undefined,
+          tipo: t.projetos?.titulo ? "Projeto" : "Cliente",
           prazo_final: t.prazo_final,
           pct: 25,
           statusLabel: "Em andamento",
@@ -187,8 +192,30 @@ export function MinhasTarefas() {
         }))
       : DEMO;
 
+  const optsStatus = useMemo(
+    () => Array.from(new Set(tarefasBase.map((t) => t.statusLabel))).sort(),
+    [tarefasBase],
+  );
+  const optsCliente = useMemo(
+    () => Array.from(new Set(tarefasBase.map((t) => t.cliente).filter(Boolean) as string[])).sort(),
+    [tarefasBase],
+  );
+  const optsTipo = useMemo(
+    () => Array.from(new Set(tarefasBase.map((t) => t.tipo).filter(Boolean) as string[])).sort(),
+    [tarefasBase],
+  );
+
+  const filtered = useMemo(() => {
+    return tarefasBase.filter((t) => {
+      if (selStatus.length && !selStatus.includes(t.statusLabel)) return false;
+      if (selCliente.length && !(t.cliente && selCliente.includes(t.cliente))) return false;
+      if (selTipo.length && !(t.tipo && selTipo.includes(t.tipo))) return false;
+      return true;
+    });
+  }, [tarefasBase, selStatus, selCliente, selTipo]);
+
   const tarefas = useMemo(() => {
-    const arr = [...tarefasBase];
+    const arr = [...filtered];
     if (sortMode === "urgencia") {
       arr.sort((a, b) => {
         const da = a.prazo_final ? parseISO(a.prazo_final).getTime() : Infinity;
@@ -205,14 +232,29 @@ export function MinhasTarefas() {
       arr.sort((a, b) => a.statusLabel.localeCompare(b.statusLabel, "pt-BR"));
     }
     return arr;
-  }, [tarefasBase, sortMode]);
+  }, [filtered, sortMode]);
+
+  const totalFilters = selStatus.length + selCliente.length + selTipo.length;
+  const clearFilters = () => {
+    setSelStatus([]);
+    setSelCliente([]);
+    setSelTipo([]);
+  };
+  const toggle = (setter: (v: string[]) => void, cur: string[], v: string) =>
+    setter(cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]);
+
+  const activeChips: { label: string; onRemove: () => void }[] = [
+    ...selStatus.map((v) => ({ label: v, onRemove: () => setSelStatus(selStatus.filter((x) => x !== v)) })),
+    ...selCliente.map((v) => ({ label: v, onRemove: () => setSelCliente(selCliente.filter((x) => x !== v)) })),
+    ...selTipo.map((v) => ({ label: v, onRemove: () => setSelTipo(selTipo.filter((x) => x !== v)) })),
+  ];
 
   return (
     <SurfaceCard padded className="flex flex-col h-full">
       <SurfaceCardHeader
         label="Suas tarefas"
         action={
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
@@ -239,12 +281,79 @@ export function MinhasTarefas() {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  className="inline-flex items-center gap-1.5 h-7 px-2 rounded-md text-[12px] text-muted-foreground hover:text-foreground hover:bg-surface-sunken transition-colors"
+                  aria-label="Filtrar tarefas"
+                >
+                  <Filter className="w-3.5 h-3.5" />
+                  <span className="font-sans">Filtros</span>
+                  {totalFilters > 0 && (
+                    <span className="inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold tabular-nums">
+                      {totalFilters}
+                    </span>
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-72 p-3 space-y-3">
+                <FilterGroup
+                  label="Status"
+                  options={optsStatus}
+                  selected={selStatus}
+                  onToggle={(v) => toggle(setSelStatus, selStatus, v)}
+                />
+                <FilterGroup
+                  label="Cliente"
+                  options={optsCliente}
+                  selected={selCliente}
+                  onToggle={(v) => toggle(setSelCliente, selCliente, v)}
+                />
+                <FilterGroup
+                  label="Tipo"
+                  options={optsTipo}
+                  selected={selTipo}
+                  onToggle={(v) => toggle(setSelTipo, selTipo, v)}
+                />
+                {totalFilters > 0 && (
+                  <button
+                    onClick={clearFilters}
+                    className="w-full h-7 rounded-md text-[12px] text-muted-foreground hover:text-foreground hover:bg-surface-sunken transition-colors"
+                  >
+                    Limpar filtros
+                  </button>
+                )}
+              </PopoverContent>
+            </Popover>
+
             <span className="text-[12px] font-sans tabular-nums text-muted-foreground">
               {tarefas.length} {tarefas.length === 1 ? "item" : "itens"}
             </span>
           </div>
         }
       />
+
+      {activeChips.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-3 -mt-1">
+          {activeChips.map((c, i) => (
+            <span
+              key={i}
+              className="inline-flex items-center gap-1 h-6 pl-2 pr-1 rounded-full bg-primary-soft/40 text-primary text-[11px]"
+            >
+              {c.label}
+              <button
+                onClick={c.onRemove}
+                aria-label={`Remover filtro ${c.label}`}
+                className="h-4 w-4 rounded-full hover:bg-primary/10 flex items-center justify-center"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
       {isLoading ? (
         <p className="type-body text-muted-foreground">Carregando…</p>
       ) : (
