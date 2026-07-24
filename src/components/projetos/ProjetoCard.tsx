@@ -24,26 +24,26 @@ function tempDot(t?: string | null) {
   return "bg-muted-foreground/40";
 }
 
-type Retorno =
+type Prazo =
   | { kind: "atrasado"; texto: string }
   | { kind: "hoje"; texto: string }
   | { kind: "futuro"; texto: string }
   | { kind: "vazio" };
 
-function retornoInfo(p: ProjetoPipeline): Retorno {
-  const alvo = p.data_retorno_prometida ?? p.proximo_contato_em;
+function prazoInfo(alvo: string | null | undefined, prefixo: string): Prazo {
   if (!alvo) return { kind: "vazio" };
   const d = new Date(alvo); d.setHours(0, 0, 0, 0);
   const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
   const diff = Math.round((hoje.getTime() - d.getTime()) / 86400000);
-  if (diff > 0) return { kind: "atrasado", texto: `retorno atrasado ${diff}d` };
-  if (diff === 0) return { kind: "hoje", texto: "retorno hoje" };
-  return { kind: "futuro", texto: `retorno em ${-diff}d` };
+  if (diff > 0) return { kind: "atrasado", texto: `${prefixo} atrasad${prefixo === "entrega" ? "a" : "o"} ${diff}d` };
+  if (diff === 0) return { kind: "hoje", texto: `${prefixo} hoje` };
+  return { kind: "futuro", texto: `${prefixo} em ${-diff}d` };
 }
 
 export function ProjetoCard({ projeto, onOpen, onMoverClick, draggable }: ProjetoCardProps) {
   const navigate = useNavigate();
-  const ret = retornoInfo(projeto);
+  const ret = prazoInfo(projeto.data_retorno_prometida ?? projeto.proximo_contato_em, "retorno");
+  const entrega = prazoInfo(projeto.data_prometida_cliente, "entrega");
   const temp = temperaturaLabel(projeto.temperatura);
   const iniciais = (projeto.responsavel_nome ?? "").split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();
 
@@ -136,18 +136,35 @@ export function ProjetoCard({ projeto, onOpen, onMoverClick, draggable }: Projet
         )}
       </div>
 
-      {/* Retorno pill full-width */}
-      {ret.kind !== "vazio" && (
-        <div
-          className={cn(
-            "flex items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium",
-            ret.kind === "atrasado" && "bg-primary text-primary-foreground",
-            ret.kind === "hoje" && "bg-primary-soft text-primary",
-            ret.kind === "futuro" && "border border-border/70 text-muted-foreground bg-transparent",
+      {/* Retorno + Entrega pills */}
+      {(ret.kind !== "vazio" || entrega.kind !== "vazio") && (
+        <div className="space-y-1.5">
+          {ret.kind !== "vazio" && (
+            <div
+              className={cn(
+                "flex items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium",
+                ret.kind === "atrasado" && "bg-primary text-primary-foreground",
+                ret.kind === "hoje" && "bg-primary-soft text-primary",
+                ret.kind === "futuro" && "border border-border/70 text-muted-foreground bg-transparent",
+              )}
+            >
+              <Clock className="w-3.5 h-3.5" />
+              {ret.texto}
+            </div>
           )}
-        >
-          <Clock className="w-3.5 h-3.5" />
-          {ret.texto}
+          {entrega.kind !== "vazio" && (
+            <div
+              className={cn(
+                "flex items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium",
+                entrega.kind === "atrasado" && "bg-primary text-primary-foreground",
+                entrega.kind === "hoje" && "bg-primary-soft text-primary",
+                entrega.kind === "futuro" && "border border-border/70 text-muted-foreground bg-transparent",
+              )}
+            >
+              <Clock className="w-3.5 h-3.5" />
+              {entrega.texto}
+            </div>
+          )}
         </div>
       )}
     </motion.article>
