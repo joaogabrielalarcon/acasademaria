@@ -133,9 +133,17 @@ export function MinhasTarefas() {
                         </p>
                       )}
                     </div>
-                    <Chip tone={farol.tone === "danger" ? "danger" : farol.tone === "attention" ? "attention" : farol.tone === "warn" ? "warn" : "ok"}>
+                    <span
+                      className={cn(
+                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium",
+                        farol.tone === "danger" && "bg-danger-soft text-danger",
+                        farol.tone === "attention" && "bg-attention-soft text-attention",
+                        farol.tone === "warn" && "bg-warn-soft text-warn",
+                        farol.tone === "ok" && "bg-ok-soft text-ok"
+                      )}
+                    >
                       {farol.label}
-                    </Chip>
+                    </span>
                     <ChevronDown
                       className={cn(
                         "w-4 h-4 text-muted-foreground transition-transform",
