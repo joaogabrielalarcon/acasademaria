@@ -68,6 +68,7 @@ import {
   usePropostasDoProjeto,
   useAtualizarProjeto,
 } from "@/hooks/usePainelProjeto";
+import { useArquivarProjeto } from "@/hooks/useProjetosPipeline";
 import { ClienteDrawer, useClienteDrawer } from "@/components/projeto/painel/ClienteDrawer";
 import { cn } from "@/lib/utils";
 
