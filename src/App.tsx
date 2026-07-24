@@ -86,6 +86,7 @@ const Orcamentos = lazyWithRetry(() => import("./pages/Orcamentos"));
 const NovoOrcamento = lazyWithRetry(() => import("./pages/NovoOrcamento"));
 const Indicadores = lazyWithRetry(() => import("./pages/Indicadores"));
 const SolicitacoesCompras = lazyWithRetry(() => import("./pages/SolicitacoesCompras"));
+const DesignSystem = lazyWithRetry(() => import("./pages/DesignSystem"));
 
 
 const queryClient = new QueryClient();
