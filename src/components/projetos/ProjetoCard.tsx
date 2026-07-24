@@ -61,7 +61,7 @@ export function ProjetoCard({ projeto, onOpen, onMoverClick, draggable }: Projet
       className="group relative bg-card rounded-lg shadow-e1 hover:shadow-e2 cursor-pointer overflow-hidden p-4 pl-[18px] space-y-2.5"
     >
       {/* Filete lateral com a cor do status */}
-      <span aria-hidden className={cn("absolute left-0 top-0 bottom-0 w-[4px]", statusDot(projeto.status))} />
+      <span aria-hidden className="absolute left-0 top-0 bottom-0 w-[4px]" style={{ background: statusColor(projeto.status) }} />
       {/* Header: nome do cliente + menu */}
       <div className="flex items-start justify-between gap-2">
         {projeto.cliente_nome ? (
