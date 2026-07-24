@@ -330,7 +330,7 @@ export default function Projetos() {
           <div className="rounded-lg bg-card shadow-e1 p-6 flex items-center gap-4">
             <AlertCircle className="w-5 h-5 text-primary flex-shrink-0" />
             <div className="flex-1">
-              <p className="font-serif text-[16px] text-foreground">Não conseguimos carregar os projetos agora</p>
+              <p className="text-[15px] font-semibold text-foreground">Não conseguimos carregar os projetos agora</p>
               <p className="text-[13px] text-muted-foreground mt-0.5">A conexão falhou no meio do caminho. Seus dados estão salvos.</p>
             </div>
             <Button variant="outline" size="sm" onClick={() => refetch()}>Ver detalhes</Button>
