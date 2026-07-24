@@ -75,7 +75,7 @@ export function ProjetoCard({ projeto, onOpen, onMoverClick, draggable }: Projet
               </button>
             </HoverCardTrigger>
             <HoverCardContent side="top" className="w-64">
-              <p className="font-serif font-semibold text-[15px]">{projeto.cliente_nome}</p>
+              <p className="font-semibold text-[13px]">{projeto.cliente_nome}</p>
               <p className="text-[12px] text-muted-foreground mt-0.5">Abrir ficha do cliente</p>
             </HoverCardContent>
           </HoverCard>
