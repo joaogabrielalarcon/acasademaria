@@ -886,7 +886,10 @@ function TabRelacionamento({
             emptyLabel="definir"
             onSave={async (v) => {
               const val = v.toLowerCase();
-              if (!["quente", "morno", "frio", ""].includes(val)) return toast({ title: "Use: quente, morno ou frio", variant: "destructive" });
+              if (!["quente", "morno", "frio", ""].includes(val)) {
+                toast({ title: "Use: quente, morno ou frio", variant: "destructive" });
+                return;
+              }
               await onSalvar({ temperatura: val || null }, `Temperatura: ${val || "removida"}`);
             }}
           />
@@ -897,7 +900,10 @@ function TabRelacionamento({
             placeholder="dd/mm/aaaa"
             onSave={async (v) => {
               const iso = parseDateBR(v);
-              if (v && !iso) return toast({ title: "Data inválida", variant: "destructive" });
+              if (v && !iso) {
+                toast({ title: "Data inválida", variant: "destructive" });
+                return;
+              }
               await onSalvar({ proximo_contato_em: iso }, `Próximo contato: ${v || "removido"}`);
             }}
           />
@@ -908,7 +914,10 @@ function TabRelacionamento({
             placeholder="dd/mm/aaaa"
             onSave={async (v) => {
               const iso = parseDateBR(v);
-              if (v && !iso) return toast({ title: "Data inválida", variant: "destructive" });
+              if (v && !iso) {
+                toast({ title: "Data inválida", variant: "destructive" });
+                return;
+              }
               await onSalvar({ data_retorno_prometida: iso }, `Retorno prometido: ${v || "removido"}`);
             }}
           />
