@@ -131,17 +131,30 @@ function useColaboradorId(userId?: string) {
   });
 }
 
+type FarolTone = "danger" | "attention" | "warn" | "ok" | "muted";
+
 function farolDoPrazo(prazo: string | null): {
-  tone: "ok" | "warn" | "attention" | "danger";
+  tone: FarolTone;
   label: string;
+  Icon: typeof Clock;
 } {
-  if (!prazo) return { tone: "ok", label: "Sem prazo" };
+  if (!prazo) return { tone: "muted", label: "Sem prazo", Icon: Clock };
   const dias = differenceInCalendarDays(parseISO(prazo), new Date());
-  if (dias < 0) return { tone: "danger", label: `Atrasada ${Math.abs(dias)}d` };
-  if (dias === 0) return { tone: "attention", label: "Hoje" };
-  if (dias === 1) return { tone: "warn", label: "Amanhã" };
-  if (dias <= 3) return { tone: "warn", label: `Em ${dias}d` };
-  return { tone: "ok", label: `Em ${dias}d` };
+  if (dias < 0) return { tone: "danger", label: `Atrasado ${Math.abs(dias)}d`, Icon: AlertTriangle };
+  if (dias === 0) return { tone: "danger", label: "Vence hoje", Icon: AlertTriangle };
+  if (dias === 1) return { tone: "attention", label: "Amanhã", Icon: Clock };
+  if (dias <= 3) return { tone: "attention", label: `Em ${dias} dias`, Icon: Clock };
+  if (dias <= 7) return { tone: "warn", label: `Em ${dias} dias`, Icon: Clock };
+  return { tone: "muted", label: `Em ${dias} dias`, Icon: Clock };
+}
+
+type StatusTone = "neutral" | "info" | "action" | "done";
+function statusMeta(label: string): { tone: StatusTone; Icon: typeof Circle; text: string } {
+  const l = label.toLowerCase();
+  if (l.includes("aguardando")) return { tone: "action", Icon: Bell, text: "Aguardando você" };
+  if (l.includes("andamento") || l.includes("progresso")) return { tone: "info", Icon: Play, text: "Em andamento" };
+  if (l.includes("conclu")) return { tone: "done", Icon: CheckCircle2, text: "Concluído" };
+  return { tone: "neutral", Icon: Circle, text: "A fazer" };
 }
 
 const SORT_LABELS: Record<SortMode, string> = {
