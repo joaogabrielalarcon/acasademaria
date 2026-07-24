@@ -141,7 +141,7 @@ export function ProjetosLista({ projetos }: Props) {
                           </button>
                         </HoverCardTrigger>
                         <HoverCardContent side="top" className="w-64">
-                          <p className="font-serif font-semibold text-[14px]">{p.cliente_nome}</p>
+                          <p className="font-semibold text-[14px]">{p.cliente_nome}</p>
                           <p className="text-[12px] text-muted-foreground">Abrir ficha</p>
                         </HoverCardContent>
                       </HoverCard>
