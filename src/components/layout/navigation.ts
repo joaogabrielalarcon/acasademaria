@@ -51,7 +51,7 @@ const operacaoItems: NavigationItem[] = [
 ];
 
 const comercialItems: NavigationItem[] = [
-  { title: "CRM", icon: GitBranch, href: "/crm", roles: ["admin", "administrativo", "gestao_campo", "arquitetura"] },
+  { title: "Projetos", icon: GitBranch, href: "/projetos", roles: ["admin", "administrativo", "gestao_campo", "arquitetura"] },
   { title: "Orçamentos", icon: FileText, href: "/orcamentos", roles: ["admin", "administrativo", "gestao_campo"] },
 ];
 
