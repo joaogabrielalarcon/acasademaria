@@ -186,7 +186,7 @@ export default function MeuDia() {
 
           <div className="relative flex flex-col gap-5 max-w-4xl">
             <div className="flex items-start gap-5">
-              <MafeAvatar size={72} />
+              <MafeAvatar size={112} />
               <div className="flex-1 min-w-0">
 
               <h1
