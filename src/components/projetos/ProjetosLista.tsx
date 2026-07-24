@@ -124,9 +124,10 @@ export function ProjetosLista({ projetos }: Props) {
               <TableRow
                 key={p.id}
                 onClick={() => navigate(`/projetos/${p.id}/painel`)}
-                className="cursor-pointer hover:bg-muted/40"
+                className="cursor-pointer hover:bg-muted/40 relative"
               >
-                <TableCell className="py-3">
+                <TableCell className="py-3 pl-4 relative">
+                  <span aria-hidden className={cn("absolute left-0 top-1 bottom-1 w-[3px] rounded-r-sm", statusDot(p.status))} />
                   <div className="font-serif text-[14.5px] font-semibold text-foreground leading-tight">{p.titulo}</div>
                   <div className="text-[12px] text-muted-foreground mt-0.5">
                     {p.cliente_nome ? (
