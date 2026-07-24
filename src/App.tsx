@@ -86,6 +86,7 @@ const Orcamentos = lazyWithRetry(() => import("./pages/Orcamentos"));
 const NovoOrcamento = lazyWithRetry(() => import("./pages/NovoOrcamento"));
 const Indicadores = lazyWithRetry(() => import("./pages/Indicadores"));
 const SolicitacoesCompras = lazyWithRetry(() => import("./pages/SolicitacoesCompras"));
+const DesignSystem = lazyWithRetry(() => import("./pages/DesignSystem"));
 
 
 const queryClient = new QueryClient();
@@ -146,6 +147,7 @@ const App = () => (
             <Route path="/orcamentos/:id" element={<ProtectedRoute allowedRoles={["admin","administrativo","gestao_campo"]}><NovoOrcamento /></ProtectedRoute>} />
             <Route path="/indicadores" element={<ProtectedRoute><Indicadores /></ProtectedRoute>} />
             <Route path="/solicitacoes-compras" element={<ProtectedRoute><SolicitacoesCompras /></ProtectedRoute>} />
+            <Route path="/design-system" element={<DesignSystem />} />
             <Route path="/agenda" element={<ProtectedRoute><MinhaAgenda /></ProtectedRoute>} />
             <Route path="/conciliacao" element={<ProtectedRoute><Conciliacao /></ProtectedRoute>} />
             <Route path="/financeiro/a-receber" element={<ProtectedRoute><AReceber /></ProtectedRoute>} />
