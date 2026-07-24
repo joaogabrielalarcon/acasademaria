@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { PIPELINE_STATUSES, statusLabel, useMoverProjetoStatus, type ProjetoPipeline } from "@/hooks/useProjetosPipeline";
+import { PIPELINE_STATUSES, statusLabel, useMoverProjetoStatus, useArquivarProjeto, type ProjetoPipeline } from "@/hooks/useProjetosPipeline";
 import { ProjetoCard } from "./ProjetoCard";
 import {
   DropdownMenu,
@@ -9,7 +9,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { Archive } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
