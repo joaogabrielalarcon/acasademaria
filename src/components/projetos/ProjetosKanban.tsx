@@ -22,6 +22,7 @@ interface Props {
 export function ProjetosKanban({ projetos }: Props) {
   const navigate = useNavigate();
   const mover = useMoverProjetoStatus();
+  const arquivar = useArquivarProjeto();
   const [dragOver, setDragOver] = useState<string | null>(null);
   const [moverAlvo, setMoverAlvo] = useState<ProjetoPipeline | null>(null);
 
@@ -39,6 +40,19 @@ export function ProjetosKanban({ projetos }: Props) {
       toast({ title: "Projeto movido", description: `${proj.titulo} → ${statusLabel(novoStatus)}` });
     } catch (e: any) {
       toast({ title: "Não foi possível mover", description: e?.message ?? "Tente novamente", variant: "destructive" });
+    }
+  };
+
+  const handleArquivar = async (proj: ProjetoPipeline) => {
+    const ok = window.confirm(
+      `Arquivar "${proj.titulo}"?\n\nO projeto sai do funil e vai para o histórico. Nenhum dado é apagado — você pode reativar depois.`,
+    );
+    if (!ok) return;
+    try {
+      await arquivar.mutateAsync({ id: proj.id, cliente_id: proj.cliente_id });
+      toast({ title: "Projeto arquivado", description: `${proj.titulo} saiu do funil.` });
+    } catch (e: any) {
+      toast({ title: "Não foi possível arquivar", description: e?.message ?? "Tente novamente", variant: "destructive" });
     }
   };
 
@@ -62,14 +76,28 @@ export function ProjetosKanban({ projetos }: Props) {
               dragOver === col.value && "bg-primary-soft/40 ring-1 ring-primary/30",
             )}
           >
-            <div className="flex items-center justify-between px-1 py-2 mb-2 border-b border-border/50">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className={cn("w-2 h-2 rounded-full flex-shrink-0", col.dot)} />
-                <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground truncate">
-                  {col.label}
-                </h3>
+            {/* Header da coluna com faixa colorida da etapa */}
+            <div
+              className="rounded-t-lg px-3 pt-2 pb-2 mb-2 border-t-[3px]"
+              style={{ borderTopColor: col.color, background: col.soft }}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full flex-shrink-0 ring-2 ring-background/60"
+                    style={{ background: col.color }}
+                  />
+                  <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground truncate">
+                    {col.label}
+                  </h3>
+                </div>
+                <span
+                  className="text-[11px] tabular-nums font-semibold rounded-full px-1.5 min-w-[20px] text-center"
+                  style={{ background: col.color, color: "hsl(var(--primary-foreground))" }}
+                >
+                  {col.itens.length}
+                </span>
               </div>
-              <span className="text-[12px] tabular-nums text-muted-foreground">{col.itens.length}</span>
             </div>
             <div className="space-y-2.5 max-h-[calc(100vh-320px)] overflow-y-auto pr-0.5">
               {col.itens.length === 0 ? (
@@ -100,7 +128,7 @@ export function ProjetosKanban({ projetos }: Props) {
 
       <DropdownMenu open={!!moverAlvo} onOpenChange={(o) => !o && setMoverAlvo(null)}>
         <DropdownMenuTrigger className="sr-only" />
-        <DropdownMenuContent align="center">
+        <DropdownMenuContent align="center" className="w-56">
           <DropdownMenuLabel>Mover para</DropdownMenuLabel>
           {PIPELINE_STATUSES.map((s) => (
             <DropdownMenuItem
@@ -111,9 +139,25 @@ export function ProjetosKanban({ projetos }: Props) {
                 setMoverAlvo(null);
               }}
             >
+              <span
+                className="w-2 h-2 rounded-full mr-2 flex-shrink-0"
+                style={{ background: s.color }}
+              />
               {s.label}
             </DropdownMenuItem>
           ))}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="text-primary focus:text-primary focus:bg-primary-soft"
+            onSelect={() => {
+              const alvo = moverAlvo;
+              setMoverAlvo(null);
+              if (alvo) handleArquivar(alvo);
+            }}
+          >
+            <Archive className="w-3.5 h-3.5 mr-2" />
+            Arquivar projeto
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
