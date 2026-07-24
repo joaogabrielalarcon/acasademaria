@@ -42,6 +42,8 @@ type TarefaView = {
   id: string;
   titulo: string;
   vinculo: string;
+  cliente?: string;
+  tipo?: string;
   prazo_final: string | null;
   pct: number;
   statusLabel: string;
