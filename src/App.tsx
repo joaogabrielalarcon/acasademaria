@@ -8,7 +8,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { RealtimeInvalidationBridge } from "@/hooks/useRealtimeInvalidation";
 import Login from "./pages/Login";
 import OAuthConsent from "./pages/OAuthConsent";
-import MenuCentral from "./pages/MenuCentral";
+import MeuDia from "./pages/MeuDia";
 
 // Wrap dynamic imports so a stale chunk (after a new deploy) doesn't crash
 // the app with "Importing a module script failed". We retry once, then force
@@ -111,7 +111,7 @@ const App = () => (
             <Route path="/esqueci-senha" element={<EsqueciSenha />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/bootstrap" element={<BootstrapAdmin />} />
-            <Route path="/" element={<ProtectedRoute><MenuCentral /></ProtectedRoute>} />
+            <Route path="/" element={<ProtectedRoute><MeuDia /></ProtectedRoute>} />
             <Route path="/clientes" element={<ProtectedRoute><Clientes /></ProtectedRoute>} />
             <Route path="/alterar-senha" element={<ProtectedRoute><AlterarSenha /></ProtectedRoute>} />
             <Route path="/clientes/novo" element={<ProtectedRoute><NovoCliente /></ProtectedRoute>} />
