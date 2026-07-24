@@ -22,7 +22,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         className={cn(
           "min-h-screen transition-[padding] duration-200 ease-out",
           "pt-14 lg:pt-0",
-          pinned ? "lg:pl-60" : "lg:pl-10",
+          pinned ? "lg:pl-60" : "lg:pl-14",
         )}
       >
         <div className="w-full px-3 py-4 lg:px-5 lg:py-5">{children}</div>
