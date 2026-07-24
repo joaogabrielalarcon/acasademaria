@@ -128,7 +128,7 @@ export function ProjetosLista({ projetos }: Props) {
               >
                 <TableCell className="py-3 pl-4 relative">
                   <span aria-hidden className="absolute left-0 top-1 bottom-1 w-[3px] rounded-r-sm" style={{ background: statusColor(p.status) }} />
-                  <div className="font-serif text-[14.5px] font-semibold text-foreground leading-tight">{p.titulo}</div>
+                  <div className="text-[14.5px] font-semibold text-foreground leading-tight tracking-tight">{p.titulo}</div>
                   <div className="text-[12px] text-muted-foreground mt-0.5">
                     {p.cliente_nome ? (
                       <HoverCard openDelay={200}>
