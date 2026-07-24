@@ -7,6 +7,12 @@ export interface Projeto {
   titulo: string;
   descricao: string | null;
   status: string;
+  substatus: string | null;
+  temperatura: string | null;
+  data_prometida_cliente: string | null;
+  data_alvo_interna: string | null;
+  proximo_contato_em: string | null;
+  data_retorno_prometida: string | null;
   valor_total: number | null;
   valor_mensal: number | null;
   dia_vencimento: number | null;
