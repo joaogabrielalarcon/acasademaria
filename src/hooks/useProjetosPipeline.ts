@@ -135,6 +135,28 @@ export function useMoverProjetoStatus() {
   });
 }
 
+export function useArquivarProjeto() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, cliente_id, motivo }: { id: string; cliente_id: string; motivo?: string | null }) => {
+      const { error } = await supabase.from("projetos").update({ status: "arquivado" }).eq("id", id);
+      if (error) throw error;
+      const { data: userData } = await supabase.auth.getUser();
+      const usuario_nome = userData?.user?.email?.split("@")[0] ?? null;
+      await supabase.from("cliente_feed_eventos").insert({
+        cliente_id,
+        tipo: "projeto_status",
+        titulo: "Projeto arquivado",
+        dados: { motivo: motivo ?? null, para: "arquivado" },
+        usuario_nome,
+        referencia_id: id,
+        referencia_tipo: "projeto",
+      });
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["projetos-pipeline"] }),
+  });
+}
+
 export interface CriarProjetoInput {
   cliente_id: string;
   titulo: string;
