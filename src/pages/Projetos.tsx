@@ -170,12 +170,12 @@ export default function Projetos() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="inline-flex rounded-full bg-foreground/95 p-1">
+            <div className="inline-flex rounded-full bg-primary-soft p-1">
               <button
                 onClick={() => setView("kanban")}
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12.5px] font-medium transition-colors",
-                  view === "kanban" ? "bg-background text-foreground shadow-e1" : "text-background/80 hover:text-background",
+                  view === "kanban" ? "bg-primary text-primary-foreground shadow-e1" : "text-primary/80 hover:text-primary",
                 )}
               >
                 <LayoutGrid className="w-3.5 h-3.5" /> Kanban
@@ -184,7 +184,7 @@ export default function Projetos() {
                 onClick={() => setView("lista")}
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12.5px] font-medium transition-colors",
-                  view === "lista" ? "bg-background text-foreground shadow-e1" : "text-background/80 hover:text-background",
+                  view === "lista" ? "bg-primary text-primary-foreground shadow-e1" : "text-primary/80 hover:text-primary",
                 )}
               >
                 <ListIcon className="w-3.5 h-3.5" /> Lista
