@@ -405,13 +405,13 @@
   /* ── Faixa-herói de marca (verde floresta) ───────────────────────── */
   .hero-band {
     background: var(--hero-band-bg);
-    color: var(--hero-band-fg);
+    color: hsl(var(--hero-band-fg));
     border-radius: calc(var(--radius) + 4px);
     padding: 2rem 2.25rem;
     box-shadow: var(--shadow-e2);
   }
-  .hero-band h1, .hero-band h2, .hero-band h3 { color: var(--hero-band-fg); }
-  .hero-band .type-label { color: color-mix(in oklch, var(--hero-band-fg) 70%, transparent); }
+  .hero-band h1, .hero-band h2, .hero-band h3 { color: hsl(var(--hero-band-fg)); }
+  .hero-band .type-label { color: hsl(var(--hero-band-fg) / 0.7); }
 
   /* ── Estados semânticos (chips e alerts por INTENÇÃO) ────────────── */
   .state-success { background: var(--success-bg); color: var(--success-fg); }
