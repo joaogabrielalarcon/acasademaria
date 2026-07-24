@@ -7,6 +7,7 @@ import {
   type ProjetoPipeline,
   tipoLabel,
   temperaturaLabel,
+  statusDot,
 } from "@/hooks/useProjetosPipeline";
 
 interface ProjetoCardProps {
