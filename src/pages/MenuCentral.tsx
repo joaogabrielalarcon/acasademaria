@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { Send, Mic, Square } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
+
 import { useAuth, useProfile, useHighestRole, type AppRole } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -171,17 +173,22 @@ export default function MenuCentral() {
   return (
     <AppLayout>
       <div className="flex flex-col gap-6 py-4">
-        {/* Greeting + Mafe — full width, no box */}
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-          <div className="w-28 h-28 lg:w-44 lg:h-44 rounded-full overflow-hidden shadow-md shrink-0">
+        {/* Faixa-herói de marca — verde floresta */}
+        <motion.section
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.24, ease: [0.2, 0.8, 0.2, 1] }}
+          className="hero-band flex flex-col sm:flex-row items-center sm:items-start gap-6"
+        >
+          <div className="w-28 h-28 lg:w-40 lg:h-40 rounded-full overflow-hidden shadow-e2 shrink-0 ring-1 ring-white/10">
             <img src={mafeAvatar} alt="Mafe" className="w-full h-full object-cover scale-[1.15]" style={{ objectPosition: "50% 20%" }} loading="eager" decoding="async" />
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-3xl font-semibold text-foreground font-serif mb-1">
-              {getGreeting()}, {firstName}! 👋🌳
+            <span className="type-label">Meu Dia</span>
+            <h1 className="type-h1 mt-1 mb-1">
+              {getGreeting()}, {firstName}.
             </h1>
-            <p className="text-lg font-semibold text-foreground font-serif mb-1">Espero que esteja bem!</p>
-            <p className="text-sm text-muted-foreground italic mb-4">{quote}</p>
+            <p className="type-body opacity-90 italic mb-4">{quote}</p>
 
             {/* Inline chat input */}
             <form onSubmit={handleInlineSend} className="flex items-end gap-2">
@@ -191,14 +198,14 @@ export default function MenuCentral() {
                 onKeyDown={handleInlineKeyDown}
                 placeholder="Pergunte algo à Mafe..."
                 rows={1}
-                className="flex-1 resize-none rounded-xl border border-border bg-background px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground"
+                className="flex-1 resize-none rounded-xl bg-white/10 backdrop-blur px-4 py-3 text-base text-[color:var(--hero-band-fg)] placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-white/30 border border-white/10"
               />
               <Button
                 type="button"
                 size="icon"
                 variant={isRecording ? "destructive" : "ghost"}
                 onClick={toggleRecording}
-                className="rounded-xl h-11 w-11 shrink-0"
+                className="rounded-xl h-11 w-11 shrink-0 text-[color:var(--hero-band-fg)] hover:bg-white/10"
               >
                 {isRecording ? <Square className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
               </Button>
@@ -207,46 +214,67 @@ export default function MenuCentral() {
                 size="icon"
                 variant="ghost"
                 disabled={!inlineInput.trim()}
-                className="rounded-xl h-11 w-11 shrink-0"
+                className="rounded-xl h-11 w-11 shrink-0 text-[color:var(--hero-band-fg)] hover:bg-white/10"
               >
                 <Send className="w-5 h-5" />
               </Button>
             </form>
           </div>
-        </div>
+        </motion.section>
 
-        {/* Menu Grid — sections matching sidebar groups */}
+
+        {/* Menu Grid — sections matching sidebar groups (stagger reveal) */}
         <div className="space-y-8">
-          {visibleSections.map((section) => (
-            <div key={section.title}>
-              <h2 className="text-base font-medium text-muted-foreground mb-4">{section.title}</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
+          {visibleSections.map((section, sIdx) => (
+            <motion.div
+              key={section.title}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.24, delay: 0.08 + sIdx * 0.04, ease: [0.2, 0.8, 0.2, 1] }}
+            >
+              <h2 className="type-label mb-4">{section.title}</h2>
+              <motion.div
+                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5"
+                initial="hidden"
+                animate="show"
+                variants={{ show: { transition: { staggerChildren: 0.03, delayChildren: 0.1 + sIdx * 0.04 } } }}
+              >
                 {section.items.map((item) => (
-                  <Link
+                  <motion.div
                     key={item.href}
-                    to={item.href}
-                    className={cn(
-                      "flex flex-col items-center gap-4 p-6 rounded-xl",
-                      "bg-card border border-border",
-                      "hover:bg-secondary hover:shadow-md hover:scale-[1.02]",
-                      "transition-all duration-200 text-center group"
-                    )}
+                    variants={{
+                      hidden: { opacity: 0, scale: 0.92, y: 6 },
+                      show: { opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 320, damping: 24 } },
+                    }}
+                    whileHover={{ scale: 1.01, boxShadow: "var(--shadow-e3)" }}
+                    transition={{ duration: 0.15, ease: [0.2, 0.8, 0.2, 1] }}
+                    className="rounded-xl"
                   >
-                    <div className="w-16 h-16 rounded-full bg-navy-soft text-accent flex items-center justify-center transition-colors">
-                      <item.icon className="w-8 h-8" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-base text-foreground">{item.title}</p>
-                      {item.description && (
-                        <p className="text-sm text-muted-foreground mt-1 hidden sm:block">{item.description}</p>
+                    <Link
+                      to={item.href}
+                      className={cn(
+                        "flex flex-col items-center gap-4 p-6 rounded-xl h-full",
+                        "bg-card shadow-e2 hover:shadow-e3",
+                        "transition-shadow duration-200 text-center group"
                       )}
-                    </div>
-                  </Link>
+                    >
+                      <div className="w-16 h-16 rounded-full bg-navy-soft text-accent flex items-center justify-center transition-colors">
+                        <item.icon className="w-8 h-8" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-base text-foreground">{item.title}</p>
+                        {item.description && (
+                          <p className="text-sm text-muted-foreground mt-1 hidden sm:block">{item.description}</p>
+                        )}
+                      </div>
+                    </Link>
+                  </motion.div>
                 ))}
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           ))}
         </div>
+
       </div>
     </AppLayout>
   );
