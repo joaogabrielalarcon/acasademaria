@@ -68,27 +68,32 @@ function saudacao(): string {
   return "Boa noite";
 }
 
-/** Marca d'água botânica em SVG — linhas ultra-finas no canto da faixa-herói */
+/** Marca d'água botânica em SVG — folhagem sutil à direita da faixa-herói */
 function BotanicalMark() {
   return (
     <svg
       aria-hidden
-      className="absolute -right-16 -bottom-24 w-[360px] h-[360px] pointer-events-none opacity-[0.035] motion-reduce:hidden"
+      className="absolute -right-10 -top-10 w-[520px] h-[520px] pointer-events-none opacity-[0.06] motion-reduce:hidden"
       viewBox="0 0 400 400"
       fill="none"
       stroke="currentColor"
-      strokeWidth="0.6"
+      strokeWidth="0.5"
+      style={{ color: "hsl(var(--hero-band-fg))" }}
     >
       <path d="M200 380 C 200 260, 200 180, 200 60" />
       <path d="M200 300 C 140 300, 100 260, 90 210" />
       <path d="M200 300 C 260 300, 300 260, 310 210" />
       <path d="M200 240 C 155 240, 125 210, 118 175" />
       <path d="M200 240 C 245 240, 275 210, 282 175" />
-      <ellipse cx="90" cy="210" rx="22" ry="8" transform="rotate(-30 90 210)" />
-      <ellipse cx="310" cy="210" rx="22" ry="8" transform="rotate(30 310 210)" />
-      <ellipse cx="118" cy="175" rx="18" ry="6" transform="rotate(-25 118 175)" />
-      <ellipse cx="282" cy="175" rx="18" ry="6" transform="rotate(25 282 175)" />
-      <circle cx="200" cy="60" r="12" />
+      <path d="M200 180 C 165 180, 140 155, 135 128" />
+      <path d="M200 180 C 235 180, 260 155, 265 128" />
+      <ellipse cx="90" cy="210" rx="26" ry="9" transform="rotate(-30 90 210)" />
+      <ellipse cx="310" cy="210" rx="26" ry="9" transform="rotate(30 310 210)" />
+      <ellipse cx="118" cy="175" rx="20" ry="7" transform="rotate(-25 118 175)" />
+      <ellipse cx="282" cy="175" rx="20" ry="7" transform="rotate(25 282 175)" />
+      <ellipse cx="135" cy="128" rx="16" ry="6" transform="rotate(-22 135 128)" />
+      <ellipse cx="265" cy="128" rx="16" ry="6" transform="rotate(22 265 128)" />
+      <circle cx="200" cy="60" r="14" />
     </svg>
   );
 }
