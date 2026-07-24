@@ -73,7 +73,7 @@ function BotanicalMark() {
   return (
     <svg
       aria-hidden
-      className="absolute -right-8 -top-8 w-[380px] h-[380px] pointer-events-none opacity-[0.06] motion-reduce:hidden"
+      className="absolute -right-16 -bottom-24 w-[360px] h-[360px] pointer-events-none opacity-[0.035] motion-reduce:hidden"
       viewBox="0 0 400 400"
       fill="none"
       stroke="currentColor"
