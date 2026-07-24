@@ -55,27 +55,28 @@ function fmtMoeda(v: number | null) {
 
 export function ProjetosLista({ projetos }: Props) {
   const navigate = useNavigate();
-  const [sortKey, setSortKey] = useState<SortKey>("retorno");
+  const [sortKey, setSortKey] = useState<SortKey>("status");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   const sorted = useMemo(() => {
-    const arr = [...projetos];
+    const arr = projetos.map((p, i) => ({ p, i }));
     arr.sort((a, b) => {
       let av: any, bv: any;
       switch (sortKey) {
-        case "titulo": av = a.titulo?.toLowerCase(); bv = b.titulo?.toLowerCase(); break;
-        case "tipo": av = a.tipo; bv = b.tipo; break;
-        case "status": av = a.status; bv = b.status; break;
-        case "responsavel": av = a.responsavel_nome ?? "zzz"; bv = b.responsavel_nome ?? "zzz"; break;
-        case "temperatura": av = a.temperatura ?? "z"; bv = b.temperatura ?? "z"; break;
-        case "retorno": av = retornoInfo(a).ordem; bv = retornoInfo(b).ordem; break;
-        case "valor": av = a.valor_total ?? -1; bv = b.valor_total ?? -1; break;
+        case "titulo": av = a.p.titulo?.toLowerCase(); bv = b.p.titulo?.toLowerCase(); break;
+        case "tipo": av = a.p.tipo; bv = b.p.tipo; break;
+        case "status": av = statusOrder(a.p.status); bv = statusOrder(b.p.status); break;
+        case "responsavel": av = a.p.responsavel_nome ?? "zzz"; bv = b.p.responsavel_nome ?? "zzz"; break;
+        case "temperatura": av = a.p.temperatura ?? "z"; bv = b.p.temperatura ?? "z"; break;
+        case "retorno": av = retornoInfo(a.p).ordem; bv = retornoInfo(b.p).ordem; break;
+        case "valor": av = a.p.valor_total ?? -1; bv = b.p.valor_total ?? -1; break;
       }
       if (av < bv) return sortDir === "asc" ? -1 : 1;
       if (av > bv) return sortDir === "asc" ? 1 : -1;
-      return 0;
+      // Desempate: mantém a mesma ordem do Kanban (updated_at desc do hook)
+      return a.i - b.i;
     });
-    return arr;
+    return arr.map((x) => x.p);
   }, [projetos, sortKey, sortDir]);
 
   const toggle = (k: SortKey) => {
