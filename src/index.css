@@ -1,466 +1,285 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* MFM Design System - Maria Fernanda Marques Paisagismo */
-/* Paleta: Fundo #F5EDE0 (nude) + Detalhes #B93C2A (terracota) */
+/* MFM Design System v1 — shadcn/Radix + tokens quentes */
+/* Regra suprema: nunca cravar cor/tamanho em componente — tudo vem daqui. */
 
 @layer base {
   :root {
-    /* Brand — terracota #B04A2C, marinho #312B5E, tinta #231A12 */
+    /* ── Brand ──────────────────────────────────────────── */
+    /* Areia quente #F5ECE0 / off-white #FDFAF5 / tinta #241A11 */
+    --background: 32 46% 92%;             /* #F5ECE0 */
+    --foreground: 28 34% 11%;             /* #241A11 */
+
+    --card: 38 60% 98%;                   /* #FDFAF5 — degrau obrigatório */
+    --card-foreground: 28 34% 11%;
+
+    --popover: 0 0% 100%;                 /* #FFFFFF */
+    --popover-foreground: 28 34% 11%;
+
+    --primary: 13 60% 43%;                /* terracota #B04A2C — RARA, só ação */
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 13 62% 37%;
+
+    --secondary: 31 40% 88%;              /* #EFE4D5 */
+    --secondary-foreground: 28 34% 11%;
+
+    --muted: 32 34% 90%;                  /* #EFE7DB */
+    --muted-foreground: 26 15% 50%;       /* #93826E */
+
+    --accent: 247 37% 27%;                /* marinho #312B5E — estável/concluído */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 8 58% 40%;             /* #A3352A */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 32 30% 85%;                 /* #E7DDCE */
+    --input: 32 30% 85%;
+    --ring: 13 60% 43%;                   /* terracota */
+
+    /* Aliases legado (compat) */
     --terracota: 13 60% 43%;
     --terracota-dark: 13 62% 37%;
     --terracota-darker: 13 62% 28%;
-    --creme: 31 46% 94%;      /* fundo areia #F7EFE6 */
-    --creme-alt: 38 60% 98%;  /* card off-white #FDFAF5 */
+    --creme: 32 46% 92%;
+    --creme-alt: 38 60% 98%;
     --creme-active: 22 45% 88%;
-
-    /* Semantic Tokens */
-    --background: 31 46% 94%;      /* #F7EFE6 */
-    --foreground: 28 34% 11%;      /* tinta #231A12 */
-
-    --card: 38 60% 98%;            /* #FDFAF5 */
-    --card-foreground: 28 34% 11%;
-
-    --popover: 38 60% 98%;
-    --popover-foreground: 28 34% 11%;
-
-    --primary: 13 60% 43%;         /* terracota #B04A2C */
-    --primary-foreground: 38 60% 98%;
-    --primary-hover: 13 62% 37%;   /* #9A3F24 */
-    --primary-soft: 13 60% 43%;    /* usar com alpha: hsl(var(--primary-soft) / 0.08) */
-
-    --secondary: 31 30% 90%;
-    --secondary-foreground: 28 34% 11%;
-
-    --muted: 31 40% 92%;
-    --muted-foreground: 28 15% 48%; /* #8A7B6C */
-
-    --accent: 31 30% 90%;
-    --accent-foreground: 28 34% 11%;
-
+    --marinho: 247 37% 27%;
+    --marinho-foreground: 0 0% 100%;
+    --accent-navy: 247 37% 27%;
+    --rose: 15 41% 55%;
+    --rose-foreground: 15 50% 18%;
     --success: 247 37% 27%;
-    --success-foreground: 38 60% 98%;
-    --diario-area-bg: 31 30% 90%;
+    --success-foreground: 0 0% 100%;
+
+    /* Softs (fundos com alpha) */
+    --primary-soft: 176 74 44;            /* usar rgb(var(--primary-soft) / 0.08) */
+    --navy-soft: 49 43 94;                /* usar rgb(var(--navy-soft) / 0.10) */
+
+    /* Faróis (indicador; nunca UI ampla) */
+    --ok: 150 41% 30%;                    /* #2F6B4F */
+    --ok-soft: 47 107 79;
+    --warn: 33 63% 48%;                   /* #C9822B */
+    --warn-soft: 201 130 43;
+    --attention: 13 60% 43%;              /* #B04A2C */
+    --attention-soft: 176 74 44;
+    --danger: 8 58% 40%;                  /* #A3352A */
+    --danger-soft: 163 53 42;
+
+    /* Sidebar */
+    --sidebar-background: 32 40% 89%;
+    --sidebar-foreground: 28 34% 11%;
+    --sidebar-primary: 13 60% 43%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 13 60% 43%;
+    --sidebar-accent-foreground: 13 60% 43%;
+    --sidebar-border: 32 30% 82%;
+    --sidebar-ring: 13 60% 43%;
+
+    /* Raio: 12px base; cartões 14, botões 10, chips full */
+    --radius: 0.75rem;
+
+    /* Sombras (profundidade > borda) */
+    --shadow-e1: 0 1px 2px rgba(36,26,17,.05);
+    --shadow-e2: 0 1px 2px rgba(36,26,17,.05), 0 4px 16px rgba(36,26,17,.06);
+    --shadow-e3: 0 8px 30px rgba(36,26,17,.12);
+    --shadow-subtle: var(--shadow-e1);
+    --shadow-card: var(--shadow-e2);
+    --shadow-elevated: var(--shadow-e3);
+
+    /* Movimento */
+    --ease-out: cubic-bezier(.2,.8,.2,1);
+    --dur-fast: 120ms;
+    --dur-base: 180ms;
+    --dur-drawer: 240ms;
+    --transition-smooth: var(--dur-base) var(--ease-out);
+
+    /* Legado — chips do Diário (mantido para não quebrar) */
+    --diario-area-bg: 32 34% 90%;
     --diario-area-fg: 247 37% 27%;
     --diario-service-bg: 13 60% 43% / 0.12;
     --diario-service-fg: 13 60% 43%;
-    --diario-team-bg: 31 30% 88%;
+    --diario-team-bg: 32 34% 88%;
     --diario-team-fg: 247 37% 22%;
     --diario-typing: 13 50% 45%;
     --mafe-diario-collecting: 13 60% 45%;
     --mafe-diario-awaiting: 13 50% 50%;
     --mafe-diario-ready: 247 37% 27%;
     --mafe-diario-typing: 13 50% 50%;
-
-    /* Marinho (estável/ativo) e rosé */
-    --marinho: 247 37% 27%;        /* #312B5E */
-    --marinho-foreground: 38 60% 98%;
-    --accent-navy: 247 37% 27%;
-    --rose: 15 41% 55%;
-    --rose-foreground: 15 50% 18%;
-
-    --destructive: 13 60% 43%;
-    --destructive-foreground: 38 60% 98%;
-
-    --border: 28 20% 84%;
-    --input: 28 20% 84%;
-    --ring: 13 60% 43%;
-
-    --radius: 0.625rem; /* 10px botões/inputs; cartões usam rounded-[14px] */
-
-    /* Sidebar */
-    --sidebar-background: 31 40% 92%;
-    --sidebar-foreground: 28 34% 11%;
-    --sidebar-primary: 13 60% 43%;
-    --sidebar-primary-foreground: 38 60% 98%;
-    --sidebar-accent: 13 60% 43%;   /* usar com alpha em classes */
-    --sidebar-accent-foreground: 13 60% 43%;
-    --sidebar-border: 28 20% 84%;
-    --sidebar-ring: 13 60% 43%;
-
-    /* Sombra padrão de cartão */
-    --shadow-subtle: 0 1px 2px hsl(28 34% 11% / 0.05), 0 4px 16px hsl(28 34% 11% / 0.06);
-    --shadow-card: 0 1px 2px hsl(28 34% 11% / 0.05), 0 4px 16px hsl(28 34% 11% / 0.06);
-    --shadow-elevated: 0 6px 24px hsl(28 34% 11% / 0.12);
-    --transition-smooth: 250ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
+  /* Dark mode ausente do produto — apontar para os mesmos tokens */
   .dark {
-    --background: 31 46% 94%;
+    --background: 32 46% 92%;
     --foreground: 28 34% 11%;
     --card: 38 60% 98%;
     --card-foreground: 28 34% 11%;
-    --popover: 38 60% 98%;
+    --popover: 0 0% 100%;
     --popover-foreground: 28 34% 11%;
     --primary: 13 60% 43%;
-    --primary-foreground: 38 60% 98%;
-    --secondary: 31 30% 90%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 31 40% 88%;
     --secondary-foreground: 28 34% 11%;
-    --muted: 31 40% 92%;
-    --muted-foreground: 28 15% 48%;
-    --accent: 31 30% 90%;
-    --accent-foreground: 28 34% 11%;
-    --marinho: 247 37% 27%;
-    --marinho-foreground: 38 60% 98%;
-    --rose: 15 41% 55%;
-    --rose-foreground: 15 50% 18%;
-    --border: 28 20% 84%;
-    --input: 28 20% 84%;
+    --muted: 32 34% 90%;
+    --muted-foreground: 26 15% 50%;
+    --accent: 247 37% 27%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 8 58% 40%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 32 30% 85%;
+    --input: 32 30% 85%;
     --ring: 13 60% 43%;
-    --sidebar-background: 31 40% 92%;
-    --sidebar-foreground: 28 34% 11%;
-    --sidebar-primary: 13 60% 43%;
-    --sidebar-primary-foreground: 38 60% 98%;
-    --sidebar-accent: 13 60% 43%;
-    --sidebar-accent-foreground: 13 60% 43%;
-    --sidebar-border: 28 20% 84%;
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
-  
+  * { @apply border-border; }
+
+  html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+
   body {
-    @apply bg-background text-foreground antialiased;
-    font-family: 'Avenir Next', 'Avenir', 'Nunito Sans', system-ui, sans-serif;
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    font-feature-settings: 'ss01', 'cv11';
   }
-  
+
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Cormorant Garamond', 'Georgia', serif;
-    @apply font-bold tracking-tight text-foreground;
+    font-family: 'Fraunces', 'Georgia', serif;
+    color: hsl(var(--foreground));
+    font-weight: 500;
+    letter-spacing: -0.01em;
   }
 }
 
 @layer components {
-  /* Card style - fundo creme, borda terracota sutil */
-  .card-botanical {
-    @apply bg-card rounded-lg border;
-    border-color: hsl(10 65% 38% / 0.18);
-    box-shadow: var(--shadow-subtle);
-    transition: all var(--transition-smooth);
+  /* ── Tipografia (escala editorial) ────────────────────── */
+  .type-display { font-family: 'Fraunces', serif; font-size: 44px; line-height: 1.1; letter-spacing: -0.02em; font-weight: 500; }
+  .type-h1      { font-family: 'Fraunces', serif; font-size: 32px; line-height: 1.15; letter-spacing: -0.015em; font-weight: 500; }
+  .type-h2      { font-family: 'Fraunces', serif; font-size: 24px; line-height: 1.2; letter-spacing: -0.01em; font-weight: 500; }
+  .type-h3      { font-family: 'Fraunces', serif; font-size: 18px; line-height: 1.3; font-weight: 500; }
+  .type-body    { font-family: 'Inter', sans-serif; font-size: 15px; line-height: 1.5; }
+  .type-small   { font-family: 'Inter', sans-serif; font-size: 13px; line-height: 1.45; }
+  .type-label   { font-family: 'Inter', sans-serif; font-size: 11px; line-height: 1.3; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 600; color: hsl(var(--muted-foreground)); }
+
+  /* ── Sombras utilitárias ──────────────────────────────── */
+  .shadow-e1 { box-shadow: var(--shadow-e1); }
+  .shadow-e2 { box-shadow: var(--shadow-e2); }
+  .shadow-e3 { box-shadow: var(--shadow-e3); }
+
+  /* ── Softs (fundos com alpha) ─────────────────────────── */
+  .bg-primary-soft { background-color: rgb(var(--primary-soft) / 0.08); }
+  .bg-primary-soft-hover:hover { background-color: rgb(var(--primary-soft) / 0.12); }
+  .bg-navy-soft { background-color: rgb(var(--navy-soft) / 0.10); }
+  .bg-ok-soft { background-color: rgb(var(--ok-soft) / 0.10); }
+  .bg-warn-soft { background-color: rgb(var(--warn-soft) / 0.10); }
+  .bg-attention-soft { background-color: rgb(var(--attention-soft) / 0.10); }
+  .bg-danger-soft { background-color: rgb(var(--danger-soft) / 0.10); }
+  .text-ok { color: hsl(var(--ok)); }
+  .text-warn { color: hsl(var(--warn)); }
+  .text-attention { color: hsl(var(--attention)); }
+  .text-danger { color: hsl(var(--danger)); }
+
+  /* ── Cartão base (degrau areia → off-white) ───────────── */
+  .card-surface {
+    background: hsl(var(--card));
+    border-radius: 14px;
+    box-shadow: var(--shadow-e2);
+    padding: 24px;
+    transition: box-shadow var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out);
   }
-  
-  .card-botanical:hover {
-    box-shadow: var(--shadow-card);
-    border-color: hsl(10 65% 38% / 0.3);
+  .card-surface--interactive:hover {
+    box-shadow: var(--shadow-e3);
+    transform: scale(1.005);
   }
-  
-  /* Timeline */
+
+  /* ── Legado (mantido para não quebrar telas antigas) ── */
+  .card-botanical { @apply card-surface; }
+
   .timeline-line {
     @apply absolute left-4 top-0 bottom-0 w-0.5;
-    background: linear-gradient(
-      to bottom,
-      hsl(10 65% 38% / 0.1),
-      hsl(10 65% 38% / 0.3),
-      hsl(10 65% 38% / 0.1)
-    );
+    background: linear-gradient(to bottom, rgb(var(--primary-soft) / 0.1), rgb(var(--primary-soft) / 0.3), rgb(var(--primary-soft) / 0.1));
   }
-  
-  .timeline-dot {
-    @apply w-3 h-3 rounded-full shadow-sm;
-    background: hsl(10 65% 38%);
-    border: 2px solid hsl(27 100% 95%);
-  }
-  
-  /* Tags */
-  .tag-primary {
-    @apply inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium;
-    background: hsl(10 65% 38%);
-    color: hsl(27 100% 97%);
-  }
-  
-  .tag-secondary {
-    @apply inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium;
-    background: hsl(22 50% 89%);
-    color: hsl(10 65% 38%);
-  }
-  
-  .tag-accent {
-    @apply inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium;
-    background: hsl(10 65% 38% / 0.15);
-    color: hsl(10 65% 38%);
-  }
+  .timeline-dot { @apply w-3 h-3 rounded-full shadow-sm; background: hsl(var(--primary)); border: 2px solid hsl(var(--card)); }
+
+  .tag-primary { @apply inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium; background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+  .tag-secondary { @apply inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium; background: hsl(var(--secondary)); color: hsl(var(--primary)); }
+  .tag-accent { @apply inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-primary-soft; color: hsl(var(--primary)); }
 
   .diario-chip-area,
   .diario-chip-service,
   .diario-chip-team {
     @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium;
   }
+  .diario-chip-area { background: hsl(var(--diario-area-bg)); color: hsl(var(--diario-area-fg)); }
+  .diario-chip-service { background: hsl(var(--diario-service-bg)); color: hsl(var(--diario-service-fg)); }
+  .diario-chip-team { background: hsl(var(--diario-team-bg)); color: hsl(var(--diario-team-fg)); }
 
-  .diario-chip-area {
-    background: hsl(var(--diario-area-bg));
-    color: hsl(var(--diario-area-fg));
-  }
+  .diario-status-badge { @apply inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold; border-color: rgb(var(--primary-soft) / 0.2); background: hsl(var(--muted)); color: hsl(var(--foreground)); }
+  .diario-status-otimo,
+  .diario-status-bom { @apply bg-primary-soft; color: hsl(var(--primary-hover)); }
+  .diario-status-requer_atencao,
+  .diario-status-critico { background: rgb(var(--primary-soft) / 0.18); color: hsl(var(--primary-hover)); }
 
-  .diario-chip-service {
-    background: hsl(var(--diario-service-bg));
-    color: hsl(var(--diario-service-fg));
-  }
+  .diario-nota-badge { @apply inline-flex items-center justify-center rounded-full text-xs font-semibold; min-width: 4.5rem; padding: 2px 8px; background: rgb(var(--primary-soft) / 0.14); color: hsl(var(--primary-hover)); }
+  .diario-nota-1, .diario-nota-2, .diario-nota-3, .diario-nota-4, .diario-nota-5 { @apply diario-nota-badge; }
 
-  .diario-chip-team {
-    background: hsl(var(--diario-team-bg));
-    color: hsl(var(--diario-team-fg));
-  }
+  .diario-trend-up { color: hsl(var(--primary-hover)); }
+  .diario-trend-down { color: hsl(var(--primary)); }
 
-  /* Status badges - paleta terracota monocromática */
-  .diario-status-badge {
-    @apply inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold;
-    border-color: hsl(10 65% 38% / 0.2);
-    background: hsl(var(--muted));
-    color: hsl(var(--foreground));
-  }
+  .diario-media-thumb { @apply overflow-hidden rounded-xl border bg-muted transition-transform duration-200; border-color: hsl(var(--border)); }
+  .diario-media-thumb:hover { transform: translateY(-1px); }
 
-  .diario-status-otimo {
-    background: hsl(22 50% 90%);
-    color: hsl(10 65% 22%);
-    border-color: hsl(10 65% 38% / 0.25);
-  }
+  .mafe-diario-frame { box-shadow: var(--shadow-e1); transition: border-color var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out); }
+  .mafe-diario-frame--collecting { border-color: hsl(var(--mafe-diario-collecting)); box-shadow: 0 0 0 1px hsl(var(--mafe-diario-collecting) / 0.12); }
+  .mafe-diario-frame--awaiting { border-color: hsl(var(--mafe-diario-awaiting)); box-shadow: 0 0 0 1px hsl(var(--mafe-diario-awaiting) / 0.12); }
+  .mafe-diario-frame--ready { border-color: hsl(var(--mafe-diario-ready)); box-shadow: 0 0 0 1px hsl(var(--mafe-diario-ready) / 0.14); }
+  .mafe-diario-dot { @apply h-2.5 w-2.5 rounded-full animate-bounce; background: hsl(var(--mafe-diario-typing)); }
+  .mafe-diario-dot:nth-child(2) { animation-delay: 120ms; }
+  .mafe-diario-dot:nth-child(3) { animation-delay: 240ms; }
 
-  .diario-status-bom {
-    background: hsl(22 50% 92%);
-    color: hsl(10 65% 26%);
-    border-color: hsl(10 65% 38% / 0.2);
-  }
+  .mafe-message-body { @apply space-y-2 text-sm leading-relaxed; }
+  .mafe-paragraph { @apply leading-relaxed; }
+  .mafe-emoji-line { @apply py-1.5 text-base leading-relaxed; }
+  .mafe-list { @apply space-y-2 pl-0; list-style: none; }
+  .mafe-list-item { @apply relative pl-4 leading-relaxed; }
+  .mafe-list-item::before { content: "•"; @apply absolute left-0 font-bold; color: hsl(var(--primary)); }
+  .mafe-bold--status, .mafe-bold--area, .mafe-bold--person { @apply font-semibold; color: hsl(var(--primary)); }
+  .mafe-italic--question { @apply not-italic block mt-3 pt-2; color: hsl(var(--primary)); border-top: 1px solid rgb(var(--primary-soft) / 0.15); }
+  .mafe-alert { @apply rounded-xl px-4 py-3 my-2 text-sm leading-relaxed bg-primary-soft; border-left: 3px solid hsl(var(--primary)); }
+  .mafe-hr { @apply my-3 border-0; border-top: 1px solid rgb(var(--primary-soft) / 0.2); }
 
-  .diario-status-requer_atencao {
-    background: hsl(10 65% 38% / 0.15);
-    color: hsl(10 65% 28%);
-    border-color: hsl(10 65% 38% / 0.25);
-  }
+  .photo-frame { @apply relative overflow-hidden rounded-lg; aspect-ratio: 4/3; }
+  .photo-frame img { @apply w-full h-full object-cover; transition: transform var(--dur-base) var(--ease-out); }
+  .photo-frame:hover img { transform: scale(1.02); }
 
-  .diario-status-critico {
-    background: hsl(10 65% 38% / 0.2);
-    color: hsl(10 65% 22%);
-    border-color: hsl(10 65% 38% / 0.3);
-  }
+  .skeleton-botanical { @apply animate-pulse rounded-lg; background: linear-gradient(90deg, rgb(var(--primary-soft) / 0.06), rgb(var(--primary-soft) / 0.12), rgb(var(--primary-soft) / 0.06)); }
 
-  /* Escala numérica 1-5 para qualidade - paleta terracota monocromática */
-  .diario-nota-badge {
-    @apply inline-flex items-center justify-center rounded-full text-xs font-semibold;
-    min-width: 4.5rem;
-    padding: 2px 8px;
-  }
+  .empty-state { @apply flex flex-col items-center justify-center py-16 px-8 text-center; }
+  .empty-state-icon { @apply w-16 h-16 mb-4; color: hsl(var(--muted-foreground)); }
 
-  .diario-nota-1 {
-    background: hsl(10 65% 38% / 0.22);
-    color: hsl(10 65% 18%);
-  }
-
-  .diario-nota-2 {
-    background: hsl(10 65% 38% / 0.18);
-    color: hsl(10 65% 22%);
-  }
-
-  .diario-nota-3 {
-    background: hsl(10 65% 38% / 0.14);
-    color: hsl(10 65% 26%);
-  }
-
-  .diario-nota-4 {
-    background: hsl(22 50% 90%);
-    color: hsl(10 65% 24%);
-  }
-
-  .diario-nota-5 {
-    background: hsl(22 50% 87%);
-    color: hsl(10 65% 20%);
-  }
-
-  .diario-trend-up {
-    color: hsl(10 65% 30%);
-  }
-
-  .diario-trend-down {
-    color: hsl(10 65% 45%);
-  }
-
-  .diario-media-thumb {
-    @apply overflow-hidden rounded-xl border bg-muted transition-transform duration-200;
-    border-color: hsl(var(--border));
-  }
-
-  .diario-media-thumb:hover {
-    transform: translateY(-1px);
-  }
-
-  .mafe-diario-frame {
-    box-shadow: var(--shadow-subtle);
-    transition: border-color var(--transition-smooth), box-shadow var(--transition-smooth);
-  }
-
-  .mafe-diario-frame--collecting {
-    border-color: hsl(var(--mafe-diario-collecting));
-    box-shadow: 0 0 0 1px hsl(var(--mafe-diario-collecting) / 0.12);
-  }
-
-  .mafe-diario-frame--awaiting {
-    border-color: hsl(var(--mafe-diario-awaiting));
-    box-shadow: 0 0 0 1px hsl(var(--mafe-diario-awaiting) / 0.12);
-  }
-
-  .mafe-diario-frame--ready {
-    border-color: hsl(var(--mafe-diario-ready));
-    box-shadow: 0 0 0 1px hsl(var(--mafe-diario-ready) / 0.14);
-  }
-
-  .mafe-diario-dot {
-    @apply h-2.5 w-2.5 rounded-full animate-bounce;
-    background: hsl(var(--mafe-diario-typing));
-  }
-
-  .mafe-diario-dot:nth-child(2) {
-    animation-delay: 120ms;
-  }
-
-  .mafe-diario-dot:nth-child(3) {
-    animation-delay: 240ms;
-  }
-
-  /* ── Mafe Message Renderer ── */
-
-  .mafe-message-body {
-    @apply space-y-2 text-sm leading-relaxed;
-  }
-
-  .mafe-paragraph {
-    @apply leading-relaxed;
-  }
-
-  .mafe-emoji-line {
-    @apply py-1.5 text-base leading-relaxed;
-  }
-
-  .mafe-list {
-    @apply space-y-2 pl-0;
-    list-style: none;
-  }
-
-  .mafe-list-item {
-    @apply relative pl-4 leading-relaxed;
-  }
-
-  .mafe-list-item::before {
-    content: "•";
-    @apply absolute left-0 font-bold;
-    color: hsl(10 65% 38%); /* terracota #9e3722 */
-  }
-
-  .mafe-bold--status {
-    @apply font-semibold;
-    color: hsl(10 65% 38%);
-  }
-
-  .mafe-bold--area {
-    @apply font-semibold;
-    color: hsl(10 65% 38%);
-  }
-
-  .mafe-bold--person {
-    @apply font-semibold;
-    color: hsl(10 65% 38%);
-  }
-
-  .mafe-italic--question {
-    @apply not-italic block mt-3 pt-2;
-    color: hsl(10 65% 38%);
-    border-top: 1px solid hsl(10 65% 38% / 0.1);
-  }
-
-  .mafe-alert {
-    @apply rounded-xl px-4 py-3 my-2 text-sm leading-relaxed;
-    background: hsl(27 100% 95%);
-    border-left: 3px solid hsl(10 65% 38%);
-  }
-
-  .mafe-hr {
-    @apply my-3 border-0;
-    border-top: 1px solid hsl(10 65% 38% / 0.15);
-  }
-
-  .photo-frame {
-    @apply relative overflow-hidden rounded-lg;
-    aspect-ratio: 4/3;
-  }
-  
-  .photo-frame img {
-    @apply w-full h-full object-cover;
-    transition: transform var(--transition-smooth);
-  }
-  
-  .photo-frame:hover img {
-    transform: scale(1.02);
-  }
-  
-  /* Skeleton Loader */
-  .skeleton-botanical {
-    @apply animate-pulse rounded-lg;
-    background: linear-gradient(
-      90deg,
-      hsl(10 65% 38% / 0.05),
-      hsl(10 65% 38% / 0.1),
-      hsl(10 65% 38% / 0.05)
-    );
-  }
-  
-  /* Empty State */
-  .empty-state {
-    @apply flex flex-col items-center justify-center py-16 px-8 text-center;
-  }
-  
-  .empty-state-icon {
-    @apply w-16 h-16 mb-4;
-    color: hsl(10 65% 38% / 0.4);
-  }
-  
-  /* FAB */
   .fab {
-    @apply fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-elevated flex items-center justify-center;
-    background: hsl(10 65% 38%);
-    color: hsl(27 100% 97%);
-    transition: all var(--transition-smooth);
+    @apply fixed bottom-6 right-6 rounded-full flex items-center justify-center;
+    width: 56px; height: 56px;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    box-shadow: var(--shadow-e3);
+    transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
     z-index: 50;
   }
-  
-  .fab:hover {
-    transform: scale(1.05);
-    box-shadow: 0 12px 40px -8px hsl(10 65% 38% / 0.3);
-  }
-  
-  .fab:active {
-    transform: scale(0.98);
-  }
+  .fab:hover { transform: scale(1.05); }
+  .fab:active { transform: scale(0.98); }
 }
 
 @layer utilities {
-  .animate-fade-in {
-    animation: fadeIn var(--transition-smooth) ease-out;
-  }
-  
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  
-  .animate-slide-in {
-    animation: slideIn var(--transition-smooth) ease-out;
-  }
-  
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateX(-16px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
-  
-  .text-botanical {
-    @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(
-      to right,
-      hsl(10 65% 38%),
-      hsl(10 65% 30%)
-    );
-  }
+  .animate-fade-in { animation: fadeIn var(--dur-base) var(--ease-out); }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .animate-slide-in { animation: slideIn var(--dur-drawer) var(--ease-out); }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: translateX(0); } }
+
+  .text-botanical { @apply bg-clip-text text-transparent; background-image: linear-gradient(to right, hsl(var(--primary)), hsl(var(--primary-hover))); }
 }
