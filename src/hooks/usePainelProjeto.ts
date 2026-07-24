@@ -10,13 +10,14 @@ export const FUNIL_STATUS: Array<{ value: string; label: string; tone: "muted" |
   { value: "negociacao", label: "Negociação", tone: "primary" },
   { value: "aprovado", label: "Aprovado", tone: "navy" },
   { value: "em_execucao", label: "Em execução", tone: "navy" },
-  { value: "concluido", label: "Concluído", tone: "ok" },
-  { value: "pos_venda", label: "Pós-venda", tone: "ok" },
+  { value: "concluido", label: "Concluído / Pós-venda", tone: "ok" },
   { value: "nao_aprovado", label: "Não aprovado", tone: "danger" },
 ];
 
-export const funilLabel = (v?: string | null) =>
-  FUNIL_STATUS.find((s) => s.value === v)?.label ?? (v ?? "");
+export const funilLabel = (v?: string | null) => {
+  const norm = v === "pos_venda" ? "concluido" : v;
+  return FUNIL_STATUS.find((s) => s.value === norm)?.label ?? (v ?? "");
+};
 
 // Tarefas (demandas) do projeto
 export interface TarefaProjeto {
