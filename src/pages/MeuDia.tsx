@@ -10,8 +10,7 @@ import { AlertasProativos } from "@/components/inicio/AlertasProativos";
 import { AgendaDoDia } from "@/components/inicio/AgendaDoDia";
 import { RetomadaRapida } from "@/components/inicio/RetomadaRapida";
 import { LembretesPostits } from "@/components/inicio/LembretesPostits";
-import { ClimaHeroInline } from "@/components/inicio/ClimaHeroInline";
-import { Aniversariantes } from "@/components/inicio/Aniversariantes";
+import { HeroLateral } from "@/components/inicio/HeroLateral";
 import { MafeAvatar } from "@/components/inicio/MafeAvatar";
 import {
   DropdownMenu,
