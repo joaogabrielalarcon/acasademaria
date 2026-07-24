@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import {
   useProjetosPipeline,
-  PIPELINE_STATUSES,
+  
   PIPELINE_STATUS_VALUES,
   TIPO_OPTIONS,
   TEMPERATURA_OPTIONS,
@@ -214,23 +214,6 @@ export default function Projetos() {
           </div>
         )}
 
-        {/* Funil label + legenda */}
-        {view === "kanban" && (
-          <div className="flex flex-col gap-3">
-            <div className="flex items-baseline justify-between">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">Funil de projetos</span>
-              <span className="text-[11.5px] text-muted-foreground italic hidden md:block">arraste um card para mudar a etapa</span>
-            </div>
-            <div className="flex flex-wrap gap-x-4 gap-y-1.5">
-              {PIPELINE_STATUSES.map((s) => (
-                <span key={s.value} className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.1em] text-muted-foreground">
-                  <span className={cn("w-2 h-2 rounded-full", s.dot)} />
-                  {s.label}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Busca + filtros */}
         <div className="flex flex-col gap-3">

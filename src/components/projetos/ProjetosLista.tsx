@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import {
   statusLabel,
-  statusDot,
+  statusColor,
   tipoLabel,
   temperaturaLabel,
   type ProjetoPipeline,
@@ -127,7 +127,7 @@ export function ProjetosLista({ projetos }: Props) {
                 className="cursor-pointer hover:bg-muted/40 relative"
               >
                 <TableCell className="py-3 pl-4 relative">
-                  <span aria-hidden className={cn("absolute left-0 top-1 bottom-1 w-[3px] rounded-r-sm", statusDot(p.status))} />
+                  <span aria-hidden className="absolute left-0 top-1 bottom-1 w-[3px] rounded-r-sm" style={{ background: statusColor(p.status) }} />
                   <div className="font-serif text-[14.5px] font-semibold text-foreground leading-tight">{p.titulo}</div>
                   <div className="text-[12px] text-muted-foreground mt-0.5">
                     {p.cliente_nome ? (
