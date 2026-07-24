@@ -285,13 +285,10 @@ export default function MeuDia() {
           </div>
         </motion.section>
 
-        {/* ── FAIXA 2 — Retomada rápida + Lembretes + Clima ── */}
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] items-start">
-          <div className="flex flex-col gap-3 min-w-0">
-            <RetomadaRapida />
-            <LembretesPostits />
-          </div>
-          <ClimaHoje />
+        {/* ── FAIXA 2 — Retomada rápida + Lembretes ── */}
+        <div className="flex flex-col gap-3">
+          <RetomadaRapida />
+          <LembretesPostits />
         </div>
 
         {/* Barra do launcher */}
