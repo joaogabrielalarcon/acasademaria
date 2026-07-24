@@ -18,8 +18,8 @@ export const SurfaceCard = React.forwardRef<HTMLDivElement, SurfaceCardProps>(
       whileHover={interactive ? { scale: 1.005, boxShadow: "var(--shadow-e3)" } : undefined}
       transition={{ duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }}
       className={cn(
-        "bg-card rounded-[14px] shadow-e2",
-        padded && "p-6",
+        "bg-card rounded-lg shadow-e2 card-filete",
+        padded && "p-5 pl-6",
         interactive && "cursor-pointer",
         className
       )}
