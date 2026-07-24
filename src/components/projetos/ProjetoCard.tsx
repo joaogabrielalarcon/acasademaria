@@ -69,7 +69,7 @@ export function ProjetoCard({ projeto, onOpen, onMoverClick, draggable }: Projet
             <HoverCardTrigger asChild>
               <button
                 onClick={(e) => { e.stopPropagation(); navigate(`/clientes/${projeto.cliente_id}`); }}
-                className="font-serif text-[19px] leading-tight text-foreground hover:text-primary text-left line-clamp-2"
+                className="text-[15px] font-semibold leading-snug text-foreground hover:text-primary text-left line-clamp-2"
               >
                 {projeto.cliente_nome}
               </button>
