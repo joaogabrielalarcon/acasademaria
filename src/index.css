@@ -400,6 +400,23 @@
   }
   .fab:hover { transform: scale(1.05); }
   .fab:active { transform: scale(0.98); }
+
+  /* ── Faixa-herói de marca (verde floresta) ───────────────────────── */
+  .hero-band {
+    background: var(--hero-band-bg);
+    color: var(--hero-band-fg);
+    border-radius: calc(var(--radius) + 4px);
+    padding: 2rem 2.25rem;
+    box-shadow: var(--shadow-e2);
+  }
+  .hero-band h1, .hero-band h2, .hero-band h3 { color: var(--hero-band-fg); }
+  .hero-band .type-label { color: color-mix(in oklch, var(--hero-band-fg) 70%, transparent); }
+
+  /* ── Estados semânticos (chips e alerts por INTENÇÃO) ────────────── */
+  .state-success { background: var(--success-bg); color: var(--success-fg); }
+  .state-warning { background: var(--warning-bg); color: var(--warning-fg); }
+  .state-danger  { background: var(--danger-bg);  color: var(--danger-fg); }
+  .state-info    { background: var(--info-bg);    color: var(--info-fg); }
 }
 
 @layer utilities {
@@ -407,6 +424,11 @@
   @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
   .animate-slide-in { animation: slideIn var(--dur-drawer) var(--ease-out); }
   @keyframes slideIn { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: translateX(0); } }
+  .animate-rise-in { animation: riseIn 240ms var(--ease-out) both; }
+  @keyframes riseIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .animate-pulse-soft { animation: pulseSoft 2.4s var(--ease-out) infinite; }
+  @keyframes pulseSoft { 0%,100% { box-shadow: 0 0 0 0 rgb(var(--primary-soft) / 0.35); } 50% { box-shadow: 0 0 0 8px rgb(var(--primary-soft) / 0); } }
 
   .text-botanical { @apply bg-clip-text text-transparent; background-image: linear-gradient(to right, hsl(var(--primary)), hsl(var(--primary-hover))); }
 }
+
