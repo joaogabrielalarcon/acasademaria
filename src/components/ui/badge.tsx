@@ -1,25 +1,30 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold tracking-wide transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
   {
     variants: {
       variant: {
-        // Ativo: fundo terracota, texto creme
-        default: "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
-        // Inativo: fundo #f5d9c8, texto terracota
-        secondary: "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        destructive: "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-        outline: "border-primary/30 text-foreground",
+        // Info estável (marinho)
+        default: "border-transparent bg-navy-soft text-accent",
+        // Estado ativo (marinho sólido)
+        active: "border-transparent bg-accent text-accent-foreground",
+        // Contorno
+        outline: "border-border text-foreground bg-transparent hover:bg-primary-soft",
+        // Fantasma
+        secondary: "border-transparent bg-muted text-foreground",
+        // Faróis
+        ok: "border-transparent bg-ok-soft text-ok",
+        warn: "border-transparent bg-warn-soft text-warn",
+        attention: "border-transparent bg-attention-soft text-attention",
+        danger: "border-transparent bg-danger-soft text-danger",
+        destructive: "border-transparent bg-danger-soft text-danger",
       },
     },
-    defaultVariants: {
-      variant: "default",
-    },
-  },
+    defaultVariants: { variant: "default" },
+  }
 );
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof badgeVariants> {}
