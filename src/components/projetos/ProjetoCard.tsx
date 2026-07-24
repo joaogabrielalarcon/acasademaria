@@ -24,21 +24,20 @@ function tempDot(t?: string | null) {
   return "bg-muted-foreground/40";
 }
 
-type Retorno =
+type Prazo =
   | { kind: "atrasado"; texto: string }
   | { kind: "hoje"; texto: string }
   | { kind: "futuro"; texto: string }
   | { kind: "vazio" };
 
-function retornoInfo(p: ProjetoPipeline): Retorno {
-  const alvo = p.data_retorno_prometida ?? p.proximo_contato_em;
+function prazoInfo(alvo: string | null | undefined, prefixo: string): Prazo {
   if (!alvo) return { kind: "vazio" };
   const d = new Date(alvo); d.setHours(0, 0, 0, 0);
   const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
   const diff = Math.round((hoje.getTime() - d.getTime()) / 86400000);
-  if (diff > 0) return { kind: "atrasado", texto: `retorno atrasado ${diff}d` };
-  if (diff === 0) return { kind: "hoje", texto: "retorno hoje" };
-  return { kind: "futuro", texto: `retorno em ${-diff}d` };
+  if (diff > 0) return { kind: "atrasado", texto: `${prefixo} atrasad${prefixo === "entrega" ? "a" : "o"} ${diff}d` };
+  if (diff === 0) return { kind: "hoje", texto: `${prefixo} hoje` };
+  return { kind: "futuro", texto: `${prefixo} em ${-diff}d` };
 }
 
 export function ProjetoCard({ projeto, onOpen, onMoverClick, draggable }: ProjetoCardProps) {
