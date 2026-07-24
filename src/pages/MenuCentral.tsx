@@ -223,38 +223,58 @@ export default function MenuCentral() {
         </motion.section>
 
 
-        {/* Menu Grid — sections matching sidebar groups */}
+        {/* Menu Grid — sections matching sidebar groups (stagger reveal) */}
         <div className="space-y-8">
-          {visibleSections.map((section) => (
-            <div key={section.title}>
-              <h2 className="text-base font-medium text-muted-foreground mb-4">{section.title}</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
+          {visibleSections.map((section, sIdx) => (
+            <motion.div
+              key={section.title}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.24, delay: 0.08 + sIdx * 0.04, ease: [0.2, 0.8, 0.2, 1] }}
+            >
+              <h2 className="type-label mb-4">{section.title}</h2>
+              <motion.div
+                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5"
+                initial="hidden"
+                animate="show"
+                variants={{ show: { transition: { staggerChildren: 0.03, delayChildren: 0.1 + sIdx * 0.04 } } }}
+              >
                 {section.items.map((item) => (
-                  <Link
+                  <motion.div
                     key={item.href}
-                    to={item.href}
-                    className={cn(
-                      "flex flex-col items-center gap-4 p-6 rounded-xl",
-                      "bg-card border border-border",
-                      "hover:bg-secondary hover:shadow-md hover:scale-[1.02]",
-                      "transition-all duration-200 text-center group"
-                    )}
+                    variants={{
+                      hidden: { opacity: 0, scale: 0.92, y: 6 },
+                      show: { opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 320, damping: 24 } },
+                    }}
+                    whileHover={{ scale: 1.01, boxShadow: "var(--shadow-e3)" }}
+                    transition={{ duration: 0.15, ease: [0.2, 0.8, 0.2, 1] }}
+                    className="rounded-xl"
                   >
-                    <div className="w-16 h-16 rounded-full bg-navy-soft text-accent flex items-center justify-center transition-colors">
-                      <item.icon className="w-8 h-8" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-base text-foreground">{item.title}</p>
-                      {item.description && (
-                        <p className="text-sm text-muted-foreground mt-1 hidden sm:block">{item.description}</p>
+                    <Link
+                      to={item.href}
+                      className={cn(
+                        "flex flex-col items-center gap-4 p-6 rounded-xl h-full",
+                        "bg-card shadow-e2 hover:shadow-e3",
+                        "transition-shadow duration-200 text-center group"
                       )}
-                    </div>
-                  </Link>
+                    >
+                      <div className="w-16 h-16 rounded-full bg-navy-soft text-accent flex items-center justify-center transition-colors">
+                        <item.icon className="w-8 h-8" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-base text-foreground">{item.title}</p>
+                        {item.description && (
+                          <p className="text-sm text-muted-foreground mt-1 hidden sm:block">{item.description}</p>
+                        )}
+                      </div>
+                    </Link>
+                  </motion.div>
                 ))}
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           ))}
         </div>
+
       </div>
     </AppLayout>
   );
