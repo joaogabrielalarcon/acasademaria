@@ -187,8 +187,11 @@ export default function MeuDia() {
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.15, duration: 0.35 }}
-                    className="text-[15px] italic mt-3 max-w-2xl"
-                    style={{ color: "hsl(var(--hero-band-fg) / 0.86)" }}
+                    className="text-[16px] italic mt-3 max-w-2xl font-medium pl-3 border-l-2"
+                    style={{
+                      color: "#FBD9C4",
+                      borderColor: "#FBD9C4",
+                    }}
                   >
                     {reflexao}
                   </motion.p>
@@ -197,37 +200,41 @@ export default function MeuDia() {
                 <Aniversariantes />
               </div>
 
-              {/* + universal, no topo */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    aria-label="Novo registro"
-                    className="shrink-0 h-10 w-10 rounded-full flex items-center justify-center bg-white/[0.10] hover:bg-white/[0.18] border border-white/[0.14] transition-colors"
-                    style={{ color: "hsl(var(--hero-band-fg))" }}
-                  >
-                    <Plus className="w-5 h-5" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                    Criar novo
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate("/projetos/novo")}>
-                    Projeto
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/clientes/novo")}>
-                    Cliente
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/orcamentos/novo")}>
-                    Orçamento
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/registros/novo")}>
-                    Registro
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {/* Coluna direita: + universal + Clima inline */}
+              <div className="shrink-0 flex flex-col items-end gap-4">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Novo registro"
+                      className="h-10 w-10 rounded-full flex items-center justify-center bg-white/[0.10] hover:bg-white/[0.18] border border-white/[0.14] transition-colors"
+                      style={{ color: "hsl(var(--hero-band-fg))" }}
+                    >
+                      <Plus className="w-5 h-5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                      Criar novo
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate("/projetos/novo")}>
+                      Projeto
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/clientes/novo")}>
+                      Cliente
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/orcamentos/novo")}>
+                      Orçamento
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/registros/novo")}>
+                      Registro
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <ClimaHeroInline />
+              </div>
             </div>
 
             {/* Campo da Mafe — field elevado com brilho no foco */}
