@@ -217,13 +217,13 @@ export default function MeuDia() {
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.15, duration: 0.35 }}
-                    className="relative font-serif italic pl-5 pr-2 py-1 border-l-[3px] max-w-[42ch]"
+                    className="relative font-sans pl-5 pr-2 py-1 border-l-[3px] max-w-[42ch]"
                     style={{
                       color: "hsl(var(--hero-band-fg))",
                       borderColor: "hsl(var(--rose-foreground))",
-                      fontSize: "22px",
-                      lineHeight: 1.35,
-                      letterSpacing: "-0.005em",
+                      fontSize: "17px",
+                      lineHeight: 1.5,
+                      fontWeight: 400,
                     }}
                   >
                     {reflexao}
