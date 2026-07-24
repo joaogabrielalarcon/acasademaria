@@ -282,6 +282,9 @@ export default function MeuDia() {
           </div>
         </motion.section>
 
+        {/* ── Faixa 2 — Retomada rápida ────────────────────── */}
+        <RetomadaRapida />
+
         {/* Barra do launcher */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -291,7 +294,7 @@ export default function MeuDia() {
           <AreasLauncher />
         </div>
 
-        {/* ── Layout 62/38 ─────────────────────────────────── */}
+        {/* ── Faixa 3 — Núcleo de trabalho (62/38) ─────────── */}
         <motion.div
           initial="hidden"
           animate="show"
@@ -328,16 +331,12 @@ export default function MeuDia() {
             >
               <AgendaDoDia />
             </motion.div>
-            <motion.div
-              variants={{
-                hidden: { opacity: 0, y: 8 },
-                show: { opacity: 1, y: 0, transition: { duration: 0.24 } },
-              }}
-            >
-              <AtalhosFixados />
-            </motion.div>
           </div>
         </motion.div>
+
+        {/* ── Faixa 4 — Lembretes ──────────────────────────── */}
+        <Lembretes />
+
       </div>
     </AppLayout>
   );
