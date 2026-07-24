@@ -211,7 +211,8 @@
 
     /* ── Faixa-herói de marca (verde floresta com texto creme) ──────── */
     --hero-band-bg: var(--verde-900);          /* #193527 */
-    --hero-band-fg: var(--neutral-100);
+    --hero-band-fg: 24 100% 95%;               /* creme (hsl) — usar com hsl(var(--hero-band-fg)) */
+    --hero-band-fg-soft: 24 60% 90%;           /* creme suavizado para textos secundários */
   }
 
 
