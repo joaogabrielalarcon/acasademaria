@@ -163,6 +163,58 @@ const SORT_LABELS: Record<SortMode, string> = {
   status: "Status",
 };
 
+function StatusChip({ meta }: { meta: ReturnType<typeof statusMeta> }) {
+  const { tone, Icon, text } = meta;
+  const cls =
+    tone === "action"
+      ? "bg-primary-soft/70 text-primary border border-primary/20"
+      : tone === "info"
+      ? "bg-info/15 text-info border border-info/25"
+      : tone === "done"
+      ? "bg-info/10 text-info/90 border border-info/20"
+      : "bg-surface-sunken text-muted-foreground border border-border/60";
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full pl-1.5 pr-2 py-0.5 text-[11.5px] font-medium whitespace-nowrap",
+        cls,
+      )}
+    >
+      <Icon className="w-3.5 h-3.5" aria-hidden />
+      <span className="font-sans">{text}</span>
+    </span>
+  );
+}
+
+function PrazoChip({ farol }: { farol: ReturnType<typeof farolDoPrazo> }) {
+  const { tone, label, Icon } = farol;
+  const cls =
+    tone === "danger"
+      ? "bg-danger-soft text-danger border border-danger/25"
+      : tone === "attention"
+      ? "bg-attention-soft text-attention border border-attention/25"
+      : tone === "warn"
+      ? "bg-warn-soft text-warn border border-warn/20"
+      : tone === "ok"
+      ? "bg-ok-soft text-ok border border-ok/20"
+      : "bg-surface-sunken text-muted-foreground border border-border/60";
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[12px] font-semibold whitespace-nowrap",
+        cls,
+      )}
+    >
+      <Icon className="w-3.5 h-3.5" aria-hidden />
+      <span className="font-sans tabular-nums">{label}</span>
+    </span>
+  );
+}
+  urgencia: "Prazo",
+  prioridade: "Prioridade",
+  status: "Status",
+};
+
 function FilterGroup({
   label, options, selected, onToggle,
 }: {
