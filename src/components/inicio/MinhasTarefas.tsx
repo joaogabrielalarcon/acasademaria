@@ -1,14 +1,25 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, Sprout, Check, ExternalLink } from "lucide-react";
+import { ChevronDown, Sprout, Check, ExternalLink, ArrowUpDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { SurfaceCard, SurfaceCardHeader } from "@/components/primitives/SurfaceCard";
 import { Progress } from "@/components/ui/progress";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+type SortMode = "urgencia" | "prioridade" | "status";
+
 
 type Demanda = {
   id: string;
@@ -119,10 +130,17 @@ function farolDoPrazo(prazo: string | null): {
   return { tone: "ok", label: `Em ${dias}d` };
 }
 
+const SORT_LABELS: Record<SortMode, string> = {
+  urgencia: "Prazo (urgência)",
+  prioridade: "Prioridade",
+  status: "Status",
+};
+
 export function MinhasTarefas() {
   const { user } = useAuth();
   const { data: colab } = useColaboradorId(user?.id);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [sortMode, setSortMode] = useState<SortMode>("urgencia");
 
   const { data: tarefasReais = [], isLoading } = useQuery({
     queryKey: ["minhas-tarefas", colab?.id],
@@ -141,7 +159,7 @@ export function MinhasTarefas() {
     },
   });
 
-  const tarefas: TarefaView[] =
+  const tarefasBase: TarefaView[] =
     tarefasReais.length > 0
       ? tarefasReais.map((t) => ({
           id: t.id,
@@ -155,20 +173,69 @@ export function MinhasTarefas() {
         }))
       : DEMO;
 
+  const tarefas = useMemo(() => {
+    const arr = [...tarefasBase];
+    if (sortMode === "urgencia") {
+      arr.sort((a, b) => {
+        const da = a.prazo_final ? parseISO(a.prazo_final).getTime() : Infinity;
+        const db = b.prazo_final ? parseISO(b.prazo_final).getTime() : Infinity;
+        return da - db;
+      });
+    } else if (sortMode === "prioridade") {
+      const weight = (t: TarefaView) => {
+        const f = farolDoPrazo(t.prazo_final).tone;
+        return f === "danger" ? 0 : f === "attention" ? 1 : f === "warn" ? 2 : 3;
+      };
+      arr.sort((a, b) => weight(a) - weight(b));
+    } else {
+      arr.sort((a, b) => a.statusLabel.localeCompare(b.statusLabel, "pt-BR"));
+    }
+    return arr;
+  }, [tarefasBase, sortMode]);
+
   return (
     <SurfaceCard padded className="flex flex-col h-full">
       <SurfaceCardHeader
         label="Suas tarefas"
         action={
-          <span className="text-[12px] font-sans tabular-nums text-muted-foreground">
-            {tarefas.length} {tarefas.length === 1 ? "item" : "itens"}
-          </span>
+          <div className="flex items-center gap-3">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="inline-flex items-center gap-1.5 h-7 px-2 rounded-md text-[12px] text-muted-foreground hover:text-foreground hover:bg-surface-sunken transition-colors"
+                  aria-label="Ordenar tarefas"
+                >
+                  <ArrowUpDown className="w-3.5 h-3.5" />
+                  <span className="font-sans">{SORT_LABELS[sortMode]}</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                  Ordenar por
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {(Object.keys(SORT_LABELS) as SortMode[]).map((m) => (
+                  <DropdownMenuItem
+                    key={m}
+                    onClick={() => setSortMode(m)}
+                    className={cn(sortMode === m && "text-primary font-medium")}
+                  >
+                    {SORT_LABELS[m]}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <span className="text-[12px] font-sans tabular-nums text-muted-foreground">
+              {tarefas.length} {tarefas.length === 1 ? "item" : "itens"}
+            </span>
+          </div>
         }
       />
       {isLoading ? (
         <p className="type-body text-muted-foreground">Carregando…</p>
       ) : (
-        <ul className="flex flex-col gap-2 flex-1 overflow-y-auto pr-1 -mr-1 max-h-[62vh]">
+        <ul className="flex flex-col gap-3 flex-1 overflow-y-auto pr-1 -mr-1 max-h-[62vh]">
+
           {tarefas.map((t, idx) => {
             const farol = farolDoPrazo(t.prazo_final);
             const isOpen = expanded === t.id;
@@ -183,7 +250,7 @@ export function MinhasTarefas() {
                   whileHover={{ y: -2, scale: 1.005 }}
                   transition={{ duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }}
                   className={cn(
-                    "group relative rounded-lg card-filete bg-card shadow-e1 hover:shadow-e2 transition-shadow px-4 py-3 cursor-pointer",
+                    "group relative rounded-lg card-filete bg-card shadow-e2 hover:shadow-e3 transition-shadow px-4 py-3 cursor-pointer",
                   )}
                   onClick={() => setExpanded(isOpen ? null : t.id)}
                 >

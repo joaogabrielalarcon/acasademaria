@@ -156,28 +156,12 @@ export function AppSidebar({ className }: AppSidebarProps) {
         to="/"
         className={cn(
           "flex items-center py-6 border-b border-sidebar-border hover:bg-foreground/5 transition-colors",
-          collapsed ? "px-2 justify-center" : "px-4 justify-between",
+          collapsed ? "px-2 justify-center" : "px-4",
         )}
       >
         <Logo variant={collapsed ? "icon" : "compact"} />
-        {!collapsed && (
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setSidebarPinned(!pinned);
-            }}
-            className={cn(
-              "p-1.5 rounded-md transition-colors",
-              pinned ? "text-primary bg-primary-soft" : "text-muted-foreground hover:bg-foreground/5",
-            )}
-            aria-label={pinned ? "Desafixar sidebar" : "Fixar sidebar"}
-            title={pinned ? "Desafixar" : "Fixar aberta"}
-          >
-            {pinned ? <Pin className="w-3.5 h-3.5" /> : <PinOff className="w-3.5 h-3.5" />}
-          </button>
-        )}
       </Link>
+
 
       {/* Navigation */}
       <nav className="flex-1 py-4 overflow-y-auto overflow-x-hidden">
@@ -364,6 +348,32 @@ export function AppSidebar({ className }: AppSidebarProps) {
         )}
       </nav>
 
+      {/* Pin discreto — só quando expandido */}
+      {!collapsed && (
+        <div className="px-3 pt-2 pb-1 flex justify-end">
+          <Tooltip delayDuration={200}>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setSidebarPinned(!pinned)}
+                aria-label={pinned ? "Desafixar sidebar" : "Fixar sidebar aberta"}
+                aria-pressed={pinned}
+                className={cn(
+                  "h-6 w-6 rounded-md flex items-center justify-center transition-colors",
+                  pinned
+                    ? "text-primary"
+                    : "text-muted-foreground/60 hover:text-foreground",
+                )}
+              >
+                {pinned ? <Pin className="w-3.5 h-3.5" /> : <PinOff className="w-3.5 h-3.5" />}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-[11px]">
+              {pinned ? "Desafixar" : "Fixar aberta"}
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      )}
+
       {/* Footer — usuário */}
       <div className="border-t border-sidebar-border p-2">
         {collapsed ? (
@@ -411,6 +421,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
           </div>
         )}
       </div>
+
     </aside>
   );
 }

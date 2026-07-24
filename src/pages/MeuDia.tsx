@@ -9,6 +9,7 @@ import { MinhasTarefas } from "@/components/inicio/MinhasTarefas";
 import { AlertasProativos } from "@/components/inicio/AlertasProativos";
 import { AgendaDoDia } from "@/components/inicio/AgendaDoDia";
 import { AtalhosFixados } from "@/components/inicio/AtalhosFixados";
+import { MafeAvatar } from "@/components/inicio/MafeAvatar";
 
 const REFLEXOES = [
   "Hoje é um ótimo dia para plantar boas sementes — no jardim e na vida.",
@@ -183,29 +184,32 @@ export default function MeuDia() {
           <BotanicalMark />
 
           <div className="relative flex flex-col gap-5 max-w-4xl">
-            <div>
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.05 }}
-                className="type-label"
-                style={{ color: "rgb(255 255 255 / 0.55)" }}
-              >
-                Meu Dia
-              </motion.span>
+            <div className="flex items-start gap-5">
+              <MafeAvatar size={72} />
+              <div className="flex-1 min-w-0">
+
               <h1
-                className="type-h1 mt-1"
+                className="type-h1"
                 style={{ color: "hsl(var(--hero-band-fg))", fontSize: "40px", lineHeight: 1.1 }}
               >
                 {saudacao()}, {primeiroNome}.
               </h1>
-              <p className="text-[15px] mt-2 opacity-80">
+              <p
+                className="text-[15px] mt-2"
+                style={{ color: "hsl(var(--hero-band-fg) / 0.92)" }}
+              >
                 Você tem{" "}
-                <span className="font-sans tabular-nums font-semibold" style={{ color: "#E9C9A8" }}>
+                <span
+                  className="font-sans tabular-nums font-bold"
+                  style={{ color: "hsl(var(--hero-band-fg))" }}
+                >
                   {tarefasN} tarefa{tarefasN === 1 ? "" : "s"}
                 </span>{" "}
                 e{" "}
-                <span className="font-sans tabular-nums font-semibold" style={{ color: "#E9C9A8" }}>
+                <span
+                  className="font-sans tabular-nums font-bold"
+                  style={{ color: "hsl(var(--hero-band-fg))" }}
+                >
                   {alertasN} alerta{alertasN === 1 ? "" : "s"}
                 </span>{" "}
                 aguardando você.
@@ -215,11 +219,14 @@ export default function MeuDia() {
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, duration: 0.35 }}
-                className="text-[14px] italic opacity-70 mt-2 max-w-2xl"
+                className="text-[14px] italic mt-2 max-w-2xl"
+                style={{ color: "hsl(var(--hero-band-fg) / 0.78)" }}
               >
                 {reflexao}
               </motion.p>
             </div>
+          </div>
+
 
             {/* Campo da Mafe — field elevado com brilho no foco */}
             <form
