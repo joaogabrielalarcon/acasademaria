@@ -20,6 +20,7 @@ import {
   Circle,
   Loader2,
   ExternalLink,
+  Archive,
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
