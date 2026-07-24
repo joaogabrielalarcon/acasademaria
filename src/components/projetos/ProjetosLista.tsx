@@ -16,9 +16,15 @@ import {
   statusColor,
   tipoLabel,
   temperaturaLabel,
+  PIPELINE_STATUS_VALUES,
   type ProjetoPipeline,
 } from "@/hooks/useProjetosPipeline";
 import { cn } from "@/lib/utils";
+
+const statusOrder = (s?: string | null) => {
+  const i = PIPELINE_STATUS_VALUES.indexOf((s ?? "prospeccao") as string);
+  return i === -1 ? 999 : i;
+};
 
 interface Props {
   projetos: ProjetoPipeline[];
