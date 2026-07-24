@@ -8,26 +8,25 @@ export default {
     container: {
       center: true,
       padding: "2rem",
-      screens: {
-        "2xl": "1400px",
-      },
+      screens: { "2xl": "1400px" },
     },
     extend: {
       colors: {
-        // Brand Colors - Monocromático terracota/creme
+        // Compat legado (todas viram tokens)
         terracota: "hsl(var(--terracota))",
         "terracota-dark": "hsl(var(--terracota-dark))",
         "terracota-darker": "hsl(var(--terracota-darker))",
         creme: "hsl(var(--creme))",
         "creme-alt": "hsl(var(--creme-alt))",
         "creme-active": "hsl(var(--creme-active))",
-        
-        // Semantic Colors
+
+        // Semantic (shadcn)
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+
         marinho: {
           DEFAULT: "hsl(var(--marinho))",
           foreground: "hsl(var(--marinho-foreground))",
@@ -39,6 +38,7 @@ export default {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
+          hover: "hsl(var(--primary-hover))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -68,6 +68,11 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Faróis
+        ok: "hsl(var(--ok))",
+        warn: "hsl(var(--warn))",
+        attention: "hsl(var(--attention))",
+        danger: "hsl(var(--danger))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -80,42 +85,44 @@ export default {
         },
       },
       fontFamily: {
-        display: ["'Cormorant Garamond'", "Georgia", "serif"],
-        body: ["'Avenir Next'", "'Avenir'", "'Nunito Sans'", "system-ui", "sans-serif"],
+        display: ["'Fraunces'", "Georgia", "serif"],
+        body: ["'Inter'", "system-ui", "sans-serif"],
+        sans: ["'Inter'", "system-ui", "sans-serif"],
+        serif: ["'Fraunces'", "Georgia", "serif"],
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        lg: "14px",
+        md: "10px",
+        sm: "8px",
+        xl: "18px",
       },
       boxShadow: {
-        subtle: "var(--shadow-subtle)",
-        card: "var(--shadow-card)",
-        elevated: "var(--shadow-elevated)",
+        e1: "var(--shadow-e1)",
+        e2: "var(--shadow-e2)",
+        e3: "var(--shadow-e3)",
+        subtle: "var(--shadow-e1)",
+        card: "var(--shadow-e2)",
+        elevated: "var(--shadow-e3)",
+      },
+      transitionTimingFunction: {
+        smooth: "cubic-bezier(.2,.8,.2,1)",
+      },
+      transitionDuration: {
+        fast: "120ms",
+        base: "180ms",
+        drawer: "240ms",
       },
       keyframes: {
-        "accordion-down": {
-          from: { height: "0" },
-          to: { height: "var(--radix-accordion-content-height)" },
-        },
-        "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
-        },
-        "fade-in": {
-          from: { opacity: "0", transform: "translateY(8px)" },
-          to: { opacity: "1", transform: "translateY(0)" },
-        },
-        "slide-in": {
-          from: { opacity: "0", transform: "translateX(-16px)" },
-          to: { opacity: "1", transform: "translateX(0)" },
-        },
+        "accordion-down": { from: { height: "0" }, to: { height: "var(--radix-accordion-content-height)" } },
+        "accordion-up": { from: { height: "var(--radix-accordion-content-height)" }, to: { height: "0" } },
+        "fade-in": { from: { opacity: "0", transform: "translateY(6px)" }, to: { opacity: "1", transform: "translateY(0)" } },
+        "slide-in": { from: { opacity: "0", transform: "translateX(-12px)" }, to: { opacity: "1", transform: "translateX(0)" } },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-in": "fade-in 0.25s ease-out",
-        "slide-in": "slide-in 0.25s ease-out",
+        "fade-in": "fade-in 0.18s cubic-bezier(.2,.8,.2,1)",
+        "slide-in": "slide-in 0.24s cubic-bezier(.2,.8,.2,1)",
       },
     },
   },
