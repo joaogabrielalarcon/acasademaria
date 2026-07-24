@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import {
-  ChevronLeft,
-  ChevronRight,
   LogOut,
   Settings,
   ChevronDown,
@@ -10,6 +8,8 @@ import {
   Lock,
   UserCircle,
   MoreVertical,
+  Pin,
+  PinOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
@@ -40,13 +40,18 @@ import {
   financeiroNavigationItems,
   type NavigationItem,
 } from "./navigation";
+import { useSidebarPinned, setSidebarPinned } from "@/lib/sidebar-store";
 
 interface AppSidebarProps {
   className?: string;
 }
 
 export function AppSidebar({ className }: AppSidebarProps) {
-  const [collapsed, setCollapsed] = useState(false);
+  const pinned = useSidebarPinned();
+  const [hovered, setHovered] = useState(false);
+  const expanded = pinned || hovered;
+  const collapsed = !expanded;
+
   const [configOpen, setConfigOpen] = useState(false);
   const [financeiroOpen, setFinanceiroOpen] = useState(false);
   const [comprasOpen, setComprasOpen] = useState(false);
@@ -101,7 +106,14 @@ export function AppSidebar({ className }: AppSidebarProps) {
           />
         )}
         <item.icon className={cn("flex-shrink-0", isSub ? "w-4 h-4" : "w-[18px] h-[18px]")} />
-        {!collapsed && <span className="text-[14px] font-medium">{item.title}</span>}
+        <span
+          className={cn(
+            "text-[14px] font-medium whitespace-nowrap transition-opacity duration-150",
+            collapsed && "opacity-0 pointer-events-none",
+          )}
+        >
+          {item.title}
+        </span>
       </Link>
     );
 
@@ -119,7 +131,9 @@ export function AppSidebar({ className }: AppSidebarProps) {
   };
 
   const GroupLabel = ({ label }: { label: string }) =>
-    collapsed ? null : (
+    collapsed ? (
+      <div className="mt-4 mb-1 mx-2 h-px bg-border/60" />
+    ) : (
       <div className="mt-5 mb-2 px-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
         {label}
       </div>
@@ -129,9 +143,11 @@ export function AppSidebar({ className }: AppSidebarProps) {
 
   return (
     <aside
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       className={cn(
-        "fixed left-0 top-0 h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col transition-all duration-300 z-40",
-        collapsed ? "w-16" : "w-60",
+        "fixed left-0 top-0 h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col transition-[width] duration-200 ease-out z-40",
+        expanded ? "w-60 shadow-e2" : "w-16",
         className,
       )}
     >
@@ -139,15 +155,32 @@ export function AppSidebar({ className }: AppSidebarProps) {
       <Link
         to="/"
         className={cn(
-          "flex items-center justify-center py-6 border-b border-sidebar-border hover:bg-foreground/5 transition-colors",
-          collapsed ? "px-2" : "px-4",
+          "flex items-center py-6 border-b border-sidebar-border hover:bg-foreground/5 transition-colors",
+          collapsed ? "px-2 justify-center" : "px-4 justify-between",
         )}
       >
         <Logo variant={collapsed ? "icon" : "compact"} />
+        {!collapsed && (
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setSidebarPinned(!pinned);
+            }}
+            className={cn(
+              "p-1.5 rounded-md transition-colors",
+              pinned ? "text-primary bg-primary-soft" : "text-muted-foreground hover:bg-foreground/5",
+            )}
+            aria-label={pinned ? "Desafixar sidebar" : "Fixar sidebar"}
+            title={pinned ? "Desafixar" : "Fixar aberta"}
+          >
+            {pinned ? <Pin className="w-3.5 h-3.5" /> : <PinOff className="w-3.5 h-3.5" />}
+          </button>
+        )}
       </Link>
 
       {/* Navigation */}
-      <nav className="flex-1 py-4 overflow-y-auto">
+      <nav className="flex-1 py-4 overflow-y-auto overflow-x-hidden">
         {navigationGroups.map((group, gi) => {
           const items = group.items.filter((i) => i.roles.includes(userRole));
           if (!items.length) return null;
@@ -161,7 +194,6 @@ export function AppSidebar({ className }: AppSidebarProps) {
           );
         })}
 
-        {/* Compras */}
         {visibleComprasItems.length > 0 && (
           <>
             <GroupLabel label="Compras" />
@@ -219,7 +251,6 @@ export function AppSidebar({ className }: AppSidebarProps) {
           </>
         )}
 
-        {/* Financeiro */}
         {visibleFinanceiroItems.length > 0 && (
           <>
             <GroupLabel label="Financeiro" />
@@ -276,7 +307,6 @@ export function AppSidebar({ className }: AppSidebarProps) {
           </>
         )}
 
-        {/* Configurações (admin) */}
         {visibleConfigItems.length > 0 && (
           <>
             <GroupLabel label="Configurações" />
@@ -334,24 +364,8 @@ export function AppSidebar({ className }: AppSidebarProps) {
         )}
       </nav>
 
-      {/* Footer — só usuário + recolher */}
-      <div className="border-t border-sidebar-border p-2 space-y-1">
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={() => setCollapsed(!collapsed)}
-          className="w-full text-foreground/60 hover:text-foreground hover:bg-foreground/5"
-        >
-          {collapsed ? (
-            <ChevronRight className="w-4 h-4" />
-          ) : (
-            <div className="flex items-center gap-2 justify-center">
-              <ChevronLeft className="w-4 h-4" />
-              <span className="text-xs">Recolher</span>
-            </div>
-          )}
-        </Button>
-
+      {/* Footer — usuário */}
+      <div className="border-t border-sidebar-border p-2">
         {collapsed ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

@@ -3,27 +3,30 @@ import { AppSidebar } from "./AppSidebar";
 import { MobileHeader } from "./MobileHeader";
 import { TopBar } from "./TopBar";
 import { cn } from "@/lib/utils";
+import { useSidebarPinned } from "@/lib/sidebar-store";
 
 interface AppLayoutProps {
   children: ReactNode;
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
+  const pinned = useSidebarPinned();
   return (
     <div className="min-h-screen bg-background">
-      {/* Desktop Sidebar */}
       <div className="hidden lg:block">
         <AppSidebar />
       </div>
 
-      {/* Mobile Header */}
       <MobileHeader />
-
-      {/* Desktop Top Bar (bell + quick actions) */}
       <TopBar />
 
-      {/* Main Content */}
-      <main className={cn("min-h-screen transition-all duration-300", "pt-14 lg:pt-0", "lg:pl-60")}>
+      <main
+        className={cn(
+          "min-h-screen transition-[padding] duration-200 ease-out",
+          "pt-14 lg:pt-0",
+          pinned ? "lg:pl-60" : "lg:pl-16",
+        )}
+      >
         <div className="w-full px-3 py-4 lg:px-5 lg:py-5">{children}</div>
       </main>
     </div>
