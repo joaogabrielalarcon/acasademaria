@@ -9,6 +9,12 @@ import {
   Sprout,
   MessageSquare,
   Paperclip,
+  AlertTriangle,
+  Clock,
+  Bell,
+  CheckCircle2,
+  Circle,
+  Play,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
