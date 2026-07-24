@@ -101,7 +101,7 @@ export function ProjetosKanban({ projetos }: Props) {
             </div>
             <div className="space-y-2.5 max-h-[calc(100vh-320px)] overflow-y-auto pr-0.5">
               {col.itens.length === 0 ? (
-                <div className="text-center py-8 px-3 text-[12.5px] text-muted-foreground/70 italic font-serif border border-dashed border-border/50 rounded-lg">
+                <div className="text-center py-8 px-3 text-[12.5px] text-muted-foreground/70 italic border border-dashed border-border/50 rounded-lg">
                   Nada aqui ainda
                 </div>
               ) : (

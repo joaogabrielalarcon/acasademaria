@@ -69,18 +69,18 @@ export function ProjetoCard({ projeto, onOpen, onMoverClick, draggable }: Projet
             <HoverCardTrigger asChild>
               <button
                 onClick={(e) => { e.stopPropagation(); navigate(`/clientes/${projeto.cliente_id}`); }}
-                className="font-serif text-[19px] leading-tight text-foreground hover:text-primary text-left line-clamp-2"
+                className="text-[17px] font-semibold leading-snug text-foreground hover:text-primary text-left line-clamp-2 tracking-tight"
               >
                 {projeto.cliente_nome}
               </button>
             </HoverCardTrigger>
             <HoverCardContent side="top" className="w-64">
-              <p className="font-serif font-semibold text-[15px]">{projeto.cliente_nome}</p>
+              <p className="font-semibold text-[14px]">{projeto.cliente_nome}</p>
               <p className="text-[12px] text-muted-foreground mt-0.5">Abrir ficha do cliente</p>
             </HoverCardContent>
           </HoverCard>
         ) : (
-          <span className="font-serif text-[19px] text-muted-foreground/60">Sem cliente</span>
+          <span className="text-[14px] text-muted-foreground/70 italic">Sem cliente</span>
         )}
         {onMoverClick && (
           <button

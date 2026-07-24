@@ -95,7 +95,7 @@ export function ProjetosLista({ projetos }: Props) {
   if (!projetos.length) {
     return (
       <div className="rounded-lg border border-border/60 bg-card p-10 text-center">
-        <p className="font-serif text-[18px] text-foreground">Nada por aqui ainda</p>
+        <p className="text-[16px] font-semibold text-foreground">Nada por aqui ainda</p>
         <p className="text-[13px] text-muted-foreground mt-1">Ajuste os filtros ou crie um novo projeto.</p>
       </div>
     );
@@ -128,7 +128,7 @@ export function ProjetosLista({ projetos }: Props) {
               >
                 <TableCell className="py-3 pl-4 relative">
                   <span aria-hidden className="absolute left-0 top-1 bottom-1 w-[3px] rounded-r-sm" style={{ background: statusColor(p.status) }} />
-                  <div className="font-serif text-[14.5px] font-semibold text-foreground leading-tight">{p.titulo}</div>
+                  <div className="text-[14.5px] font-semibold text-foreground leading-tight tracking-tight">{p.titulo}</div>
                   <div className="text-[12px] text-muted-foreground mt-0.5">
                     {p.cliente_nome ? (
                       <HoverCard openDelay={200}>
@@ -141,7 +141,7 @@ export function ProjetosLista({ projetos }: Props) {
                           </button>
                         </HoverCardTrigger>
                         <HoverCardContent side="top" className="w-64">
-                          <p className="font-serif font-semibold text-[14px]">{p.cliente_nome}</p>
+                          <p className="font-semibold text-[14px]">{p.cliente_nome}</p>
                           <p className="text-[12px] text-muted-foreground">Abrir ficha</p>
                         </HoverCardContent>
                       </HoverCard>
