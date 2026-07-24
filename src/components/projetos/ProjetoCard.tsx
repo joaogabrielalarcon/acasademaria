@@ -42,7 +42,8 @@ function prazoInfo(alvo: string | null | undefined, prefixo: string): Prazo {
 
 export function ProjetoCard({ projeto, onOpen, onMoverClick, draggable }: ProjetoCardProps) {
   const navigate = useNavigate();
-  const ret = retornoInfo(projeto);
+  const ret = prazoInfo(projeto.data_retorno_prometida ?? projeto.proximo_contato_em, "retorno");
+  const entrega = prazoInfo(projeto.data_prometida_cliente, "entrega");
   const temp = temperaturaLabel(projeto.temperatura);
   const iniciais = (projeto.responsavel_nome ?? "").split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();
 
