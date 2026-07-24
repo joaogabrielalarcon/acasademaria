@@ -24,25 +24,35 @@ export interface ProjetoPipeline {
   responsavel_foto?: string | null;
 }
 
-export const PIPELINE_STATUSES: Array<{ value: string; label: string; dot: string }> = [
-  { value: "prospeccao",   label: "Prospecção",   dot: "bg-warn" },
-  { value: "qualificacao", label: "Qualificação", dot: "bg-warn/70" },
-  { value: "projeto",      label: "Projeto",      dot: "bg-accent" },
-  { value: "orcamento",    label: "Orçamento",    dot: "bg-primary/80" },
-  { value: "proposta",     label: "Em negociação", dot: "bg-primary" },
-  { value: "aprovado",     label: "Aprovado",     dot: "bg-accent" },
-  { value: "em_execucao",  label: "Execução",     dot: "bg-primary" },
-  { value: "concluido",    label: "Concluído",    dot: "bg-accent" },
-  { value: "pos_venda",    label: "Pós-venda",    dot: "bg-accent" },
+// Cada etapa tem cor própria da paleta MFM (argila → marinho → âmbar → terracota → sálvia → floresta)
+// para dar salto visível de uma etapa para a outra.
+export const PIPELINE_STATUSES: Array<{ value: string; label: string; color: string; soft: string }> = [
+  { value: "prospeccao",   label: "Prospecção",            color: "var(--argila-400)",   soft: "var(--argila-100)" },
+  { value: "qualificacao", label: "Qualificação",          color: "var(--argila-600)",   soft: "var(--argila-200)" },
+  { value: "projeto",      label: "Projeto",               color: "var(--marinho-400)",  soft: "var(--marinho-100)" },
+  { value: "orcamento",    label: "Orçamento",             color: "hsl(var(--warn))",    soft: "var(--terracota-100)" },
+  { value: "proposta",     label: "Em negociação",         color: "var(--terracota-500)",soft: "var(--terracota-100)" },
+  { value: "aprovado",     label: "Aprovado",              color: "var(--verde-500)",    soft: "var(--verde-100)" },
+  { value: "em_execucao",  label: "Execução",              color: "var(--marinho-700)",  soft: "var(--marinho-100)" },
+  { value: "concluido",    label: "Concluído / Pós-venda", color: "var(--verde-900)",    soft: "var(--verde-100)" },
 ];
 
+// pos_venda foi fundido em concluido; arquivado some do funil.
 export const PIPELINE_STATUS_VALUES = PIPELINE_STATUSES.map((s) => s.value);
+const STATUS_ALIAS: Record<string, string> = { pos_venda: "concluido" };
+export const normalizeStatus = (v?: string | null) => STATUS_ALIAS[v ?? ""] ?? (v ?? "prospeccao");
 
 export function statusLabel(v?: string | null) {
-  return PIPELINE_STATUSES.find((s) => s.value === v)?.label ?? (v ?? "—");
+  const n = normalizeStatus(v);
+  return PIPELINE_STATUSES.find((s) => s.value === n)?.label ?? (v ?? "—");
 }
-export function statusDot(v?: string | null) {
-  return PIPELINE_STATUSES.find((s) => s.value === v)?.dot ?? "bg-muted-foreground/40";
+export function statusColor(v?: string | null) {
+  const n = normalizeStatus(v);
+  return PIPELINE_STATUSES.find((s) => s.value === n)?.color ?? "hsl(var(--muted-foreground) / 0.4)";
+}
+export function statusSoft(v?: string | null) {
+  const n = normalizeStatus(v);
+  return PIPELINE_STATUSES.find((s) => s.value === n)?.soft ?? "hsl(var(--muted))";
 }
 
 export const TIPO_OPTIONS = [
