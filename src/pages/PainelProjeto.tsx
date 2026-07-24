@@ -240,6 +240,29 @@ export default function PainelProjeto() {
                           {s.label}
                         </DropdownMenuItem>
                       ))}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-primary focus:text-primary focus:bg-primary-soft"
+                        onClick={() => {
+                          const ok = window.confirm(
+                            `Arquivar "${projeto.titulo}"?\n\nO projeto sai do funil e vai para o histórico. Nenhum dado é apagado — você pode reativar depois.`,
+                          );
+                          if (!ok) return;
+                          arquivarProjeto.mutate(
+                            { id: projeto.id, cliente_id: projeto.cliente_id },
+                            {
+                              onSuccess: () => {
+                                toast({ title: "Projeto arquivado", description: "Saiu do funil." });
+                                navigate("/projetos");
+                              },
+                              onError: (e: any) => toast({ title: "Não foi possível arquivar", description: e.message, variant: "destructive" }),
+                            },
+                          );
+                        }}
+                      >
+                        <Archive className="w-3.5 h-3.5 mr-2" />
+                        Arquivar projeto
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
