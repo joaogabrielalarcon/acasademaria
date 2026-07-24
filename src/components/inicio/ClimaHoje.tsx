@@ -11,7 +11,7 @@ import {
   MapPin,
   ArrowRight,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -53,15 +53,12 @@ export function ClimaHoje() {
   const carregar = async (lat: number, lon: number, marca: "local" | "sede") => {
     setEstado("carregando");
     try {
-      const { data, error } = await supabase.functions.invoke("clima", {
-        body: null,
-        method: "GET" as any,
-      }).catch(() => ({ data: null, error: new Error("fallback") as any }));
-
-      // usar fetch direto (query string) — supabase.functions.invoke não passa qs
-      const url = `${(supabase as any).functionsUrl || ""}/clima?lat=${lat}&lon=${lon}`;
-      const anon = (supabase as any).supabaseKey;
-      const res = await fetch(url, { headers: { apikey: anon, Authorization: `Bearer ${anon}` } });
+      const base = import.meta.env.VITE_SUPABASE_URL as string;
+      const anon = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+      const url = `${base}/functions/v1/clima?lat=${lat}&lon=${lon}`;
+      const res = await fetch(url, {
+        headers: { apikey: anon, Authorization: `Bearer ${anon}` },
+      });
       if (!res.ok) throw new Error("clima indisponível");
       const json = (await res.json()) as ClimaData;
       setDados(json);
