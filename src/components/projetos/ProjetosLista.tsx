@@ -95,7 +95,7 @@ export function ProjetosLista({ projetos }: Props) {
   if (!projetos.length) {
     return (
       <div className="rounded-lg border border-border/60 bg-card p-10 text-center">
-        <p className="font-serif text-[18px] text-foreground">Nada por aqui ainda</p>
+        <p className="text-[16px] font-semibold text-foreground">Nada por aqui ainda</p>
         <p className="text-[13px] text-muted-foreground mt-1">Ajuste os filtros ou crie um novo projeto.</p>
       </div>
     );
