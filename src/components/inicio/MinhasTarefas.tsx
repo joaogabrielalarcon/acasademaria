@@ -250,7 +250,7 @@ export function MinhasTarefas() {
                   whileHover={{ y: -2, scale: 1.005 }}
                   transition={{ duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }}
                   className={cn(
-                    "group relative rounded-lg card-filete bg-card shadow-e1 hover:shadow-e2 transition-shadow px-4 py-3 cursor-pointer",
+                    "group relative rounded-lg card-filete bg-card shadow-e2 hover:shadow-e3 transition-shadow px-4 py-3 cursor-pointer",
                   )}
                   onClick={() => setExpanded(isOpen ? null : t.id)}
                 >
