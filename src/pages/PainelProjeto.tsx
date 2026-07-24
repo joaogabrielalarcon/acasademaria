@@ -114,6 +114,7 @@ export default function PainelProjeto() {
   const [tab, setTab] = useState("resumo");
 
   const atualizar = useAtualizarProjeto();
+  const arquivarProjeto = useArquivarProjeto();
 
   if (isLoading) {
     return (
