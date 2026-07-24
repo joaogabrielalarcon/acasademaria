@@ -42,14 +42,11 @@ export function ProjetosKanban({ projetos }: Props) {
 
   return (
     <div className="overflow-x-auto pb-4 -mx-4 px-4">
-      <div className="flex gap-3 min-w-max">
+      <div className="flex gap-4 min-w-max">
         {colunas.map((col) => (
           <div
             key={col.value}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragOver(col.value);
-            }}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(col.value); }}
             onDragLeave={() => setDragOver((v) => (v === col.value ? null : v))}
             onDrop={(e) => {
               e.preventDefault();
@@ -59,20 +56,23 @@ export function ProjetosKanban({ projetos }: Props) {
               if (proj) handleMove(proj, col.value);
             }}
             className={cn(
-              "w-[290px] flex-shrink-0 rounded-lg border border-border/50 bg-muted/40 transition-colors",
-              dragOver === col.value && "bg-primary-soft/60 border-primary/40",
+              "w-[280px] flex-shrink-0 rounded-lg transition-colors",
+              dragOver === col.value && "bg-primary-soft/40 ring-1 ring-primary/30",
             )}
           >
-            <div className="flex items-baseline justify-between px-3 py-2.5 border-b border-border/40">
-              <h3 className="text-[12px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                {col.label}
-              </h3>
-              <span className="text-[12px] tabular-nums text-muted-foreground/80">{col.itens.length}</span>
+            <div className="flex items-center justify-between px-1 py-2 mb-2 border-b border-border/50">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className={cn("w-2 h-2 rounded-full flex-shrink-0", col.dot)} />
+                <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground truncate">
+                  {col.label}
+                </h3>
+              </div>
+              <span className="text-[12px] tabular-nums text-muted-foreground">{col.itens.length}</span>
             </div>
-            <div className="p-2 space-y-2 max-h-[calc(100vh-260px)] overflow-y-auto">
+            <div className="space-y-2.5 max-h-[calc(100vh-320px)] overflow-y-auto pr-0.5">
               {col.itens.length === 0 ? (
-                <div className="text-center py-6 text-[12px] text-muted-foreground/70 italic font-serif">
-                  Nenhum projeto aqui
+                <div className="text-center py-8 px-3 text-[12.5px] text-muted-foreground/70 italic font-serif border border-dashed border-border/50 rounded-lg">
+                  Nada aqui ainda
                 </div>
               ) : (
                 col.itens.map((p, i) => (
