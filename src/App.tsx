@@ -143,7 +143,8 @@ const App = () => (
             <Route path="/custos-equipe" element={<ProtectedRoute><CustosEquipe /></ProtectedRoute>} />
             <Route path="/processos" element={<ProtectedRoute><ProcessosInternos /></ProtectedRoute>} />
             <Route path="/calendario" element={<ProtectedRoute><Calendario /></ProtectedRoute>} />
-            <Route path="/crm" element={<ProtectedRoute><CRM /></ProtectedRoute>} />
+            <Route path="/projetos" element={<ProtectedRoute><Projetos /></ProtectedRoute>} />
+            <Route path="/crm" element={<Navigate to="/projetos" replace />} />
             <Route path="/orcamentos" element={<ProtectedRoute allowedRoles={["admin","administrativo","gestao_campo"]}><Orcamentos /></ProtectedRoute>} />
             <Route path="/orcamentos/novo" element={<ProtectedRoute allowedRoles={["admin","administrativo","gestao_campo"]}><NovoOrcamento /></ProtectedRoute>} />
             <Route path="/orcamentos/:id" element={<ProtectedRoute allowedRoles={["admin","administrativo","gestao_campo"]}><NovoOrcamento /></ProtectedRoute>} />

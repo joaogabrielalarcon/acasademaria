@@ -1,0 +1,173 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
+export interface ProjetoPipeline {
+  id: string;
+  cliente_id: string;
+  titulo: string;
+  tipo: string;
+  status: string;
+  substatus: string | null;
+  temperatura: string | null;
+  responsavel_id: string | null;
+  local_id: string | null;
+  valor_total: number | null;
+  data_prometida_cliente: string | null;
+  data_alvo_interna: string | null;
+  proximo_contato_em: string | null;
+  data_retorno_prometida: string | null;
+  created_at: string;
+  updated_at: string;
+  cliente_nome?: string | null;
+  local_apelido?: string | null;
+  responsavel_nome?: string | null;
+  responsavel_foto?: string | null;
+}
+
+export const PIPELINE_STATUSES: Array<{ value: string; label: string }> = [
+  { value: "prospeccao", label: "Prospecção" },
+  { value: "qualificacao", label: "Qualificação" },
+  { value: "projeto", label: "Projeto" },
+  { value: "orcamento", label: "Orçamento" },
+  { value: "proposta", label: "Proposta" },
+  { value: "aprovado", label: "Aprovado" },
+  { value: "em_execucao", label: "Execução" },
+  { value: "concluido", label: "Concluído" },
+  { value: "pos_venda", label: "Pós-venda" },
+];
+
+export const PIPELINE_STATUS_VALUES = PIPELINE_STATUSES.map((s) => s.value);
+
+export function statusLabel(v?: string | null) {
+  return PIPELINE_STATUSES.find((s) => s.value === v)?.label ?? (v ?? "—");
+}
+
+export const TIPO_OPTIONS = [
+  { value: "implantacao", label: "Implantação" },
+  { value: "manutencao", label: "Manutenção" },
+  { value: "obra", label: "Obra" },
+  { value: "fornecimento", label: "Fornecimento" },
+];
+
+export const TEMPERATURA_OPTIONS = [
+  { value: "quente", label: "Quente" },
+  { value: "morno", label: "Morno" },
+  { value: "frio", label: "Frio" },
+];
+
+export function tipoLabel(v?: string | null) {
+  return TIPO_OPTIONS.find((o) => o.value === v)?.label ?? (v ?? "—");
+}
+export function temperaturaLabel(v?: string | null) {
+  return TEMPERATURA_OPTIONS.find((o) => o.value === v)?.label ?? null;
+}
+
+export function useProjetosPipeline() {
+  return useQuery({
+    queryKey: ["projetos-pipeline"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("projetos")
+        .select("id, cliente_id, titulo, tipo, status, substatus, temperatura, responsavel_id, local_id, valor_total, data_prometida_cliente, data_alvo_interna, proximo_contato_em, data_retorno_prometida, created_at, updated_at")
+        .order("updated_at", { ascending: false });
+      if (error) throw error;
+      const rows = (data ?? []) as ProjetoPipeline[];
+
+      const clienteIds = Array.from(new Set(rows.map((r) => r.cliente_id).filter(Boolean)));
+      const localIds = Array.from(new Set(rows.map((r) => r.local_id).filter(Boolean))) as string[];
+      const respIds = Array.from(new Set(rows.map((r) => r.responsavel_id).filter(Boolean))) as string[];
+
+      const [clientesRes, locaisRes, colsRes] = await Promise.all([
+        clienteIds.length ? supabase.from("clientes").select("id, nome").in("id", clienteIds) : Promise.resolve({ data: [] as any[] }),
+        localIds.length ? supabase.from("locais_cliente").select("id, apelido").in("id", localIds) : Promise.resolve({ data: [] as any[] }),
+        respIds.length ? supabase.from("colaboradores_basico").select("id, nome, foto_url").in("id", respIds) : Promise.resolve({ data: [] as any[] }),
+      ]);
+
+      const clientes = new Map((clientesRes.data ?? []).map((c: any) => [c.id, c.nome]));
+      const locais = new Map((locaisRes.data ?? []).map((l: any) => [l.id, l.apelido]));
+      const cols = new Map((colsRes.data ?? []).map((c: any) => [c.id, c]));
+
+      return rows.map((r) => ({
+        ...r,
+        cliente_nome: clientes.get(r.cliente_id) ?? null,
+        local_apelido: r.local_id ? locais.get(r.local_id) ?? null : null,
+        responsavel_nome: r.responsavel_id ? cols.get(r.responsavel_id)?.nome ?? null : null,
+        responsavel_foto: r.responsavel_id ? cols.get(r.responsavel_id)?.foto_url ?? null : null,
+      })) as ProjetoPipeline[];
+    },
+    staleTime: 30_000,
+  });
+}
+
+export function useMoverProjetoStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, novo, anterior, cliente_id }: { id: string; novo: string; anterior?: string | null; cliente_id: string }) => {
+      const { error } = await supabase.from("projetos").update({ status: novo }).eq("id", id);
+      if (error) throw error;
+      const { data: userData } = await supabase.auth.getUser();
+      const usuario_nome = userData?.user?.email?.split("@")[0] ?? null;
+      await supabase.from("cliente_feed_eventos").insert({
+        cliente_id,
+        tipo: "projeto_status",
+        titulo: `Status alterado para ${statusLabel(novo)}`,
+        dados: { de: anterior ?? null, para: novo },
+        usuario_nome,
+        referencia_id: id,
+        referencia_tipo: "projeto",
+      });
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["projetos-pipeline"] }),
+  });
+}
+
+export interface CriarProjetoInput {
+  cliente_id: string;
+  titulo: string;
+  tipo: string;
+  local_id?: string | null;
+  temperatura?: string | null;
+  origem?: string | null;
+  responsavel_id?: string | null;
+}
+
+export function useCriarProjeto() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: CriarProjetoInput) => {
+      const { data, error } = await supabase
+        .from("projetos")
+        .insert({
+          cliente_id: payload.cliente_id,
+          titulo: payload.titulo,
+          tipo: payload.tipo,
+          local_id: payload.local_id ?? null,
+          temperatura: payload.temperatura ?? null,
+          responsavel_id: payload.responsavel_id ?? null,
+          status: "prospeccao",
+          observacoes: payload.origem ? `Origem: ${payload.origem}` : null,
+        })
+        .select("id, cliente_id")
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["projetos-pipeline"] }),
+  });
+}
+
+export function useCriarClienteRapido() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ nome, tipo_pessoa }: { nome: string; tipo_pessoa: "fisica" | "juridica" }) => {
+      const { data, error } = await supabase
+        .from("clientes")
+        .insert({ nome, tipo_pessoa, status: "ativo" })
+        .select("id, nome")
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["clientes-simples"] }),
+  });
+}
