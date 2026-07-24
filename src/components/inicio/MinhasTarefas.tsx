@@ -9,6 +9,12 @@ import {
   Sprout,
   MessageSquare,
   Paperclip,
+  AlertTriangle,
+  Clock,
+  Bell,
+  CheckCircle2,
+  Circle,
+  Play,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -125,17 +131,30 @@ function useColaboradorId(userId?: string) {
   });
 }
 
+type FarolTone = "danger" | "attention" | "warn" | "ok" | "muted";
+
 function farolDoPrazo(prazo: string | null): {
-  tone: "ok" | "warn" | "attention" | "danger";
+  tone: FarolTone;
   label: string;
+  Icon: typeof Clock;
 } {
-  if (!prazo) return { tone: "ok", label: "Sem prazo" };
+  if (!prazo) return { tone: "muted", label: "Sem prazo", Icon: Clock };
   const dias = differenceInCalendarDays(parseISO(prazo), new Date());
-  if (dias < 0) return { tone: "danger", label: `Atrasada ${Math.abs(dias)}d` };
-  if (dias === 0) return { tone: "attention", label: "Hoje" };
-  if (dias === 1) return { tone: "warn", label: "Amanhã" };
-  if (dias <= 3) return { tone: "warn", label: `Em ${dias}d` };
-  return { tone: "ok", label: `Em ${dias}d` };
+  if (dias < 0) return { tone: "danger", label: `Atrasado ${Math.abs(dias)}d`, Icon: AlertTriangle };
+  if (dias === 0) return { tone: "danger", label: "Vence hoje", Icon: AlertTriangle };
+  if (dias === 1) return { tone: "attention", label: "Amanhã", Icon: Clock };
+  if (dias <= 3) return { tone: "attention", label: `Em ${dias} dias`, Icon: Clock };
+  if (dias <= 7) return { tone: "warn", label: `Em ${dias} dias`, Icon: Clock };
+  return { tone: "muted", label: `Em ${dias} dias`, Icon: Clock };
+}
+
+type StatusTone = "neutral" | "info" | "action" | "done";
+function statusMeta(label: string): { tone: StatusTone; Icon: typeof Circle; text: string } {
+  const l = label.toLowerCase();
+  if (l.includes("aguardando")) return { tone: "action", Icon: Bell, text: "Aguardando você" };
+  if (l.includes("andamento") || l.includes("progresso")) return { tone: "info", Icon: Play, text: "Em andamento" };
+  if (l.includes("conclu")) return { tone: "done", Icon: CheckCircle2, text: "Concluído" };
+  return { tone: "neutral", Icon: Circle, text: "A fazer" };
 }
 
 const SORT_LABELS: Record<SortMode, string> = {
@@ -143,6 +162,54 @@ const SORT_LABELS: Record<SortMode, string> = {
   prioridade: "Prioridade",
   status: "Status",
 };
+
+function StatusChip({ meta }: { meta: ReturnType<typeof statusMeta> }) {
+  const { tone, Icon, text } = meta;
+  const cls =
+    tone === "action"
+      ? "bg-primary-soft/70 text-primary border border-primary/20"
+      : tone === "info"
+      ? "bg-info/15 text-info border border-info/25"
+      : tone === "done"
+      ? "bg-info/10 text-info/90 border border-info/20"
+      : "bg-surface-sunken text-muted-foreground border border-border/60";
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full pl-1.5 pr-2 py-0.5 text-[11.5px] font-medium whitespace-nowrap",
+        cls,
+      )}
+    >
+      <Icon className="w-3.5 h-3.5" aria-hidden />
+      <span className="font-sans">{text}</span>
+    </span>
+  );
+}
+
+function PrazoChip({ farol }: { farol: ReturnType<typeof farolDoPrazo> }) {
+  const { tone, label, Icon } = farol;
+  const cls =
+    tone === "danger"
+      ? "bg-danger-soft text-danger border border-danger/25"
+      : tone === "attention"
+      ? "bg-attention-soft text-attention border border-attention/25"
+      : tone === "warn"
+      ? "bg-warn-soft text-warn border border-warn/20"
+      : tone === "ok"
+      ? "bg-ok-soft text-ok border border-ok/20"
+      : "bg-surface-sunken text-muted-foreground border border-border/60";
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[12px] font-semibold whitespace-nowrap",
+        cls,
+      )}
+    >
+      <Icon className="w-3.5 h-3.5" aria-hidden />
+      <span className="font-sans tabular-nums">{label}</span>
+    </span>
+  );
+}
 
 function FilterGroup({
   label, options, selected, onToggle,
@@ -211,6 +278,7 @@ export function MinhasTarefas() {
           temNotas: !!t.notas,
         }))
       : DEMO;
+  const isDemo = tarefasReais.length === 0;
 
   const optsStatus = useMemo(
     () => Array.from(new Set(tarefasBase.map((t) => t.statusLabel))).sort(),
@@ -316,6 +384,11 @@ export function MinhasTarefas() {
             <span className="text-[12px] font-sans tabular-nums text-muted-foreground">
               {tarefas.length} {tarefas.length === 1 ? "item" : "itens"}
             </span>
+            {isDemo && (
+              <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider bg-surface-sunken text-muted-foreground border border-border/60">
+                dados de exemplo
+              </span>
+            )}
           </div>
         }
       />
@@ -347,112 +420,152 @@ export function MinhasTarefas() {
         </div>
       ) : (
         <div className="rounded-md border border-border/60 overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="h-9 text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">Tarefa</TableHead>
-                <TableHead className="h-9 text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">Cliente</TableHead>
-                <TableHead className="h-9 text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">Projeto</TableHead>
-                <TableHead className="h-9 text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold w-[220px]">Status</TableHead>
-                <TableHead className="h-9 text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold text-right w-[130px]">Prazo</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tarefas.map((t, idx) => {
-                const farol = farolDoPrazo(t.prazo_final);
-                return (
-                  <motion.tr
-                    key={t.id}
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: Math.min(idx, 8) * 0.04, duration: 0.2 }}
-                    onClick={() => navigate(`/agenda?tarefa=${t.id}`)}
-                    className="h-11 cursor-pointer border-b border-border/40 last:border-0 hover:bg-surface-sunken/60 transition-colors"
-                  >
-                    <TableCell className="py-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-[13.5px] font-medium text-foreground truncate">{t.titulo}</span>
+          {/* Cabeçalho — apenas no desktop */}
+          <div className="hidden md:grid grid-cols-[minmax(0,1fr)_180px_170px_150px] gap-4 items-center h-9 px-3 bg-surface-sunken/40 border-b border-border/50">
+            <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">Tarefa</span>
+            <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">Status</span>
+            <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">Progresso</span>
+            <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold text-right">Prazo</span>
+          </div>
+
+          <div>
+            {tarefas.map((t, idx) => {
+              const farol = farolDoPrazo(t.prazo_final);
+              const st = statusMeta(t.statusLabel);
+              const rowHighlight =
+                farol.tone === "danger"
+                  ? "bg-danger-soft/40"
+                  : st.tone === "action"
+                  ? "bg-primary-soft/25"
+                  : "";
+
+              return (
+                <motion.div
+                  key={t.id}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(idx, 8) * 0.04, duration: 0.2 }}
+                  onClick={() => navigate(`/agenda?tarefa=${t.id}`)}
+                  className={cn(
+                    "group cursor-pointer border-b border-border/40 last:border-0 hover:bg-surface-sunken/60 transition-colors",
+                    rowHighlight,
+                  )}
+                >
+                  {/* Desktop: grid alinhado ao cabeçalho */}
+                  <div className="hidden md:grid grid-cols-[minmax(0,1fr)_180px_170px_150px] gap-4 items-center min-h-[56px] px-3 py-2">
+                    {/* Tarefa (título + contexto) */}
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-[14px] font-semibold text-foreground truncate">
+                          {t.titulo}
+                        </span>
                         {t.temNotas && (
-                          <MessageSquare className="w-3.5 h-3.5 text-muted-foreground/70 shrink-0" aria-label="Tem observação" />
+                          <MessageSquare
+                            className="w-3.5 h-3.5 text-muted-foreground/70 shrink-0"
+                            aria-label="Tem observação"
+                          />
                         )}
                         {typeof t.anexos === "number" && t.anexos > 0 && (
-                          <span className="inline-flex items-center gap-0.5 text-[11px] text-muted-foreground/80 shrink-0" aria-label={`${t.anexos} anexos`}>
+                          <span
+                            className="inline-flex items-center gap-0.5 text-[11px] text-muted-foreground/80 shrink-0"
+                            aria-label={`${t.anexos} anexos`}
+                          >
                             <Paperclip className="w-3 h-3" />
                             <span className="font-sans tabular-nums">{t.anexos}</span>
                           </span>
                         )}
-                        {t.demo && (
-                          <span className="inline-flex items-center rounded-full px-1.5 py-px text-[9px] uppercase tracking-wider bg-surface-sunken text-muted-foreground border border-border/50 shrink-0">
-                            exemplo
-                          </span>
+                      </div>
+                      <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-muted-foreground min-w-0">
+                        {t.cliente ? (
+                          <HoverCard openDelay={200}>
+                            <HoverCardTrigger asChild>
+                              <span className="hover:text-primary transition-colors truncate">
+                                {t.cliente}
+                              </span>
+                            </HoverCardTrigger>
+                            <HoverCardContent className="w-64 text-[12.5px]">
+                              <p className="font-medium">{t.cliente}</p>
+                              <p className="text-muted-foreground mt-1">
+                                {t.tipo || "Cliente"}
+                              </p>
+                            </HoverCardContent>
+                          </HoverCard>
+                        ) : (
+                          <span>Sem cliente</span>
+                        )}
+                        {t.projeto && (
+                          <>
+                            <span aria-hidden className="text-muted-foreground/50">·</span>
+                            <HoverCard openDelay={200}>
+                              <HoverCardTrigger asChild>
+                                <span className="hover:text-primary transition-colors truncate">
+                                  {t.projeto}
+                                </span>
+                              </HoverCardTrigger>
+                              <HoverCardContent className="w-64 text-[12.5px]">
+                                <p className="font-medium">{t.projeto}</p>
+                                <p className="text-muted-foreground mt-1">{t.cliente}</p>
+                              </HoverCardContent>
+                            </HoverCard>
+                          </>
                         )}
                       </div>
-                    </TableCell>
-                    <TableCell className="py-2 text-[13px] text-foreground/85">
-                      {t.cliente ? (
-                        <HoverCard openDelay={200}>
-                          <HoverCardTrigger asChild>
-                            <span className="hover:text-primary transition-colors cursor-pointer truncate">{t.cliente}</span>
-                          </HoverCardTrigger>
-                          <HoverCardContent className="w-64 text-[12.5px]">
-                            <p className="font-medium">{t.cliente}</p>
-                            <p className="text-muted-foreground mt-1">{t.tipo || "Cliente"}</p>
-                          </HoverCardContent>
-                        </HoverCard>
-                      ) : <span className="text-muted-foreground">—</span>}
-                    </TableCell>
-                    <TableCell className="py-2 text-[13px] text-foreground/85">
-                      {t.projeto ? (
-                        <HoverCard openDelay={200}>
-                          <HoverCardTrigger asChild>
-                            <span className="hover:text-primary transition-colors cursor-pointer truncate">{t.projeto}</span>
-                          </HoverCardTrigger>
-                          <HoverCardContent className="w-64 text-[12.5px]">
-                            <p className="font-medium">{t.projeto}</p>
-                            <p className="text-muted-foreground mt-1">{t.cliente}</p>
-                          </HoverCardContent>
-                        </HoverCard>
-                      ) : <span className="text-muted-foreground">—</span>}
-                    </TableCell>
-                    <TableCell className="py-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-sans font-medium uppercase tracking-wider text-muted-foreground shrink-0 min-w-[92px]">
-                          {t.statusLabel}
-                        </span>
-                        <Progress value={t.pct} className="h-1.5 flex-1" />
-                        <span className="text-[11.5px] font-sans tabular-nums text-muted-foreground w-9 text-right">
-                          {t.pct}%
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-2 text-right">
-                      <span
-                        className={cn(
-                          "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap",
-                          farol.tone === "danger" && "bg-danger-soft text-danger",
-                          farol.tone === "attention" && "bg-attention-soft text-attention",
-                          farol.tone === "warn" && "bg-warn-soft text-warn",
-                          farol.tone === "ok" && "bg-ok-soft text-ok",
-                        )}
-                      >
-                        <span
-                          aria-hidden
-                          className={cn(
-                            "w-1.5 h-1.5 rounded-full",
-                            farol.tone === "danger" && "bg-danger",
-                            farol.tone === "attention" && "bg-attention",
-                            farol.tone === "warn" && "bg-warn",
-                            farol.tone === "ok" && "bg-ok",
-                          )}
-                        />
-                        <span className="font-sans tabular-nums">{farol.label}</span>
+                    </div>
+
+                    {/* Status (chip semântico) */}
+                    <div>
+                      <StatusChip meta={st} />
+                    </div>
+
+                    {/* Progresso (barra + %) */}
+                    <div className="flex items-center gap-2">
+                      <Progress value={t.pct} className="h-1.5 flex-1" />
+                      <span className="text-[12px] font-sans tabular-nums text-muted-foreground w-9 text-right">
+                        {t.pct}%
                       </span>
-                    </TableCell>
-                  </motion.tr>
-                );
-              })}
-            </TableBody>
-          </Table>
+                    </div>
+
+                    {/* Prazo (farol destacado, coluna fixa, nunca cortada) */}
+                    <div className="flex justify-end">
+                      <PrazoChip farol={farol} />
+                    </div>
+                  </div>
+
+                  {/* Mobile: cartão empilhado */}
+                  <div className="md:hidden p-3">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-[14px] font-semibold text-foreground truncate">
+                        {t.titulo}
+                      </span>
+                      {t.temNotas && (
+                        <MessageSquare className="w-3.5 h-3.5 text-muted-foreground/70 shrink-0" />
+                      )}
+                      {typeof t.anexos === "number" && t.anexos > 0 && (
+                        <span className="inline-flex items-center gap-0.5 text-[11px] text-muted-foreground/80 shrink-0">
+                          <Paperclip className="w-3 h-3" />
+                          <span className="font-sans tabular-nums">{t.anexos}</span>
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-0.5 text-[12px] text-muted-foreground truncate">
+                      {t.cliente || "Sem cliente"}
+                      {t.projeto ? ` · ${t.projeto}` : ""}
+                    </div>
+                    <div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
+                      <StatusChip meta={st} />
+                      <PrazoChip farol={farol} />
+                    </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <Progress value={t.pct} className="h-1.5 flex-1" />
+                      <span className="text-[12px] font-sans tabular-nums text-muted-foreground w-9 text-right">
+                        {t.pct}%
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
         </div>
       )}
     </SurfaceCard>
