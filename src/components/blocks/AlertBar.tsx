@@ -32,14 +32,14 @@ export function AlertBar({ tone = "attention", count, title, onClick, className 
       transition={{ duration: 0.12 }}
       onClick={onClick}
       className={cn(
-        "group w-full flex items-center gap-3 rounded-[14px] px-5 py-4 text-left transition-shadow duration-base ease-smooth hover:shadow-e2",
+        "group w-full flex items-center gap-3 rounded-lg px-5 py-4 text-left transition-shadow duration-base ease-smooth hover:shadow-e2",
         t.bg,
         className
       )}
     >
       <t.Icon className={cn("w-5 h-5 flex-shrink-0", t.text)} />
       {typeof count === "number" && (
-        <span className={cn("font-display text-[22px] leading-none", t.text)}>{count}</span>
+        <span className={cn("font-sans font-semibold text-[22px] leading-none tabular-nums", t.text)}>{count}</span>
       )}
       <span className="flex-1 text-[14px] text-foreground">{title}</span>
       <ArrowRight className={cn("w-4 h-4 opacity-60 group-hover:translate-x-0.5 transition-transform", t.text)} />

@@ -38,7 +38,7 @@ export default function DesignSystem() {
 
         <Section title="Tipografia">
           <div className="space-y-3">
-            <p className="type-display">Display 44 / Fraunces</p>
+            <p className="type-display">Display 44 / Cormorant Garamond</p>
             <p className="type-h1">Headline 32</p>
             <p className="type-h2">Headline 24</p>
             <p className="type-h3">Headline 18</p>
@@ -71,7 +71,7 @@ export default function DesignSystem() {
         <Section title="Sombras (profundidade > borda)">
           <div className="grid grid-cols-3 gap-4">
             {["e1", "e2", "e3"].map((s) => (
-              <div key={s} className={`bg-card rounded-[14px] p-6 shadow-${s} text-center`}>
+              <div key={s} className={`bg-card rounded-lg p-6 shadow-${s} text-center`}>
                 <p className="type-label">{s}</p>
               </div>
             ))}

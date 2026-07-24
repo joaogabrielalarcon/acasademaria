@@ -26,7 +26,7 @@ export function FeedItem({ icon, title, meta, media = [], hasIssue, onClick, cla
       transition={{ duration: 0.12 }}
       onClick={onClick}
       className={cn(
-        "w-full flex items-start gap-4 rounded-[14px] p-4 text-left hover:bg-primary-soft transition-colors duration-base ease-smooth",
+        "w-full flex items-start gap-4 rounded-lg p-4 text-left hover:bg-primary-soft transition-colors duration-base ease-smooth",
         className
       )}
     >

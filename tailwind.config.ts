@@ -85,16 +85,16 @@ export default {
         },
       },
       fontFamily: {
-        display: ["'Fraunces'", "Georgia", "serif"],
-        body: ["'Inter'", "system-ui", "sans-serif"],
-        sans: ["'Inter'", "system-ui", "sans-serif"],
-        serif: ["'Fraunces'", "Georgia", "serif"],
+        display: ["'Cormorant Garamond'", "Georgia", "serif"],
+        body: ["'Avenir Next'", "Avenir", "'Nunito Sans'", "system-ui", "sans-serif"],
+        sans: ["'Avenir Next'", "Avenir", "'Nunito Sans'", "system-ui", "sans-serif"],
+        serif: ["'Cormorant Garamond'", "Georgia", "serif"],
       },
       borderRadius: {
-        lg: "14px",
-        md: "10px",
-        sm: "8px",
-        xl: "18px",
+        lg: "var(--radius)",              /* 8px */
+        md: "calc(var(--radius) - 2px)",  /* 6px */
+        sm: "calc(var(--radius) - 4px)",  /* 4px */
+        xl: "calc(var(--radius) + 4px)",  /* 12px */
       },
       boxShadow: {
         e1: "var(--shadow-e1)",

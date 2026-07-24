@@ -1,91 +1,103 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Nunito+Sans:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* MFM Design System v1 — shadcn/Radix + tokens quentes */
+/* MFM Design System v2 — identidade REAL da marca */
+/* Alma: terracota sobre creme. Monocromática, editorial, natural. */
 /* Regra suprema: nunca cravar cor/tamanho em componente — tudo vem daqui. */
 
 @layer base {
   :root {
-    /* ── Brand ──────────────────────────────────────────── */
-    /* Areia quente #F5ECE0 / off-white #FDFAF5 / tinta #241A11 */
-    --background: 32 46% 92%;             /* #F5ECE0 */
-    --foreground: 28 34% 11%;             /* #241A11 */
+    /* ── Brand base (creme monocromático) ─────────────────── */
+    --background: 24 100% 95%;            /* #FFF0E5 creme */
+    --foreground: 11 65% 38%;             /* terracota #9E3722 — TEXTO padrão */
 
-    --card: 38 60% 98%;                   /* #FDFAF5 — degrau obrigatório */
-    --card-foreground: 28 34% 11%;
+    --card: 30 100% 97%;                  /* #FFF7EE creme claro */
+    --card-foreground: 11 65% 38%;        /* terracota sobre o cartão */
 
-    --popover: 0 0% 100%;                 /* #FFFFFF */
-    --popover-foreground: 28 34% 11%;
+    --popover: 30 100% 97%;
+    --popover-foreground: 11 65% 38%;
 
-    --primary: 13 60% 43%;                /* terracota #B04A2C — RARA, só ação */
-    --primary-foreground: 0 0% 100%;
-    --primary-hover: 13 62% 37%;
+    /* Terracota — cor principal (ação, texto, ícones) */
+    --primary: 11 65% 38%;                /* #9E3722 */
+    --primary-foreground: 24 100% 95%;    /* #FFF0E5 */
+    --primary-hover: 11 65% 30%;          /* #7E2C1B */
+    --primary-dark: 11 65% 30%;
+    --primary-darker: 11 65% 22%;         /* #5C2013 */
 
-    --secondary: 31 40% 88%;              /* #EFE4D5 */
-    --secondary-foreground: 28 34% 11%;
+    /* Superfície secundária: nude morno */
+    --secondary: 24 39% 87%;              /* #EBDBD0 */
+    --secondary-foreground: 11 65% 38%;
+    --surface-2: 24 39% 87%;              /* alias */
 
-    --muted: 32 34% 90%;                  /* #EFE7DB */
-    --muted-foreground: 26 15% 50%;       /* #93826E */
+    --muted: 24 60% 92%;                  /* muted quente */
+    --muted-foreground: 11 30% 45%;       /* terracota suave */
 
-    --accent: 247 37% 27%;                /* marinho #312B5E — estável/concluído */
-    --accent-foreground: 0 0% 100%;
+    /* Marinho — concluído / selecionado / info / Mafe */
+    --accent: 263 47% 18%;                /* #281842 */
+    --accent-foreground: 24 100% 95%;
 
-    --destructive: 8 58% 40%;             /* #A3352A */
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 8 58% 40%;
+    --destructive-foreground: 24 100% 95%;
 
-    --border: 32 30% 85%;                 /* #E7DDCE */
-    --input: 32 30% 85%;
-    --ring: 13 60% 43%;                   /* terracota */
+    /* Borda = terracota a ~20% (aproximada em creme) */
+    --border: 21 51% 84%;                 /* mistura visual */
+    --input: 21 51% 84%;
+    --ring: 11 65% 55%;                   /* terracota ~35% percebido */
 
-    /* Aliases legado (compat) */
-    --terracota: 13 60% 43%;
-    --terracota-dark: 13 62% 37%;
-    --terracota-darker: 13 62% 28%;
-    --creme: 32 46% 92%;
-    --creme-alt: 38 60% 98%;
-    --creme-active: 22 45% 88%;
-    --marinho: 247 37% 27%;
-    --marinho-foreground: 0 0% 100%;
-    --accent-navy: 247 37% 27%;
-    --rose: 15 41% 55%;
-    --rose-foreground: 15 50% 18%;
-    --success: 247 37% 27%;
-    --success-foreground: 0 0% 100%;
+    /* ── Aliases legado (compat de todo o codebase existente) ── */
+    --terracota: 11 65% 38%;
+    --terracota-dark: 11 65% 30%;
+    --terracota-darker: 11 65% 22%;
+    --creme: 24 100% 95%;
+    --creme-alt: 30 100% 97%;
+    --creme-active: 24 39% 87%;
+    --marinho: 263 47% 18%;
+    --marinho-foreground: 24 100% 95%;
+    --accent-navy: 263 47% 18%;
+    --rose: 15 42% 55%;                   /* #BC755D */
+    --rose-foreground: 24 100% 95%;
+    --success: 263 47% 18%;               /* concluído = marinho */
+    --success-foreground: 24 100% 95%;
 
-    /* Softs (fundos com alpha) */
-    --primary-soft: 176 74 44;            /* usar rgb(var(--primary-soft) / 0.08) */
-    --navy-soft: 49 43 94;                /* usar rgb(var(--navy-soft) / 0.10) */
+    /* Verde SÓ para natureza literal + faixa-herói de marca */
+    --forest: 150 37% 15%;                /* #193527 */
+    --sage: 113 14% 53%;                  /* #7A9776 */
+    --clay: 15 42% 55%;                   /* #BC755D */
 
-    /* Faróis (indicador; nunca UI ampla) */
-    --ok: 150 41% 30%;                    /* #2F6B4F */
-    --ok-soft: 47 107 79;
-    --warn: 33 63% 48%;                   /* #C9822B */
+    /* Softs (fundos com alpha — usar rgb(var(--x) / 0.xx)) */
+    --primary-soft: 158 55 34;            /* rgb terracota */
+    --navy-soft: 40 24 66;                /* rgb marinho */
+
+    /* Faróis (indicadores discretos; nunca UI ampla) */
+    --ok: 263 47% 18%;                    /* marinho = ok/concluído */
+    --ok-soft: 40 24 66;
+    --warn: 33 63% 48%;
     --warn-soft: 201 130 43;
-    --attention: 13 60% 43%;              /* #B04A2C */
-    --attention-soft: 176 74 44;
-    --danger: 8 58% 40%;                  /* #A3352A */
+    --attention: 11 65% 38%;              /* terracota */
+    --attention-soft: 158 55 34;
+    --danger: 8 58% 40%;
     --danger-soft: 163 53 42;
 
     /* Sidebar */
-    --sidebar-background: 32 40% 89%;
-    --sidebar-foreground: 28 34% 11%;
-    --sidebar-primary: 13 60% 43%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 13 60% 43%;
-    --sidebar-accent-foreground: 13 60% 43%;
-    --sidebar-border: 32 30% 82%;
-    --sidebar-ring: 13 60% 43%;
+    --sidebar-background: 30 100% 97%;
+    --sidebar-foreground: 11 65% 38%;
+    --sidebar-primary: 11 65% 38%;
+    --sidebar-primary-foreground: 24 100% 95%;
+    --sidebar-accent: 24 39% 87%;
+    --sidebar-accent-foreground: 11 65% 38%;
+    --sidebar-border: 21 51% 84%;
+    --sidebar-ring: 11 65% 38%;
 
-    /* Raio: 12px base; cartões 14, botões 10, chips full */
-    --radius: 0.75rem;
+    /* Raio: 8px base */
+    --radius: 0.5rem;
 
-    /* Sombras (profundidade > borda) */
-    --shadow-e1: 0 1px 2px rgba(36,26,17,.06), 0 2px 6px rgba(36,26,17,.05);
-    --shadow-e2: 0 2px 4px rgba(36,26,17,.08), 0 8px 24px rgba(36,26,17,.10);
-    --shadow-e3: 0 12px 40px rgba(36,26,17,.16), 0 4px 12px rgba(36,26,17,.08);
+    /* Sombras — tinta terracota, suaves */
+    --shadow-e1: 0 1px 2px rgb(158 55 34 / 0.05), 0 1px 3px rgb(158 55 34 / 0.06);
+    --shadow-e2: 0 2px 6px rgb(158 55 34 / 0.07), 0 6px 18px rgb(158 55 34 / 0.08);
+    --shadow-e3: 0 8px 28px rgb(158 55 34 / 0.12), 0 3px 10px rgb(158 55 34 / 0.06);
     --shadow-subtle: var(--shadow-e1);
     --shadow-card: var(--shadow-e2);
     --shadow-elevated: var(--shadow-e3);
@@ -97,41 +109,40 @@
     --dur-drawer: 240ms;
     --transition-smooth: var(--dur-base) var(--ease-out);
 
-    /* Legado — chips do Diário (mantido para não quebrar) */
-    --diario-area-bg: 32 34% 90%;
-    --diario-area-fg: 247 37% 27%;
-    --diario-service-bg: 13 60% 43% / 0.12;
-    --diario-service-fg: 13 60% 43%;
-    --diario-team-bg: 32 34% 88%;
-    --diario-team-fg: 247 37% 22%;
-    --diario-typing: 13 50% 45%;
-    --mafe-diario-collecting: 13 60% 45%;
-    --mafe-diario-awaiting: 13 50% 50%;
-    --mafe-diario-ready: 247 37% 27%;
-    --mafe-diario-typing: 13 50% 50%;
+    /* Legado — chips do Diário */
+    --diario-area-bg: 24 39% 87%;
+    --diario-area-fg: 263 47% 18%;
+    --diario-service-bg: 11 65% 38% / 0.12;
+    --diario-service-fg: 11 65% 38%;
+    --diario-team-bg: 24 39% 87%;
+    --diario-team-fg: 263 47% 18%;
+    --diario-typing: 11 65% 45%;
+    --mafe-diario-collecting: 11 65% 45%;
+    --mafe-diario-awaiting: 11 65% 50%;
+    --mafe-diario-ready: 263 47% 18%;
+    --mafe-diario-typing: 11 65% 45%;
   }
 
-  /* Dark mode ausente do produto — apontar para os mesmos tokens */
   .dark {
-    --background: 32 46% 92%;
-    --foreground: 28 34% 11%;
-    --card: 38 60% 98%;
-    --card-foreground: 28 34% 11%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 28 34% 11%;
-    --primary: 13 60% 43%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 31 40% 88%;
-    --secondary-foreground: 28 34% 11%;
-    --muted: 32 34% 90%;
-    --muted-foreground: 26 15% 50%;
-    --accent: 247 37% 27%;
-    --accent-foreground: 0 0% 100%;
+    --background: 24 100% 95%;
+    --foreground: 11 65% 38%;
+    --card: 30 100% 97%;
+    --card-foreground: 11 65% 38%;
+    --popover: 30 100% 97%;
+    --popover-foreground: 11 65% 38%;
+    --primary: 11 65% 38%;
+    --primary-foreground: 24 100% 95%;
+    --secondary: 24 39% 87%;
+    --secondary-foreground: 11 65% 38%;
+    --muted: 24 60% 92%;
+    --muted-foreground: 11 30% 45%;
+    --accent: 263 47% 18%;
+    --accent-foreground: 24 100% 95%;
     --destructive: 8 58% 40%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 32 30% 85%;
-    --input: 32 30% 85%;
-    --ring: 13 60% 43%;
+    --destructive-foreground: 24 100% 95%;
+    --border: 21 51% 84%;
+    --input: 21 51% 84%;
+    --ring: 11 65% 55%;
   }
 }
 
@@ -142,29 +153,38 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: "Avenir Next", "Avenir", "Nunito Sans", system-ui, -apple-system, sans-serif;
     font-size: 15px;
     line-height: 1.5;
-    font-feature-settings: 'ss01', 'cv11';
+    font-feature-settings: "ss01", "cv11";
   }
 
+  /* Títulos em serifada de presença. Nunca aplicar em números. */
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Fraunces', 'Georgia', serif;
+    font-family: "Cormorant Garamond", "Georgia", serif;
     color: hsl(var(--foreground));
     font-weight: 500;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.005em;
+  }
+
+  /* Números SEMPRE no sans do corpo, nunca na serifada — legibilidade + elegância. */
+  .num, .tabular-nums, [data-num] {
+    font-family: "Avenir Next", "Avenir", "Nunito Sans", system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1, "lnum" 1;
+    letter-spacing: 0;
   }
 }
 
 @layer components {
   /* ── Tipografia (escala editorial) ────────────────────── */
-  .type-display { font-family: 'Fraunces', serif; font-size: 44px; line-height: 1.1; letter-spacing: -0.02em; font-weight: 500; }
-  .type-h1      { font-family: 'Fraunces', serif; font-size: 32px; line-height: 1.15; letter-spacing: -0.015em; font-weight: 500; }
-  .type-h2      { font-family: 'Fraunces', serif; font-size: 24px; line-height: 1.2; letter-spacing: -0.01em; font-weight: 500; }
-  .type-h3      { font-family: 'Fraunces', serif; font-size: 18px; line-height: 1.3; font-weight: 500; }
-  .type-body    { font-family: 'Inter', sans-serif; font-size: 15px; line-height: 1.5; }
-  .type-small   { font-family: 'Inter', sans-serif; font-size: 13px; line-height: 1.45; }
-  .type-label   { font-family: 'Inter', sans-serif; font-size: 11px; line-height: 1.3; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 600; color: hsl(var(--muted-foreground)); }
+  .type-display { font-family: "Cormorant Garamond", serif; font-size: 44px; line-height: 1.1; letter-spacing: -0.01em; font-weight: 500; }
+  .type-h1      { font-family: "Cormorant Garamond", serif; font-size: 32px; line-height: 1.15; letter-spacing: -0.005em; font-weight: 500; }
+  .type-h2      { font-family: "Cormorant Garamond", serif; font-size: 24px; line-height: 1.2; font-weight: 500; }
+  .type-h3      { font-family: "Cormorant Garamond", serif; font-size: 18px; line-height: 1.3; font-weight: 600; }
+  .type-body    { font-family: "Avenir Next", "Avenir", "Nunito Sans", sans-serif; font-size: 15px; line-height: 1.5; }
+  .type-small   { font-family: "Avenir Next", "Avenir", "Nunito Sans", sans-serif; font-size: 13px; line-height: 1.45; }
+  .type-label   { font-family: "Avenir Next", "Avenir", "Nunito Sans", sans-serif; font-size: 11px; line-height: 1.3; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 600; color: hsl(var(--muted-foreground)); }
 
   /* ── Sombras utilitárias ──────────────────────────────── */
   .shadow-e1 { box-shadow: var(--shadow-e1); }
@@ -184,20 +204,35 @@
   .text-attention { color: hsl(var(--attention)); }
   .text-danger { color: hsl(var(--danger)); }
 
-  /* ── Cartão base (degrau areia → off-white) ───────────── */
+  /* ── Cartão base ──────────────────────────────────────── */
   .card-surface {
     background: hsl(var(--card));
-    border-radius: 14px;
+    border-radius: var(--radius);
     box-shadow: var(--shadow-e2);
-    padding: 24px;
+    padding: 20px;
     transition: box-shadow var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out);
   }
   .card-surface--interactive:hover {
     box-shadow: var(--shadow-e3);
-    transform: scale(1.005);
+    transform: translateY(-1px);
   }
 
-  /* ── Legado (mantido para não quebrar telas antigas) ── */
+  /* ── Filete lateral (assinatura visual da marca) ──────── */
+  .card-filete { position: relative; overflow: hidden; }
+  .card-filete::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: hsl(var(--primary));
+    border-top-left-radius: inherit;
+    border-bottom-left-radius: inherit;
+  }
+  .card-filete-marinho::before { background: hsl(var(--accent)); }
+  .card-filete-sage::before    { background: hsl(var(--sage)); }
+  .card-filete-muted::before   { background: hsl(var(--border)); }
+
+  /* Legado */
   .card-botanical { @apply card-surface; }
 
   .timeline-line {
@@ -231,7 +266,7 @@
   .diario-trend-up { color: hsl(var(--primary-hover)); }
   .diario-trend-down { color: hsl(var(--primary)); }
 
-  .diario-media-thumb { @apply overflow-hidden rounded-xl border bg-muted transition-transform duration-200; border-color: hsl(var(--border)); }
+  .diario-media-thumb { @apply overflow-hidden rounded-lg border bg-muted transition-transform duration-200; border-color: hsl(var(--border)); }
   .diario-media-thumb:hover { transform: translateY(-1px); }
 
   .mafe-diario-frame { box-shadow: var(--shadow-e1); transition: border-color var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out); }
@@ -250,7 +285,7 @@
   .mafe-list-item::before { content: "•"; @apply absolute left-0 font-bold; color: hsl(var(--primary)); }
   .mafe-bold--status, .mafe-bold--area, .mafe-bold--person { @apply font-semibold; color: hsl(var(--primary)); }
   .mafe-italic--question { @apply not-italic block mt-3 pt-2; color: hsl(var(--primary)); border-top: 1px solid rgb(var(--primary-soft) / 0.15); }
-  .mafe-alert { @apply rounded-xl px-4 py-3 my-2 text-sm leading-relaxed bg-primary-soft; border-left: 3px solid hsl(var(--primary)); }
+  .mafe-alert { @apply rounded-lg px-4 py-3 my-2 text-sm leading-relaxed bg-primary-soft; border-left: 3px solid hsl(var(--primary)); }
   .mafe-hr { @apply my-3 border-0; border-top: 1px solid rgb(var(--primary-soft) / 0.2); }
 
   .photo-frame { @apply relative overflow-hidden rounded-lg; aspect-ratio: 4/3; }
