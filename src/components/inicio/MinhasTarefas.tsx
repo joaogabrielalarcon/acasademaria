@@ -230,6 +230,7 @@ export function MinhasTarefas() {
           temNotas: !!t.notas,
         }))
       : DEMO;
+  const isDemo = tarefasReais.length === 0;
 
   const optsStatus = useMemo(
     () => Array.from(new Set(tarefasBase.map((t) => t.statusLabel))).sort(),
