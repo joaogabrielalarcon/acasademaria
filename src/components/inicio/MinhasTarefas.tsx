@@ -150,6 +150,41 @@ const SORT_LABELS: Record<SortMode, string> = {
   status: "Status",
 };
 
+function FilterGroup({
+  label,
+  options,
+  selected,
+  onToggle,
+}: {
+  label: string;
+  options: string[];
+  selected: string[];
+  onToggle: (v: string) => void;
+}) {
+  if (options.length === 0) return null;
+  return (
+    <div>
+      <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1.5">{label}</p>
+      <div className="flex flex-col gap-1 max-h-40 overflow-y-auto">
+        {options.map((o) => {
+          const on = selected.includes(o);
+          return (
+            <label
+              key={o}
+              className="flex items-center gap-2 px-1.5 py-1 rounded hover:bg-surface-sunken cursor-pointer text-[13px]"
+            >
+              <Checkbox checked={on} onCheckedChange={() => onToggle(o)} />
+              <span className="flex-1 truncate">{o}</span>
+            </label>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+
+
 export function MinhasTarefas() {
   const { user } = useAuth();
   const { data: colab } = useColaboradorId(user?.id);
