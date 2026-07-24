@@ -91,7 +91,8 @@ export function AppSidebar({ className }: AppSidebarProps) {
       <Link
         to={item.href}
         className={cn(
-          "relative flex items-center gap-3 rounded-md transition-colors duration-150 h-10 px-3",
+          "relative flex items-center rounded-md transition-colors duration-150 h-10",
+          collapsed ? "justify-center px-0" : "gap-3 px-3",
           isSub && "h-9 text-[13px]",
           active
             ? "text-primary font-semibold"
@@ -106,14 +107,11 @@ export function AppSidebar({ className }: AppSidebarProps) {
           />
         )}
         <item.icon className={cn("flex-shrink-0", isSub ? "w-4 h-4" : "w-[18px] h-[18px]")} />
-        <span
-          className={cn(
-            "text-[14px] font-medium whitespace-nowrap transition-opacity duration-150",
-            collapsed && "opacity-0 pointer-events-none",
-          )}
-        >
-          {item.title}
-        </span>
+        {!collapsed && (
+          <span className="text-[14px] font-medium whitespace-nowrap transition-opacity duration-150">
+            {item.title}
+          </span>
+        )}
       </Link>
     );
 
@@ -147,7 +145,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
       onMouseLeave={() => setHovered(false)}
       className={cn(
         "fixed left-0 top-0 h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col transition-[width] duration-200 ease-out z-40",
-        expanded ? "w-60 shadow-e2" : "w-10",
+        expanded ? "w-60 shadow-e2" : "w-14",
         className,
       )}
     >
