@@ -10,7 +10,7 @@ import { AlertasProativos } from "@/components/inicio/AlertasProativos";
 import { AgendaDoDia } from "@/components/inicio/AgendaDoDia";
 import { RetomadaRapida } from "@/components/inicio/RetomadaRapida";
 import { LembretesPostits } from "@/components/inicio/LembretesPostits";
-import { ClimaHoje } from "@/components/inicio/ClimaHoje";
+import { ClimaHeroInline } from "@/components/inicio/ClimaHeroInline";
 import { Aniversariantes } from "@/components/inicio/Aniversariantes";
 import { MafeAvatar } from "@/components/inicio/MafeAvatar";
 import {
@@ -73,7 +73,7 @@ function BotanicalMark() {
   return (
     <svg
       aria-hidden
-      className="absolute -right-8 -top-8 w-[380px] h-[380px] pointer-events-none opacity-[0.06] motion-reduce:hidden"
+      className="absolute -right-16 -bottom-24 w-[360px] h-[360px] pointer-events-none opacity-[0.035] motion-reduce:hidden"
       viewBox="0 0 400 400"
       fill="none"
       stroke="currentColor"
@@ -187,8 +187,11 @@ export default function MeuDia() {
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.15, duration: 0.35 }}
-                    className="text-[15px] italic mt-3 max-w-2xl"
-                    style={{ color: "hsl(var(--hero-band-fg) / 0.86)" }}
+                    className="text-[16px] italic mt-3 max-w-2xl font-medium pl-3 border-l-2"
+                    style={{
+                      color: "#FBD9C4",
+                      borderColor: "#FBD9C4",
+                    }}
                   >
                     {reflexao}
                   </motion.p>
@@ -197,37 +200,41 @@ export default function MeuDia() {
                 <Aniversariantes />
               </div>
 
-              {/* + universal, no topo */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    aria-label="Novo registro"
-                    className="shrink-0 h-10 w-10 rounded-full flex items-center justify-center bg-white/[0.10] hover:bg-white/[0.18] border border-white/[0.14] transition-colors"
-                    style={{ color: "hsl(var(--hero-band-fg))" }}
-                  >
-                    <Plus className="w-5 h-5" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                    Criar novo
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate("/projetos/novo")}>
-                    Projeto
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/clientes/novo")}>
-                    Cliente
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/orcamentos/novo")}>
-                    Orçamento
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/registros/novo")}>
-                    Registro
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {/* Coluna direita: + universal + Clima inline */}
+              <div className="shrink-0 flex flex-col items-end gap-4">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Novo registro"
+                      className="h-10 w-10 rounded-full flex items-center justify-center bg-white/[0.10] hover:bg-white/[0.18] border border-white/[0.14] transition-colors"
+                      style={{ color: "hsl(var(--hero-band-fg))" }}
+                    >
+                      <Plus className="w-5 h-5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                      Criar novo
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate("/projetos/novo")}>
+                      Projeto
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/clientes/novo")}>
+                      Cliente
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/orcamentos/novo")}>
+                      Orçamento
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/registros/novo")}>
+                      Registro
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <ClimaHeroInline />
+              </div>
             </div>
 
             {/* Campo da Mafe — field elevado com brilho no foco */}
@@ -278,13 +285,10 @@ export default function MeuDia() {
           </div>
         </motion.section>
 
-        {/* ── FAIXA 2 — Retomada rápida + Lembretes + Clima ── */}
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] items-start">
-          <div className="flex flex-col gap-3 min-w-0">
-            <RetomadaRapida />
-            <LembretesPostits />
-          </div>
-          <ClimaHoje />
+        {/* ── FAIXA 2 — Retomada rápida + Lembretes ── */}
+        <div className="flex flex-col gap-3">
+          <RetomadaRapida />
+          <LembretesPostits />
         </div>
 
         {/* Barra do launcher */}

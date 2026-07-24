@@ -27,13 +27,14 @@ export function Aniversariantes() {
         <Link
           key={a.id}
           to={a.href}
-          className="inline-flex items-center gap-1.5 h-7 pl-2 pr-3 rounded-full bg-white/[0.10] hover:bg-white/[0.16] border border-white/[0.14] text-[12.5px] transition-colors"
+          className="inline-flex items-center gap-1.5 h-8 pl-2.5 pr-3.5 rounded-full bg-white/[0.18] hover:bg-white/[0.26] border border-white/[0.28] text-[13px] font-medium shadow-sm transition-colors"
           style={{ color: "hsl(var(--hero-band-fg))" }}
-          title={`${a.nome} — ${a.relacao}`}
+          title={`${a.nome} · ${a.relacao}`}
         >
-          <Cake className="w-3.5 h-3.5" />
-          <span className="truncate max-w-[240px]">
-            Hoje: <span className="font-medium">{a.nome}</span> ({a.relacao})
+          <Cake className="w-4 h-4" />
+          <span className="truncate max-w-[260px]">
+            Hoje: <span className="font-semibold">{a.nome}</span>
+            <span className="opacity-80"> · {a.relacao}</span>
           </span>
         </Link>
       ))}
