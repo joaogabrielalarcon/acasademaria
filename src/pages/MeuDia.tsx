@@ -1,10 +1,9 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Send, Mic, Square } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth, useProfile } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import mafeAvatar from "@/assets/flora-avatar.webp";
 import { AreasLauncher } from "@/components/inicio/AreasLauncher";
 import { MinhasTarefas } from "@/components/inicio/MinhasTarefas";
 import { AlertasProativos } from "@/components/inicio/AlertasProativos";
@@ -57,6 +56,55 @@ function saudacao(): string {
   return "Boa noite";
 }
 
+/** Count-up animado para o número de tarefas/alertas do resumo */
+function useCountUp(target: number, duration = 700) {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    const start = performance.now();
+    const tick = (t: number) => {
+      const p = Math.min(1, (t - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setN(Math.round(target * eased));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+  return n;
+}
+
+/** Marca d'água botânica em SVG — linhas ultra-finas no canto da faixa-herói */
+function BotanicalMark() {
+  return (
+    <svg
+      aria-hidden
+      className="absolute -right-6 -top-6 w-[420px] h-[420px] pointer-events-none opacity-[0.06]"
+      viewBox="0 0 400 400"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="0.6"
+    >
+      <path d="M200 380 C 200 260, 200 180, 200 60" />
+      <path d="M200 300 C 140 300, 100 260, 90 210" />
+      <path d="M200 300 C 260 300, 300 260, 310 210" />
+      <path d="M200 240 C 155 240, 125 210, 118 175" />
+      <path d="M200 240 C 245 240, 275 210, 282 175" />
+      <path d="M200 180 C 165 180, 140 155, 135 125" />
+      <path d="M200 180 C 235 180, 260 155, 265 125" />
+      <path d="M200 120 C 180 120, 165 105, 162 85" />
+      <path d="M200 120 C 220 120, 235 105, 238 85" />
+      <ellipse cx="90" cy="210" rx="22" ry="8" transform="rotate(-30 90 210)" />
+      <ellipse cx="310" cy="210" rx="22" ry="8" transform="rotate(30 310 210)" />
+      <ellipse cx="118" cy="175" rx="18" ry="6" transform="rotate(-25 118 175)" />
+      <ellipse cx="282" cy="175" rx="18" ry="6" transform="rotate(25 282 175)" />
+      <ellipse cx="135" cy="125" rx="15" ry="5" transform="rotate(-20 135 125)" />
+      <ellipse cx="265" cy="125" rx="15" ry="5" transform="rotate(20 265 125)" />
+      <circle cx="200" cy="60" r="12" />
+    </svg>
+  );
+}
+
 export default function MeuDia() {
   const { user } = useAuth();
   const { data: profile } = useProfile(user?.id);
@@ -64,8 +112,13 @@ export default function MeuDia() {
     profile?.nome?.split(" ")[0] || user?.email?.split("@")[0] || "Você";
   const [input, setInput] = useState("");
   const [recording, setRecording] = useState(false);
+  const [focus, setFocus] = useState(false);
   const recognitionRef = useRef<any>(null);
   const reflexao = useMemo(() => pegarReflexao(), []);
+
+  // Números resumo (usam os mocks: 5 tarefas / 3 alertas — count-up)
+  const tarefasN = useCountUp(5);
+  const alertasN = useCountUp(3);
 
   const send = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -88,7 +141,8 @@ export default function MeuDia() {
       return;
     }
     const SR =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
     if (!SR) return;
     const r = new SR();
     r.lang = "pt-BR";
@@ -113,136 +167,169 @@ export default function MeuDia() {
 
   return (
     <AppLayout>
-      <div className="flex flex-col gap-6 py-4">
-        {/* Faixa-herói de marca — cuidado primeiro */}
+      <div className="flex flex-col gap-6 py-2">
+        {/* ── Faixa-herói de marca ────────────────────────────── */}
         <motion.section
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.24, ease: [0.2, 0.8, 0.2, 1] }}
-          className="hero-band flex flex-col sm:flex-row items-start gap-6"
+          className="relative overflow-hidden rounded-xl shadow-e2 px-8 py-8 lg:px-10 lg:py-9"
+          style={{
+            background:
+              "linear-gradient(135deg, #193527 0%, #12271D 55%, #0E1F17 100%)",
+            color: "hsl(var(--hero-band-fg))",
+          }}
         >
-          <div className="w-24 h-24 lg:w-32 lg:h-32 rounded-full overflow-hidden shadow-e2 shrink-0 ring-1 ring-white/10">
-            <img
-              src={mafeAvatar}
-              alt="Mafe"
-              className="w-full h-full object-cover scale-[1.15]"
-              style={{ objectPosition: "50% 20%" }}
-              loading="eager"
-            />
-          </div>
-          <div className="flex-1 min-w-0">
-            <span className="type-label">Meu Dia</span>
-            <h1 className="type-h1 mt-1 mb-2">
-              {saudacao()}, {primeiroNome}.
-            </h1>
-            <motion.p
-              key={reflexao}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15, duration: 0.35 }}
-              className="type-body opacity-90 italic mb-4 max-w-2xl"
-            >
-              {reflexao}
-            </motion.p>
+          <BotanicalMark />
 
-            <form onSubmit={send} className="flex items-end gap-2">
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    send();
-                  }
+          <div className="relative flex flex-col gap-5 max-w-4xl">
+            <div>
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.05 }}
+                className="type-label"
+                style={{ color: "rgb(255 255 255 / 0.55)" }}
+              >
+                Meu Dia
+              </motion.span>
+              <h1
+                className="type-h1 mt-1"
+                style={{ color: "hsl(var(--hero-band-fg))", fontSize: "40px", lineHeight: 1.1 }}
+              >
+                {saudacao()}, {primeiroNome}.
+              </h1>
+              <p className="text-[15px] mt-2 opacity-80">
+                Você tem{" "}
+                <span className="font-sans tabular-nums font-semibold" style={{ color: "#E9C9A8" }}>
+                  {tarefasN} tarefa{tarefasN === 1 ? "" : "s"}
+                </span>{" "}
+                e{" "}
+                <span className="font-sans tabular-nums font-semibold" style={{ color: "#E9C9A8" }}>
+                  {alertasN} alerta{alertasN === 1 ? "" : "s"}
+                </span>{" "}
+                aguardando você.
+              </p>
+              <motion.p
+                key={reflexao}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.35 }}
+                className="text-[14px] italic opacity-70 mt-2 max-w-2xl"
+              >
+                {reflexao}
+              </motion.p>
+            </div>
+
+            {/* Campo da Mafe — field elevado com brilho no foco */}
+            <form
+              onSubmit={send}
+              className="relative flex items-end gap-2 max-w-3xl"
+            >
+              <motion.div
+                animate={{
+                  boxShadow: focus
+                    ? "0 0 0 2px rgba(158, 55, 34, 0.4), 0 8px 24px rgba(0,0,0,0.25)"
+                    : "0 4px 14px rgba(0,0,0,0.18)",
                 }}
-                placeholder="Pergunte algo à Mafe..."
-                rows={1}
-                className="flex-1 resize-none rounded-lg bg-white/10 backdrop-blur px-4 py-3 text-[15px] text-[color:var(--hero-band-fg)] placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-white/30 border border-white/10"
-              />
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                onClick={toggleRec}
-                className="rounded-lg h-11 w-11 shrink-0 text-[color:var(--hero-band-fg)] hover:bg-white/10"
+                transition={{ duration: 0.18 }}
+                className="flex-1 flex items-center gap-1 rounded-xl bg-white/[0.08] backdrop-blur-md border border-white/[0.12] pl-4 pr-1.5 py-1.5"
               >
-                {recording ? (
-                  <Square className="w-5 h-5" />
-                ) : (
-                  <Mic className="w-5 h-5" />
-                )}
-              </Button>
-              <Button
-                type="submit"
-                size="icon"
-                variant="ghost"
-                disabled={!input.trim()}
-                className="rounded-lg h-11 w-11 shrink-0 text-[color:var(--hero-band-fg)] hover:bg-white/10"
-              >
-                <Send className="w-5 h-5" />
-              </Button>
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onFocus={() => setFocus(true)}
+                  onBlur={() => setFocus(false)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      send();
+                    }
+                  }}
+                  placeholder="Pergunte algo à Mafe…"
+                  rows={1}
+                  className="flex-1 resize-none bg-transparent py-2 text-[15px] placeholder:text-white/45 focus:outline-none"
+                  style={{ color: "hsl(var(--hero-band-fg))" }}
+                />
+                <motion.button
+                  type="button"
+                  onClick={toggleRec}
+                  whileTap={{ scale: 0.92 }}
+                  animate={recording ? { scale: [1, 1.08, 1] } : { scale: 1 }}
+                  transition={recording ? { repeat: Infinity, duration: 1.4 } : { duration: 0.15 }}
+                  className="h-9 w-9 shrink-0 rounded-lg flex items-center justify-center text-white/75 hover:text-white hover:bg-white/10 transition-colors"
+                >
+                  {recording ? <Square className="w-4.5 h-4.5" /> : <Mic className="w-[18px] h-[18px]" />}
+                </motion.button>
+                <motion.button
+                  type="submit"
+                  disabled={!input.trim()}
+                  whileTap={{ scale: 0.92 }}
+                  className="h-9 w-9 shrink-0 rounded-lg flex items-center justify-center text-white/75 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-40"
+                >
+                  <Send className="w-[18px] h-[18px]" />
+                </motion.button>
+              </motion.div>
             </form>
           </div>
         </motion.section>
 
         {/* Barra do launcher */}
         <div className="flex items-center justify-between">
-          <span className="type-label">Painel do dia</span>
+          <div className="flex items-center gap-3">
+            <span className="type-label">Painel do dia</span>
+            <span aria-hidden className="h-px w-16 bg-border/70" />
+          </div>
           <AreasLauncher />
         </div>
 
-        {/* Grid principal */}
+        {/* ── Layout 62/38 ─────────────────────────────────── */}
         <motion.div
           initial="hidden"
           animate="show"
           variants={{
             show: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } },
           }}
-          className="grid gap-5 lg:grid-cols-3"
+          className="grid gap-5 lg:grid-cols-[62%_38%] xl:grid-cols-[63%_37%]"
         >
+          {/* Coluna principal — Suas tarefas */}
           <motion.div
             variants={{
               hidden: { opacity: 0, y: 8 },
               show: { opacity: 1, y: 0, transition: { duration: 0.24 } },
             }}
-            className="lg:col-span-2"
           >
             <MinhasTarefas />
           </motion.div>
 
-          <motion.div
-            variants={{
-              hidden: { opacity: 0, y: 8 },
-              show: { opacity: 1, y: 0, transition: { duration: 0.24 } },
-            }}
-          >
-            <AlertasProativos />
-          </motion.div>
-
-          <motion.div
-            variants={{
-              hidden: { opacity: 0, y: 8 },
-              show: { opacity: 1, y: 0, transition: { duration: 0.24 } },
-            }}
-            className="lg:col-span-2"
-          >
-            <AgendaDoDia />
-          </motion.div>
-
-          <motion.div
-            variants={{
-              hidden: { opacity: 0, y: 8 },
-              show: { opacity: 1, y: 0, transition: { duration: 0.24 } },
-            }}
-          >
-            <AtalhosFixados />
-          </motion.div>
+          {/* Coluna direita — empilhada */}
+          <div className="flex flex-col gap-5 min-w-0">
+            <motion.div
+              variants={{
+                hidden: { opacity: 0, y: 8 },
+                show: { opacity: 1, y: 0, transition: { duration: 0.24 } },
+              }}
+            >
+              <AlertasProativos />
+            </motion.div>
+            <motion.div
+              variants={{
+                hidden: { opacity: 0, y: 8 },
+                show: { opacity: 1, y: 0, transition: { duration: 0.24 } },
+              }}
+            >
+              <AgendaDoDia />
+            </motion.div>
+            <motion.div
+              variants={{
+                hidden: { opacity: 0, y: 8 },
+                show: { opacity: 1, y: 0, transition: { duration: 0.24 } },
+              }}
+            >
+              <AtalhosFixados />
+            </motion.div>
+          </div>
         </motion.div>
-
-        {/* Placeholder Lembretes/Stickers (Passo 2) */}
-        <div className="rounded-lg border border-dashed border-border/60 px-5 py-4 text-center text-muted-foreground text-[13px]">
-          Lembretes e stickers virão em breve.
-        </div>
       </div>
     </AppLayout>
   );

@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, Sprout } from "lucide-react";
+import { ChevronDown, Sprout, Check, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { SurfaceCard, SurfaceCardHeader } from "@/components/primitives/SurfaceCard";
-
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
@@ -24,31 +23,99 @@ type Demanda = {
   notas: string | null;
   clientes?: { nome: string | null } | null;
   projetos?: { titulo: string | null } | null;
-  etapa?: { nome: string | null } | null;
 };
+
+type TarefaView = {
+  id: string;
+  titulo: string;
+  vinculo: string;
+  prazo_final: string | null;
+  pct: number;
+  statusLabel: string;
+  codigo?: string | null;
+  notas?: string | null;
+  demo?: boolean;
+};
+
+function inDias(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+const DEMO: TarefaView[] = [
+  {
+    id: "demo-1",
+    titulo: "Enviar proposta revisada",
+    vinculo: "Dario Guarita · Residência Alto de Pinheiros",
+    prazo_final: inDias(1),
+    pct: 60,
+    statusLabel: "Em andamento",
+    demo: true,
+  },
+  {
+    id: "demo-2",
+    titulo: "Aprovar orçamento",
+    vinculo: "Juliana Falconi · Cobertura Jardins",
+    prazo_final: inDias(0),
+    pct: 0,
+    statusLabel: "Aguardando você",
+    demo: true,
+  },
+  {
+    id: "demo-3",
+    titulo: "Retornar contato",
+    vinculo: "Nina Ranieri · Prospecção",
+    prazo_final: inDias(2),
+    pct: 10,
+    statusLabel: "A fazer",
+    demo: true,
+  },
+  {
+    id: "demo-4",
+    titulo: "Revisar memorial descritivo",
+    vinculo: "Thais e Renato · Casa de campo Cotia",
+    prazo_final: inDias(4),
+    pct: 30,
+    statusLabel: "Em andamento",
+    demo: true,
+  },
+  {
+    id: "demo-5",
+    titulo: "Fechar escala da semana",
+    vinculo: "Time de campo",
+    prazo_final: inDias(3),
+    pct: 80,
+    statusLabel: "Em andamento",
+    demo: true,
+  },
+];
 
 function useColaboradorId(userId?: string) {
   return useQuery({
     queryKey: ["colaborador-by-user", userId],
     enabled: !!userId,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("colaboradores")
         .select("id, nome")
         .eq("user_id", userId!)
         .maybeSingle();
-      if (error) throw error;
       return data;
     },
   });
 }
 
-function farolDoPrazo(prazo: string | null): { tone: "ok" | "warn" | "attention" | "danger"; label: string } {
+function farolDoPrazo(prazo: string | null): {
+  tone: "ok" | "warn" | "attention" | "danger";
+  label: string;
+} {
   if (!prazo) return { tone: "ok", label: "Sem prazo" };
   const dias = differenceInCalendarDays(parseISO(prazo), new Date());
   if (dias < 0) return { tone: "danger", label: `Atrasada ${Math.abs(dias)}d` };
   if (dias === 0) return { tone: "attention", label: "Hoje" };
-  if (dias <= 2) return { tone: "warn", label: `Em ${dias}d` };
+  if (dias === 1) return { tone: "warn", label: "Amanhã" };
+  if (dias <= 3) return { tone: "warn", label: `Em ${dias}d` };
   return { tone: "ok", label: `Em ${dias}d` };
 }
 
@@ -57,14 +124,14 @@ export function MinhasTarefas() {
   const { data: colab } = useColaboradorId(user?.id);
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const { data: tarefas = [], isLoading } = useQuery({
+  const { data: tarefasReais = [], isLoading } = useQuery({
     queryKey: ["minhas-tarefas", colab?.id],
     enabled: !!colab?.id,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("demandas")
         .select(
-          "id, codigo, titulo, prazo_final, cliente_id, projeto_id, arquivada, status_saida, etapa_atual_id, notas, clientes(nome), projetos(titulo)"
+          "id, codigo, titulo, prazo_final, cliente_id, projeto_id, arquivada, status_saida, etapa_atual_id, notas, clientes(nome), projetos(titulo)",
         )
         .eq("responsavel_atual_id", colab!.id)
         .eq("arquivada", false)
@@ -74,90 +141,126 @@ export function MinhasTarefas() {
     },
   });
 
-  // Dependências para calcular % de evolução
-  const { data: deps = [] } = useQuery({
-    queryKey: ["deps", tarefas.map((t) => t.id).join(",")],
-    enabled: tarefas.length > 0,
-    queryFn: async () => {
-      const ids = tarefas.map((t) => t.id);
-      const { data, error } = await supabase
-        .from("demanda_dependencias")
-        .select("demanda_id, depende_de_id, dep:depende_de_id(arquivada)")
-        .in("demanda_id", ids);
-      if (error) throw error;
-      return data as any[];
-    },
-  });
-
-  const progressoPara = (id: string): number => {
-    const linhas = deps.filter((d) => d.demanda_id === id);
-    if (linhas.length === 0) return 25; // sem deps: iniciada
-    const concluidas = linhas.filter((d) => d.dep?.arquivada).length;
-    return Math.round((concluidas / linhas.length) * 100);
-  };
+  const tarefas: TarefaView[] =
+    tarefasReais.length > 0
+      ? tarefasReais.map((t) => ({
+          id: t.id,
+          titulo: t.titulo,
+          vinculo: t.projetos?.titulo || t.clientes?.nome || "",
+          prazo_final: t.prazo_final,
+          pct: 25,
+          statusLabel: "Em andamento",
+          codigo: t.codigo,
+          notas: t.notas,
+        }))
+      : DEMO;
 
   return (
-    <SurfaceCard padded>
-      <SurfaceCardHeader label="Suas tarefas" />
+    <SurfaceCard padded className="flex flex-col h-full">
+      <SurfaceCardHeader
+        label="Suas tarefas"
+        action={
+          <span className="text-[12px] font-sans tabular-nums text-muted-foreground">
+            {tarefas.length} {tarefas.length === 1 ? "item" : "itens"}
+          </span>
+        }
+      />
       {isLoading ? (
         <p className="type-body text-muted-foreground">Carregando…</p>
-      ) : tarefas.length === 0 ? (
-        <div className="flex items-center gap-3 py-6 text-muted-foreground">
-          <Sprout className="w-5 h-5 text-sage" />
-          <span className="type-body">Nada aguardando você agora.</span>
-        </div>
       ) : (
-        <ul className="flex flex-col gap-2">
-          {tarefas.map((t) => {
+        <ul className="flex flex-col gap-2 flex-1 overflow-y-auto pr-1 -mr-1 max-h-[62vh]">
+          {tarefas.map((t, idx) => {
             const farol = farolDoPrazo(t.prazo_final);
-            const pct = progressoPara(t.id);
             const isOpen = expanded === t.id;
-            const vinculo = t.projetos?.titulo || t.clientes?.nome || "";
             return (
-              <li key={t.id}>
-                <motion.button
-                  layout
-                  onClick={() => setExpanded(isOpen ? null : t.id)}
+              <motion.li
+                key={t.id}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.04, duration: 0.22 }}
+              >
+                <motion.div
+                  whileHover={{ y: -2, scale: 1.005 }}
+                  transition={{ duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }}
                   className={cn(
-                    "w-full text-left rounded-lg card-filete bg-surface-elevated hover:shadow-e2 transition-shadow px-4 py-3"
+                    "group relative rounded-lg card-filete bg-card shadow-e1 hover:shadow-e2 transition-shadow px-4 py-3 cursor-pointer",
                   )}
+                  onClick={() => setExpanded(isOpen ? null : t.id)}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-start gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="text-[15px] font-semibold text-foreground truncate">
-                        {t.titulo}
-                      </p>
-                      {vinculo && (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-[15px] font-semibold text-foreground truncate">
+                          {t.titulo}
+                        </p>
+                        {t.demo && (
+                          <span className="inline-flex items-center rounded-full px-1.5 py-px text-[9px] uppercase tracking-wider bg-surface-sunken text-muted-foreground border border-border/50">
+                            exemplo
+                          </span>
+                        )}
+                      </div>
+                      {t.vinculo && (
                         <p className="text-[13px] text-muted-foreground truncate mt-0.5">
-                          {vinculo}
+                          {t.vinculo}
                         </p>
                       )}
                     </div>
-                    <span
-                      className={cn(
-                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium",
-                        farol.tone === "danger" && "bg-danger-soft text-danger",
-                        farol.tone === "attention" && "bg-attention-soft text-attention",
-                        farol.tone === "warn" && "bg-warn-soft text-warn",
-                        farol.tone === "ok" && "bg-ok-soft text-ok"
-                      )}
-                    >
-                      {farol.label}
-                    </span>
-                    <ChevronDown
-                      className={cn(
-                        "w-4 h-4 text-muted-foreground transition-transform",
-                        isOpen && "rotate-180"
-                      )}
-                    />
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span
+                        className={cn(
+                          "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap",
+                          farol.tone === "danger" && "bg-danger-soft text-danger",
+                          farol.tone === "attention" && "bg-attention-soft text-attention",
+                          farol.tone === "warn" && "bg-warn-soft text-warn",
+                          farol.tone === "ok" && "bg-ok-soft text-ok",
+                        )}
+                      >
+                        {farol.label}
+                      </span>
+                      <ChevronDown
+                        className={cn(
+                          "w-4 h-4 text-muted-foreground transition-transform",
+                          isOpen && "rotate-180",
+                        )}
+                      />
+                    </div>
                   </div>
                   <div className="mt-2.5 flex items-center gap-3">
-                    <Progress value={pct} className="h-1.5 flex-1" />
-                    <span className="text-[12px] font-sans tabular-nums text-muted-foreground">
-                      {pct}%
+                    <span className="text-[11px] font-sans font-medium uppercase tracking-wider text-muted-foreground shrink-0">
+                      {t.statusLabel}
+                    </span>
+                    <motion.div
+                      initial={{ scaleX: 0 }}
+                      animate={{ scaleX: 1 }}
+                      transition={{ delay: 0.1 + idx * 0.04, duration: 0.45 }}
+                      style={{ transformOrigin: "left" }}
+                      className="flex-1"
+                    >
+                      <Progress value={t.pct} className="h-1.5" />
+                    </motion.div>
+                    <span className="text-[12px] font-sans tabular-nums text-muted-foreground w-9 text-right">
+                      {t.pct}%
                     </span>
                   </div>
-                </motion.button>
+
+                  {/* Ações rápidas revelam no hover */}
+                  <div className="absolute right-3 -top-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                    <button
+                      onClick={(e) => e.stopPropagation()}
+                      className="h-6 w-6 rounded-full bg-card shadow-e1 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-primary"
+                      title="Concluir"
+                    >
+                      <Check className="w-3 h-3" />
+                    </button>
+                    <button
+                      onClick={(e) => e.stopPropagation()}
+                      className="h-6 w-6 rounded-full bg-card shadow-e1 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-primary"
+                      title="Abrir"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                    </button>
+                  </div>
+                </motion.div>
                 <AnimatePresence>
                   {isOpen && (
                     <motion.div
@@ -173,7 +276,10 @@ export function MinhasTarefas() {
                         )}
                         {t.prazo_final && (
                           <p className="text-[13px] text-muted-foreground">
-                            Prazo: {format(parseISO(t.prazo_final), "dd 'de' MMMM", { locale: ptBR })}
+                            Prazo:{" "}
+                            {format(parseISO(t.prazo_final), "dd 'de' MMMM", {
+                              locale: ptBR,
+                            })}
                           </p>
                         )}
                         {t.notas && (
@@ -181,13 +287,25 @@ export function MinhasTarefas() {
                             {t.notas}
                           </p>
                         )}
+                        {t.demo && !t.notas && (
+                          <p className="text-[12px] text-muted-foreground italic">
+                            Cartão de exemplo — dados reais aparecem aqui assim que
+                            houver demandas atribuídas a você.
+                          </p>
+                        )}
                       </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
-              </li>
+              </motion.li>
             );
           })}
+          {tarefas.length === 0 && (
+            <div className="flex items-center gap-3 py-6 text-muted-foreground">
+              <Sprout className="w-5 h-5 text-sage" />
+              <span className="type-body">Nada aguardando você agora.</span>
+            </div>
+          )}
         </ul>
       )}
     </SurfaceCard>
