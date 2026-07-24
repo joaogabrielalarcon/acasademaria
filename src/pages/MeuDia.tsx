@@ -158,8 +158,7 @@ export default function MeuDia() {
     <AppLayout>
       <div className="flex flex-col gap-6 py-2">
         {/* ── Barra superior da página (fora da faixa-herói) ── */}
-        <div className="flex items-center justify-between gap-3">
-          <ClimaHeroInline />
+        <div className="flex items-center justify-end gap-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
@@ -188,7 +187,7 @@ export default function MeuDia() {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.24, ease: [0.2, 0.8, 0.2, 1] }}
-          className="relative overflow-hidden rounded-xl shadow-e2 px-8 py-6 lg:px-10 lg:py-7"
+          className="relative overflow-hidden rounded-xl shadow-e2 px-8 py-7 lg:px-10 lg:py-8"
           style={{
             background:
               "linear-gradient(135deg, #193527 0%, #12271D 55%, #0E1F17 100%)",
@@ -197,11 +196,12 @@ export default function MeuDia() {
         >
           <BotanicalMark />
 
-          <div className="relative flex flex-col gap-5">
-            <div className="flex items-start gap-6">
-              <MafeAvatar size={160} />
-              <div className="flex-1 min-w-0 flex flex-col gap-4">
-                <div>
+          <div className="relative flex flex-col gap-6">
+            <div className="grid gap-8 lg:gap-10 lg:grid-cols-[1fr_260px] xl:grid-cols-[1fr_300px] items-start">
+              {/* Coluna esquerda: avatar + saudação + frase em destaque */}
+              <div className="flex items-start gap-6 min-w-0">
+                <MafeAvatar size={160} />
+                <div className="flex-1 min-w-0 flex flex-col gap-4">
                   <h1
                     className="type-h1"
                     style={{
@@ -212,24 +212,31 @@ export default function MeuDia() {
                   >
                     {saudacao()}, {primeiroNome}.
                   </h1>
-                  <motion.p
+                  <motion.blockquote
                     key={reflexao}
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.15, duration: 0.35 }}
-                    className="text-[16.5px] italic mt-3 max-w-2xl font-medium pl-3 border-l-2"
+                    className="relative font-serif italic pl-5 pr-2 py-1 border-l-[3px] max-w-[42ch]"
                     style={{
-                      color: "hsl(var(--hero-band-fg) / 0.92)",
-                      borderColor: "hsl(var(--hero-band-fg) / 0.55)",
+                      color: "hsl(var(--hero-band-fg))",
+                      borderColor: "hsl(var(--rose-foreground))",
+                      fontSize: "22px",
+                      lineHeight: 1.35,
+                      letterSpacing: "-0.005em",
                     }}
                   >
                     {reflexao}
-                  </motion.p>
+                  </motion.blockquote>
                 </div>
-
-                <Aniversariantes />
               </div>
+
+              {/* Coluna direita: Clima + Aniversários e Eventos (2 semanas) */}
+              <aside className="lg:border-l lg:pl-6 xl:pl-8" style={{ borderColor: "hsl(var(--hero-band-fg) / 0.14)" }}>
+                <HeroLateral />
+              </aside>
             </div>
+
 
             {/* Campo da Mafe — field elevado com brilho no foco */}
             <form onSubmit={send} className="relative flex items-end gap-2">
