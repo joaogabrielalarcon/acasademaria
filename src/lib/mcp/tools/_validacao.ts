@@ -61,6 +61,29 @@ export const STATUS_ESCALA = [
   "cancelada",
 ] as const;
 
+/** Vocabulário próprio de projetos (funil comercial + entrega). */
+export const TIPOS_PROJETO = [
+  "implantacao",
+  "obra",
+  "manutencao",
+  "fornecimento",
+  "projeto",
+  "mao_de_obra",
+] as const;
+
+export const STATUS_PROJETO = [
+  "prospeccao",
+  "qualificacao",
+  "projeto",
+  "orcamento",
+  "proposta",
+  "aprovado",
+  "em_execucao",
+  "concluido",
+  "perdido",
+  "cancelado",
+] as const;
+
 export const PRIORIDADES = ["alta", "normal", "baixa"] as const;
 export const SOLICITANTES = ["equipe", "cliente", "caseiro", "contrato"] as const;
 export const AREAS_FUNCIONAIS = [
@@ -70,20 +93,19 @@ export const AREAS_FUNCIONAIS = [
   "direcao",
 ] as const;
 
-/** Valores aceitos por tabela. diarias e projetos não têm CHECK no banco:
- *  seguem a lista de registros. */
+/** Valores aceitos por tabela. diarias não tem CHECK no banco: segue a lista de registros. */
 export const TIPOS_POR_TABELA: Record<string, readonly string[]> = {
   registros: TIPOS_REGISTRO,
   escala_alocacoes: TIPOS_ESCALA,
   diarias: TIPOS_REGISTRO,
-  projetos: TIPOS_REGISTRO,
+  projetos: TIPOS_PROJETO,
 };
 
 export const STATUS_POR_TABELA: Record<string, readonly string[]> = {
   registros: STATUS_REGISTRO,
   escala_alocacoes: STATUS_ESCALA,
   diarias: STATUS_REGISTRO,
-  projetos: STATUS_REGISTRO,
+  projetos: STATUS_PROJETO,
 };
 
 const STATUS_POR_TIPO: Record<string, readonly string[]> = {

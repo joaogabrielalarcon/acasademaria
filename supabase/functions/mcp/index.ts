@@ -428,6 +428,26 @@ var STATUS_ESCALA = [
   "realizada",
   "cancelada"
 ];
+var TIPOS_PROJETO = [
+  "implantacao",
+  "obra",
+  "manutencao",
+  "fornecimento",
+  "projeto",
+  "mao_de_obra"
+];
+var STATUS_PROJETO = [
+  "prospeccao",
+  "qualificacao",
+  "projeto",
+  "orcamento",
+  "proposta",
+  "aprovado",
+  "em_execucao",
+  "concluido",
+  "perdido",
+  "cancelado"
+];
 var PRIORIDADES = ["alta", "normal", "baixa"];
 var SOLICITANTES = ["equipe", "cliente", "caseiro", "contrato"];
 var AREAS_FUNCIONAIS = [
@@ -440,13 +460,13 @@ var TIPOS_POR_TABELA = {
   registros: TIPOS_REGISTRO,
   escala_alocacoes: TIPOS_ESCALA,
   diarias: TIPOS_REGISTRO,
-  projetos: TIPOS_REGISTRO
+  projetos: TIPOS_PROJETO
 };
 var STATUS_POR_TABELA = {
   registros: STATUS_REGISTRO,
   escala_alocacoes: STATUS_ESCALA,
   diarias: STATUS_REGISTRO,
-  projetos: STATUS_REGISTRO
+  projetos: STATUS_PROJETO
 };
 var STATUS_POR_TIPO = {
   visita: ["programado", "realizado", "cancelado"],
