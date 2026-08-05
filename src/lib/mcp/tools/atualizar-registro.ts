@@ -328,7 +328,7 @@ export default defineTool({
         quemExecutou: quem_executou,
         observacao,
       });
-      if (!res.ok) avisos.push(res.aviso);
+      if (res.ok === false) avisos.push(res.aviso);
     }
 
     return {
