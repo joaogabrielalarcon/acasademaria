@@ -25,6 +25,12 @@ export function normalizarTexto(v: unknown): string {
 /* ─────────── listas de valores ─────────── */
 
 export const TIPOS_REGISTRO = [
+  "manutencao",
+  "implantacao",
+  "entrega",
+  "visita_tecnica",
+  "reuniao",
+  "outro",
   "visita",
   "tarefa",
   "acompanhamento",
@@ -32,9 +38,6 @@ export const TIPOS_REGISTRO = [
   "solicitacao",
   "observacao",
   "irrigacao",
-  "reuniao",
-  "visita_tecnica",
-  "outro",
 ] as const;
 
 export const STATUS_REGISTRO = [
@@ -50,9 +53,38 @@ export const STATUS_REGISTRO = [
   "reaberto",
 ] as const;
 
+export const TIPOS_ESCALA = ["projeto", "mao_de_obra_extra"] as const;
+export const STATUS_ESCALA = [
+  "planejada",
+  "confirmada",
+  "realizada",
+  "cancelada",
+] as const;
+
 export const PRIORIDADES = ["alta", "normal", "baixa"] as const;
 export const SOLICITANTES = ["equipe", "cliente", "caseiro", "contrato"] as const;
-export const AREAS_FUNCIONAIS = ["campo", "projetos", "administrativo"] as const;
+export const AREAS_FUNCIONAIS = [
+  "campo",
+  "projetos",
+  "administrativo",
+  "direcao",
+] as const;
+
+/** Valores aceitos por tabela. diarias e projetos não têm CHECK no banco:
+ *  seguem a lista de registros. */
+export const TIPOS_POR_TABELA: Record<string, readonly string[]> = {
+  registros: TIPOS_REGISTRO,
+  escala_alocacoes: TIPOS_ESCALA,
+  diarias: TIPOS_REGISTRO,
+  projetos: TIPOS_REGISTRO,
+};
+
+export const STATUS_POR_TABELA: Record<string, readonly string[]> = {
+  registros: STATUS_REGISTRO,
+  escala_alocacoes: STATUS_ESCALA,
+  diarias: STATUS_REGISTRO,
+  projetos: STATUS_REGISTRO,
+};
 
 const STATUS_POR_TIPO: Record<string, readonly string[]> = {
   visita: ["programado", "realizado", "cancelado"],
@@ -61,45 +93,51 @@ const STATUS_POR_TIPO: Record<string, readonly string[]> = {
 };
 
 /**
- * Normaliza e valida os campos de lista de `registros`.
+ * Normaliza e valida os campos de lista de uma tabela da operação.
  * Devolve { erro } com mensagem em português ou { valores } já normalizados.
  */
 export function validarValoresRegistro(
   campos: Record<string, unknown>,
+  tabela = "registros",
 ): { erro: string } | { valores: Record<string, unknown> } {
   const out: Record<string, unknown> = { ...campos };
 
   const checar = (
     campo: string,
-    permitidos: readonly string[],
+    permitidos: readonly string[] | undefined,
   ): string | null => {
+    if (!permitidos) return null;
     if (campos[campo] === undefined || campos[campo] === null) return null;
     const v = normalizarValor(campos[campo]);
     if (!permitidos.includes(v)) {
-      return `${campo} '${campos[campo]}' não existe. Use: ${permitidos.join(", ")}.`;
+      return `${campo} '${campos[campo]}' não vale para ${tabela}. Use: ${permitidos.join(", ")}.`;
     }
     out[campo] = v;
     return null;
   };
 
+  const ehRegistros = tabela === "registros";
+
   const erros = [
-    checar("tipo", TIPOS_REGISTRO),
-    checar("status", STATUS_REGISTRO),
-    checar("prioridade", PRIORIDADES),
-    checar("solicitante", SOLICITANTES),
-    checar("area_funcional", AREAS_FUNCIONAIS),
+    checar("tipo", TIPOS_POR_TABELA[tabela]),
+    checar("status", STATUS_POR_TABELA[tabela]),
+    ehRegistros ? checar("prioridade", PRIORIDADES) : null,
+    ehRegistros ? checar("solicitante", SOLICITANTES) : null,
+    ehRegistros ? checar("area_funcional", AREAS_FUNCIONAIS) : null,
   ].filter(Boolean) as string[];
 
   if (erros.length) return { erro: erros.join(" ") };
 
-  const tipo = out.tipo as string | undefined;
-  const status = out.status as string | undefined;
-  if (tipo && status) {
-    const permitidos = STATUS_POR_TIPO[tipo];
-    if (permitidos && !permitidos.includes(status)) {
-      return {
-        erro: `status '${status}' não vale para tipo=${tipo}. Para tipo=${tipo} use: ${permitidos.join(", ")}.`,
-      };
+  if (ehRegistros) {
+    const tipo = out.tipo as string | undefined;
+    const status = out.status as string | undefined;
+    if (tipo && status) {
+      const permitidos = STATUS_POR_TIPO[tipo];
+      if (permitidos && !permitidos.includes(status)) {
+        return {
+          erro: `status '${status}' não vale para tipo=${tipo}. Para tipo=${tipo} use: ${permitidos.join(", ")}.`,
+        };
+      }
     }
   }
 
@@ -112,22 +150,27 @@ export function validarValoresRegistro(
 export function validarStatusRegistroComTipo(
   statusBruto: unknown,
   tipoAtual: unknown,
+  tabela = "registros",
 ): { erro: string } | { status: string } {
   const status = normalizarValor(statusBruto);
-  if (!(STATUS_REGISTRO as readonly string[]).includes(status)) {
+  const permitidosTabela = STATUS_POR_TABELA[tabela] ?? STATUS_REGISTRO;
+  if (!permitidosTabela.includes(status)) {
     return {
-      erro: `status '${statusBruto}' não existe. Use: ${STATUS_REGISTRO.join(", ")}.`,
+      erro: `status '${statusBruto}' não vale para ${tabela}. Use: ${permitidosTabela.join(", ")}.`,
     };
   }
-  const tipo = normalizarValor(tipoAtual);
-  const permitidos = STATUS_POR_TIPO[tipo];
-  if (permitidos && !permitidos.includes(status)) {
-    return {
-      erro: `status '${status}' não vale para tipo=${tipo}. Para tipo=${tipo} use: ${permitidos.join(", ")}.`,
-    };
+  if (tabela === "registros") {
+    const tipo = normalizarValor(tipoAtual);
+    const permitidos = STATUS_POR_TIPO[tipo];
+    if (permitidos && !permitidos.includes(status)) {
+      return {
+        erro: `status '${status}' não vale para tipo=${tipo}. Para tipo=${tipo} use: ${permitidos.join(", ")}.`,
+      };
+    }
   }
   return { status };
 }
+
 
 /* ─────────── campos de texto acumuláveis ─────────── */
 

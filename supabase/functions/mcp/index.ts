@@ -395,16 +395,19 @@ function normalizarTexto(v) {
   return String(v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 var TIPOS_REGISTRO = [
+  "manutencao",
+  "implantacao",
+  "entrega",
+  "visita_tecnica",
+  "reuniao",
+  "outro",
   "visita",
   "tarefa",
   "acompanhamento",
   "intercorrencia",
   "solicitacao",
   "observacao",
-  "irrigacao",
-  "reuniao",
-  "visita_tecnica",
-  "outro"
+  "irrigacao"
 ];
 var STATUS_REGISTRO = [
   "programado",
@@ -418,58 +421,89 @@ var STATUS_REGISTRO = [
   "em_cuidado",
   "reaberto"
 ];
+var TIPOS_ESCALA = ["projeto", "mao_de_obra_extra"];
+var STATUS_ESCALA = [
+  "planejada",
+  "confirmada",
+  "realizada",
+  "cancelada"
+];
 var PRIORIDADES = ["alta", "normal", "baixa"];
 var SOLICITANTES = ["equipe", "cliente", "caseiro", "contrato"];
-var AREAS_FUNCIONAIS = ["campo", "projetos", "administrativo"];
+var AREAS_FUNCIONAIS = [
+  "campo",
+  "projetos",
+  "administrativo",
+  "direcao"
+];
+var TIPOS_POR_TABELA = {
+  registros: TIPOS_REGISTRO,
+  escala_alocacoes: TIPOS_ESCALA,
+  diarias: TIPOS_REGISTRO,
+  projetos: TIPOS_REGISTRO
+};
+var STATUS_POR_TABELA = {
+  registros: STATUS_REGISTRO,
+  escala_alocacoes: STATUS_ESCALA,
+  diarias: STATUS_REGISTRO,
+  projetos: STATUS_REGISTRO
+};
 var STATUS_POR_TIPO = {
   visita: ["programado", "realizado", "cancelado"],
   tarefa: ["a_fazer", "em_andamento", "travado", "concluido", "cancelado"],
   acompanhamento: ["em_observacao", "em_cuidado", "concluido", "reaberto"]
 };
-function validarValoresRegistro(campos) {
+function validarValoresRegistro(campos, tabela = "registros") {
   const out = { ...campos };
   const checar = (campo, permitidos) => {
+    if (!permitidos) return null;
     if (campos[campo] === void 0 || campos[campo] === null) return null;
     const v = normalizarValor(campos[campo]);
     if (!permitidos.includes(v)) {
-      return `${campo} '${campos[campo]}' n\xE3o existe. Use: ${permitidos.join(", ")}.`;
+      return `${campo} '${campos[campo]}' n\xE3o vale para ${tabela}. Use: ${permitidos.join(", ")}.`;
     }
     out[campo] = v;
     return null;
   };
+  const ehRegistros = tabela === "registros";
   const erros = [
-    checar("tipo", TIPOS_REGISTRO),
-    checar("status", STATUS_REGISTRO),
-    checar("prioridade", PRIORIDADES),
-    checar("solicitante", SOLICITANTES),
-    checar("area_funcional", AREAS_FUNCIONAIS)
+    checar("tipo", TIPOS_POR_TABELA[tabela]),
+    checar("status", STATUS_POR_TABELA[tabela]),
+    ehRegistros ? checar("prioridade", PRIORIDADES) : null,
+    ehRegistros ? checar("solicitante", SOLICITANTES) : null,
+    ehRegistros ? checar("area_funcional", AREAS_FUNCIONAIS) : null
   ].filter(Boolean);
   if (erros.length) return { erro: erros.join(" ") };
-  const tipo = out.tipo;
-  const status = out.status;
-  if (tipo && status) {
+  if (ehRegistros) {
+    const tipo = out.tipo;
+    const status = out.status;
+    if (tipo && status) {
+      const permitidos = STATUS_POR_TIPO[tipo];
+      if (permitidos && !permitidos.includes(status)) {
+        return {
+          erro: `status '${status}' n\xE3o vale para tipo=${tipo}. Para tipo=${tipo} use: ${permitidos.join(", ")}.`
+        };
+      }
+    }
+  }
+  return { valores: out };
+}
+function validarStatusRegistroComTipo(statusBruto, tipoAtual, tabela = "registros") {
+  const status = normalizarValor(statusBruto);
+  const permitidosTabela = STATUS_POR_TABELA[tabela] ?? STATUS_REGISTRO;
+  if (!permitidosTabela.includes(status)) {
+    return {
+      erro: `status '${statusBruto}' n\xE3o vale para ${tabela}. Use: ${permitidosTabela.join(", ")}.`
+    };
+  }
+  if (tabela === "registros") {
+    const tipo = normalizarValor(tipoAtual);
     const permitidos = STATUS_POR_TIPO[tipo];
     if (permitidos && !permitidos.includes(status)) {
       return {
         erro: `status '${status}' n\xE3o vale para tipo=${tipo}. Para tipo=${tipo} use: ${permitidos.join(", ")}.`
       };
     }
-  }
-  return { valores: out };
-}
-function validarStatusRegistroComTipo(statusBruto, tipoAtual) {
-  const status = normalizarValor(statusBruto);
-  if (!STATUS_REGISTRO.includes(status)) {
-    return {
-      erro: `status '${statusBruto}' n\xE3o existe. Use: ${STATUS_REGISTRO.join(", ")}.`
-    };
-  }
-  const tipo = normalizarValor(tipoAtual);
-  const permitidos = STATUS_POR_TIPO[tipo];
-  if (permitidos && !permitidos.includes(status)) {
-    return {
-      erro: `status '${status}' n\xE3o vale para tipo=${tipo}. Para tipo=${tipo} use: ${permitidos.join(", ")}.`
-    };
   }
   return { status };
 }
@@ -775,13 +809,21 @@ var criar_registros_default = defineTool10({
             continue;
           }
           payload = filtrado.payload;
-          if (tbl === "registros") {
-            const validado = validarValoresRegistro(payload);
+          if (tbl === "registros" || tbl === "escala_alocacoes" || tbl === "diarias" || tbl === "projetos") {
+            const validado = validarValoresRegistro(payload, tbl);
             if ("erro" in validado) {
               resultados.push({ indice: i, status: "erro", motivo: validado.erro });
               continue;
             }
             payload = validado.valores;
+          }
+          if (tbl === "escala_alocacoes" && !payload.projeto_id && !payload.local_id) {
+            resultados.push({
+              indice: i,
+              status: "erro",
+              motivo: "escala_alocacoes precisa de projeto_id ou local_id. Informe pelo menos um dos dois para dizer onde a pessoa vai trabalhar."
+            });
+            continue;
           }
         }
         if (!forcar && tbl === "diarias") {
@@ -1059,8 +1101,8 @@ var atualizar_registro_default = defineTool11({
     const patch = {};
     for (const [k, v] of entries) {
       let valor = v;
-      if (tbl === "registros" && k === "status") {
-        const r = validarStatusRegistroComTipo(v, antesObj.tipo);
+      if (k === "status" && STATUS_POR_TABELA[tbl]) {
+        const r = validarStatusRegistroComTipo(v, antesObj.tipo, tbl);
         if ("erro" in r) {
           return { content: [{ type: "text", text: r.erro }], isError: true };
         }
