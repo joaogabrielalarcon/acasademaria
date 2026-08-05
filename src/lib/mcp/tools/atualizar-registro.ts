@@ -12,6 +12,8 @@ import {
   PRIORIDADES,
   SOLICITANTES,
   AREAS_FUNCIONAIS,
+  STATUS_POR_TABELA,
+
 } from "./_validacao";
 
 const TABELAS = [

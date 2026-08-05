@@ -442,7 +442,7 @@ var TIPOS_POR_TABELA = {
   diarias: TIPOS_REGISTRO,
   projetos: TIPOS_REGISTRO
 };
-var STATUS_POR_TABELA2 = {
+var STATUS_POR_TABELA = {
   registros: STATUS_REGISTRO,
   escala_alocacoes: STATUS_ESCALA,
   diarias: STATUS_REGISTRO,
@@ -468,7 +468,7 @@ function validarValoresRegistro(campos, tabela = "registros") {
   const ehRegistros = tabela === "registros";
   const erros = [
     checar("tipo", TIPOS_POR_TABELA[tabela]),
-    checar("status", STATUS_POR_TABELA2[tabela]),
+    checar("status", STATUS_POR_TABELA[tabela]),
     ehRegistros ? checar("prioridade", PRIORIDADES) : null,
     ehRegistros ? checar("solicitante", SOLICITANTES) : null,
     ehRegistros ? checar("area_funcional", AREAS_FUNCIONAIS) : null
@@ -490,7 +490,7 @@ function validarValoresRegistro(campos, tabela = "registros") {
 }
 function validarStatusRegistroComTipo(statusBruto, tipoAtual, tabela = "registros") {
   const status = normalizarValor(statusBruto);
-  const permitidosTabela = STATUS_POR_TABELA2[tabela] ?? STATUS_REGISTRO;
+  const permitidosTabela = STATUS_POR_TABELA[tabela] ?? STATUS_REGISTRO;
   if (!permitidosTabela.includes(status)) {
     return {
       erro: `status '${statusBruto}' n\xE3o vale para ${tabela}. Use: ${permitidosTabela.join(", ")}.`
