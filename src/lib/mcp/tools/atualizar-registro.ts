@@ -237,7 +237,22 @@ export default defineTool({
           return { content: [{ type: "text", text: r.erro }], isError: true };
         }
         valor = r.status;
+      } else if (tbl === "projetos" && k === "substatus") {
+        const n = normalizarValor(v);
+        if (n && !(SUBSTATUS_PROJETO as readonly string[]).includes(n)) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `substatus '${v}' não existe. Use: ${SUBSTATUS_PROJETO.join(", ")}.`,
+              },
+            ],
+            isError: true,
+          };
+        }
+        valor = n || null;
       } else if (tbl === "registros" && k === "prioridade") {
+
 
         const n = normalizarValor(v);
         if (!(PRIORIDADES as readonly string[]).includes(n)) {
