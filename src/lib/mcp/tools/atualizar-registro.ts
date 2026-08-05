@@ -13,6 +13,7 @@ import {
   SOLICITANTES,
   AREAS_FUNCIONAIS,
   STATUS_POR_TABELA,
+  SUBSTATUS_PROJETO,
 
 } from "./_validacao";
 

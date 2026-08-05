@@ -488,7 +488,7 @@ var STATUS_POR_TABELA = {
   diarias: STATUS_REGISTRO,
   projetos: STATUS_PROJETO
 };
-var SUBSTATUS_PROJETO2 = STATUS_REGISTRO;
+var SUBSTATUS_PROJETO = STATUS_REGISTRO;
 var STATUS_POR_TIPO = {
   visita: ["programado", "realizado", "reportado", "validado", "cancelado"],
   tarefa: [
@@ -542,7 +542,7 @@ function validarValoresRegistro(campos, tabela = "registros") {
   const erros = [
     checar("tipo", TIPOS_POR_TABELA[tabela]),
     checar("status", STATUS_POR_TABELA[tabela]),
-    ehProjetos ? checar("substatus", SUBSTATUS_PROJETO2) : null,
+    ehProjetos ? checar("substatus", SUBSTATUS_PROJETO) : null,
     ehRegistros ? checar("prioridade", PRIORIDADES) : null,
     ehRegistros ? checar("solicitante", SOLICITANTES) : null,
     ehRegistros ? checar("area_funcional", AREAS_FUNCIONAIS) : null
