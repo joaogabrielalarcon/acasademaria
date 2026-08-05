@@ -410,16 +410,36 @@ var TIPOS_REGISTRO = [
   "irrigacao"
 ];
 var STATUS_REGISTRO = [
+  // rotina da visita
   "programado",
   "realizado",
-  "cancelado",
+  "reportado",
+  "validado",
+  // análise e orçamento
+  "solicitado",
+  "a_quantificar",
+  "quantificando",
+  "a_orcar",
+  "orcando",
+  "aguardando_aprovacao",
+  // preparação
+  "planejar_execucao",
+  "aguardando_material",
+  "retirar_material",
+  // execução
+  "executando",
   "a_fazer",
   "em_andamento",
   "travado",
-  "concluido",
+  // acompanhamento
+  "pos_execucao",
   "em_observacao",
   "em_cuidado",
-  "reaberto"
+  "reaberto",
+  // encerramento
+  "concluido",
+  "nao_aprovado",
+  "cancelado"
 ];
 var TIPOS_ESCALA = ["projeto", "mao_de_obra_extra"];
 var STATUS_ESCALA = [

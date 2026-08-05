@@ -40,18 +40,59 @@ export const TIPOS_REGISTRO = [
   "irrigacao",
 ] as const;
 
+/**
+ * Vocabulário real da operação (board "*Perfil Base" do Monday) + 4 estados
+ * genéricos que já estavam em uso. Serve para registros.status e projetos.substatus.
+ */
 export const STATUS_REGISTRO = [
+  // rotina da visita
   "programado",
   "realizado",
-  "cancelado",
+  "reportado",
+  "validado",
+  // análise e orçamento
+  "solicitado",
+  "a_quantificar",
+  "quantificando",
+  "a_orcar",
+  "orcando",
+  "aguardando_aprovacao",
+  // preparação
+  "planejar_execucao",
+  "aguardando_material",
+  "retirar_material",
+  // execução
+  "executando",
   "a_fazer",
   "em_andamento",
   "travado",
-  "concluido",
+  // acompanhamento
+  "pos_execucao",
   "em_observacao",
   "em_cuidado",
   "reaberto",
+  // encerramento
+  "concluido",
+  "nao_aprovado",
+  "cancelado",
 ] as const;
+
+/**
+ * MAPA DAS FASES (referência, ainda não implementado).
+ * Régua única para comparar áreas diferentes da empresa:
+ *
+ *   solicitado                                         → Solicitado
+ *   a_quantificar, quantificando, a_orcar, orcando     → Em análise
+ *   aguardando_aprovacao                               → Aguardando decisão
+ *   planejar_execucao, aguardando_material,
+ *   retirar_material, programado, a_fazer              → A programar
+ *   executando, em_andamento, travado, realizado,
+ *   reportado, validado                                → Em execução
+ *   pos_execucao, em_observacao, em_cuidado, reaberto  → Em acompanhamento
+ *   concluido                                          → Encerrado
+ *   nao_aprovado, cancelado                            → Encerrado sem entrega
+ */
+
 
 export const TIPOS_ESCALA = ["projeto", "mao_de_obra_extra"] as const;
 export const STATUS_ESCALA = [
