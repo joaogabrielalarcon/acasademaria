@@ -489,9 +489,40 @@ var STATUS_POR_TABELA = {
   projetos: STATUS_PROJETO
 };
 var STATUS_POR_TIPO = {
-  visita: ["programado", "realizado", "cancelado"],
-  tarefa: ["a_fazer", "em_andamento", "travado", "concluido", "cancelado"],
-  acompanhamento: ["em_observacao", "em_cuidado", "concluido", "reaberto"]
+  visita: ["programado", "realizado", "reportado", "validado", "cancelado"],
+  tarefa: [
+    "solicitado",
+    "a_quantificar",
+    "quantificando",
+    "a_orcar",
+    "orcando",
+    "aguardando_aprovacao",
+    "planejar_execucao",
+    "aguardando_material",
+    "retirar_material",
+    "executando",
+    "a_fazer",
+    "em_andamento",
+    "travado",
+    "concluido",
+    "nao_aprovado",
+    "cancelado"
+  ],
+  acompanhamento: [
+    "em_observacao",
+    "em_cuidado",
+    "pos_execucao",
+    "reaberto",
+    "concluido"
+  ],
+  irrigacao: [
+    "em_observacao",
+    "em_cuidado",
+    "a_fazer",
+    "em_andamento",
+    "concluido",
+    "cancelado"
+  ]
 };
 function validarValoresRegistro(campos, tabela = "registros") {
   const out = { ...campos };
