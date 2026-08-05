@@ -390,7 +390,7 @@
       {
         "name": "criar_registros",
         "title": "Criar registros em lote",
-        "description": "Cria linhas em lote em tabelas de cadastro (whitelist). Roda deduplicação para plantas, insumos e fornecedores (match_catalogo/norm_catalogo com nome). Match >= 0.90 é reportado como possível duplicado e NÃO cria (a menos que forcar=true). Máx 50 linhas por chamada. Escreve com o token do usuário (RLS ativa).",
+        "description": "Cria linhas em lote em tabelas de cadastro e da operação de campo (whitelist). Cadastro (plantas, insumos, fornecedores) roda deduplicação por nome. Operação (projetos, registros, diarias, escala_alocacoes, registro_insumos, registro_maquinas) roda validação de campos/valores e proteção contra gravação repetida por chave natural: diarias = cliente_id + data_visita; registros = cliente_id + data_servico + tipo + descrição parecida; escala_alocacoes = data + colaborador_id + local_id. Use forcar=true para criar mesmo assim. Máx 50 linhas por chamada. Escreve com o token do usuário (RLS ativa).",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -413,9 +413,15 @@
                 "plantas",
                 "fornecedores",
                 "fornecedor_atendentes",
-                "estoque_movimentacoes"
+                "estoque_movimentacoes",
+                "projetos",
+                "registros",
+                "diarias",
+                "escala_alocacoes",
+                "registro_insumos",
+                "registro_maquinas"
               ],
-              "description": "Tabela alvo. Aceita apenas: clientes, locais_cliente, colaboradores, maquinas, insumos, insumo_unidades, plantas, fornecedores, fornecedor_atendentes, estoque_movimentacoes"
+              "description": "Tabela alvo. Aceita apenas: clientes, locais_cliente, colaboradores, maquinas, insumos, insumo_unidades, plantas, fornecedores, fornecedor_atendentes, estoque_movimentacoes, projetos, registros, diarias, escala_alocacoes, registro_insumos, registro_maquinas"
             },
             "linhas": {
               "minItems": 1,
@@ -431,7 +437,7 @@
               "description": "Array de objetos (máx 50)."
             },
             "forcar": {
-              "description": "Se true, cria mesmo quando houver possível duplicado.",
+              "description": "Se true, cria mesmo quando houver possível duplicado ou visita repetida.",
               "type": "boolean"
             }
           },
@@ -445,7 +451,7 @@
       {
         "name": "atualizar_registro",
         "title": "Atualizar registro por id",
-        "description": "Atualiza UMA linha por id em tabelas de cadastro (whitelist). Em 'projetos' só permite corrigir tipo, status, titulo, responsavel_id e datas (data_inicio, data_fim, data_previsao, data_conclusao). Escreve com o token do usuário (RLS ativa). Retorna antes → depois.",
+        "description": "Atualiza UMA linha por id em tabelas de cadastro e da operação de campo (whitelist), com campos restritos por tabela. Use modo='acrescentar' para somar texto ao que já existe (separado por ' | ') em vez de sobrescrever. Toda mudança de status é gravada em audit_status_changes com metadata padronizado (motivo, quem_executou, observacao). Escreve com o token do usuário (RLS ativa). Retorna antes → depois.",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -469,9 +475,14 @@
                 "fornecedores",
                 "fornecedor_atendentes",
                 "estoque_movimentacoes",
-                "projetos"
+                "projetos",
+                "registros",
+                "diarias",
+                "escala_alocacoes",
+                "registro_insumos",
+                "registro_maquinas"
               ],
-              "description": "Tabela alvo. Aceita: clientes, locais_cliente, colaboradores, maquinas, insumos, insumo_unidades, plantas, fornecedores, fornecedor_atendentes, estoque_movimentacoes, projetos"
+              "description": "Tabela alvo. Aceita: clientes, locais_cliente, colaboradores, maquinas, insumos, insumo_unidades, plantas, fornecedores, fornecedor_atendentes, estoque_movimentacoes, projetos, registros, diarias, escala_alocacoes, registro_insumos, registro_maquinas"
             },
             "id": {
               "type": "string",
@@ -486,6 +497,26 @@
               },
               "additionalProperties": {},
               "description": "Campos a atualizar (objeto). Não passe id."
+            },
+            "modo": {
+              "description": "substituir (padrão) troca o valor. acrescentar soma o texto novo ao existente, separado por ' | ', nos campos de texto livre.",
+              "type": "string",
+              "enum": [
+                "substituir",
+                "acrescentar"
+              ]
+            },
+            "motivo": {
+              "description": "Por que o status mudou (vai para o histórico).",
+              "type": "string"
+            },
+            "quem_executou": {
+              "description": "Quem de fato executou (vai para o histórico).",
+              "type": "string"
+            },
+            "observacao": {
+              "description": "Observação livre sobre a mudança (vai para o histórico).",
+              "type": "string"
             }
           },
           "required": [
