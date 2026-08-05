@@ -809,13 +809,21 @@ var criar_registros_default = defineTool10({
             continue;
           }
           payload = filtrado.payload;
-          if (tbl === "registros") {
-            const validado = validarValoresRegistro(payload);
+          if (tbl === "registros" || tbl === "escala_alocacoes" || tbl === "diarias" || tbl === "projetos") {
+            const validado = validarValoresRegistro(payload, tbl);
             if ("erro" in validado) {
               resultados.push({ indice: i, status: "erro", motivo: validado.erro });
               continue;
             }
             payload = validado.valores;
+          }
+          if (tbl === "escala_alocacoes" && !payload.projeto_id && !payload.local_id) {
+            resultados.push({
+              indice: i,
+              status: "erro",
+              motivo: "escala_alocacoes precisa de projeto_id ou local_id. Informe pelo menos um dos dois para dizer onde a pessoa vai trabalhar."
+            });
+            continue;
           }
         }
         if (!forcar && tbl === "diarias") {
