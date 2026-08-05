@@ -226,13 +226,14 @@ export default defineTool({
     for (const [k, v] of entries) {
       let valor = v;
 
-      if (tbl === "registros" && k === "status") {
-        const r = validarStatusRegistroComTipo(v, antesObj.tipo);
+      if (k === "status" && STATUS_POR_TABELA[tbl]) {
+        const r = validarStatusRegistroComTipo(v, antesObj.tipo, tbl);
         if ("erro" in r) {
           return { content: [{ type: "text", text: r.erro }], isError: true };
         }
         valor = r.status;
       } else if (tbl === "registros" && k === "prioridade") {
+
         const n = normalizarValor(v);
         if (!(PRIORIDADES as readonly string[]).includes(n)) {
           return {
