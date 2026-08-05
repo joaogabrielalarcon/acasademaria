@@ -457,6 +457,38 @@ function validarValoresRegistro(campos) {
   }
   return { valores: out };
 }
+function validarStatusRegistroComTipo(statusBruto, tipoAtual) {
+  const status = normalizarValor(statusBruto);
+  if (!STATUS_REGISTRO.includes(status)) {
+    return {
+      erro: `status '${statusBruto}' n\xE3o existe. Use: ${STATUS_REGISTRO.join(", ")}.`
+    };
+  }
+  const tipo = normalizarValor(tipoAtual);
+  const permitidos = STATUS_POR_TIPO[tipo];
+  if (permitidos && !permitidos.includes(status)) {
+    return {
+      erro: `status '${status}' n\xE3o vale para tipo=${tipo}. Para tipo=${tipo} use: ${permitidos.join(", ")}.`
+    };
+  }
+  return { status };
+}
+var CAMPOS_TEXTO_ACUMULAVEL = /* @__PURE__ */ new Set([
+  "observacoes",
+  "observacoes_internas",
+  "descricao",
+  "assessores",
+  "funcionarios_casa",
+  "comentarios_jardim",
+  "ocorrencias"
+]);
+function acrescentarTexto(atual, novo) {
+  const a = typeof atual === "string" ? atual.trim() : "";
+  const b = String(novo ?? "").trim();
+  if (!a) return b;
+  if (!b) return a;
+  return `${a} | ${b}`;
+}
 function filtrarCampos(linha, permitidos, obrigatorios, tabela) {
   const desconhecidos = Object.keys(linha).filter(
     (k) => !permitidos.includes(k)
@@ -490,6 +522,44 @@ var TEM_AUTORIA = /* @__PURE__ */ new Set([
   "plantas",
   "locais_cliente"
 ]);
+async function nomeDoUsuario(supabase, userId, email) {
+  try {
+    const { data: col } = await supabase.from("colaboradores").select("nome").eq("user_id", userId).maybeSingle();
+    const nomeCol = col?.nome;
+    if (nomeCol) return nomeCol;
+  } catch {
+  }
+  try {
+    const { data: p } = await supabase.from("profiles").select("nome,email").eq("id", userId).maybeSingle();
+    const prof = p;
+    if (prof?.nome) return prof.nome;
+    if (prof?.email) return prof.email;
+  } catch {
+  }
+  return email ?? userId;
+}
+async function registrarMudancaStatus(supabase, params) {
+  const { error } = await supabase.from("audit_status_changes").insert({
+    entity_table: params.entityTable,
+    entity_id: params.entityId,
+    status_anterior: params.statusAnterior === null || params.statusAnterior === void 0 ? null : String(params.statusAnterior),
+    status_novo: params.statusNovo === null || params.statusNovo === void 0 ? null : String(params.statusNovo),
+    changed_by: params.changedBy,
+    changed_by_nome: params.changedByNome,
+    metadata: {
+      motivo: params.motivo ?? "",
+      quem_executou: params.quemExecutou ?? params.changedByNome,
+      observacao: params.observacao ?? ""
+    }
+  });
+  if (error) {
+    return {
+      ok: false,
+      aviso: `A altera\xE7\xE3o foi gravada, mas o hist\xF3rico de status n\xE3o p\xF4de ser registrado (${error.message}). Avise a administra\xE7\xE3o para liberar a escrita em audit_status_changes.`
+    };
+  }
+  return { ok: true };
+}
 
 // src/lib/mcp/tools/criar-registros.ts
 var TABELAS = [
@@ -835,26 +905,81 @@ var TABELAS2 = [
   "fornecedores",
   "fornecedor_atendentes",
   "estoque_movimentacoes",
-  "projetos"
+  "projetos",
+  "registros",
+  "diarias",
+  "escala_alocacoes",
+  "registro_insumos",
+  "registro_maquinas"
 ];
-var PROJETOS_CAMPOS = /* @__PURE__ */ new Set([
-  "tipo",
-  "status",
-  "titulo",
-  "responsavel_id",
-  "data_inicio",
-  "data_fim",
-  "data_previsao",
-  "data_conclusao"
-]);
+var CAMPOS_UPDATE = {
+  projetos: [
+    "tipo",
+    "status",
+    "titulo",
+    "responsavel_id",
+    "data_inicio",
+    "data_fim",
+    "data_previsao",
+    "data_conclusao",
+    "valor_mensal",
+    "dia_vencimento",
+    "local_id",
+    "lider_responsavel_id",
+    "escala_periodicidade",
+    "escala_dias_semana",
+    "escala_duracao_dias",
+    "escala_equipe_qtd"
+  ],
+  registros: [
+    "status",
+    "descricao",
+    "observacoes_internas",
+    "prioridade",
+    "data_alerta",
+    "status_solicitacao",
+    "tags",
+    "midia",
+    "trecho_id",
+    "area_funcional",
+    "equipe_presente_ids",
+    "executores_ids",
+    "solicitante"
+  ],
+  diarias: [
+    "status",
+    "comentarios_jardim",
+    "observacoes_internas",
+    "equipe_presente_ids",
+    "periodo",
+    "data_alerta",
+    "trecho_id"
+  ],
+  escala_alocacoes: ["status", "lider_id", "observacoes", "diaria_id"],
+  registro_insumos: ["quantidade", "observacao"],
+  registro_maquinas: ["horas_utilizadas", "observacao"]
+};
+var CAMPOS_BLOQUEADOS = {
+  registros: {
+    cliente_id: "mover um registro de casa por engano \xE9 pior que apagar e refazer. Crie um novo registro na casa certa e cancele este.",
+    local_id: "mover um registro de local por engano \xE9 pior que apagar e refazer. Crie um novo registro no local certo e cancele este.",
+    projeto_id: "mover um registro de projeto por engano \xE9 pior que apagar e refazer. Crie um novo registro no projeto certo e cancele este."
+  }
+};
 var atualizar_registro_default = defineTool11({
   name: "atualizar_registro",
   title: "Atualizar registro por id",
-  description: "Atualiza UMA linha por id em tabelas de cadastro (whitelist). Em 'projetos' s\xF3 permite corrigir tipo, status, titulo, responsavel_id e datas (data_inicio, data_fim, data_previsao, data_conclusao). Escreve com o token do usu\xE1rio (RLS ativa). Retorna antes \u2192 depois.",
+  description: "Atualiza UMA linha por id em tabelas de cadastro e da opera\xE7\xE3o de campo (whitelist), com campos restritos por tabela. Use modo='acrescentar' para somar texto ao que j\xE1 existe (separado por ' | ') em vez de sobrescrever. Toda mudan\xE7a de status \xE9 gravada em audit_status_changes com metadata padronizado (motivo, quem_executou, observacao). Escreve com o token do usu\xE1rio (RLS ativa). Retorna antes \u2192 depois.",
   inputSchema: {
     tabela: z10.enum(TABELAS2).describe("Tabela alvo. Aceita: " + TABELAS2.join(", ")),
     id: z10.string().uuid().describe("UUID da linha."),
-    campos: z10.record(z10.string(), z10.unknown()).describe("Campos a atualizar (objeto). N\xE3o passe id.")
+    campos: z10.record(z10.string(), z10.unknown()).describe("Campos a atualizar (objeto). N\xE3o passe id."),
+    modo: z10.enum(["substituir", "acrescentar"]).optional().describe(
+      "substituir (padr\xE3o) troca o valor. acrescentar soma o texto novo ao existente, separado por ' | ', nos campos de texto livre."
+    ),
+    motivo: z10.string().optional().describe("Por que o status mudou (vai para o hist\xF3rico)."),
+    quem_executou: z10.string().optional().describe("Quem de fato executou (vai para o hist\xF3rico)."),
+    observacao: z10.string().optional().describe("Observa\xE7\xE3o livre sobre a mudan\xE7a (vai para o hist\xF3rico).")
   },
   annotations: {
     readOnlyHint: false,
@@ -862,13 +987,15 @@ var atualizar_registro_default = defineTool11({
     idempotentHint: true,
     openWorldHint: false
   },
-  handler: async ({ tabela, id, campos }, ctx) => {
+  handler: async ({ tabela, id, campos, modo, motivo, quem_executou, observacao }, ctx) => {
     const unauth = requireAuth(ctx);
     if (unauth) return unauth;
     const supabase = supabaseForUser(ctx);
+    const userId = ctx.getUserId();
     const tbl = tabela;
+    const acrescentar = modo === "acrescentar";
     const entries = Object.entries(campos).filter(
-      ([k]) => k !== "id"
+      ([k]) => k !== "id" && k !== "created_by" && k !== "updated_by"
     );
     if (entries.length === 0) {
       return {
@@ -876,21 +1003,43 @@ var atualizar_registro_default = defineTool11({
         isError: true
       };
     }
-    if (tbl === "projetos") {
-      const invalidos = entries.filter(([k]) => !PROJETOS_CAMPOS.has(k)).map(([k]) => k);
-      if (invalidos.length) {
+    const bloqueados = CAMPOS_BLOQUEADOS[tbl];
+    if (bloqueados) {
+      const batidos = entries.filter(([k]) => bloqueados[k]);
+      if (batidos.length) {
         return {
           content: [
             {
               type: "text",
-              text: `Em 'projetos' s\xF3 \xE9 permitido: ${Array.from(PROJETOS_CAMPOS).join(", ")}. Rejeitados: ${invalidos.join(", ")}.`
+              text: batidos.map(([k]) => `N\xE3o \xE9 permitido alterar '${k}' em ${tbl}: ${bloqueados[k]}`).join(" ")
             }
           ],
           isError: true
         };
       }
     }
-    const colunas = entries.map(([k]) => k).join(",");
+    const permitidos = CAMPOS_UPDATE[tbl];
+    if (permitidos) {
+      const invalidos = entries.filter(([k]) => !permitidos.includes(k)).map(([k]) => k);
+      if (invalidos.length) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Em '${tbl}' s\xF3 \xE9 permitido atualizar: ${permitidos.join(", ")}. Rejeitados: ${invalidos.join(", ")}.`
+            }
+          ],
+          isError: true
+        };
+      }
+    }
+    const colunasSet = new Set(entries.map(([k]) => k));
+    if (tbl === "registros") colunasSet.add("tipo");
+    if (colunasSet.has("status") === false) {
+    } else {
+      colunasSet.add("status");
+    }
+    const colunas = Array.from(colunasSet).join(",");
     const { data: antes, error: eAntes } = await supabase.from(tbl).select(`id,${colunas}`).eq("id", id).maybeSingle();
     if (eAntes) {
       return { content: [{ type: "text", text: eAntes.message }], isError: true };
@@ -906,15 +1055,74 @@ var atualizar_registro_default = defineTool11({
         isError: true
       };
     }
-    const patch = Object.fromEntries(entries);
+    const antesObj = antes;
+    const patch = {};
+    for (const [k, v] of entries) {
+      let valor = v;
+      if (tbl === "registros" && k === "status") {
+        const r = validarStatusRegistroComTipo(v, antesObj.tipo);
+        if ("erro" in r) {
+          return { content: [{ type: "text", text: r.erro }], isError: true };
+        }
+        valor = r.status;
+      } else if (tbl === "registros" && k === "prioridade") {
+        const n = normalizarValor(v);
+        if (!PRIORIDADES.includes(n)) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `prioridade '${v}' n\xE3o existe. Use: ${PRIORIDADES.join(", ")}.`
+              }
+            ],
+            isError: true
+          };
+        }
+        valor = n;
+      } else if (tbl === "registros" && k === "solicitante") {
+        const n = normalizarValor(v);
+        if (!SOLICITANTES.includes(n)) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `solicitante '${v}' n\xE3o existe. Use: ${SOLICITANTES.join(", ")}.`
+              }
+            ],
+            isError: true
+          };
+        }
+        valor = n;
+      } else if (tbl === "registros" && k === "area_funcional") {
+        const n = normalizarValor(v);
+        if (!AREAS_FUNCIONAIS.includes(n)) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `area_funcional '${v}' n\xE3o existe. Use: ${AREAS_FUNCIONAIS.join(", ")}.`
+              }
+            ],
+            isError: true
+          };
+        }
+        valor = n;
+      }
+      if (acrescentar && CAMPOS_TEXTO_ACUMULAVEL.has(k) && typeof valor === "string") {
+        valor = acrescentarTexto(antesObj[k], valor);
+      }
+      patch[k] = valor;
+    }
+    if (TEM_AUTORIA.has(tbl)) {
+      patch.updated_by = userId;
+    }
     const { data: depois, error } = await supabase.from(tbl).update(patch).eq("id", id).select(`id,${colunas}`).maybeSingle();
     if (error) {
       const msg = /permission denied|row-level security/i.test(error.message) ? `acesso negado por RLS: ${error.message}` : error.message;
       return { content: [{ type: "text", text: msg }], isError: true };
     }
-    const diff = {};
-    const antesObj = antes;
     const depoisObj = depois ?? {};
+    const diff = {};
     for (const [k] of entries) {
       const a = antesObj[k];
       const d = depoisObj[k];
@@ -922,14 +1130,36 @@ var atualizar_registro_default = defineTool11({
         diff[k] = { antes: a, depois: d };
       }
     }
+    const avisos = [];
+    if (diff.status) {
+      const nome = await nomeDoUsuario(supabase, userId, ctx.getUserEmail?.());
+      const res = await registrarMudancaStatus(supabase, {
+        entityTable: tbl,
+        entityId: id,
+        statusAnterior: diff.status.antes,
+        statusNovo: diff.status.depois,
+        changedBy: userId,
+        changedByNome: nome,
+        motivo,
+        quemExecutou: quem_executou,
+        observacao
+      });
+      if (!res.ok) avisos.push(res.aviso);
+    }
     return {
       content: [
         {
           type: "text",
-          text: `Registro ${id} em ${tbl} atualizado (${Object.keys(diff).length} campo(s) alterado(s)).`
+          text: `Registro ${id} em ${tbl} atualizado (${Object.keys(diff).length} campo(s) alterado(s))` + (acrescentar ? ", modo acrescentar" : "") + "." + (avisos.length ? " " + avisos.join(" ") : "")
         }
       ],
-      structuredContent: { tabela: tbl, id, alteracoes: diff }
+      structuredContent: {
+        tabela: tbl,
+        id,
+        modo: acrescentar ? "acrescentar" : "substituir",
+        alteracoes: diff,
+        avisos
+      }
     };
   }
 });
