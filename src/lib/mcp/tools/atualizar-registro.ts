@@ -41,7 +41,10 @@ const CAMPOS_UPDATE: Partial<Record<Tabela, string[]>> = {
   projetos: [
     "tipo",
     "status",
+    "substatus",
+    "observacoes",
     "titulo",
+
     "responsavel_id",
     "data_inicio",
     "data_fim",

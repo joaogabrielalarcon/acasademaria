@@ -1032,6 +1032,8 @@ var CAMPOS_UPDATE = {
   projetos: [
     "tipo",
     "status",
+    "substatus",
+    "observacoes",
     "titulo",
     "responsavel_id",
     "data_inicio",
