@@ -410,16 +410,36 @@ var TIPOS_REGISTRO = [
   "irrigacao"
 ];
 var STATUS_REGISTRO = [
+  // rotina da visita
   "programado",
   "realizado",
-  "cancelado",
+  "reportado",
+  "validado",
+  // análise e orçamento
+  "solicitado",
+  "a_quantificar",
+  "quantificando",
+  "a_orcar",
+  "orcando",
+  "aguardando_aprovacao",
+  // preparação
+  "planejar_execucao",
+  "aguardando_material",
+  "retirar_material",
+  // execução
+  "executando",
   "a_fazer",
   "em_andamento",
   "travado",
-  "concluido",
+  // acompanhamento
+  "pos_execucao",
   "em_observacao",
   "em_cuidado",
-  "reaberto"
+  "reaberto",
+  // encerramento
+  "concluido",
+  "nao_aprovado",
+  "cancelado"
 ];
 var TIPOS_ESCALA = ["projeto", "mao_de_obra_extra"];
 var STATUS_ESCALA = [
@@ -468,10 +488,42 @@ var STATUS_POR_TABELA = {
   diarias: STATUS_REGISTRO,
   projetos: STATUS_PROJETO
 };
+var SUBSTATUS_PROJETO = STATUS_REGISTRO;
 var STATUS_POR_TIPO = {
-  visita: ["programado", "realizado", "cancelado"],
-  tarefa: ["a_fazer", "em_andamento", "travado", "concluido", "cancelado"],
-  acompanhamento: ["em_observacao", "em_cuidado", "concluido", "reaberto"]
+  visita: ["programado", "realizado", "reportado", "validado", "cancelado"],
+  tarefa: [
+    "solicitado",
+    "a_quantificar",
+    "quantificando",
+    "a_orcar",
+    "orcando",
+    "aguardando_aprovacao",
+    "planejar_execucao",
+    "aguardando_material",
+    "retirar_material",
+    "executando",
+    "a_fazer",
+    "em_andamento",
+    "travado",
+    "concluido",
+    "nao_aprovado",
+    "cancelado"
+  ],
+  acompanhamento: [
+    "em_observacao",
+    "em_cuidado",
+    "pos_execucao",
+    "reaberto",
+    "concluido"
+  ],
+  irrigacao: [
+    "em_observacao",
+    "em_cuidado",
+    "a_fazer",
+    "em_andamento",
+    "concluido",
+    "cancelado"
+  ]
 };
 function validarValoresRegistro(campos, tabela = "registros") {
   const out = { ...campos };
@@ -486,9 +538,11 @@ function validarValoresRegistro(campos, tabela = "registros") {
     return null;
   };
   const ehRegistros = tabela === "registros";
+  const ehProjetos = tabela === "projetos";
   const erros = [
     checar("tipo", TIPOS_POR_TABELA[tabela]),
     checar("status", STATUS_POR_TABELA[tabela]),
+    ehProjetos ? checar("substatus", SUBSTATUS_PROJETO) : null,
     ehRegistros ? checar("prioridade", PRIORIDADES) : null,
     ehRegistros ? checar("solicitante", SOLICITANTES) : null,
     ehRegistros ? checar("area_funcional", AREAS_FUNCIONAIS) : null

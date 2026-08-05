@@ -40,18 +40,59 @@ export const TIPOS_REGISTRO = [
   "irrigacao",
 ] as const;
 
+/**
+ * Vocabulário real da operação (board "*Perfil Base" do Monday) + 4 estados
+ * genéricos que já estavam em uso. Serve para registros.status e projetos.substatus.
+ */
 export const STATUS_REGISTRO = [
+  // rotina da visita
   "programado",
   "realizado",
-  "cancelado",
+  "reportado",
+  "validado",
+  // análise e orçamento
+  "solicitado",
+  "a_quantificar",
+  "quantificando",
+  "a_orcar",
+  "orcando",
+  "aguardando_aprovacao",
+  // preparação
+  "planejar_execucao",
+  "aguardando_material",
+  "retirar_material",
+  // execução
+  "executando",
   "a_fazer",
   "em_andamento",
   "travado",
-  "concluido",
+  // acompanhamento
+  "pos_execucao",
   "em_observacao",
   "em_cuidado",
   "reaberto",
+  // encerramento
+  "concluido",
+  "nao_aprovado",
+  "cancelado",
 ] as const;
+
+/**
+ * MAPA DAS FASES (referência, ainda não implementado).
+ * Régua única para comparar áreas diferentes da empresa:
+ *
+ *   solicitado                                         → Solicitado
+ *   a_quantificar, quantificando, a_orcar, orcando     → Em análise
+ *   aguardando_aprovacao                               → Aguardando decisão
+ *   planejar_execucao, aguardando_material,
+ *   retirar_material, programado, a_fazer              → A programar
+ *   executando, em_andamento, travado, realizado,
+ *   reportado, validado                                → Em execução
+ *   pos_execucao, em_observacao, em_cuidado, reaberto  → Em acompanhamento
+ *   concluido                                          → Encerrado
+ *   nao_aprovado, cancelado                            → Encerrado sem entrega
+ */
+
 
 export const TIPOS_ESCALA = ["projeto", "mao_de_obra_extra"] as const;
 export const STATUS_ESCALA = [
@@ -108,10 +149,44 @@ export const STATUS_POR_TABELA: Record<string, readonly string[]> = {
   projetos: STATUS_PROJETO,
 };
 
+/** projetos.substatus usa o mesmo vocabulário operacional de registros.status. */
+export const SUBSTATUS_PROJETO = STATUS_REGISTRO;
+
 const STATUS_POR_TIPO: Record<string, readonly string[]> = {
-  visita: ["programado", "realizado", "cancelado"],
-  tarefa: ["a_fazer", "em_andamento", "travado", "concluido", "cancelado"],
-  acompanhamento: ["em_observacao", "em_cuidado", "concluido", "reaberto"],
+  visita: ["programado", "realizado", "reportado", "validado", "cancelado"],
+  tarefa: [
+    "solicitado",
+    "a_quantificar",
+    "quantificando",
+    "a_orcar",
+    "orcando",
+    "aguardando_aprovacao",
+    "planejar_execucao",
+    "aguardando_material",
+    "retirar_material",
+    "executando",
+    "a_fazer",
+    "em_andamento",
+    "travado",
+    "concluido",
+    "nao_aprovado",
+    "cancelado",
+  ],
+  acompanhamento: [
+    "em_observacao",
+    "em_cuidado",
+    "pos_execucao",
+    "reaberto",
+    "concluido",
+  ],
+  irrigacao: [
+    "em_observacao",
+    "em_cuidado",
+    "a_fazer",
+    "em_andamento",
+    "concluido",
+    "cancelado",
+  ],
 };
 
 /**
@@ -139,10 +214,12 @@ export function validarValoresRegistro(
   };
 
   const ehRegistros = tabela === "registros";
+  const ehProjetos = tabela === "projetos";
 
   const erros = [
     checar("tipo", TIPOS_POR_TABELA[tabela]),
     checar("status", STATUS_POR_TABELA[tabela]),
+    ehProjetos ? checar("substatus", SUBSTATUS_PROJETO) : null,
     ehRegistros ? checar("prioridade", PRIORIDADES) : null,
     ehRegistros ? checar("solicitante", SOLICITANTES) : null,
     ehRegistros ? checar("area_funcional", AREAS_FUNCIONAIS) : null,
