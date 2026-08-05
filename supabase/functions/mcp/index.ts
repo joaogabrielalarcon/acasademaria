@@ -1032,6 +1032,8 @@ var CAMPOS_UPDATE = {
   projetos: [
     "tipo",
     "status",
+    "substatus",
+    "observacoes",
     "titulo",
     "responsavel_id",
     "data_inicio",
@@ -1181,6 +1183,20 @@ var atualizar_registro_default = defineTool11({
           return { content: [{ type: "text", text: r.erro }], isError: true };
         }
         valor = r.status;
+      } else if (tbl === "projetos" && k === "substatus") {
+        const n = normalizarValor(v);
+        if (n && !SUBSTATUS_PROJETO.includes(n)) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `substatus '${v}' n\xE3o existe. Use: ${SUBSTATUS_PROJETO.join(", ")}.`
+              }
+            ],
+            isError: true
+          };
+        }
+        valor = n || null;
       } else if (tbl === "registros" && k === "prioridade") {
         const n = normalizarValor(v);
         if (!PRIORIDADES.includes(n)) {
