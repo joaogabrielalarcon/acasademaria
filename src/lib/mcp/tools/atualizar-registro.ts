@@ -14,6 +14,9 @@ import {
   AREAS_FUNCIONAIS,
   STATUS_POR_TABELA,
   SUBSTATUS_PROJETO,
+  validarCamposExtras,
+  acessoRestrito,
+  cortarLinha,
 
 } from "./_validacao";
 
@@ -34,6 +37,7 @@ const TABELAS = [
   "escala_alocacoes",
   "registro_insumos",
   "registro_maquinas",
+  "demandas",
 ] as const;
 type Tabela = (typeof TABELAS)[number];
 
@@ -59,6 +63,30 @@ const CAMPOS_UPDATE: Partial<Record<Tabela, string[]>> = {
     "escala_dias_semana",
     "escala_duracao_dias",
     "escala_equipe_qtd",
+    "temperatura",
+    "proximo_contato_em",
+    "data_retorno_prometida",
+    "data_prometida_cliente",
+    "data_alvo_interna",
+    "origem",
+    "valor_total",
+    "descricao",
+  ],
+  demandas: [
+    "titulo",
+    "tipo",
+    "prioridade",
+    "responsavel_atual_id",
+    "etapa_atual_id",
+    "prazo_final",
+    "cronograma_inicio",
+    "cronograma_fim",
+    "valor",
+    "status_saida",
+    "notas",
+    "arquivada",
+    "projeto_id",
+    "local_id",
   ],
   registros: [
     "status",
@@ -197,6 +225,15 @@ export default defineTool({
       }
     }
 
+    // Listas, datas e números dos campos de projetos e demandas.
+    if (tbl === "projetos" || tbl === "demandas") {
+      const extras = validarCamposExtras(Object.fromEntries(entries), tbl);
+      if ("erro" in extras) {
+        return { content: [{ type: "text", text: extras.erro }], isError: true };
+      }
+      for (const e of entries) e[1] = extras.valores[e[0]];
+    }
+
     const colunasSet = new Set(entries.map(([k]) => k));
     if (tbl === "registros") colunasSet.add("tipo");
     if (colunasSet.has("status") === false) {
@@ -326,13 +363,18 @@ export default defineTool({
     }
 
     const depoisObj = (depois ?? {}) as unknown as Record<string, unknown>;
-    const diff: Record<string, { antes: unknown; depois: unknown }> = {};
+    let diff: Record<string, { antes: unknown; depois: unknown }> = {};
     for (const [k] of entries) {
       const a = antesObj[k];
       const d = depoisObj[k];
       if (JSON.stringify(a) !== JSON.stringify(d)) {
         diff[k] = { antes: a, depois: d };
       }
+    }
+
+    // Corte por cargo também no antes → depois devolvido.
+    if (await acessoRestrito(supabase, userId)) {
+      diff = cortarLinha(tbl, diff);
     }
 
     // Histórico de status: grava sempre que o status mudar, com ou sem motivo.

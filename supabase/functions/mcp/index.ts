@@ -354,6 +354,87 @@ async function registrarMudancaStatus(supabase, params) {
   }
   return { ok: true };
 }
+var TEMPERATURAS = ["frio", "morno", "quente"];
+var ORIGENS_PROJETO = [
+  "indicacao",
+  "arquiteto",
+  "instagram",
+  "site",
+  "cliente_antigo",
+  "evento",
+  "outro"
+];
+var CAMPOS_DATA_ISO = {
+  projetos: [
+    "proximo_contato_em",
+    "data_retorno_prometida",
+    "data_prometida_cliente",
+    "data_alvo_interna"
+  ],
+  demandas: ["prazo_final", "cronograma_inicio", "cronograma_fim"]
+};
+function dataIsoValida(v) {
+  if (typeof v !== "string") return false;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v.trim());
+  if (!m) return false;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const dt = new Date(Date.UTC(y, mo - 1, d));
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === mo - 1 && dt.getUTCDate() === d;
+}
+var PRIORIDADES_DEMANDA = ["baixa", "media", "alta", "urgente"];
+var PRIORIDADE_DEMANDA_BANCO = {
+  baixa: "baixa",
+  media: "media",
+  alta: "alta",
+  urgente: "critica",
+  critica: "critica"
+};
+var LADOS_DEMANDA = ["nosso", "terceiro", "cliente"];
+var STATUS_SAIDA_DEMANDA = ["nao_aprovado", "rejeitado", "cancelado"];
+function validarCamposExtras(campos, tabela) {
+  const out = { ...campos };
+  const erros = [];
+  const presente = (k) => campos[k] !== void 0 && campos[k] !== null && campos[k] !== "";
+  const lista = (k, permitidos, mapa) => {
+    if (!presente(k)) return;
+    const n = normalizarValor(campos[k]);
+    const aceito = mapa ? n in mapa : permitidos.includes(n);
+    if (!aceito) {
+      erros.push(`${k} '${campos[k]}' n\xE3o vale para ${tabela}. Use: ${permitidos.join(", ")}.`);
+      return;
+    }
+    out[k] = mapa ? mapa[n] : n;
+  };
+  if (tabela === "projetos") {
+    lista("temperatura", TEMPERATURAS);
+    lista("origem", ORIGENS_PROJETO);
+    if (presente("valor_total")) {
+      const n = Number(campos.valor_total);
+      if (!Number.isFinite(n) || n < 0) {
+        erros.push(`valor_total '${campos.valor_total}' precisa ser um n\xFAmero maior ou igual a zero.`);
+      } else out.valor_total = n;
+    }
+  }
+  if (tabela === "demandas") {
+    lista("prioridade", PRIORIDADES_DEMANDA, PRIORIDADE_DEMANDA_BANCO);
+    lista("lado", LADOS_DEMANDA);
+    lista("status_saida", STATUS_SAIDA_DEMANDA);
+    if (presente("valor")) {
+      const n = Number(campos.valor);
+      if (!Number.isFinite(n) || n < 0) {
+        erros.push(`valor '${campos.valor}' precisa ser um n\xFAmero maior ou igual a zero.`);
+      } else out.valor = n;
+    }
+  }
+  for (const k of CAMPOS_DATA_ISO[tabela] ?? []) {
+    if (!presente(k)) continue;
+    if (!dataIsoValida(campos[k])) {
+      erros.push(`${k} '${campos[k]}' n\xE3o \xE9 uma data v\xE1lida. Use o formato AAAA-MM-DD.`);
+    }
+  }
+  if (erros.length) return { erro: erros.join(" ") };
+  return { valores: out };
+}
 async function papeisDoUsuario(supabase, userId) {
   const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
   return (data ?? []).map((r) => r.role);
@@ -766,7 +847,10 @@ var TABELAS = [
   "diarias",
   "escala_alocacoes",
   "registro_insumos",
-  "registro_maquinas"
+  "registro_maquinas",
+  // pendências por cliente
+  "demandas",
+  "demanda_responsaveis"
 ];
 var TEM_CREATED_BY = /* @__PURE__ */ new Set([
   "clientes",
@@ -805,8 +889,36 @@ var CAMPOS_OPERACAO = {
       "escala_periodicidade",
       "escala_dias_semana",
       "escala_duracao_dias",
-      "escala_equipe_qtd"
+      "escala_equipe_qtd",
+      "temperatura",
+      "proximo_contato_em",
+      "data_retorno_prometida",
+      "data_prometida_cliente",
+      "data_alvo_interna"
     ]
+  },
+  demandas: {
+    obrigatorios: ["titulo", "tipo"],
+    permitidos: [
+      "titulo",
+      "tipo",
+      "cliente_id",
+      "projeto_id",
+      "local_id",
+      "prioridade",
+      "responsavel_atual_id",
+      "prazo_final",
+      "valor",
+      "notas",
+      "pipeline_id",
+      "etapa_atual_id",
+      "orcamento_id",
+      "lado"
+    ]
+  },
+  demanda_responsaveis: {
+    obrigatorios: ["demanda_id", "colaborador_id"],
+    permitidos: ["demanda_id", "colaborador_id", "papel"]
   },
   registros: {
     obrigatorios: ["cliente_id", "data_servico", "tipo", "descricao", "status"],
@@ -871,7 +983,7 @@ var CAMPOS_OPERACAO = {
 var criar_registros_default = defineTool10({
   name: "criar_registros",
   title: "Criar registros em lote",
-  description: "Cria linhas em lote em tabelas de cadastro e da opera\xE7\xE3o de campo (whitelist). Cadastro (plantas, insumos, fornecedores) roda deduplica\xE7\xE3o por nome. Opera\xE7\xE3o (projetos, registros, diarias, escala_alocacoes, registro_insumos, registro_maquinas) roda valida\xE7\xE3o de campos/valores e prote\xE7\xE3o contra grava\xE7\xE3o repetida por chave natural: diarias = cliente_id + data_visita; registros = cliente_id + data_servico + tipo + descri\xE7\xE3o parecida; escala_alocacoes = data + colaborador_id + local_id. Use forcar=true para criar mesmo assim. M\xE1x 50 linhas por chamada. Escreve com o token do usu\xE1rio (RLS ativa).",
+  description: "Cria linhas em lote em tabelas de cadastro e da opera\xE7\xE3o de campo (whitelist). Cadastro (plantas, insumos, fornecedores) roda deduplica\xE7\xE3o por nome. Opera\xE7\xE3o (projetos, registros, diarias, escala_alocacoes, registro_insumos, registro_maquinas, demandas, demanda_responsaveis) roda valida\xE7\xE3o de campos/valores e prote\xE7\xE3o contra grava\xE7\xE3o repetida por chave natural: diarias = cliente_id + data_visita; registros = cliente_id + data_servico + tipo + descri\xE7\xE3o parecida; escala_alocacoes = data + colaborador_id + local_id; demandas = cliente_id + t\xEDtulo parecido entre as n\xE3o arquivadas. Use forcar=true para criar mesmo assim. M\xE1x 50 linhas por chamada. Escreve com o token do usu\xE1rio (RLS ativa).",
   inputSchema: {
     tabela: z9.enum(TABELAS).describe("Tabela alvo. Aceita apenas: " + TABELAS.join(", ")),
     linhas: z9.array(z9.record(z9.string(), z9.unknown())).min(1).max(50).describe("Array de objetos (m\xE1x 50)."),
@@ -970,6 +1082,15 @@ var criar_registros_default = defineTool10({
             }
             payload = validado.valores;
           }
+          if (tbl === "projetos" || tbl === "demandas") {
+            const extras = validarCamposExtras(payload, tbl);
+            if ("erro" in extras) {
+              resultados.push({ indice: i, status: "erro", motivo: extras.erro });
+              continue;
+            }
+            payload = extras.valores;
+          }
+          if (tbl === "demandas" && !payload.prioridade) payload.prioridade = "media";
           if (tbl === "escala_alocacoes" && !payload.projeto_id && !payload.local_id) {
             resultados.push({
               indice: i,
@@ -1012,6 +1133,29 @@ var criar_registros_default = defineTool10({
                 id: hit.id,
                 fonte: "cliente_id + data_servico + tipo + descri\xE7\xE3o parecida",
                 mudaria: diffPreview({ descricao: hit.descricao }, payload)
+              }
+            });
+            continue;
+          }
+        }
+        if (!forcar && tbl === "demandas" && payload.cliente_id) {
+          const { data: cands } = await supabase.from("demandas").select("id, titulo, prioridade, prazo_final, notas").eq("cliente_id", payload.cliente_id).eq("arquivada", false).limit(100);
+          const alvo = normalizarTexto(payload.titulo);
+          const hit = (cands ?? []).find((c) => {
+            const t = normalizarTexto(c.titulo);
+            if (!t || !alvo) return false;
+            return t === alvo || Math.min(t.length, alvo.length) >= 8 && (t.includes(alvo) || alvo.includes(t));
+          });
+          if (hit) {
+            resultados.push({
+              indice: i,
+              status: "pulada",
+              motivo: "j\xE1 existe pend\xEAncia aberta com t\xEDtulo parecido para este cliente. Para criar assim mesmo, chame de novo com forcar=true.",
+              duplicado: {
+                id: hit.id,
+                nome: hit.titulo,
+                fonte: "cliente_id + t\xEDtulo parecido + arquivada=false",
+                mudaria: diffPreview(hit, payload)
               }
             });
             continue;
@@ -1105,7 +1249,8 @@ var TABELAS2 = [
   "diarias",
   "escala_alocacoes",
   "registro_insumos",
-  "registro_maquinas"
+  "registro_maquinas",
+  "demandas"
 ];
 var CAMPOS_UPDATE = {
   projetos: [
@@ -1126,7 +1271,31 @@ var CAMPOS_UPDATE = {
     "escala_periodicidade",
     "escala_dias_semana",
     "escala_duracao_dias",
-    "escala_equipe_qtd"
+    "escala_equipe_qtd",
+    "temperatura",
+    "proximo_contato_em",
+    "data_retorno_prometida",
+    "data_prometida_cliente",
+    "data_alvo_interna",
+    "origem",
+    "valor_total",
+    "descricao"
+  ],
+  demandas: [
+    "titulo",
+    "tipo",
+    "prioridade",
+    "responsavel_atual_id",
+    "etapa_atual_id",
+    "prazo_final",
+    "cronograma_inicio",
+    "cronograma_fim",
+    "valor",
+    "status_saida",
+    "notas",
+    "arquivada",
+    "projeto_id",
+    "local_id"
   ],
   registros: [
     "status",
@@ -1229,6 +1398,13 @@ var atualizar_registro_default = defineTool11({
           isError: true
         };
       }
+    }
+    if (tbl === "projetos" || tbl === "demandas") {
+      const extras = validarCamposExtras(Object.fromEntries(entries), tbl);
+      if ("erro" in extras) {
+        return { content: [{ type: "text", text: extras.erro }], isError: true };
+      }
+      for (const e of entries) e[1] = extras.valores[e[0]];
     }
     const colunasSet = new Set(entries.map(([k]) => k));
     if (tbl === "registros") colunasSet.add("tipo");
@@ -1333,13 +1509,16 @@ var atualizar_registro_default = defineTool11({
       return { content: [{ type: "text", text: msg }], isError: true };
     }
     const depoisObj = depois ?? {};
-    const diff = {};
+    let diff = {};
     for (const [k] of entries) {
       const a = antesObj[k];
       const d = depoisObj[k];
       if (JSON.stringify(a) !== JSON.stringify(d)) {
         diff[k] = { antes: a, depois: d };
       }
+    }
+    if (await acessoRestrito(supabase, userId)) {
+      diff = cortarLinha(tbl, diff);
     }
     const avisos = [];
     if (diff.status) {
