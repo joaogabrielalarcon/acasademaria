@@ -410,3 +410,196 @@ export async function registrarMudancaStatus(
   }
   return { ok: true };
 }
+
+/* ─────────── projetos: campos novos (temperatura, origem, datas, valor) ─────────── */
+
+export const TEMPERATURAS = ["frio", "morno", "quente"] as const;
+export const ORIGENS_PROJETO = [
+  "indicacao",
+  "arquiteto",
+  "instagram",
+  "site",
+  "cliente_antigo",
+  "evento",
+  "outro",
+] as const;
+
+/** Campos de data que precisam vir em ISO (AAAA-MM-DD). */
+export const CAMPOS_DATA_ISO: Record<string, readonly string[]> = {
+  projetos: [
+    "proximo_contato_em",
+    "data_retorno_prometida",
+    "data_prometida_cliente",
+    "data_alvo_interna",
+  ],
+  demandas: ["prazo_final", "cronograma_inicio", "cronograma_fim"],
+};
+
+export function dataIsoValida(v: unknown): boolean {
+  if (typeof v !== "string") return false;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v.trim());
+  if (!m) return false;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const dt = new Date(Date.UTC(y, mo - 1, d));
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === mo - 1 && dt.getUTCDate() === d;
+}
+
+/* ─────────── demandas ─────────── */
+
+/**
+ * Prioridade de demandas. O CHECK do banco aceita critica|alta|media|baixa;
+ * "urgente" é aceito como apelido e gravado como "critica".
+ */
+export const PRIORIDADES_DEMANDA = ["baixa", "media", "alta", "urgente"] as const;
+const PRIORIDADE_DEMANDA_BANCO: Record<string, string> = {
+  baixa: "baixa",
+  media: "media",
+  alta: "alta",
+  urgente: "critica",
+  critica: "critica",
+};
+export const LADOS_DEMANDA = ["nosso", "terceiro", "cliente"] as const;
+export const STATUS_SAIDA_DEMANDA = ["nao_aprovado", "rejeitado", "cancelado"] as const;
+
+/**
+ * Valida os campos extras de projetos e demandas (listas, datas, números).
+ * Muta e devolve uma cópia normalizada.
+ */
+export function validarCamposExtras(
+  campos: Record<string, unknown>,
+  tabela: string,
+): { erro: string } | { valores: Record<string, unknown> } {
+  const out: Record<string, unknown> = { ...campos };
+  const erros: string[] = [];
+  const presente = (k: string) => campos[k] !== undefined && campos[k] !== null && campos[k] !== "";
+
+  const lista = (k: string, permitidos: readonly string[], mapa?: Record<string, string>) => {
+    if (!presente(k)) return;
+    const n = normalizarValor(campos[k]);
+    const aceito = mapa ? n in mapa : permitidos.includes(n);
+    if (!aceito) {
+      erros.push(`${k} '${campos[k]}' não vale para ${tabela}. Use: ${permitidos.join(", ")}.`);
+      return;
+    }
+    out[k] = mapa ? mapa[n] : n;
+  };
+
+  if (tabela === "projetos") {
+    lista("temperatura", TEMPERATURAS);
+    lista("origem", ORIGENS_PROJETO);
+    if (presente("valor_total")) {
+      const n = Number(campos.valor_total);
+      if (!Number.isFinite(n) || n < 0) {
+        erros.push(`valor_total '${campos.valor_total}' precisa ser um número maior ou igual a zero.`);
+      } else out.valor_total = n;
+    }
+  }
+
+  if (tabela === "demandas") {
+    lista("prioridade", PRIORIDADES_DEMANDA, PRIORIDADE_DEMANDA_BANCO);
+    lista("lado", LADOS_DEMANDA);
+    lista("status_saida", STATUS_SAIDA_DEMANDA);
+    if (presente("valor")) {
+      const n = Number(campos.valor);
+      if (!Number.isFinite(n) || n < 0) {
+        erros.push(`valor '${campos.valor}' precisa ser um número maior ou igual a zero.`);
+      } else out.valor = n;
+    }
+  }
+
+  for (const k of CAMPOS_DATA_ISO[tabela] ?? []) {
+    if (!presente(k)) continue;
+    if (!dataIsoValida(campos[k])) {
+      erros.push(`${k} '${campos[k]}' não é uma data válida. Use o formato AAAA-MM-DD.`);
+    }
+  }
+
+  if (erros.length) return { erro: erros.join(" ") };
+  return { valores: out };
+}
+
+/* ─────────── corte por cargo (operador_campo) ─────────── */
+
+/** Lê os papéis do usuário do token. */
+export async function papeisDoUsuario(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<string[]> {
+  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+  return ((data ?? []) as Array<{ role: string }>).map((r) => r.role);
+}
+
+/** true quando o usuário é operador_campo e não tem admin nem administrativo. */
+export function ehSoCampo(papeis: readonly string[]): boolean {
+  return (
+    papeis.includes("operador_campo") &&
+    !papeis.includes("admin") &&
+    !papeis.includes("administrativo")
+  );
+}
+
+export async function acessoRestrito(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<boolean> {
+  return ehSoCampo(await papeisDoUsuario(supabase, userId));
+}
+
+const TABELAS_BLOQUEADAS_CAMPO = new Set([
+  "orcamentos",
+  "financeiro_parcelas",
+  "financeiro_movimentacoes",
+  "historico_salarios",
+  "custos_equipe",
+  "cargos_mo",
+  "perfis_markup",
+  "perfis_markup_categorias",
+  "historico_precos",
+  "historico_precos_fornecedor",
+  "audit_price_changes",
+]);
+
+export function tabelaBloqueadaParaCampo(tabela: string): boolean {
+  return (
+    TABELAS_BLOQUEADAS_CAMPO.has(tabela) ||
+    tabela.startsWith("orcamento_") ||
+    tabela.startsWith("conciliacao_")
+  );
+}
+
+export const MSG_FORA_DO_ACESSO = "Esse dado não está no seu acesso.";
+
+/** Colunas explícitas + padrão de nome, por tabela. */
+const CORTE_CAMPO: Record<string, { colunas: string[]; padrao?: RegExp }> = {
+  projetos: { colunas: ["valor_total", "valor_mensal", "parcelas_config"] },
+  demandas: { colunas: ["valor"] },
+  clientes: { colunas: [], padrao: /valor|limite|credito/i },
+  registros: { colunas: [], padrao: /valor|custo/i },
+  estoque_movimentacoes: {
+    colunas: ["valor_unitario", "valor_total", "preco_unitario"],
+  },
+  solicitacoes_compras: {
+    colunas: ["valor_estimado", "condicao_pagamento"],
+    padrao: /valor/i,
+  },
+  colaboradores: { colunas: [], padrao: /salario|remunera/i },
+};
+
+export function colunaCortada(tabela: string, coluna: string): boolean {
+  const regra = CORTE_CAMPO[tabela];
+  if (!regra) return false;
+  return regra.colunas.includes(coluna) || Boolean(regra.padrao?.test(coluna));
+}
+
+export function cortarLinha<T>(tabela: string, linha: T): T {
+  if (!linha || typeof linha !== "object" || !CORTE_CAMPO[tabela]) return linha;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(linha as Record<string, unknown>)) {
+    if (!colunaCortada(tabela, k)) out[k] = v;
+  }
+  return out as T;
+}
+
+export function cortarLinhas<T>(tabela: string, linhas: T[] | null | undefined): T[] {
+  return (linhas ?? []).map((l) => cortarLinha(tabela, l));
+}
