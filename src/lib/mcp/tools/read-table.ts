@@ -1,6 +1,13 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { supabaseForUser, requireAuth } from "../_supabase";
+import {
+  acessoRestrito,
+  colunaCortada,
+  cortarLinhas,
+  tabelaBloqueadaParaCampo,
+  MSG_FORA_DO_ACESSO,
+} from "./_validacao";
 
 export default defineTool({
   name: "read_table",
@@ -46,6 +53,22 @@ export default defineTool({
       };
     }
 
+    // Corte por cargo: feito no servidor, antes de qualquer consulta.
+    const restrito = await acessoRestrito(supabase, ctx.getUserId()!);
+    if (restrito && tabelaBloqueadaParaCampo(tabela)) {
+      return { content: [{ type: "text", text: MSG_FORA_DO_ACESSO }], isError: true };
+    }
+    if (restrito) {
+      // Também não deixa filtrar/ordenar por coluna cortada (evita adivinhar o valor).
+      const usadas = [
+        ...Object.keys(filtros ?? {}),
+        ...(ordenar_por ? [ordenar_por.replace(/^-/, "")] : []),
+      ];
+      if (usadas.some((c) => colunaCortada(tabela, c))) {
+        return { content: [{ type: "text", text: MSG_FORA_DO_ACESSO }], isError: true };
+      }
+    }
+
     const lim = Math.min(limite ?? 25, 100);
     const off = offset ?? 0;
     let q = supabase.from(tabela).select(colunas ?? "*").range(off, off + lim - 1);
@@ -69,9 +92,13 @@ export default defineTool({
       return { content: [{ type: "text", text: msg }], isError: true };
     }
 
+    const linhas = restrito
+      ? cortarLinhas(tabela, data as unknown as Record<string, unknown>[])
+      : ((data ?? []) as unknown as Record<string, unknown>[]);
+
     return {
-      content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
-      structuredContent: { tabela, count: data?.length ?? 0, linhas: data ?? [] },
+      content: [{ type: "text", text: JSON.stringify(linhas, null, 2) }],
+      structuredContent: { tabela, count: linhas.length, linhas },
     };
   },
 });

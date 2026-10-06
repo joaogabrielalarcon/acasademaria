@@ -5,6 +5,7 @@ import {
   filtrarCampos,
   normalizarTexto,
   validarValoresRegistro,
+  validarCamposExtras,
   TEM_AUTORIA,
 } from "./_validacao";
 
@@ -26,6 +27,9 @@ const TABELAS = [
   "escala_alocacoes",
   "registro_insumos",
   "registro_maquinas",
+  // pendências por cliente
+  "demandas",
+  "demanda_responsaveis",
 ] as const;
 type Tabela = (typeof TABELAS)[number];
 
@@ -73,7 +77,35 @@ const CAMPOS_OPERACAO: Partial<
       "escala_dias_semana",
       "escala_duracao_dias",
       "escala_equipe_qtd",
+      "temperatura",
+      "proximo_contato_em",
+      "data_retorno_prometida",
+      "data_prometida_cliente",
+      "data_alvo_interna",
     ],
+  },
+  demandas: {
+    obrigatorios: ["titulo", "tipo"],
+    permitidos: [
+      "titulo",
+      "tipo",
+      "cliente_id",
+      "projeto_id",
+      "local_id",
+      "prioridade",
+      "responsavel_atual_id",
+      "prazo_final",
+      "valor",
+      "notas",
+      "pipeline_id",
+      "etapa_atual_id",
+      "orcamento_id",
+      "lado",
+    ],
+  },
+  demanda_responsaveis: {
+    obrigatorios: ["demanda_id", "colaborador_id"],
+    permitidos: ["demanda_id", "colaborador_id", "papel"],
   },
   registros: {
     obrigatorios: ["cliente_id", "data_servico", "tipo", "descricao", "status"],
@@ -144,8 +176,8 @@ export default defineTool({
   description:
     "Cria linhas em lote em tabelas de cadastro e da operação de campo (whitelist). " +
     "Cadastro (plantas, insumos, fornecedores) roda deduplicação por nome. " +
-    "Operação (projetos, registros, diarias, escala_alocacoes, registro_insumos, registro_maquinas) roda validação de campos/valores e proteção contra gravação repetida por chave natural: " +
-    "diarias = cliente_id + data_visita; registros = cliente_id + data_servico + tipo + descrição parecida; escala_alocacoes = data + colaborador_id + local_id. " +
+    "Operação (projetos, registros, diarias, escala_alocacoes, registro_insumos, registro_maquinas, demandas, demanda_responsaveis) roda validação de campos/valores e proteção contra gravação repetida por chave natural: " +
+    "diarias = cliente_id + data_visita; registros = cliente_id + data_servico + tipo + descrição parecida; escala_alocacoes = data + colaborador_id + local_id; demandas = cliente_id + título parecido entre as não arquivadas. " +
     "Use forcar=true para criar mesmo assim. Máx 50 linhas por chamada. Escreve com o token do usuário (RLS ativa).",
   inputSchema: {
     tabela: z
@@ -295,6 +327,16 @@ export default defineTool({
             payload = validado.valores;
           }
 
+          if (tbl === "projetos" || tbl === "demandas") {
+            const extras = validarCamposExtras(payload, tbl);
+            if ("erro" in extras) {
+              resultados.push({ indice: i, status: "erro", motivo: extras.erro });
+              continue;
+            }
+            payload = extras.valores;
+          }
+          if (tbl === "demandas" && !payload.prioridade) payload.prioridade = "media";
+
           if (tbl === "escala_alocacoes" && !payload.projeto_id && !payload.local_id) {
             resultados.push({
               indice: i,
@@ -356,6 +398,36 @@ export default defineTool({
                 id: hit.id,
                 fonte: "cliente_id + data_servico + tipo + descrição parecida",
                 mudaria: diffPreview({ descricao: hit.descricao }, payload),
+              },
+            });
+            continue;
+          }
+        }
+
+        if (!forcar && tbl === "demandas" && payload.cliente_id) {
+          const { data: cands } = await supabase
+            .from("demandas")
+            .select("id, titulo, prioridade, prazo_final, notas")
+            .eq("cliente_id", payload.cliente_id as string)
+            .eq("arquivada", false)
+            .limit(100);
+          const alvo = normalizarTexto(payload.titulo);
+          const hit = (cands ?? []).find((c: { titulo?: string }) => {
+            const t = normalizarTexto(c.titulo);
+            if (!t || !alvo) return false;
+            return t === alvo || (Math.min(t.length, alvo.length) >= 8 && (t.includes(alvo) || alvo.includes(t)));
+          }) as Linha | undefined;
+          if (hit) {
+            resultados.push({
+              indice: i,
+              status: "pulada",
+              motivo:
+                "já existe pendência aberta com título parecido para este cliente. Para criar assim mesmo, chame de novo com forcar=true.",
+              duplicado: {
+                id: hit.id as string,
+                nome: hit.titulo as string,
+                fonte: "cliente_id + título parecido + arquivada=false",
+                mudaria: diffPreview(hit, payload),
               },
             });
             continue;

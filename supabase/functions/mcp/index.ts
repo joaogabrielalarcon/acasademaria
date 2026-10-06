@@ -72,320 +72,6 @@ var whoami_default = defineTool({
 // src/lib/mcp/tools/list-clientes.ts
 import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@0.24.0";
 import { z } from "npm:zod@^4.4.3";
-var list_clientes_default = defineTool2({
-  name: "list_clientes",
-  title: "Listar clientes",
-  description: "Lista clientes vis\xEDveis ao usu\xE1rio autenticado, com busca opcional por nome, cidade ou CPF/CNPJ. Respeita as permiss\xF5es (RLS) do usu\xE1rio.",
-  inputSchema: {
-    busca: z.string().trim().optional().describe("Termo de busca (nome, cidade, CPF/CNPJ)."),
-    status: z.string().optional().describe("Filtrar por status (ex.: 'ativo', 'inativo')."),
-    limite: z.number().int().min(1).max(100).optional().describe("M\xE1ximo de resultados (padr\xE3o 25).")
-  },
-  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ busca, status, limite }, ctx) => {
-    const unauth = requireAuth(ctx);
-    if (unauth) return unauth;
-    const supabase = supabaseForUser(ctx);
-    let q = supabase.from("clientes").select("id, nome, email, telefone, cidade, estado, status, cpf_cnpj, created_at").order("nome", { ascending: true }).limit(limite ?? 25);
-    if (status) q = q.eq("status", status);
-    if (busca) {
-      const like = `%${busca}%`;
-      q = q.or(`nome.ilike.${like},cidade.ilike.${like},cpf_cnpj.ilike.${like}`);
-    }
-    const { data, error } = await q;
-    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
-    return {
-      content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
-      structuredContent: { count: data?.length ?? 0, clientes: data ?? [] }
-    };
-  }
-});
-
-// src/lib/mcp/tools/get-cliente.ts
-import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@0.24.0";
-import { z as z2 } from "npm:zod@^4.4.3";
-var get_cliente_default = defineTool3({
-  name: "get_cliente",
-  title: "Detalhes do cliente",
-  description: "Retorna dados detalhados de um cliente pelo id, incluindo projetos vinculados.",
-  inputSchema: {
-    cliente_id: z2.string().uuid().describe("UUID do cliente.")
-  },
-  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ cliente_id }, ctx) => {
-    const unauth = requireAuth(ctx);
-    if (unauth) return unauth;
-    const supabase = supabaseForUser(ctx);
-    const [cliente, projetos] = await Promise.all([
-      supabase.from("clientes").select("*").eq("id", cliente_id).maybeSingle(),
-      supabase.from("projetos").select("id, titulo, tipo, status, data_inicio, data_previsao, valor_total").eq("cliente_id", cliente_id).order("created_at", { ascending: false })
-    ]);
-    if (cliente.error) return { content: [{ type: "text", text: cliente.error.message }], isError: true };
-    if (!cliente.data) return { content: [{ type: "text", text: "Cliente n\xE3o encontrado." }], isError: true };
-    const payload = { cliente: cliente.data, projetos: projetos.data ?? [] };
-    return {
-      content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
-      structuredContent: payload
-    };
-  }
-});
-
-// src/lib/mcp/tools/list-projetos.ts
-import { defineTool as defineTool4 } from "npm:@lovable.dev/mcp-js@0.24.0";
-import { z as z3 } from "npm:zod@^4.4.3";
-var list_projetos_default = defineTool4({
-  name: "list_projetos",
-  title: "Listar projetos",
-  description: "Lista projetos vis\xEDveis ao usu\xE1rio (respeita aloca\xE7\xE3o e RLS). Filtre por status, tipo ou cliente.",
-  inputSchema: {
-    status: z3.string().optional().describe("Ex.: 'em_andamento', 'concluido'."),
-    tipo: z3.string().optional().describe("Ex.: 'implantacao', 'manutencao'."),
-    cliente_id: z3.string().uuid().optional(),
-    busca: z3.string().trim().optional().describe("Busca por t\xEDtulo."),
-    limite: z3.number().int().min(1).max(100).optional()
-  },
-  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ status, tipo, cliente_id, busca, limite }, ctx) => {
-    const unauth = requireAuth(ctx);
-    if (unauth) return unauth;
-    const supabase = supabaseForUser(ctx);
-    let q = supabase.from("projetos").select("id, titulo, tipo, status, cliente_id, data_inicio, data_previsao, data_conclusao, valor_total, valor_mensal, responsavel_id").order("created_at", { ascending: false }).limit(limite ?? 25);
-    if (status) q = q.eq("status", status);
-    if (tipo) q = q.eq("tipo", tipo);
-    if (cliente_id) q = q.eq("cliente_id", cliente_id);
-    if (busca) q = q.ilike("titulo", `%${busca}%`);
-    const { data, error } = await q;
-    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
-    return {
-      content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
-      structuredContent: { count: data?.length ?? 0, projetos: data ?? [] }
-    };
-  }
-});
-
-// src/lib/mcp/tools/list-crm-cards.ts
-import { defineTool as defineTool5 } from "npm:@lovable.dev/mcp-js@0.24.0";
-import { z as z4 } from "npm:zod@^4.4.3";
-var list_crm_cards_default = defineTool5({
-  name: "list_crm_cards",
-  title: "Listar cards do CRM",
-  description: "Lista cards do funil de CRM (leads, propostas, aprovados, em execu\xE7\xE3o, etc). Respeita RLS do usu\xE1rio.",
-  inputSchema: {
-    status: z4.string().optional().describe("Ex.: 'Lead', 'Proposta Enviada', 'Aprovado', 'Em Execucao', 'Concluido', 'Pos-venda', 'Nao Aprovado'."),
-    cliente_id: z4.string().uuid().optional(),
-    busca: z4.string().trim().optional().describe("Busca por t\xEDtulo ou nome do contato."),
-    limite: z4.number().int().min(1).max(100).optional()
-  },
-  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ status, cliente_id, busca, limite }, ctx) => {
-    const unauth = requireAuth(ctx);
-    if (unauth) return unauth;
-    const supabase = supabaseForUser(ctx);
-    let q = supabase.from("crm_cards").select("id, titulo, tipo, status, cliente_id, projeto_id, contato_nome, contato_email, contato_whatsapp, prazo, responsavel_id, created_at").order("updated_at", { ascending: false }).limit(limite ?? 25);
-    if (status) q = q.eq("status", status);
-    if (cliente_id) q = q.eq("cliente_id", cliente_id);
-    if (busca) {
-      const like = `%${busca}%`;
-      q = q.or(`titulo.ilike.${like},contato_nome.ilike.${like}`);
-    }
-    const { data, error } = await q;
-    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
-    return {
-      content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
-      structuredContent: { count: data?.length ?? 0, cards: data ?? [] }
-    };
-  }
-});
-
-// src/lib/mcp/tools/create-crm-card.ts
-import { defineTool as defineTool6 } from "npm:@lovable.dev/mcp-js@0.24.0";
-import { z as z5 } from "npm:zod@^4.4.3";
-var create_crm_card_default = defineTool6({
-  name: "create_crm_card",
-  title: "Criar card no CRM",
-  description: "Cria um novo card (lead) no funil de CRM. O card \xE9 criado com o usu\xE1rio autenticado como respons\xE1vel quando n\xE3o indicado.",
-  inputSchema: {
-    titulo: z5.string().trim().min(1).describe("T\xEDtulo do card (obrigat\xF3rio)."),
-    tipo: z5.string().trim().min(1).describe("Tipo do card (ex.: 'Implanta\xE7\xE3o', 'Manuten\xE7\xE3o')."),
-    status: z5.string().trim().optional().describe("Status inicial (padr\xE3o 'Lead')."),
-    cliente_id: z5.string().uuid().nullable().optional(),
-    projeto_id: z5.string().uuid().nullable().optional(),
-    contato_nome: z5.string().trim().nullable().optional(),
-    contato_email: z5.string().trim().nullable().optional(),
-    contato_whatsapp: z5.string().trim().nullable().optional(),
-    observacoes: z5.string().trim().nullable().optional(),
-    prazo: z5.string().trim().nullable().optional().describe("Data em ISO (YYYY-MM-DD).")
-  },
-  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
-  handler: async (input, ctx) => {
-    const unauth = requireAuth(ctx);
-    if (unauth) return unauth;
-    const supabase = supabaseForUser(ctx);
-    const { data: colaborador } = await supabase.from("colaboradores").select("id").eq("user_id", ctx.getUserId()).maybeSingle();
-    const row = {
-      titulo: input.titulo,
-      tipo: input.tipo,
-      status: input.status ?? "Lead",
-      cliente_id: input.cliente_id ?? null,
-      projeto_id: input.projeto_id ?? null,
-      contato_nome: input.contato_nome ?? null,
-      contato_email: input.contato_email ?? null,
-      contato_whatsapp: input.contato_whatsapp ?? null,
-      observacoes: input.observacoes ?? null,
-      prazo: input.prazo ?? null,
-      responsavel_id: colaborador?.id ?? null
-    };
-    const { data, error } = await supabase.from("crm_cards").insert(row).select().maybeSingle();
-    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
-    return {
-      content: [{ type: "text", text: `Card criado (id ${data?.id}).` }],
-      structuredContent: { card: data }
-    };
-  }
-});
-
-// src/lib/mcp/tools/describe-schema.ts
-import { defineTool as defineTool7 } from "npm:@lovable.dev/mcp-js@0.24.0";
-import { z as z6 } from "npm:zod@^4.4.3";
-var describe_schema_default = defineTool7({
-  name: "describe_schema",
-  title: "Descrever schema",
-  description: "Introspec\xE7\xE3o s\xF3-leitura do schema public. Sem par\xE2metro, lista todas as tabelas com contagem de colunas e status de RLS. Com 'tabela', devolve colunas, chave prim\xE1ria, chaves estrangeiras e status de RLS. Nunca l\xEA dados.",
-  inputSchema: {
-    tabela: z6.string().trim().optional().describe("Nome da tabela do schema public. Omita para listar todas.")
-  },
-  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ tabela }, ctx) => {
-    const unauth = requireAuth(ctx);
-    if (unauth) return unauth;
-    const supabase = supabaseForUser(ctx);
-    if (!tabela) {
-      const { data: data2, error: error2 } = await supabase.rpc("mcp_list_public_tables");
-      if (error2) return { content: [{ type: "text", text: error2.message }], isError: true };
-      return {
-        content: [{ type: "text", text: JSON.stringify(data2, null, 2) }],
-        structuredContent: { tabelas: data2 ?? [] }
-      };
-    }
-    const { data, error } = await supabase.rpc("mcp_describe_table", { p_tabela: tabela });
-    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
-    if (data && typeof data === "object" && "erro" in data) {
-      return {
-        content: [{ type: "text", text: String(data.erro) }],
-        isError: true
-      };
-    }
-    return {
-      content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
-      structuredContent: data
-    };
-  }
-});
-
-// src/lib/mcp/tools/read-table.ts
-import { defineTool as defineTool8 } from "npm:@lovable.dev/mcp-js@0.24.0";
-import { z as z7 } from "npm:zod@^4.4.3";
-var read_table_default = defineTool8({
-  name: "read_table",
-  title: "Ler tabela",
-  description: "Leitura gen\xE9rica de qualquer tabela do schema public, respeitando as permiss\xF5es (RLS) do usu\xE1rio autenticado. S\xF3 retorna o que o usu\xE1rio tem permiss\xE3o para ver.",
-  inputSchema: {
-    tabela: z7.string().trim().min(1).describe("Nome da tabela do schema public."),
-    colunas: z7.string().trim().optional().describe("Lista de colunas separadas por v\xEDrgula (padr\xE3o '*')."),
-    filtros: z7.record(z7.string(), z7.union([z7.string(), z7.number(), z7.boolean(), z7.null()])).optional().describe("Objeto campo\u2192valor para igualdade estrita."),
-    ordenar_por: z7.string().trim().optional().describe("Coluna para ordenar. Prefixe com '-' para descendente (ex.: '-created_at')."),
-    limite: z7.number().int().min(1).max(100).optional().describe("Padr\xE3o 25, m\xE1ximo 100."),
-    offset: z7.number().int().min(0).optional()
-  },
-  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ tabela, colunas, filtros, ordenar_por, limite, offset }, ctx) => {
-    const unauth = requireAuth(ctx);
-    if (unauth) return unauth;
-    const supabase = supabaseForUser(ctx);
-    const { data: tabelas, error: eList } = await supabase.rpc("mcp_list_public_tables");
-    if (eList) return { content: [{ type: "text", text: eList.message }], isError: true };
-    const nomes = new Set(
-      tabelas?.map((t) => t.tabela) ?? []
-    );
-    if (!nomes.has(tabela)) {
-      return {
-        content: [{ type: "text", text: `Tabela "${tabela}" n\xE3o existe no schema public.` }],
-        isError: true
-      };
-    }
-    const lim = Math.min(limite ?? 25, 100);
-    const off = offset ?? 0;
-    let q = supabase.from(tabela).select(colunas ?? "*").range(off, off + lim - 1);
-    if (filtros && typeof filtros === "object") {
-      for (const [k, v] of Object.entries(filtros)) {
-        q = v === null ? q.is(k, null) : q.eq(k, v);
-      }
-    }
-    if (ordenar_por) {
-      const desc = ordenar_por.startsWith("-");
-      const col = desc ? ordenar_por.slice(1) : ordenar_por;
-      q = q.order(col, { ascending: !desc });
-    }
-    const { data, error } = await q;
-    if (error) {
-      const msg = /permission denied|row-level security/i.test(error.message) ? `Acesso negado \xE0 tabela "${tabela}" para o usu\xE1rio atual (RLS).` : error.message;
-      return { content: [{ type: "text", text: msg }], isError: true };
-    }
-    return {
-      content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
-      structuredContent: { tabela, count: data?.length ?? 0, linhas: data ?? [] }
-    };
-  }
-});
-
-// src/lib/mcp/tools/list-storage.ts
-import { defineTool as defineTool9 } from "npm:@lovable.dev/mcp-js@0.24.0";
-import { z as z8 } from "npm:zod@^4.4.3";
-var list_storage_default = defineTool9({
-  name: "list_storage",
-  title: "Listar Storage",
-  description: "Lista buckets ou arquivos do Storage. Sem par\xE2metro, devolve buckets (nome, p\xFAblico/privado). Com 'bucket' (e 'prefixo' opcional), lista arquivos (nome, tamanho, criado em), m\xE1ximo 100. N\xE3o devolve conte\xFAdo nem URLs assinadas.",
-  inputSchema: {
-    bucket: z8.string().trim().optional().describe("Nome do bucket."),
-    prefixo: z8.string().trim().optional().describe("Prefixo (pasta) dentro do bucket.")
-  },
-  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ bucket, prefixo }, ctx) => {
-    const unauth = requireAuth(ctx);
-    if (unauth) return unauth;
-    const supabase = supabaseForUser(ctx);
-    if (!bucket) {
-      const { data: data2, error: error2 } = await supabase.storage.listBuckets();
-      if (error2) return { content: [{ type: "text", text: error2.message }], isError: true };
-      const buckets = (data2 ?? []).map((b) => ({
-        nome: b.name,
-        publico: b.public,
-        criado_em: b.created_at
-      }));
-      return {
-        content: [{ type: "text", text: JSON.stringify(buckets, null, 2) }],
-        structuredContent: { buckets }
-      };
-    }
-    const { data, error } = await supabase.storage.from(bucket).list(prefixo ?? "", { limit: 100, sortBy: { column: "name", order: "asc" } });
-    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
-    const arquivos = (data ?? []).map((f) => ({
-      nome: f.name,
-      tamanho: f.metadata?.size ?? null,
-      mimetype: f.metadata?.mimetype ?? null,
-      criado_em: f.created_at,
-      atualizado_em: f.updated_at
-    }));
-    return {
-      content: [{ type: "text", text: JSON.stringify(arquivos, null, 2) }],
-      structuredContent: { bucket, prefixo: prefixo ?? "", count: arquivos.length, arquivos }
-    };
-  }
-});
-
-// src/lib/mcp/tools/criar-registros.ts
-import { defineTool as defineTool10 } from "npm:@lovable.dev/mcp-js@0.24.0";
-import { z as z9 } from "npm:zod@^4.4.3";
 
 // src/lib/mcp/tools/_validacao.ts
 function normalizarValor(v) {
@@ -668,8 +354,482 @@ async function registrarMudancaStatus(supabase, params) {
   }
   return { ok: true };
 }
+var TEMPERATURAS = ["frio", "morno", "quente"];
+var ORIGENS_PROJETO = [
+  "indicacao",
+  "arquiteto",
+  "instagram",
+  "site",
+  "cliente_antigo",
+  "evento",
+  "outro"
+];
+var CAMPOS_DATA_ISO = {
+  projetos: [
+    "proximo_contato_em",
+    "data_retorno_prometida",
+    "data_prometida_cliente",
+    "data_alvo_interna"
+  ],
+  demandas: ["prazo_final", "cronograma_inicio", "cronograma_fim"]
+};
+function dataIsoValida(v) {
+  if (typeof v !== "string") return false;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v.trim());
+  if (!m) return false;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const dt = new Date(Date.UTC(y, mo - 1, d));
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === mo - 1 && dt.getUTCDate() === d;
+}
+var PRIORIDADES_DEMANDA = ["baixa", "media", "alta", "urgente"];
+var PRIORIDADE_DEMANDA_BANCO = {
+  baixa: "baixa",
+  media: "media",
+  alta: "alta",
+  urgente: "critica",
+  critica: "critica"
+};
+var LADOS_DEMANDA = ["nosso", "terceiro", "cliente"];
+var STATUS_SAIDA_DEMANDA = ["nao_aprovado", "rejeitado", "cancelado"];
+function validarCamposExtras(campos, tabela) {
+  const out = { ...campos };
+  const erros = [];
+  const presente = (k) => campos[k] !== void 0 && campos[k] !== null && campos[k] !== "";
+  const lista = (k, permitidos, mapa) => {
+    if (!presente(k)) return;
+    const n = normalizarValor(campos[k]);
+    const aceito = mapa ? n in mapa : permitidos.includes(n);
+    if (!aceito) {
+      erros.push(`${k} '${campos[k]}' n\xE3o vale para ${tabela}. Use: ${permitidos.join(", ")}.`);
+      return;
+    }
+    out[k] = mapa ? mapa[n] : n;
+  };
+  if (tabela === "projetos") {
+    lista("temperatura", TEMPERATURAS);
+    lista("origem", ORIGENS_PROJETO);
+    if (presente("valor_total")) {
+      const n = Number(campos.valor_total);
+      if (!Number.isFinite(n) || n < 0) {
+        erros.push(`valor_total '${campos.valor_total}' precisa ser um n\xFAmero maior ou igual a zero.`);
+      } else out.valor_total = n;
+    }
+  }
+  if (tabela === "demandas") {
+    lista("prioridade", PRIORIDADES_DEMANDA, PRIORIDADE_DEMANDA_BANCO);
+    lista("lado", LADOS_DEMANDA);
+    lista("status_saida", STATUS_SAIDA_DEMANDA);
+    if (presente("valor")) {
+      const n = Number(campos.valor);
+      if (!Number.isFinite(n) || n < 0) {
+        erros.push(`valor '${campos.valor}' precisa ser um n\xFAmero maior ou igual a zero.`);
+      } else out.valor = n;
+    }
+  }
+  for (const k of CAMPOS_DATA_ISO[tabela] ?? []) {
+    if (!presente(k)) continue;
+    if (!dataIsoValida(campos[k])) {
+      erros.push(`${k} '${campos[k]}' n\xE3o \xE9 uma data v\xE1lida. Use o formato AAAA-MM-DD.`);
+    }
+  }
+  if (erros.length) return { erro: erros.join(" ") };
+  return { valores: out };
+}
+async function papeisDoUsuario(supabase, userId) {
+  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+  return (data ?? []).map((r) => r.role);
+}
+function ehSoCampo(papeis) {
+  return papeis.includes("operador_campo") && !papeis.includes("admin") && !papeis.includes("administrativo");
+}
+async function acessoRestrito(supabase, userId) {
+  return ehSoCampo(await papeisDoUsuario(supabase, userId));
+}
+var TABELAS_BLOQUEADAS_CAMPO = /* @__PURE__ */ new Set([
+  "orcamentos",
+  "financeiro_parcelas",
+  "financeiro_movimentacoes",
+  "historico_salarios",
+  "custos_equipe",
+  "cargos_mo",
+  "perfis_markup",
+  "perfis_markup_categorias",
+  "historico_precos",
+  "historico_precos_fornecedor",
+  "audit_price_changes"
+]);
+function tabelaBloqueadaParaCampo(tabela) {
+  return TABELAS_BLOQUEADAS_CAMPO.has(tabela) || tabela.startsWith("orcamento_") || tabela.startsWith("conciliacao_");
+}
+var MSG_FORA_DO_ACESSO = "Esse dado n\xE3o est\xE1 no seu acesso.";
+var CORTE_CAMPO = {
+  projetos: { colunas: ["valor_total", "valor_mensal", "parcelas_config"] },
+  demandas: { colunas: ["valor"] },
+  clientes: { colunas: [], padrao: /valor|limite|credito/i },
+  registros: { colunas: [], padrao: /valor|custo/i },
+  estoque_movimentacoes: {
+    colunas: ["valor_unitario", "valor_total", "preco_unitario"]
+  },
+  solicitacoes_compras: {
+    colunas: ["valor_estimado", "condicao_pagamento"],
+    padrao: /valor/i
+  },
+  colaboradores: { colunas: [], padrao: /salario|remunera/i }
+};
+function colunaCortada(tabela, coluna) {
+  const regra = CORTE_CAMPO[tabela];
+  if (!regra) return false;
+  return regra.colunas.includes(coluna) || Boolean(regra.padrao?.test(coluna));
+}
+function cortarLinha(tabela, linha) {
+  if (!linha || typeof linha !== "object" || !CORTE_CAMPO[tabela]) return linha;
+  const out = {};
+  for (const [k, v] of Object.entries(linha)) {
+    if (!colunaCortada(tabela, k)) out[k] = v;
+  }
+  return out;
+}
+function cortarLinhas(tabela, linhas) {
+  return (linhas ?? []).map((l) => cortarLinha(tabela, l));
+}
+
+// src/lib/mcp/tools/list-clientes.ts
+var list_clientes_default = defineTool2({
+  name: "list_clientes",
+  title: "Listar clientes",
+  description: "Lista clientes vis\xEDveis ao usu\xE1rio autenticado, com busca opcional por nome, cidade ou CPF/CNPJ. Respeita as permiss\xF5es (RLS) do usu\xE1rio.",
+  inputSchema: {
+    busca: z.string().trim().optional().describe("Termo de busca (nome, cidade, CPF/CNPJ)."),
+    status: z.string().optional().describe("Filtrar por status (ex.: 'ativo', 'inativo')."),
+    limite: z.number().int().min(1).max(100).optional().describe("M\xE1ximo de resultados (padr\xE3o 25).")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ busca, status, limite }, ctx) => {
+    const unauth = requireAuth(ctx);
+    if (unauth) return unauth;
+    const supabase = supabaseForUser(ctx);
+    let q = supabase.from("clientes").select("id, nome, email, telefone, cidade, estado, status, cpf_cnpj, created_at").order("nome", { ascending: true }).limit(limite ?? 25);
+    if (status) q = q.eq("status", status);
+    if (busca) {
+      const like = `%${busca}%`;
+      q = q.or(`nome.ilike.${like},cidade.ilike.${like},cpf_cnpj.ilike.${like}`);
+    }
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
+    const restrito = await acessoRestrito(supabase, ctx.getUserId());
+    const clientes = restrito ? cortarLinhas("clientes", data) : data ?? [];
+    return {
+      content: [{ type: "text", text: JSON.stringify(clientes, null, 2) }],
+      structuredContent: { count: clientes.length, clientes }
+    };
+  }
+});
+
+// src/lib/mcp/tools/get-cliente.ts
+import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@0.24.0";
+import { z as z2 } from "npm:zod@^4.4.3";
+var get_cliente_default = defineTool3({
+  name: "get_cliente",
+  title: "Detalhes do cliente",
+  description: "Retorna dados detalhados de um cliente pelo id, incluindo projetos vinculados.",
+  inputSchema: {
+    cliente_id: z2.string().uuid().describe("UUID do cliente.")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ cliente_id }, ctx) => {
+    const unauth = requireAuth(ctx);
+    if (unauth) return unauth;
+    const supabase = supabaseForUser(ctx);
+    const [cliente, projetos] = await Promise.all([
+      supabase.from("clientes").select("*").eq("id", cliente_id).maybeSingle(),
+      supabase.from("projetos").select("id, titulo, tipo, status, data_inicio, data_previsao, valor_total").eq("cliente_id", cliente_id).order("created_at", { ascending: false })
+    ]);
+    if (cliente.error) return { content: [{ type: "text", text: cliente.error.message }], isError: true };
+    if (!cliente.data) return { content: [{ type: "text", text: "Cliente n\xE3o encontrado." }], isError: true };
+    const restrito = await acessoRestrito(supabase, ctx.getUserId());
+    const payload = restrito ? {
+      cliente: cortarLinha("clientes", cliente.data),
+      projetos: cortarLinhas("projetos", projetos.data)
+    } : { cliente: cliente.data, projetos: projetos.data ?? [] };
+    return {
+      content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
+      structuredContent: payload
+    };
+  }
+});
+
+// src/lib/mcp/tools/list-projetos.ts
+import { defineTool as defineTool4 } from "npm:@lovable.dev/mcp-js@0.24.0";
+import { z as z3 } from "npm:zod@^4.4.3";
+var list_projetos_default = defineTool4({
+  name: "list_projetos",
+  title: "Listar projetos",
+  description: "Lista projetos vis\xEDveis ao usu\xE1rio (respeita aloca\xE7\xE3o e RLS). Filtre por status, tipo ou cliente.",
+  inputSchema: {
+    status: z3.string().optional().describe("Ex.: 'em_andamento', 'concluido'."),
+    tipo: z3.string().optional().describe("Ex.: 'implantacao', 'manutencao'."),
+    cliente_id: z3.string().uuid().optional(),
+    busca: z3.string().trim().optional().describe("Busca por t\xEDtulo."),
+    limite: z3.number().int().min(1).max(100).optional()
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ status, tipo, cliente_id, busca, limite }, ctx) => {
+    const unauth = requireAuth(ctx);
+    if (unauth) return unauth;
+    const supabase = supabaseForUser(ctx);
+    let q = supabase.from("projetos").select("id, titulo, tipo, status, cliente_id, data_inicio, data_previsao, data_conclusao, valor_total, valor_mensal, responsavel_id").order("created_at", { ascending: false }).limit(limite ?? 25);
+    if (status) q = q.eq("status", status);
+    if (tipo) q = q.eq("tipo", tipo);
+    if (cliente_id) q = q.eq("cliente_id", cliente_id);
+    if (busca) q = q.ilike("titulo", `%${busca}%`);
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
+    const restrito = await acessoRestrito(supabase, ctx.getUserId());
+    const projetos = restrito ? cortarLinhas("projetos", data) : data ?? [];
+    return {
+      content: [{ type: "text", text: JSON.stringify(projetos, null, 2) }],
+      structuredContent: { count: projetos.length, projetos }
+    };
+  }
+});
+
+// src/lib/mcp/tools/list-crm-cards.ts
+import { defineTool as defineTool5 } from "npm:@lovable.dev/mcp-js@0.24.0";
+import { z as z4 } from "npm:zod@^4.4.3";
+var list_crm_cards_default = defineTool5({
+  name: "list_crm_cards",
+  title: "Listar cards do CRM",
+  description: "Lista cards do funil de CRM (leads, propostas, aprovados, em execu\xE7\xE3o, etc). Respeita RLS do usu\xE1rio.",
+  inputSchema: {
+    status: z4.string().optional().describe("Ex.: 'Lead', 'Proposta Enviada', 'Aprovado', 'Em Execucao', 'Concluido', 'Pos-venda', 'Nao Aprovado'."),
+    cliente_id: z4.string().uuid().optional(),
+    busca: z4.string().trim().optional().describe("Busca por t\xEDtulo ou nome do contato."),
+    limite: z4.number().int().min(1).max(100).optional()
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ status, cliente_id, busca, limite }, ctx) => {
+    const unauth = requireAuth(ctx);
+    if (unauth) return unauth;
+    const supabase = supabaseForUser(ctx);
+    let q = supabase.from("crm_cards").select("id, titulo, tipo, status, cliente_id, projeto_id, contato_nome, contato_email, contato_whatsapp, prazo, responsavel_id, created_at").order("updated_at", { ascending: false }).limit(limite ?? 25);
+    if (status) q = q.eq("status", status);
+    if (cliente_id) q = q.eq("cliente_id", cliente_id);
+    if (busca) {
+      const like = `%${busca}%`;
+      q = q.or(`titulo.ilike.${like},contato_nome.ilike.${like}`);
+    }
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
+    return {
+      content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+      structuredContent: { count: data?.length ?? 0, cards: data ?? [] }
+    };
+  }
+});
+
+// src/lib/mcp/tools/create-crm-card.ts
+import { defineTool as defineTool6 } from "npm:@lovable.dev/mcp-js@0.24.0";
+import { z as z5 } from "npm:zod@^4.4.3";
+var create_crm_card_default = defineTool6({
+  name: "create_crm_card",
+  title: "Criar card no CRM",
+  description: "Cria um novo card (lead) no funil de CRM. O card \xE9 criado com o usu\xE1rio autenticado como respons\xE1vel quando n\xE3o indicado.",
+  inputSchema: {
+    titulo: z5.string().trim().min(1).describe("T\xEDtulo do card (obrigat\xF3rio)."),
+    tipo: z5.string().trim().min(1).describe("Tipo do card (ex.: 'Implanta\xE7\xE3o', 'Manuten\xE7\xE3o')."),
+    status: z5.string().trim().optional().describe("Status inicial (padr\xE3o 'Lead')."),
+    cliente_id: z5.string().uuid().nullable().optional(),
+    projeto_id: z5.string().uuid().nullable().optional(),
+    contato_nome: z5.string().trim().nullable().optional(),
+    contato_email: z5.string().trim().nullable().optional(),
+    contato_whatsapp: z5.string().trim().nullable().optional(),
+    observacoes: z5.string().trim().nullable().optional(),
+    prazo: z5.string().trim().nullable().optional().describe("Data em ISO (YYYY-MM-DD).")
+  },
+  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+  handler: async (input, ctx) => {
+    const unauth = requireAuth(ctx);
+    if (unauth) return unauth;
+    const supabase = supabaseForUser(ctx);
+    const { data: colaborador } = await supabase.from("colaboradores").select("id").eq("user_id", ctx.getUserId()).maybeSingle();
+    const row = {
+      titulo: input.titulo,
+      tipo: input.tipo,
+      status: input.status ?? "Lead",
+      cliente_id: input.cliente_id ?? null,
+      projeto_id: input.projeto_id ?? null,
+      contato_nome: input.contato_nome ?? null,
+      contato_email: input.contato_email ?? null,
+      contato_whatsapp: input.contato_whatsapp ?? null,
+      observacoes: input.observacoes ?? null,
+      prazo: input.prazo ?? null,
+      responsavel_id: colaborador?.id ?? null
+    };
+    const { data, error } = await supabase.from("crm_cards").insert(row).select().maybeSingle();
+    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
+    return {
+      content: [{ type: "text", text: `Card criado (id ${data?.id}).` }],
+      structuredContent: { card: data }
+    };
+  }
+});
+
+// src/lib/mcp/tools/describe-schema.ts
+import { defineTool as defineTool7 } from "npm:@lovable.dev/mcp-js@0.24.0";
+import { z as z6 } from "npm:zod@^4.4.3";
+var describe_schema_default = defineTool7({
+  name: "describe_schema",
+  title: "Descrever schema",
+  description: "Introspec\xE7\xE3o s\xF3-leitura do schema public. Sem par\xE2metro, lista todas as tabelas com contagem de colunas e status de RLS. Com 'tabela', devolve colunas, chave prim\xE1ria, chaves estrangeiras e status de RLS. Nunca l\xEA dados.",
+  inputSchema: {
+    tabela: z6.string().trim().optional().describe("Nome da tabela do schema public. Omita para listar todas.")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ tabela }, ctx) => {
+    const unauth = requireAuth(ctx);
+    if (unauth) return unauth;
+    const supabase = supabaseForUser(ctx);
+    if (!tabela) {
+      const { data: data2, error: error2 } = await supabase.rpc("mcp_list_public_tables");
+      if (error2) return { content: [{ type: "text", text: error2.message }], isError: true };
+      return {
+        content: [{ type: "text", text: JSON.stringify(data2, null, 2) }],
+        structuredContent: { tabelas: data2 ?? [] }
+      };
+    }
+    const { data, error } = await supabase.rpc("mcp_describe_table", { p_tabela: tabela });
+    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
+    if (data && typeof data === "object" && "erro" in data) {
+      return {
+        content: [{ type: "text", text: String(data.erro) }],
+        isError: true
+      };
+    }
+    return {
+      content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+      structuredContent: data
+    };
+  }
+});
+
+// src/lib/mcp/tools/read-table.ts
+import { defineTool as defineTool8 } from "npm:@lovable.dev/mcp-js@0.24.0";
+import { z as z7 } from "npm:zod@^4.4.3";
+var read_table_default = defineTool8({
+  name: "read_table",
+  title: "Ler tabela",
+  description: "Leitura gen\xE9rica de qualquer tabela do schema public, respeitando as permiss\xF5es (RLS) do usu\xE1rio autenticado. S\xF3 retorna o que o usu\xE1rio tem permiss\xE3o para ver.",
+  inputSchema: {
+    tabela: z7.string().trim().min(1).describe("Nome da tabela do schema public."),
+    colunas: z7.string().trim().optional().describe("Lista de colunas separadas por v\xEDrgula (padr\xE3o '*')."),
+    filtros: z7.record(z7.string(), z7.union([z7.string(), z7.number(), z7.boolean(), z7.null()])).optional().describe("Objeto campo\u2192valor para igualdade estrita."),
+    ordenar_por: z7.string().trim().optional().describe("Coluna para ordenar. Prefixe com '-' para descendente (ex.: '-created_at')."),
+    limite: z7.number().int().min(1).max(100).optional().describe("Padr\xE3o 25, m\xE1ximo 100."),
+    offset: z7.number().int().min(0).optional()
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ tabela, colunas, filtros, ordenar_por, limite, offset }, ctx) => {
+    const unauth = requireAuth(ctx);
+    if (unauth) return unauth;
+    const supabase = supabaseForUser(ctx);
+    const { data: tabelas, error: eList } = await supabase.rpc("mcp_list_public_tables");
+    if (eList) return { content: [{ type: "text", text: eList.message }], isError: true };
+    const nomes = new Set(
+      tabelas?.map((t) => t.tabela) ?? []
+    );
+    if (!nomes.has(tabela)) {
+      return {
+        content: [{ type: "text", text: `Tabela "${tabela}" n\xE3o existe no schema public.` }],
+        isError: true
+      };
+    }
+    const restrito = await acessoRestrito(supabase, ctx.getUserId());
+    if (restrito && tabelaBloqueadaParaCampo(tabela)) {
+      return { content: [{ type: "text", text: MSG_FORA_DO_ACESSO }], isError: true };
+    }
+    if (restrito) {
+      const usadas = [
+        ...Object.keys(filtros ?? {}),
+        ...ordenar_por ? [ordenar_por.replace(/^-/, "")] : []
+      ];
+      if (usadas.some((c) => colunaCortada(tabela, c))) {
+        return { content: [{ type: "text", text: MSG_FORA_DO_ACESSO }], isError: true };
+      }
+    }
+    const lim = Math.min(limite ?? 25, 100);
+    const off = offset ?? 0;
+    let q = supabase.from(tabela).select(colunas ?? "*").range(off, off + lim - 1);
+    if (filtros && typeof filtros === "object") {
+      for (const [k, v] of Object.entries(filtros)) {
+        q = v === null ? q.is(k, null) : q.eq(k, v);
+      }
+    }
+    if (ordenar_por) {
+      const desc = ordenar_por.startsWith("-");
+      const col = desc ? ordenar_por.slice(1) : ordenar_por;
+      q = q.order(col, { ascending: !desc });
+    }
+    const { data, error } = await q;
+    if (error) {
+      const msg = /permission denied|row-level security/i.test(error.message) ? `Acesso negado \xE0 tabela "${tabela}" para o usu\xE1rio atual (RLS).` : error.message;
+      return { content: [{ type: "text", text: msg }], isError: true };
+    }
+    const linhas = restrito ? cortarLinhas(tabela, data) : data ?? [];
+    return {
+      content: [{ type: "text", text: JSON.stringify(linhas, null, 2) }],
+      structuredContent: { tabela, count: linhas.length, linhas }
+    };
+  }
+});
+
+// src/lib/mcp/tools/list-storage.ts
+import { defineTool as defineTool9 } from "npm:@lovable.dev/mcp-js@0.24.0";
+import { z as z8 } from "npm:zod@^4.4.3";
+var list_storage_default = defineTool9({
+  name: "list_storage",
+  title: "Listar Storage",
+  description: "Lista buckets ou arquivos do Storage. Sem par\xE2metro, devolve buckets (nome, p\xFAblico/privado). Com 'bucket' (e 'prefixo' opcional), lista arquivos (nome, tamanho, criado em), m\xE1ximo 100. N\xE3o devolve conte\xFAdo nem URLs assinadas.",
+  inputSchema: {
+    bucket: z8.string().trim().optional().describe("Nome do bucket."),
+    prefixo: z8.string().trim().optional().describe("Prefixo (pasta) dentro do bucket.")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ bucket, prefixo }, ctx) => {
+    const unauth = requireAuth(ctx);
+    if (unauth) return unauth;
+    const supabase = supabaseForUser(ctx);
+    if (!bucket) {
+      const { data: data2, error: error2 } = await supabase.storage.listBuckets();
+      if (error2) return { content: [{ type: "text", text: error2.message }], isError: true };
+      const buckets = (data2 ?? []).map((b) => ({
+        nome: b.name,
+        publico: b.public,
+        criado_em: b.created_at
+      }));
+      return {
+        content: [{ type: "text", text: JSON.stringify(buckets, null, 2) }],
+        structuredContent: { buckets }
+      };
+    }
+    const { data, error } = await supabase.storage.from(bucket).list(prefixo ?? "", { limit: 100, sortBy: { column: "name", order: "asc" } });
+    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
+    const arquivos = (data ?? []).map((f) => ({
+      nome: f.name,
+      tamanho: f.metadata?.size ?? null,
+      mimetype: f.metadata?.mimetype ?? null,
+      criado_em: f.created_at,
+      atualizado_em: f.updated_at
+    }));
+    return {
+      content: [{ type: "text", text: JSON.stringify(arquivos, null, 2) }],
+      structuredContent: { bucket, prefixo: prefixo ?? "", count: arquivos.length, arquivos }
+    };
+  }
+});
 
 // src/lib/mcp/tools/criar-registros.ts
+import { defineTool as defineTool10 } from "npm:@lovable.dev/mcp-js@0.24.0";
+import { z as z9 } from "npm:zod@^4.4.3";
 var TABELAS = [
   "clientes",
   "locais_cliente",
@@ -687,7 +847,10 @@ var TABELAS = [
   "diarias",
   "escala_alocacoes",
   "registro_insumos",
-  "registro_maquinas"
+  "registro_maquinas",
+  // pendências por cliente
+  "demandas",
+  "demanda_responsaveis"
 ];
 var TEM_CREATED_BY = /* @__PURE__ */ new Set([
   "clientes",
@@ -726,8 +889,36 @@ var CAMPOS_OPERACAO = {
       "escala_periodicidade",
       "escala_dias_semana",
       "escala_duracao_dias",
-      "escala_equipe_qtd"
+      "escala_equipe_qtd",
+      "temperatura",
+      "proximo_contato_em",
+      "data_retorno_prometida",
+      "data_prometida_cliente",
+      "data_alvo_interna"
     ]
+  },
+  demandas: {
+    obrigatorios: ["titulo", "tipo"],
+    permitidos: [
+      "titulo",
+      "tipo",
+      "cliente_id",
+      "projeto_id",
+      "local_id",
+      "prioridade",
+      "responsavel_atual_id",
+      "prazo_final",
+      "valor",
+      "notas",
+      "pipeline_id",
+      "etapa_atual_id",
+      "orcamento_id",
+      "lado"
+    ]
+  },
+  demanda_responsaveis: {
+    obrigatorios: ["demanda_id", "colaborador_id"],
+    permitidos: ["demanda_id", "colaborador_id", "papel"]
   },
   registros: {
     obrigatorios: ["cliente_id", "data_servico", "tipo", "descricao", "status"],
@@ -792,7 +983,7 @@ var CAMPOS_OPERACAO = {
 var criar_registros_default = defineTool10({
   name: "criar_registros",
   title: "Criar registros em lote",
-  description: "Cria linhas em lote em tabelas de cadastro e da opera\xE7\xE3o de campo (whitelist). Cadastro (plantas, insumos, fornecedores) roda deduplica\xE7\xE3o por nome. Opera\xE7\xE3o (projetos, registros, diarias, escala_alocacoes, registro_insumos, registro_maquinas) roda valida\xE7\xE3o de campos/valores e prote\xE7\xE3o contra grava\xE7\xE3o repetida por chave natural: diarias = cliente_id + data_visita; registros = cliente_id + data_servico + tipo + descri\xE7\xE3o parecida; escala_alocacoes = data + colaborador_id + local_id. Use forcar=true para criar mesmo assim. M\xE1x 50 linhas por chamada. Escreve com o token do usu\xE1rio (RLS ativa).",
+  description: "Cria linhas em lote em tabelas de cadastro e da opera\xE7\xE3o de campo (whitelist). Cadastro (plantas, insumos, fornecedores) roda deduplica\xE7\xE3o por nome. Opera\xE7\xE3o (projetos, registros, diarias, escala_alocacoes, registro_insumos, registro_maquinas, demandas, demanda_responsaveis) roda valida\xE7\xE3o de campos/valores e prote\xE7\xE3o contra grava\xE7\xE3o repetida por chave natural: diarias = cliente_id + data_visita; registros = cliente_id + data_servico + tipo + descri\xE7\xE3o parecida; escala_alocacoes = data + colaborador_id + local_id; demandas = cliente_id + t\xEDtulo parecido entre as n\xE3o arquivadas. Use forcar=true para criar mesmo assim. M\xE1x 50 linhas por chamada. Escreve com o token do usu\xE1rio (RLS ativa).",
   inputSchema: {
     tabela: z9.enum(TABELAS).describe("Tabela alvo. Aceita apenas: " + TABELAS.join(", ")),
     linhas: z9.array(z9.record(z9.string(), z9.unknown())).min(1).max(50).describe("Array de objetos (m\xE1x 50)."),
@@ -891,6 +1082,15 @@ var criar_registros_default = defineTool10({
             }
             payload = validado.valores;
           }
+          if (tbl === "projetos" || tbl === "demandas") {
+            const extras = validarCamposExtras(payload, tbl);
+            if ("erro" in extras) {
+              resultados.push({ indice: i, status: "erro", motivo: extras.erro });
+              continue;
+            }
+            payload = extras.valores;
+          }
+          if (tbl === "demandas" && !payload.prioridade) payload.prioridade = "media";
           if (tbl === "escala_alocacoes" && !payload.projeto_id && !payload.local_id) {
             resultados.push({
               indice: i,
@@ -933,6 +1133,29 @@ var criar_registros_default = defineTool10({
                 id: hit.id,
                 fonte: "cliente_id + data_servico + tipo + descri\xE7\xE3o parecida",
                 mudaria: diffPreview({ descricao: hit.descricao }, payload)
+              }
+            });
+            continue;
+          }
+        }
+        if (!forcar && tbl === "demandas" && payload.cliente_id) {
+          const { data: cands } = await supabase.from("demandas").select("id, titulo, prioridade, prazo_final, notas").eq("cliente_id", payload.cliente_id).eq("arquivada", false).limit(100);
+          const alvo = normalizarTexto(payload.titulo);
+          const hit = (cands ?? []).find((c) => {
+            const t = normalizarTexto(c.titulo);
+            if (!t || !alvo) return false;
+            return t === alvo || Math.min(t.length, alvo.length) >= 8 && (t.includes(alvo) || alvo.includes(t));
+          });
+          if (hit) {
+            resultados.push({
+              indice: i,
+              status: "pulada",
+              motivo: "j\xE1 existe pend\xEAncia aberta com t\xEDtulo parecido para este cliente. Para criar assim mesmo, chame de novo com forcar=true.",
+              duplicado: {
+                id: hit.id,
+                nome: hit.titulo,
+                fonte: "cliente_id + t\xEDtulo parecido + arquivada=false",
+                mudaria: diffPreview(hit, payload)
               }
             });
             continue;
@@ -1026,7 +1249,8 @@ var TABELAS2 = [
   "diarias",
   "escala_alocacoes",
   "registro_insumos",
-  "registro_maquinas"
+  "registro_maquinas",
+  "demandas"
 ];
 var CAMPOS_UPDATE = {
   projetos: [
@@ -1047,7 +1271,31 @@ var CAMPOS_UPDATE = {
     "escala_periodicidade",
     "escala_dias_semana",
     "escala_duracao_dias",
-    "escala_equipe_qtd"
+    "escala_equipe_qtd",
+    "temperatura",
+    "proximo_contato_em",
+    "data_retorno_prometida",
+    "data_prometida_cliente",
+    "data_alvo_interna",
+    "origem",
+    "valor_total",
+    "descricao"
+  ],
+  demandas: [
+    "titulo",
+    "tipo",
+    "prioridade",
+    "responsavel_atual_id",
+    "etapa_atual_id",
+    "prazo_final",
+    "cronograma_inicio",
+    "cronograma_fim",
+    "valor",
+    "status_saida",
+    "notas",
+    "arquivada",
+    "projeto_id",
+    "local_id"
   ],
   registros: [
     "status",
@@ -1150,6 +1398,13 @@ var atualizar_registro_default = defineTool11({
           isError: true
         };
       }
+    }
+    if (tbl === "projetos" || tbl === "demandas") {
+      const extras = validarCamposExtras(Object.fromEntries(entries), tbl);
+      if ("erro" in extras) {
+        return { content: [{ type: "text", text: extras.erro }], isError: true };
+      }
+      for (const e of entries) e[1] = extras.valores[e[0]];
     }
     const colunasSet = new Set(entries.map(([k]) => k));
     if (tbl === "registros") colunasSet.add("tipo");
@@ -1254,13 +1509,16 @@ var atualizar_registro_default = defineTool11({
       return { content: [{ type: "text", text: msg }], isError: true };
     }
     const depoisObj = depois ?? {};
-    const diff = {};
+    let diff = {};
     for (const [k] of entries) {
       const a = antesObj[k];
       const d = depoisObj[k];
       if (JSON.stringify(a) !== JSON.stringify(d)) {
         diff[k] = { antes: a, depois: d };
       }
+    }
+    if (await acessoRestrito(supabase, userId)) {
+      diff = cortarLinha(tbl, diff);
     }
     const avisos = [];
     if (diff.status) {
@@ -1296,6 +1554,130 @@ var atualizar_registro_default = defineTool11({
   }
 });
 
+// src/lib/mcp/tools/painel-projetos.ts
+import { defineTool as defineTool12 } from "npm:@lovable.dev/mcp-js@0.24.0";
+import { z as z11 } from "npm:zod@^4.4.3";
+var ORDENACOES = [
+  "dias_no_status",
+  "proximo_contato_em",
+  "data_prometida_cliente",
+  "data_alvo_interna",
+  "demandas_abertas",
+  "valor_total"
+];
+var DIA_MS = 864e5;
+function nomesPorId(rows) {
+  return new Map((rows ?? []).map((r) => [r.id, r.nome ?? ""]));
+}
+var painel_projetos_default = defineTool12({
+  name: "painel_projetos",
+  title: "Painel de projetos",
+  description: "Vista de acompanhamento da gest\xE3o: projetos n\xE3o conclu\xEDdos e n\xE3o cancelados, com cliente, local, respons\xE1veis, datas, dias_no_status (desde a \xFAltima mudan\xE7a de status registrada, ou desde a cria\xE7\xE3o) e demandas_abertas. Para quem s\xF3 tem o papel operador_campo, valor_total n\xE3o \xE9 devolvido.",
+  inputSchema: {
+    tipo: z11.string().optional(),
+    status: z11.string().optional(),
+    cliente_id: z11.string().uuid().optional(),
+    responsavel_id: z11.string().uuid().optional(),
+    ordenar_por: z11.enum(ORDENACOES).optional().describe("Padr\xE3o: dias_no_status (decrescente). Datas ordenam da mais pr\xF3xima para a mais distante."),
+    limite: z11.number().int().min(1).max(200).optional().describe("Padr\xE3o 50.")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ tipo, status, cliente_id, responsavel_id, ordenar_por, limite }, ctx) => {
+    const unauth = requireAuth(ctx);
+    if (unauth) return unauth;
+    const supabase = supabaseForUser(ctx);
+    const restrito = await acessoRestrito(supabase, ctx.getUserId());
+    let q = supabase.from("projetos").select(
+      "id,titulo,tipo,status,substatus,temperatura,cliente_id,local_id,responsavel_id,lider_responsavel_id,proximo_contato_em,data_prometida_cliente,data_alvo_interna,valor_total,created_at"
+    ).not("status", "in", "(concluido,cancelado)").limit(1e3);
+    if (tipo) q = q.eq("tipo", tipo);
+    if (status) q = q.eq("status", status);
+    if (cliente_id) q = q.eq("cliente_id", cliente_id);
+    if (responsavel_id) q = q.eq("responsavel_id", responsavel_id);
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
+    const projetos = data ?? [];
+    if (projetos.length === 0) {
+      return {
+        content: [{ type: "text", text: "Nenhum projeto em aberto com esses filtros." }],
+        structuredContent: { count: 0, projetos: [] }
+      };
+    }
+    const ids = projetos.map((p) => p.id);
+    const uniq = (xs) => Array.from(new Set(xs.filter((x) => Boolean(x))));
+    const clienteIds = uniq(projetos.map((p) => p.cliente_id));
+    const localIds = uniq(projetos.map((p) => p.local_id));
+    const pessoaIds = uniq(projetos.flatMap((p) => [p.responsavel_id, p.lider_responsavel_id]));
+    const [audit, dem, cli, loc, colab, prof] = await Promise.all([
+      supabase.from("audit_status_changes").select("entity_id,changed_at").eq("entity_table", "projetos").in("entity_id", ids).order("changed_at", { ascending: false }),
+      supabase.from("demandas").select("projeto_id").in("projeto_id", ids).eq("arquivada", false).is("status_saida", null),
+      clienteIds.length ? supabase.from("clientes").select("id,nome").in("id", clienteIds) : Promise.resolve({ data: [] }),
+      localIds.length ? supabase.from("locais_cliente").select("id,nome").in("id", localIds) : Promise.resolve({ data: [] }),
+      pessoaIds.length ? supabase.from("colaboradores").select("id,nome,user_id").or(
+        `id.in.(${pessoaIds.join(",")}),user_id.in.(${pessoaIds.join(",")})`
+      ) : Promise.resolve({ data: [] }),
+      pessoaIds.length ? supabase.from("profiles").select("id,nome").in("id", pessoaIds) : Promise.resolve({ data: [] })
+    ]);
+    const ultimaMudanca = /* @__PURE__ */ new Map();
+    for (const a of audit.data ?? []) {
+      if (!ultimaMudanca.has(a.entity_id)) ultimaMudanca.set(a.entity_id, a.changed_at);
+    }
+    const abertas = /* @__PURE__ */ new Map();
+    for (const d of dem.data ?? []) {
+      abertas.set(d.projeto_id, (abertas.get(d.projeto_id) ?? 0) + 1);
+    }
+    const clientes = nomesPorId(cli.data);
+    const locais = nomesPorId(loc.data);
+    const pessoas = nomesPorId(prof.data);
+    for (const c of colab.data ?? []) {
+      pessoas.set(c.id, c.nome ?? "");
+      if (c.user_id) pessoas.set(c.user_id, c.nome ?? "");
+    }
+    const nome = (id) => id ? pessoas.get(id) ?? null : null;
+    const agora = Date.now();
+    const linhas = projetos.map((p) => {
+      const desde = ultimaMudanca.get(p.id) ?? p.created_at;
+      const linha = {
+        id: p.id,
+        cliente: p.cliente_id ? clientes.get(p.cliente_id) ?? null : null,
+        local: p.local_id ? locais.get(p.local_id) ?? null : null,
+        titulo: p.titulo,
+        tipo: p.tipo,
+        status: p.status,
+        substatus: p.substatus,
+        temperatura: p.temperatura,
+        responsavel: nome(p.responsavel_id),
+        lider_responsavel: nome(p.lider_responsavel_id),
+        proximo_contato_em: p.proximo_contato_em,
+        data_prometida_cliente: p.data_prometida_cliente,
+        data_alvo_interna: p.data_alvo_interna,
+        valor_total: p.valor_total,
+        dias_no_status: Math.max(0, Math.floor((agora - new Date(desde).getTime()) / DIA_MS)),
+        status_desde: desde,
+        demandas_abertas: abertas.get(p.id) ?? 0
+      };
+      if (restrito) delete linha.valor_total;
+      return linha;
+    });
+    const chave = ordenar_por ?? "dias_no_status";
+    const ordemAsc = chave === "proximo_contato_em" || chave === "data_prometida_cliente" || chave === "data_alvo_interna";
+    const ordenavel = restrito && chave === "valor_total" ? "dias_no_status" : chave;
+    linhas.sort((a, b) => {
+      const va = a[ordenavel];
+      const vb = b[ordenavel];
+      if (va === null || va === void 0) return 1;
+      if (vb === null || vb === void 0) return -1;
+      const cmp = va < vb ? -1 : va > vb ? 1 : 0;
+      return ordemAsc ? cmp : -cmp;
+    });
+    const resultado = linhas.slice(0, limite ?? 50);
+    return {
+      content: [{ type: "text", text: JSON.stringify(resultado, null, 2) }],
+      structuredContent: { count: resultado.length, total_em_aberto: linhas.length, projetos: resultado }
+    };
+  }
+});
+
 // src/lib/mcp/index.ts
 var projectRef = "lelteebbziredzfamkzb";
 var mcp_default = defineMcp({
@@ -1318,7 +1700,8 @@ var mcp_default = defineMcp({
     read_table_default,
     list_storage_default,
     criar_registros_default,
-    atualizar_registro_default
+    atualizar_registro_default,
+    painel_projetos_default
   ]
 });
 

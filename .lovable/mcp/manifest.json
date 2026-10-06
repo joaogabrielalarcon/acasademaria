@@ -390,7 +390,7 @@
       {
         "name": "criar_registros",
         "title": "Criar registros em lote",
-        "description": "Cria linhas em lote em tabelas de cadastro e da operação de campo (whitelist). Cadastro (plantas, insumos, fornecedores) roda deduplicação por nome. Operação (projetos, registros, diarias, escala_alocacoes, registro_insumos, registro_maquinas) roda validação de campos/valores e proteção contra gravação repetida por chave natural: diarias = cliente_id + data_visita; registros = cliente_id + data_servico + tipo + descrição parecida; escala_alocacoes = data + colaborador_id + local_id. Use forcar=true para criar mesmo assim. Máx 50 linhas por chamada. Escreve com o token do usuário (RLS ativa).",
+        "description": "Cria linhas em lote em tabelas de cadastro e da operação de campo (whitelist). Cadastro (plantas, insumos, fornecedores) roda deduplicação por nome. Operação (projetos, registros, diarias, escala_alocacoes, registro_insumos, registro_maquinas, demandas, demanda_responsaveis) roda validação de campos/valores e proteção contra gravação repetida por chave natural: diarias = cliente_id + data_visita; registros = cliente_id + data_servico + tipo + descrição parecida; escala_alocacoes = data + colaborador_id + local_id; demandas = cliente_id + título parecido entre as não arquivadas. Use forcar=true para criar mesmo assim. Máx 50 linhas por chamada. Escreve com o token do usuário (RLS ativa).",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -419,9 +419,11 @@
                 "diarias",
                 "escala_alocacoes",
                 "registro_insumos",
-                "registro_maquinas"
+                "registro_maquinas",
+                "demandas",
+                "demanda_responsaveis"
               ],
-              "description": "Tabela alvo. Aceita apenas: clientes, locais_cliente, colaboradores, maquinas, insumos, insumo_unidades, plantas, fornecedores, fornecedor_atendentes, estoque_movimentacoes, projetos, registros, diarias, escala_alocacoes, registro_insumos, registro_maquinas"
+              "description": "Tabela alvo. Aceita apenas: clientes, locais_cliente, colaboradores, maquinas, insumos, insumo_unidades, plantas, fornecedores, fornecedor_atendentes, estoque_movimentacoes, projetos, registros, diarias, escala_alocacoes, registro_insumos, registro_maquinas, demandas, demanda_responsaveis"
             },
             "linhas": {
               "minItems": 1,
@@ -480,9 +482,10 @@
                 "diarias",
                 "escala_alocacoes",
                 "registro_insumos",
-                "registro_maquinas"
+                "registro_maquinas",
+                "demandas"
               ],
-              "description": "Tabela alvo. Aceita: clientes, locais_cliente, colaboradores, maquinas, insumos, insumo_unidades, plantas, fornecedores, fornecedor_atendentes, estoque_movimentacoes, projetos, registros, diarias, escala_alocacoes, registro_insumos, registro_maquinas"
+              "description": "Tabela alvo. Aceita: clientes, locais_cliente, colaboradores, maquinas, insumos, insumo_unidades, plantas, fornecedores, fornecedor_atendentes, estoque_movimentacoes, projetos, registros, diarias, escala_alocacoes, registro_insumos, registro_maquinas, demandas"
             },
             "id": {
               "type": "string",
@@ -524,6 +527,57 @@
             "id",
             "campos"
           ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "painel_projetos",
+        "title": "Painel de projetos",
+        "description": "Vista de acompanhamento da gestão: projetos não concluídos e não cancelados, com cliente, local, responsáveis, datas, dias_no_status (desde a última mudança de status registrada, ou desde a criação) e demandas_abertas. Para quem só tem o papel operador_campo, valor_total não é devolvido.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "tipo": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string"
+            },
+            "cliente_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "responsavel_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "ordenar_por": {
+              "description": "Padrão: dias_no_status (decrescente). Datas ordenam da mais próxima para a mais distante.",
+              "type": "string",
+              "enum": [
+                "dias_no_status",
+                "proximo_contato_em",
+                "data_prometida_cliente",
+                "data_alvo_interna",
+                "demandas_abertas",
+                "valor_total"
+              ]
+            },
+            "limite": {
+              "description": "Padrão 50.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          }
         },
         "outputSchema": null
       }
