@@ -1,0 +1,2 @@
+ALTER TABLE public.demandas DROP CONSTRAINT IF EXISTS demandas_prioridade_check;
+ALTER TABLE public.demandas ADD CONSTRAINT demandas_prioridade_check CHECK (prioridade = ANY (ARRAY['urgente'::text,'alta'::text,'media'::text,'baixa'::text]));
