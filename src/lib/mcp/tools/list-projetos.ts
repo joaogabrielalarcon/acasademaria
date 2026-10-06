@@ -1,6 +1,7 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { supabaseForUser, requireAuth } from "../_supabase";
+import { acessoRestrito, cortarLinhas } from "./_validacao";
 
 export default defineTool({
   name: "list_projetos",
@@ -34,9 +35,12 @@ export default defineTool({
     const { data, error } = await q;
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
 
+    const restrito = await acessoRestrito(supabase, ctx.getUserId()!);
+    const projetos = restrito ? cortarLinhas("projetos", data) : (data ?? []);
+
     return {
-      content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
-      structuredContent: { count: data?.length ?? 0, projetos: data ?? [] },
+      content: [{ type: "text", text: JSON.stringify(projetos, null, 2) }],
+      structuredContent: { count: projetos.length, projetos },
     };
   },
 });

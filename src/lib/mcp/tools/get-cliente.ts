@@ -1,6 +1,7 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { supabaseForUser, requireAuth } from "../_supabase";
+import { acessoRestrito, cortarLinha, cortarLinhas } from "./_validacao";
 
 export default defineTool({
   name: "get_cliente",
@@ -28,7 +29,13 @@ export default defineTool({
     if (cliente.error) return { content: [{ type: "text", text: cliente.error.message }], isError: true };
     if (!cliente.data) return { content: [{ type: "text", text: "Cliente não encontrado." }], isError: true };
 
-    const payload = { cliente: cliente.data, projetos: projetos.data ?? [] };
+    const restrito = await acessoRestrito(supabase, ctx.getUserId()!);
+    const payload = restrito
+      ? {
+          cliente: cortarLinha("clientes", cliente.data),
+          projetos: cortarLinhas("projetos", projetos.data),
+        }
+      : { cliente: cliente.data, projetos: projetos.data ?? [] };
     return {
       content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
       structuredContent: payload,
