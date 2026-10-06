@@ -381,14 +381,8 @@ function dataIsoValida(v) {
   const dt = new Date(Date.UTC(y, mo - 1, d));
   return dt.getUTCFullYear() === y && dt.getUTCMonth() === mo - 1 && dt.getUTCDate() === d;
 }
-var PRIORIDADES_DEMANDA = ["baixa", "media", "alta", "urgente"];
-var PRIORIDADE_DEMANDA_BANCO = {
-  baixa: "baixa",
-  media: "media",
-  alta: "alta",
-  urgente: "critica",
-  critica: "critica"
-};
+var PRIORIDADES_DEMANDA = ["urgente", "alta", "media", "baixa"];
+var TIPOS_DEMANDA = ["comercial", "operacional", "financeiro", "administrativo"];
 var LADOS_DEMANDA = ["nosso", "terceiro", "cliente"];
 var STATUS_SAIDA_DEMANDA = ["nao_aprovado", "rejeitado", "cancelado"];
 function validarCamposExtras(campos, tabela) {
@@ -416,7 +410,8 @@ function validarCamposExtras(campos, tabela) {
     }
   }
   if (tabela === "demandas") {
-    lista("prioridade", PRIORIDADES_DEMANDA, PRIORIDADE_DEMANDA_BANCO);
+    lista("prioridade", PRIORIDADES_DEMANDA);
+    lista("tipo", TIPOS_DEMANDA);
     lista("lado", LADOS_DEMANDA);
     lista("status_saida", STATUS_SAIDA_DEMANDA);
     if (presente("valor")) {
