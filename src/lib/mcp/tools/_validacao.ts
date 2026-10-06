@@ -446,18 +446,10 @@ export function dataIsoValida(v: unknown): boolean {
 
 /* ─────────── demandas ─────────── */
 
-/**
- * Prioridade de demandas. O CHECK do banco aceita critica|alta|media|baixa;
- * "urgente" é aceito como apelido e gravado como "critica".
- */
-export const PRIORIDADES_DEMANDA = ["baixa", "media", "alta", "urgente"] as const;
-const PRIORIDADE_DEMANDA_BANCO: Record<string, string> = {
-  baixa: "baixa",
-  media: "media",
-  alta: "alta",
-  urgente: "critica",
-  critica: "critica",
-};
+/** Prioridade de demandas: mesma lista do CHECK do banco, gravada sem tradução. */
+export const PRIORIDADES_DEMANDA = ["urgente", "alta", "media", "baixa"] as const;
+/** Tipo de demanda = área da empresa (RH fica em administrativo). A natureza do trabalho vai no título. */
+export const TIPOS_DEMANDA = ["comercial", "operacional", "financeiro", "administrativo"] as const;
 export const LADOS_DEMANDA = ["nosso", "terceiro", "cliente"] as const;
 export const STATUS_SAIDA_DEMANDA = ["nao_aprovado", "rejeitado", "cancelado"] as const;
 
@@ -496,7 +488,8 @@ export function validarCamposExtras(
   }
 
   if (tabela === "demandas") {
-    lista("prioridade", PRIORIDADES_DEMANDA, PRIORIDADE_DEMANDA_BANCO);
+    lista("prioridade", PRIORIDADES_DEMANDA);
+    lista("tipo", TIPOS_DEMANDA);
     lista("lado", LADOS_DEMANDA);
     lista("status_saida", STATUS_SAIDA_DEMANDA);
     if (presente("valor")) {
