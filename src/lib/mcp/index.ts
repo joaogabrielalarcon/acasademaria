@@ -10,6 +10,7 @@ import readTable from "./tools/read-table";
 import listStorage from "./tools/list-storage";
 import criarRegistros from "./tools/criar-registros";
 import atualizarRegistro from "./tools/atualizar-registro";
+import painelProjetos from "./tools/painel-projetos";
 
 // Direct Supabase issuer (never the .lovable.cloud proxy). Vite inlines this
 // at build time so no runtime env read happens at module top level.
@@ -37,5 +38,6 @@ export default defineMcp({
     listStorage,
     criarRegistros,
     atualizarRegistro,
+    painelProjetos,
   ],
 });
