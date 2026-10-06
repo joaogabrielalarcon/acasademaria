@@ -1554,6 +1554,130 @@ var atualizar_registro_default = defineTool11({
   }
 });
 
+// src/lib/mcp/tools/painel-projetos.ts
+import { defineTool as defineTool12 } from "npm:@lovable.dev/mcp-js@0.24.0";
+import { z as z11 } from "npm:zod@^4.4.3";
+var ORDENACOES = [
+  "dias_no_status",
+  "proximo_contato_em",
+  "data_prometida_cliente",
+  "data_alvo_interna",
+  "demandas_abertas",
+  "valor_total"
+];
+var DIA_MS = 864e5;
+function nomesPorId(rows) {
+  return new Map((rows ?? []).map((r) => [r.id, r.nome ?? ""]));
+}
+var painel_projetos_default = defineTool12({
+  name: "painel_projetos",
+  title: "Painel de projetos",
+  description: "Vista de acompanhamento da gest\xE3o: projetos n\xE3o conclu\xEDdos e n\xE3o cancelados, com cliente, local, respons\xE1veis, datas, dias_no_status (desde a \xFAltima mudan\xE7a de status registrada, ou desde a cria\xE7\xE3o) e demandas_abertas. Para quem s\xF3 tem o papel operador_campo, valor_total n\xE3o \xE9 devolvido.",
+  inputSchema: {
+    tipo: z11.string().optional(),
+    status: z11.string().optional(),
+    cliente_id: z11.string().uuid().optional(),
+    responsavel_id: z11.string().uuid().optional(),
+    ordenar_por: z11.enum(ORDENACOES).optional().describe("Padr\xE3o: dias_no_status (decrescente). Datas ordenam da mais pr\xF3xima para a mais distante."),
+    limite: z11.number().int().min(1).max(200).optional().describe("Padr\xE3o 50.")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ tipo, status, cliente_id, responsavel_id, ordenar_por, limite }, ctx) => {
+    const unauth = requireAuth(ctx);
+    if (unauth) return unauth;
+    const supabase = supabaseForUser(ctx);
+    const restrito = await acessoRestrito(supabase, ctx.getUserId());
+    let q = supabase.from("projetos").select(
+      "id,titulo,tipo,status,substatus,temperatura,cliente_id,local_id,responsavel_id,lider_responsavel_id,proximo_contato_em,data_prometida_cliente,data_alvo_interna,valor_total,created_at"
+    ).not("status", "in", "(concluido,cancelado)").limit(1e3);
+    if (tipo) q = q.eq("tipo", tipo);
+    if (status) q = q.eq("status", status);
+    if (cliente_id) q = q.eq("cliente_id", cliente_id);
+    if (responsavel_id) q = q.eq("responsavel_id", responsavel_id);
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
+    const projetos = data ?? [];
+    if (projetos.length === 0) {
+      return {
+        content: [{ type: "text", text: "Nenhum projeto em aberto com esses filtros." }],
+        structuredContent: { count: 0, projetos: [] }
+      };
+    }
+    const ids = projetos.map((p) => p.id);
+    const uniq = (xs) => Array.from(new Set(xs.filter((x) => Boolean(x))));
+    const clienteIds = uniq(projetos.map((p) => p.cliente_id));
+    const localIds = uniq(projetos.map((p) => p.local_id));
+    const pessoaIds = uniq(projetos.flatMap((p) => [p.responsavel_id, p.lider_responsavel_id]));
+    const [audit, dem, cli, loc, colab, prof] = await Promise.all([
+      supabase.from("audit_status_changes").select("entity_id,changed_at").eq("entity_table", "projetos").in("entity_id", ids).order("changed_at", { ascending: false }),
+      supabase.from("demandas").select("projeto_id").in("projeto_id", ids).eq("arquivada", false).is("status_saida", null),
+      clienteIds.length ? supabase.from("clientes").select("id,nome").in("id", clienteIds) : Promise.resolve({ data: [] }),
+      localIds.length ? supabase.from("locais_cliente").select("id,nome").in("id", localIds) : Promise.resolve({ data: [] }),
+      pessoaIds.length ? supabase.from("colaboradores").select("id,nome,user_id").or(
+        `id.in.(${pessoaIds.join(",")}),user_id.in.(${pessoaIds.join(",")})`
+      ) : Promise.resolve({ data: [] }),
+      pessoaIds.length ? supabase.from("profiles").select("id,nome").in("id", pessoaIds) : Promise.resolve({ data: [] })
+    ]);
+    const ultimaMudanca = /* @__PURE__ */ new Map();
+    for (const a of audit.data ?? []) {
+      if (!ultimaMudanca.has(a.entity_id)) ultimaMudanca.set(a.entity_id, a.changed_at);
+    }
+    const abertas = /* @__PURE__ */ new Map();
+    for (const d of dem.data ?? []) {
+      abertas.set(d.projeto_id, (abertas.get(d.projeto_id) ?? 0) + 1);
+    }
+    const clientes = nomesPorId(cli.data);
+    const locais = nomesPorId(loc.data);
+    const pessoas = nomesPorId(prof.data);
+    for (const c of colab.data ?? []) {
+      pessoas.set(c.id, c.nome ?? "");
+      if (c.user_id) pessoas.set(c.user_id, c.nome ?? "");
+    }
+    const nome = (id) => id ? pessoas.get(id) ?? null : null;
+    const agora = Date.now();
+    const linhas = projetos.map((p) => {
+      const desde = ultimaMudanca.get(p.id) ?? p.created_at;
+      const linha = {
+        id: p.id,
+        cliente: p.cliente_id ? clientes.get(p.cliente_id) ?? null : null,
+        local: p.local_id ? locais.get(p.local_id) ?? null : null,
+        titulo: p.titulo,
+        tipo: p.tipo,
+        status: p.status,
+        substatus: p.substatus,
+        temperatura: p.temperatura,
+        responsavel: nome(p.responsavel_id),
+        lider_responsavel: nome(p.lider_responsavel_id),
+        proximo_contato_em: p.proximo_contato_em,
+        data_prometida_cliente: p.data_prometida_cliente,
+        data_alvo_interna: p.data_alvo_interna,
+        valor_total: p.valor_total,
+        dias_no_status: Math.max(0, Math.floor((agora - new Date(desde).getTime()) / DIA_MS)),
+        status_desde: desde,
+        demandas_abertas: abertas.get(p.id) ?? 0
+      };
+      if (restrito) delete linha.valor_total;
+      return linha;
+    });
+    const chave = ordenar_por ?? "dias_no_status";
+    const ordemAsc = chave === "proximo_contato_em" || chave === "data_prometida_cliente" || chave === "data_alvo_interna";
+    const ordenavel = restrito && chave === "valor_total" ? "dias_no_status" : chave;
+    linhas.sort((a, b) => {
+      const va = a[ordenavel];
+      const vb = b[ordenavel];
+      if (va === null || va === void 0) return 1;
+      if (vb === null || vb === void 0) return -1;
+      const cmp = va < vb ? -1 : va > vb ? 1 : 0;
+      return ordemAsc ? cmp : -cmp;
+    });
+    const resultado = linhas.slice(0, limite ?? 50);
+    return {
+      content: [{ type: "text", text: JSON.stringify(resultado, null, 2) }],
+      structuredContent: { count: resultado.length, total_em_aberto: linhas.length, projetos: resultado }
+    };
+  }
+});
+
 // src/lib/mcp/index.ts
 var projectRef = "lelteebbziredzfamkzb";
 var mcp_default = defineMcp({
@@ -1576,7 +1700,8 @@ var mcp_default = defineMcp({
     read_table_default,
     list_storage_default,
     criar_registros_default,
-    atualizar_registro_default
+    atualizar_registro_default,
+    painel_projetos_default
   ]
 });
 
