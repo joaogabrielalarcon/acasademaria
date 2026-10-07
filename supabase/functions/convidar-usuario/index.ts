@@ -35,12 +35,15 @@ Deno.serve(async (req) => {
   });
   const { data: { user } } = await asUser.auth.getUser();
   if (!user) return json({ error: "Não autenticado" }, 401);
-  const { data: canManage } = await asUser.rpc("can_manage_users", { _user_id: user.id });
-  if (!canManage) return json({ error: "Sem permissão para criar usuários" }, 403);
+  // Only admins may create accounts through this path.
+  const { data: isAdmin } = await asUser.rpc("has_role", { _user_id: user.id, _role: "admin" });
+  if (!isAdmin) return json({ error: "Somente administradores podem criar usuários" }, 403);
 
   const parsed = Body.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return json({ error: parsed.error.flatten().fieldErrors }, 400);
   const { email, nome, role, colaborador_id, redirect_to } = parsed.data;
+  // The admin role is granted only manually, never through this function.
+  if (role === "admin") return json({ error: "O papel admin não pode ser atribuído por aqui" }, 403);
 
   const admin = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
     auth: { autoRefreshToken: false, persistSession: false },
