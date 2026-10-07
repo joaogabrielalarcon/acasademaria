@@ -759,7 +759,18 @@ var read_table_default = defineTool8({
     }
     const lim = Math.min(limite ?? 25, 100);
     const off = offset ?? 0;
-    let q = supabase.from(tabela).select(colunas ?? "*").range(off, off + lim - 1);
+    const ehEstoque = tabela === "estoque_movimentacoes";
+    let colunasPedidas = colunas ?? (ehEstoque ? COLUNAS_ESTOQUE_LIVRES : "*");
+    if (ehEstoque && colunas) {
+      const lista = colunas.split(",").map((c) => c.trim()).filter(Boolean);
+      const livres = lista.filter((c) => !COLUNAS_ESTOQUE_VALOR.includes(c));
+      if (!livres.includes("id")) livres.unshift("id");
+      colunasPedidas = livres.join(",");
+    }
+    if (ehEstoque && ordenar_por && COLUNAS_ESTOQUE_VALOR.includes(ordenar_por.replace(/^-/, ""))) {
+      return { content: [{ type: "text", text: MSG_FORA_DO_ACESSO }], isError: true };
+    }
+    let q = supabase.from(tabela).select(colunasPedidas).range(off, off + lim - 1);
     if (filtros && typeof filtros === "object") {
       for (const [k, v] of Object.entries(filtros)) {
         q = v === null ? q.is(k, null) : q.eq(k, v);
@@ -775,13 +786,30 @@ var read_table_default = defineTool8({
       const msg = /permission denied|row-level security/i.test(error.message) ? `Acesso negado \xE0 tabela "${tabela}" para o usu\xE1rio atual (RLS).` : error.message;
       return { content: [{ type: "text", text: msg }], isError: true };
     }
-    const linhas = restrito ? cortarLinhas(tabela, data) : data ?? [];
+    let base = data ?? [];
+    if (ehEstoque && !restrito && base.length) {
+      const { data: v } = await supabase.rpc("estoque_valores", {
+        _ids: base.map((r) => r.id)
+      });
+      const mapa = new Map(
+        (v ?? []).map(
+          (x) => [x.id, x]
+        )
+      );
+      base = base.map((r) => {
+        const x = mapa.get(r.id);
+        return { ...r, preco_unitario: x?.preco_unitario ?? null, valor_total: x?.valor_total ?? null };
+      });
+    }
+    const linhas = restrito ? cortarLinhas(tabela, base) : base;
     return {
       content: [{ type: "text", text: JSON.stringify(linhas, null, 2) }],
       structuredContent: { tabela, count: linhas.length, linhas }
     };
   }
 });
+var COLUNAS_ESTOQUE_VALOR = ["preco_unitario", "valor_total"];
+var COLUNAS_ESTOQUE_LIVRES = "id, item_id, item_tipo, tipo_movimento, quantidade, fornecedor_id, origem, referencia_id, observacoes, registrado_por_nome, created_at";
 
 // src/lib/mcp/tools/list-storage.ts
 import { defineTool as defineTool9 } from "npm:@lovable.dev/mcp-js@0.24.0";

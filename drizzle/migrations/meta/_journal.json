@@ -15,6 +15,13 @@
       "when": 1791378477145,
       "tag": "0001_restrict_markup_and_stock_values",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791378653144,
+      "tag": "0002_estoque_valores_erro_pt",
+      "breakpoints": true
     }
   ]
 }
