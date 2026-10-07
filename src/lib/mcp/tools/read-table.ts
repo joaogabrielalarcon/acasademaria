@@ -71,7 +71,21 @@ export default defineTool({
 
     const lim = Math.min(limite ?? 25, 100);
     const off = offset ?? 0;
-    let q = supabase.from(tabela).select(colunas ?? "*").range(off, off + lim - 1);
+
+    // Stock money columns have no column grant: never ask for them directly.
+    const ehEstoque = tabela === "estoque_movimentacoes";
+    let colunasPedidas = colunas ?? (ehEstoque ? COLUNAS_ESTOQUE_LIVRES : "*");
+    if (ehEstoque && colunas) {
+      const lista = colunas.split(",").map((c) => c.trim()).filter(Boolean);
+      const livres = lista.filter((c) => !COLUNAS_ESTOQUE_VALOR.includes(c));
+      if (!livres.includes("id")) livres.unshift("id");
+      colunasPedidas = livres.join(",");
+    }
+    if (ehEstoque && ordenar_por && COLUNAS_ESTOQUE_VALOR.includes(ordenar_por.replace(/^-/, ""))) {
+      return { content: [{ type: "text", text: MSG_FORA_DO_ACESSO }], isError: true };
+    }
+
+    let q = supabase.from(tabela).select(colunasPedidas).range(off, off + lim - 1);
 
     if (filtros && typeof filtros === "object") {
       for (const [k, v] of Object.entries(filtros)) {
@@ -92,9 +106,25 @@ export default defineTool({
       return { content: [{ type: "text", text: msg }], isError: true };
     }
 
-    const linhas = restrito
-      ? cortarLinhas(tabela, data as unknown as Record<string, unknown>[])
-      : ((data ?? []) as unknown as Record<string, unknown>[]);
+    let base = (data ?? []) as unknown as Record<string, unknown>[];
+
+    // Management gets stock values through the role-checked function.
+    if (ehEstoque && !restrito && base.length) {
+      const { data: v } = await supabase.rpc("estoque_valores", {
+        _ids: base.map((r) => r.id as string),
+      });
+      const mapa = new Map(
+        ((v ?? []) as Array<{ id: string; preco_unitario: number | null; valor_total: number | null }>).map(
+          (x) => [x.id, x],
+        ),
+      );
+      base = base.map((r) => {
+        const x = mapa.get(r.id as string);
+        return { ...r, preco_unitario: x?.preco_unitario ?? null, valor_total: x?.valor_total ?? null };
+      });
+    }
+
+    const linhas = restrito ? cortarLinhas(tabela, base) : base;
 
     return {
       content: [{ type: "text", text: JSON.stringify(linhas, null, 2) }],
@@ -102,3 +132,7 @@ export default defineTool({
     };
   },
 });
+
+const COLUNAS_ESTOQUE_VALOR = ["preco_unitario", "valor_total"];
+const COLUNAS_ESTOQUE_LIVRES =
+  "id, item_id, item_tipo, tipo_movimento, quantidade, fornecedor_id, origem, referencia_id, observacoes, registrado_por_nome, created_at";
