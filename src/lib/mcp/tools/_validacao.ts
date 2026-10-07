@@ -522,20 +522,27 @@ export async function papeisDoUsuario(
   return ((data ?? []) as Array<{ role: string }>).map((r) => r.role);
 }
 
-/** true quando o usuário é operador_campo e não tem admin nem administrativo. */
-export function ehSoCampo(papeis: readonly string[]): boolean {
-  return (
-    papeis.includes("operador_campo") &&
-    !papeis.includes("admin") &&
-    !papeis.includes("administrativo")
-  );
+/**
+ * Papéis que podem ver valor, markup e margem. Quem não tem pelo menos um
+ * deles recebe o corte. Papel novo criado no futuro nasce cortado.
+ */
+export const PAPEIS_QUE_VEEM_VALOR: readonly string[] = [
+  "admin",
+  "administrativo",
+  "gestor",
+  "diretor",
+];
+
+/** true quando o usuário tem pelo menos um papel de gestão. */
+export function podeVerValor(papeis: readonly string[]): boolean {
+  return papeis.some((p) => PAPEIS_QUE_VEEM_VALOR.includes(p));
 }
 
 export async function acessoRestrito(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<boolean> {
-  return ehSoCampo(await papeisDoUsuario(supabase, userId));
+  return !podeVerValor(await papeisDoUsuario(supabase, userId));
 }
 
 const TABELAS_BLOQUEADAS_CAMPO = new Set([

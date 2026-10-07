@@ -42,7 +42,7 @@ export default defineTool({
   description:
     "Vista de acompanhamento da gestão: projetos não concluídos e não cancelados, com cliente, local, responsáveis, datas, " +
     "dias_no_status (desde a última mudança de status registrada, ou desde a criação) e demandas_abertas. " +
-    "Para quem só tem o papel operador_campo, valor_total não é devolvido.",
+    "Para quem não tem papel de gestão (admin, administrativo, gestor, diretor), valor_total não é devolvido.",
   inputSchema: {
     tipo: z.string().optional(),
     status: z.string().optional(),

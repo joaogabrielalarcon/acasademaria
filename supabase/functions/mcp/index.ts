@@ -434,11 +434,17 @@ async function papeisDoUsuario(supabase, userId) {
   const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
   return (data ?? []).map((r) => r.role);
 }
-function ehSoCampo(papeis) {
-  return papeis.includes("operador_campo") && !papeis.includes("admin") && !papeis.includes("administrativo");
+var PAPEIS_QUE_VEEM_VALOR = [
+  "admin",
+  "administrativo",
+  "gestor",
+  "diretor"
+];
+function podeVerValor(papeis) {
+  return papeis.some((p) => PAPEIS_QUE_VEEM_VALOR.includes(p));
 }
 async function acessoRestrito(supabase, userId) {
-  return ehSoCampo(await papeisDoUsuario(supabase, userId));
+  return !podeVerValor(await papeisDoUsuario(supabase, userId));
 }
 var TABELAS_BLOQUEADAS_CAMPO = /* @__PURE__ */ new Set([
   "orcamentos",
@@ -1567,7 +1573,7 @@ function nomesPorId(rows) {
 var painel_projetos_default = defineTool12({
   name: "painel_projetos",
   title: "Painel de projetos",
-  description: "Vista de acompanhamento da gest\xE3o: projetos n\xE3o conclu\xEDdos e n\xE3o cancelados, com cliente, local, respons\xE1veis, datas, dias_no_status (desde a \xFAltima mudan\xE7a de status registrada, ou desde a cria\xE7\xE3o) e demandas_abertas. Para quem s\xF3 tem o papel operador_campo, valor_total n\xE3o \xE9 devolvido.",
+  description: "Vista de acompanhamento da gest\xE3o: projetos n\xE3o conclu\xEDdos e n\xE3o cancelados, com cliente, local, respons\xE1veis, datas, dias_no_status (desde a \xFAltima mudan\xE7a de status registrada, ou desde a cria\xE7\xE3o) e demandas_abertas. Para quem n\xE3o tem papel de gest\xE3o (admin, administrativo, gestor, diretor), valor_total n\xE3o \xE9 devolvido.",
   inputSchema: {
     tipo: z11.string().optional(),
     status: z11.string().optional(),
