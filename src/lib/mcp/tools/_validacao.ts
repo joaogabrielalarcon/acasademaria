@@ -511,7 +511,7 @@ export function validarCamposExtras(
   return { valores: out };
 }
 
-/* ─────────── corte por cargo (operador_campo) ─────────── */
+/* corte por cargo: só gestão vê valor */
 
 /** Lê os papéis do usuário do token. */
 export async function papeisDoUsuario(
