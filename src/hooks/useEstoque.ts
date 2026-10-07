@@ -7,8 +7,9 @@ export interface EstoqueMovimentacao {
   item_tipo: "insumo" | "planta";
   tipo_movimento: "entrada" | "saida";
   quantidade: number;
-  preco_unitario: number;
-  valor_total: number;
+  /** null when the user's role cannot see stock money values. */
+  preco_unitario: number | null;
+  valor_total: number | null;
   fornecedor_id: string | null;
   origem: "manual" | "diario" | "compra";
   referencia_id: string | null;
@@ -32,7 +33,9 @@ export function useEstoqueMovimentacoes(itemTipo?: "insumo" | "planta") {
     queryFn: async () => {
       let query = supabase
         .from("estoque_movimentacoes")
-        .select("*")
+        .select(
+          "id, item_id, item_tipo, tipo_movimento, quantidade, fornecedor_id, origem, referencia_id, observacoes, registrado_por_nome, created_at",
+        )
         .order("created_at", { ascending: false });
 
       if (itemTipo) {
@@ -41,7 +44,22 @@ export function useEstoqueMovimentacoes(itemTipo?: "insumo" | "planta") {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as unknown as EstoqueMovimentacao[];
+      const rows = data ?? [];
+
+      // Money columns come only through estoque_valores (management roles); field roles get none.
+      const valores = new Map<string, { preco_unitario: number | null; valor_total: number | null }>();
+      if (rows.length) {
+        const { data: v } = await supabase.rpc("estoque_valores", { _ids: rows.map((r) => r.id) });
+        for (const item of v ?? []) {
+          valores.set(item.id, { preco_unitario: item.preco_unitario, valor_total: item.valor_total });
+        }
+      }
+
+      return rows.map((r) => ({
+        ...r,
+        preco_unitario: valores.get(r.id)?.preco_unitario ?? null,
+        valor_total: valores.get(r.id)?.valor_total ?? null,
+      })) as EstoqueMovimentacao[];
     },
   });
 }

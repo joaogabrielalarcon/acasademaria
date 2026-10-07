@@ -6433,6 +6433,14 @@ export type Database = {
         Returns: string
       }
       detectar_fornecedores_duplicados: { Args: never; Returns: Json }
+      estoque_valores: {
+        Args: { _ids: string[] }
+        Returns: {
+          id: string
+          preco_unitario: number
+          valor_total: number
+        }[]
+      }
       gerar_codigo_orcamento: { Args: { p_sigla: string }; Returns: string }
       get_colaborador_id: { Args: { _user_id: string }; Returns: string }
       get_user_area: { Args: { _user_id: string }; Returns: string }
