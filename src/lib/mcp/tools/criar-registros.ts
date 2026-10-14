@@ -61,6 +61,7 @@ const CAMPOS_OPERACAO: Partial<
       "titulo",
       "tipo",
       "status",
+      "substatus",
       "local_id",
       "descricao",
       "observacoes",
