@@ -903,6 +903,7 @@ var CAMPOS_OPERACAO = {
       "titulo",
       "tipo",
       "status",
+      "substatus",
       "local_id",
       "descricao",
       "observacoes",
