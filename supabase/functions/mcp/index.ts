@@ -10,6 +10,15 @@ import { defineTool } from "npm:@lovable.dev/mcp-js@0.24.0";
 
 // src/lib/mcp/_supabase.ts
 import { createClient } from "npm:@supabase/supabase-js@^2.90.1";
+
+// supabase/functions/_shared/access-policy.ts
+var MSG_TROCAR_SENHA = "Troque sua senha no primeiro acesso em acasademaria.lovable.app antes de usar o conector.";
+function accessDenial(active, pending) {
+  if (active !== true) return "Seu acesso est\xE1 desativado. Procure a dire\xE7\xE3o.";
+  return pending ? MSG_TROCAR_SENHA : null;
+}
+
+// src/lib/mcp/_supabase.ts
 function getEnv(name) {
   try {
     const g = globalThis;
@@ -30,7 +39,7 @@ function supabaseForUser(ctx) {
     auth: { persistSession: false, autoRefreshToken: false }
   });
 }
-var MSG_TROCAR_SENHA = "Troque sua senha no primeiro acesso em acasademaria.lovable.app antes de usar o conector.";
+var MSG_TROCAR_SENHA2 = "Troque sua senha no primeiro acesso em acasademaria.lovable.app antes de usar o conector.";
 async function requireAuth(ctx) {
   if (!ctx.isAuthenticated()) {
     return {
@@ -38,10 +47,15 @@ async function requireAuth(ctx) {
       isError: true
     };
   }
-  const { data, error } = await supabaseForUser(ctx).from("user_access_security").select("must_change_password").eq("user_id", ctx.getUserId()).maybeSingle();
-  if (error || data?.must_change_password) {
+  const userId = ctx.getUserId();
+  if (!userId) return { content: [{ type: "text", text: "N\xE3o autenticado." }], isError: true };
+  const client = supabaseForUser(ctx);
+  const { data: profile, error: profileError } = await client.from("profiles").select("ativo").eq("id", userId).maybeSingle();
+  const { data, error } = await client.from("user_access_security").select("must_change_password").eq("user_id", userId).maybeSingle();
+  const denial = accessDenial(profile?.ativo, data?.must_change_password === true);
+  if (error || profileError || denial) {
     return {
-      content: [{ type: "text", text: error ? "N\xE3o foi poss\xEDvel conferir o seu acesso." : MSG_TROCAR_SENHA }],
+      content: [{ type: "text", text: error || profileError ? "N\xE3o foi poss\xEDvel conferir o seu acesso." : denial ?? MSG_TROCAR_SENHA2 }],
       isError: true
     };
   }

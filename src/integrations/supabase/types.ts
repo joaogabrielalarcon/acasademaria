@@ -6538,6 +6538,7 @@ export type Database = {
       norm_catalogo: { Args: { t: string }; Returns: string }
       normalize_cnpj: { Args: { _cnpj: string }; Returns: string }
       normalize_fornecedor_nome: { Args: { _nome: string }; Returns: string }
+      record_login_failure: { Args: { _username: string }; Returns: undefined }
       set_fornecedor_mercado: {
         Args: { p_fornecedor_id: string; p_mercado: string }
         Returns: undefined

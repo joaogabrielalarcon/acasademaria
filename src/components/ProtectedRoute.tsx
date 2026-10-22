@@ -1,5 +1,5 @@
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuth, useUserRoles, useAccessState, type AppRole } from "@/hooks/useAuth";
+import { useAuth, useUserRoles, useAccessState, useProfile, type AppRole } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 
 export function ProtectedRoute({
@@ -16,8 +16,9 @@ export function ProtectedRoute({
   const location = useLocation();
   const { data: roles = [], isLoading: rolesLoading } = useUserRoles(user?.id);
   const { data: access, isLoading: accessLoading, isError: accessError } = useAccessState(user?.id);
+  const { data: profile, isLoading: profileLoading, isError: profileError } = useProfile(user?.id);
 
-  if (loading || (user && accessLoading) || (allowedRoles && rolesLoading && user)) {
+  if (loading || (user && (accessLoading || profileLoading)) || (allowedRoles && rolesLoading && user)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -26,8 +27,10 @@ export function ProtectedRoute({
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to={`/login?next=${encodeURIComponent(location.pathname + location.search)}`} replace />;
   }
+
+  if (profileError || profile?.ativo !== true) return <Navigate to="/login" replace />;
 
   if (!allowPendingPassword && (accessError || access?.must_change_password)) {
     const next = location.pathname + location.search;

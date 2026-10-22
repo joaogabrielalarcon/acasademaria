@@ -9,6 +9,7 @@ import { RealtimeInvalidationBridge } from "@/hooks/useRealtimeInvalidation";
 import Login from "./pages/Login";
 import OAuthConsent from "./pages/OAuthConsent";
 import MeuDia from "./pages/MeuDia";
+import { AuthenticatedAssistant } from "@/components/AuthenticatedAssistant";
 
 // Wrap dynamic imports so a stale chunk (after a new deploy) doesn't crash
 // the app with "Importing a module script failed". We retry once, then force
@@ -42,10 +43,6 @@ function lazyWithRetry<T extends ComponentType<any>>(
     }
   });
 }
-
-const MafeChat = lazyWithRetry(() =>
-  import("@/components/FloraChat").then((m) => ({ default: m.MafeChat }))
-);
 
 // Lazy-loaded routes for better initial load performance
 const Clientes = lazyWithRetry(() => import("./pages/Clientes"));
@@ -141,7 +138,7 @@ const App = () => (
             <Route path="/projetos/:id/editar" element={<ProtectedRoute><NovoProjeto /></ProtectedRoute>} />
             <Route path="/maquinas" element={<ProtectedRoute><Maquinas /></ProtectedRoute>} />
             <Route path="/areas" element={<ProtectedRoute><Areas /></ProtectedRoute>} />
-            <Route path="/acessos" element={<ProtectedRoute><ControleAcessos /></ProtectedRoute>} />
+            <Route path="/acessos" element={<ProtectedRoute allowedRoles={["admin"]}><ControleAcessos /></ProtectedRoute>} />
             <Route path="/custos-equipe" element={<ProtectedRoute><CustosEquipe /></ProtectedRoute>} />
             <Route path="/processos" element={<ProtectedRoute><ProcessosInternos /></ProtectedRoute>} />
             <Route path="/calendario" element={<ProtectedRoute><Calendario /></ProtectedRoute>} />
@@ -152,7 +149,7 @@ const App = () => (
             <Route path="/orcamentos/:id" element={<ProtectedRoute allowedRoles={["admin","administrativo","gestao_campo"]}><NovoOrcamento /></ProtectedRoute>} />
             <Route path="/indicadores" element={<ProtectedRoute><Indicadores /></ProtectedRoute>} />
             <Route path="/solicitacoes-compras" element={<ProtectedRoute><SolicitacoesCompras /></ProtectedRoute>} />
-            <Route path="/design-system" element={<DesignSystem />} />
+            <Route path="/design-system" element={<ProtectedRoute><DesignSystem /></ProtectedRoute>} />
             <Route path="/agenda" element={<ProtectedRoute><MinhaAgenda /></ProtectedRoute>} />
             <Route path="/conciliacao" element={<ProtectedRoute><Conciliacao /></ProtectedRoute>} />
             <Route path="/financeiro/a-receber" element={<ProtectedRoute><AReceber /></ProtectedRoute>} />
@@ -163,7 +160,7 @@ const App = () => (
           </Routes>
         </Suspense>
         <Suspense fallback={null}>
-          <MafeChat />
+          <AuthenticatedAssistant />
         </Suspense>
       </BrowserRouter>
     </TooltipProvider>

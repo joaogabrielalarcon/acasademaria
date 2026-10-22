@@ -1,9 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-
-const GENERIC_AUTH_ERROR = "Usuário ou senha incorretos";
-const MAX_FAILS = 5;
-const LOCK_MINUTES = 15;
+import { GENERIC_AUTH_ERROR, temporaryPasswordExpired } from "../_shared/access-policy.ts";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -17,9 +14,11 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const admin = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !supabaseAnonKey || !serviceKey) return json({ error: GENERIC_AUTH_ERROR }, 503);
+    const admin = createClient(supabaseUrl, serviceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
@@ -31,22 +30,15 @@ Deno.serve(async (req) => {
     }
 
     // Lockout check (same message whether the user exists or not)
-    const { data: tentativa } = await admin.from("login_attempts")
+    const { data: tentativa, error: attemptError } = await admin.from("login_attempts")
       .select("failed_count, locked_until").eq("username", username).maybeSingle();
+    if (attemptError) return json({ error: GENERIC_AUTH_ERROR }, 401);
     if (tentativa?.locked_until && new Date(tentativa.locked_until) > new Date()) {
       return json({ error: GENERIC_AUTH_ERROR }, 401);
     }
 
     const falha = async () => {
-      const expirado = tentativa?.locked_until && new Date(tentativa.locked_until) <= new Date();
-      const count = (expirado ? 0 : tentativa?.failed_count ?? 0) + 1;
-      const lock = count >= MAX_FAILS ? new Date(Date.now() + LOCK_MINUTES * 60000).toISOString() : null;
-      await admin.from("login_attempts").upsert({
-        username,
-        failed_count: lock ? 0 : count,
-        locked_until: lock,
-        updated_at: new Date().toISOString(),
-      });
+      await admin.rpc("record_login_failure", { _username: username });
       return json({ error: GENERIC_AUTH_ERROR }, 401);
     };
 
@@ -75,8 +67,8 @@ Deno.serve(async (req) => {
 
     if (!userId) return await falha();
 
-    const { data: profile } = await admin.from("profiles").select("ativo").eq("id", userId).maybeSingle();
-    if (profile && profile.ativo === false) return await falha();
+    const { data: profile, error: profileError } = await admin.from("profiles").select("ativo").eq("id", userId).maybeSingle();
+    if (profileError || profile?.ativo !== true) return await falha();
 
     const { data: authUser } = await admin.auth.admin.getUserById(userId);
     const loginEmail = authUser?.user?.email;
@@ -86,15 +78,22 @@ Deno.serve(async (req) => {
     const { data: authData, error: authError } = await client.auth.signInWithPassword({ email: loginEmail, password });
     if (authError || !authData.session) return await falha();
 
-    await admin.from("login_attempts").delete().eq("username", username);
-
-    const { data: estado } = await admin.from("user_access_security")
-      .select("must_change_password, temp_password_expires_at").eq("user_id", userId).maybeSingle();
-    if (estado?.must_change_password && estado.temp_password_expires_at &&
-        new Date(estado.temp_password_expires_at) < new Date()) {
+    // A concurrent failure may have locked this username while credentials were checked.
+    const { data: latestAttempt, error: latestError } = await admin.from("login_attempts")
+      .select("locked_until").eq("username", username).maybeSingle();
+    if (latestError || (latestAttempt?.locked_until && new Date(latestAttempt.locked_until) > new Date())) {
       await client.auth.signOut();
-      return json({ error: "Sua senha provisória expirou. Peça uma nova à direção." }, 401);
+      return json({ error: GENERIC_AUTH_ERROR }, 401);
     }
+
+    const { data: estado, error: stateError } = await admin.from("user_access_security")
+      .select("must_change_password, temp_password_expires_at").eq("user_id", userId).maybeSingle();
+    if (stateError || (estado?.must_change_password && temporaryPasswordExpired(estado.temp_password_expires_at))) {
+      await client.auth.signOut();
+      return json({ error: GENERIC_AUTH_ERROR }, 401);
+    }
+
+    await admin.from("login_attempts").delete().eq("username", username).or("locked_until.is.null,locked_until.lte." + new Date().toISOString());
 
     return json({
       session: authData.session,

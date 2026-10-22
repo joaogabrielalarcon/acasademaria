@@ -3,13 +3,16 @@
 // Read env lazily inside the function — never at module top level (extractor eval).
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { ToolContext } from "@lovable.dev/mcp-js";
+import { accessDenial } from "../../../supabase/functions/_shared/access-policy";
 
 declare const process: { env: Record<string, string | undefined> } | undefined;
 
 function getEnv(name: string): string | undefined {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const g: any = globalThis;
+    const g = globalThis as typeof globalThis & {
+      process?: { env?: Record<string, string | undefined> };
+      Deno?: { env?: { get: (key: string) => string | undefined } };
+    };
     if (g?.process?.env?.[name]) return g.process.env[name];
     if (g?.Deno?.env?.get) return g.Deno.env.get(name);
   } catch {
@@ -42,14 +45,20 @@ export async function requireAuth(ctx: ToolContext) {
       isError: true as const,
     };
   }
-  const { data, error } = await supabaseForUser(ctx)
+  const userId = ctx.getUserId();
+  if (!userId) return { content: [{ type: "text" as const, text: "Não autenticado." }], isError: true as const };
+  const client = supabaseForUser(ctx);
+  const { data: profile, error: profileError } = await client
+    .from("profiles").select("ativo").eq("id", userId).maybeSingle();
+  const { data, error } = await client
     .from("user_access_security")
     .select("must_change_password")
-    .eq("user_id", ctx.getUserId()!)
+    .eq("user_id", userId)
     .maybeSingle();
-  if (error || data?.must_change_password) {
+  const denial = accessDenial(profile?.ativo, data?.must_change_password === true);
+  if (error || profileError || denial) {
     return {
-      content: [{ type: "text" as const, text: error ? "Não foi possível conferir o seu acesso." : MSG_TROCAR_SENHA }],
+      content: [{ type: "text" as const, text: error || profileError ? "Não foi possível conferir o seu acesso." : denial ?? MSG_TROCAR_SENHA }],
       isError: true as const,
     };
   }

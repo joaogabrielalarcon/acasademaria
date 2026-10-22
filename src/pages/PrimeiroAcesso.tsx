@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth, useAccessState } from "@/hooks/useAuth";
 import { invokeFunction } from "@/lib/invoke-function";
 import logoMfm from "@/assets/logo-mfm-raiz.png";
+import { temporaryPasswordExpired } from "../../supabase/functions/_shared/access-policy";
 
 export default function PrimeiroAcesso() {
   const [params] = useSearchParams();
@@ -24,7 +25,7 @@ export default function PrimeiroAcesso() {
   const [confirma, setConfirma] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const expirada = !!access?.temp_password_expires_at && new Date(access.temp_password_expires_at) < new Date();
+  const expirada = !!access?.must_change_password && temporaryPasswordExpired(access.temp_password_expires_at);
 
   if (access && !access.must_change_password) return <Navigate to={next} replace />;
 

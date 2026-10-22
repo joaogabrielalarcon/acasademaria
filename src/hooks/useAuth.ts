@@ -13,7 +13,7 @@ export interface UserProfile {
   ativo: boolean;
 }
 
-export type AppRole = "admin" | "administrativo" | "gestao_campo" | "responsavel_obra" | "operador_campo" | "arquitetura";
+export type AppRole = "admin" | "administrativo" | "gestor" | "diretor" | "gestao_campo" | "responsavel_obra" | "operador_campo" | "operador" | "arquitetura";
 
 export interface UserRole {
   role: AppRole;
@@ -22,6 +22,9 @@ export interface UserRole {
 export const roleLabels: Record<AppRole, string> = {
   admin: "Direção",
   administrativo: "Administrativo",
+  gestor: "Gestor",
+  diretor: "Diretoria",
+  operador: "Operador",
   gestao_campo: "Coordenação de Campo",
   responsavel_obra: "Responsável de Obra",
   operador_campo: "Operador de Campo",
@@ -44,6 +47,8 @@ export function useAuth() {
         // On logout, clear cached roles
         if (!session) {
           queryClient.removeQueries({ queryKey: ["user_roles"] });
+          queryClient.removeQueries({ queryKey: ["access_state"] });
+          queryClient.removeQueries({ queryKey: ["profile"] });
         }
       }
     );
@@ -173,14 +178,18 @@ export function useAccessState(userId: string | undefined) {
   return useQuery({
     queryKey: ["access_state", userId],
     queryFn: async (): Promise<AccessState> => {
+      if (!userId) throw new Error("Não autenticado.");
       const { data, error } = await supabase
         .from("user_access_security")
         .select("must_change_password, temp_password_expires_at")
-        .eq("user_id", userId!)
+        .eq("user_id", userId)
         .maybeSingle();
       if (error) throw error;
       return data ?? { must_change_password: false, temp_password_expires_at: null };
     },
     enabled: !!userId,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchInterval: 30_000,
   });
 }

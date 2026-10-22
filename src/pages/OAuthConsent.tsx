@@ -18,12 +18,11 @@ interface OauthResult {
   data?: AuthorizationDetails;
   error?: { message: string };
 }
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const authOauth = (supabase.auth as any).oauth as {
+const authOauth = (supabase.auth as unknown as { oauth: {
   getAuthorizationDetails: (id: string) => Promise<OauthResult>;
   approveAuthorization: (id: string) => Promise<OauthResult>;
   denyAuthorization: (id: string) => Promise<OauthResult>;
-};
+} }).oauth;
 
 export default function OAuthConsent() {
   const [params] = useSearchParams();
@@ -39,8 +38,8 @@ export default function OAuthConsent() {
         setError("Solicitação inválida (authorization_id ausente).");
         return;
       }
-      const { data: sess } = await supabase.auth.getSession();
-      if (!sess.session) {
+      const { data: auth, error: authError } = await supabase.auth.getUser();
+      if (authError || !auth.user) {
         const next = window.location.pathname + window.location.search;
         window.location.href = "/login?next=" + encodeURIComponent(next);
         return;
@@ -50,8 +49,14 @@ export default function OAuthConsent() {
       const { data: access, error: accessError } = await supabase
         .from("user_access_security")
         .select("must_change_password")
-        .eq("user_id", sess.session.user.id)
+        .eq("user_id", auth.user.id)
         .maybeSingle();
+      const { data: profile, error: profileError } = await supabase.from("profiles")
+        .select("ativo").eq("id", auth.user.id).maybeSingle();
+      if (profileError || profile?.ativo !== true) {
+        setError("Seu acesso está desativado. Procure a direção.");
+        return;
+      }
       if (accessError || access?.must_change_password) {
         const next = window.location.pathname + window.location.search;
         window.location.href = "/primeiro-acesso?next=" + encodeURIComponent(next);
