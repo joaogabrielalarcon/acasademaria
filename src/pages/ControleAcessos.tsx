@@ -6,14 +6,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, Shield, Loader2, UserPlus, UserX } from "lucide-react";
+import { Search, Shield, Loader2, UserX, KeyRound } from "lucide-react";
+import { CadastroAcessoButton, SenhaProvisoriaDialog, type SenhaGerada } from "@/components/acessos/CadastroAcesso";
+import { invokeFunction } from "@/lib/invoke-function";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, useIsAdmin, type AppRole, roleLabels } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -56,11 +60,9 @@ const roleConfig: Record<AppRole, { color: string; description: string }> = {
 export default function ControleAcessos() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState<string>("all");
-  const [inviteOpen, setInviteOpen] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteNome, setInviteNome] = useState("");
-  const [inviteRole, setInviteRole] = useState<AppRole>("operador_campo");
-  const [invitePassword, setInvitePassword] = useState("");
+  const [senhaGerada, setSenhaGerada] = useState<SenhaGerada | null>(null);
+  const [acaoPendente, setAcaoPendente] = useState<{ tipo: "nova_senha" | "desativar"; userId: string; nome: string } | null>(null);
+  const [acaoBusy, setAcaoBusy] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -123,27 +125,28 @@ export default function ControleAcessos() {
     },
   });
 
-  const inviteMutation = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke("create-user", {
-        body: { email: inviteEmail, password: invitePassword, nome: inviteNome, role: inviteRole },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users-with-roles"] });
-      toast({ title: "Usuário convidado", description: `${inviteNome} foi adicionado ao sistema.` });
-      setInviteOpen(false);
-      setInviteEmail("");
-      setInviteNome("");
-      setInvitePassword("");
-      setInviteRole("operador_campo");
-    },
-    onError: (error: any) => {
-      toast({ title: "Erro ao convidar", description: error.message, variant: "destructive" });
-    },
-  });
+  const executarAcao = async () => {
+    if (!acaoPendente) return;
+    setAcaoBusy(true);
+    const { data, error } = await invokeFunction<{ senha_provisoria?: string; expira_em?: string; username?: string | null }>(
+      "admin-usuarios",
+      { acao: acaoPendente.tipo, user_id: acaoPendente.userId },
+    );
+    setAcaoBusy(false);
+    const alvo = acaoPendente;
+    setAcaoPendente(null);
+    if (error || !data) {
+      toast({ title: "Não foi possível concluir", description: error ?? undefined, variant: "destructive" });
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ["users-with-roles"] });
+    if (alvo.tipo === "nova_senha" && data.senha_provisoria && data.expira_em) {
+      toast({ title: "Nova senha provisória gerada", description: "A senha anterior deixou de valer." });
+      setSenhaGerada({ nome: alvo.nome, username: data.username ?? null, senha: data.senha_provisoria, expiraEm: data.expira_em });
+    } else {
+      toast({ title: "Acesso desativado", description: `${alvo.nome} não consegue mais entrar.` });
+    }
+  };
 
   const filteredUsers = useMemo(() => {
     return usersWithRoles.filter(u => {
@@ -167,57 +170,7 @@ export default function ControleAcessos() {
             <h1 className="text-2xl font-display font-bold text-foreground">Gestão de Usuários</h1>
             <p className="text-muted-foreground mt-1">Gerencie acessos e permissões do sistema</p>
           </div>
-          <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-            <DialogTrigger asChild>
-              <Button variant="terracota">
-                <UserPlus className="w-4 h-4 mr-2" />
-                Convidar Usuário
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Convidar Novo Usuário</DialogTitle>
-                <DialogDescription>Preencha os dados para criar o acesso.</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Nome</Label>
-                  <Input value={inviteNome} onChange={e => setInviteNome(e.target.value)} placeholder="Nome completo" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="email@exemplo.com" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Senha inicial</Label>
-                  <Input type="password" value={invitePassword} onChange={e => setInvitePassword(e.target.value)} placeholder="Mínimo 6 caracteres" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Nível de Acesso</Label>
-                  <Select value={inviteRole} onValueChange={v => setInviteRole(v as AppRole)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {(Object.entries(roleLabels) as [AppRole, string][]).map(([key, label]) => (
-                        <SelectItem key={key} value={key}>
-                          <span className="flex items-center gap-2">
-                            <span className={`w-2 h-2 rounded-full ${roleConfig[key].color.split(" ")[0]}`} />
-                            {label}
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setInviteOpen(false)}>Cancelar</Button>
-                <Button variant="terracota" onClick={() => inviteMutation.mutate()} disabled={inviteMutation.isPending || !inviteEmail || !inviteNome || !invitePassword}>
-                  {inviteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                  Criar Usuário
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <CadastroAcessoButton onSenha={setSenhaGerada} />
         </div>
 
         {/* Legend */}
@@ -329,15 +282,29 @@ export default function ControleAcessos() {
                           : "—"}
                       </TableCell>
                       <TableCell>
-                        {u.id !== user?.id && (
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => toggleActiveMutation.mutate({ userId: u.id, ativo: !u.ativo })}
-                            title={u.ativo ? "Desativar" : "Reativar"}
-                          >
-                            <UserX className="w-4 h-4" />
-                          </Button>
+                        {u.id !== user?.id && u.role !== "admin" && (
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => setAcaoPendente({ tipo: "nova_senha", userId: u.id, nome: u.nome })}
+                              title="Gerar nova senha provisória"
+                              aria-label="Gerar nova senha provisória"
+                            >
+                              <KeyRound className="w-4 h-4" />
+                            </Button>
+                            {u.ativo && (
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={() => setAcaoPendente({ tipo: "desativar", userId: u.id, nome: u.nome })}
+                                title="Desativar acesso"
+                                aria-label="Desativar acesso"
+                              >
+                                <UserX className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
                         )}
                       </TableCell>
                     </TableRow>
@@ -348,6 +315,28 @@ export default function ControleAcessos() {
           </CardContent>
         </Card>
       </div>
+      <SenhaProvisoriaDialog dados={senhaGerada} onClose={() => setSenhaGerada(null)} />
+      <AlertDialog open={!!acaoPendente} onOpenChange={(o) => !o && !acaoBusy && setAcaoPendente(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {acaoPendente?.tipo === "nova_senha" ? "Gerar nova senha provisória?" : "Desativar acesso?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {acaoPendente?.tipo === "nova_senha"
+                ? `A senha atual de ${acaoPendente?.nome} deixa de valer. A nova aparece uma vez e precisa ser trocada no primeiro acesso.`
+                : `${acaoPendente?.nome} não vai mais conseguir entrar no sistema nem no conector. Para reativar, gere uma nova senha provisória.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={acaoBusy}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); executarAcao(); }} disabled={acaoBusy}>
+              {acaoBusy && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              {acaoPendente?.tipo === "nova_senha" ? "Gerar senha" : "Desativar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }
