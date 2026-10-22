@@ -9,6 +9,7 @@ import { RealtimeInvalidationBridge } from "@/hooks/useRealtimeInvalidation";
 import Login from "./pages/Login";
 import OAuthConsent from "./pages/OAuthConsent";
 import MeuDia from "./pages/MeuDia";
+import { AuthenticatedAssistant } from "@/components/AuthenticatedAssistant";
 
 // Wrap dynamic imports so a stale chunk (after a new deploy) doesn't crash
 // the app with "Importing a module script failed". We retry once, then force
@@ -42,10 +43,6 @@ function lazyWithRetry<T extends ComponentType<any>>(
     }
   });
 }
-
-const MafeChat = lazyWithRetry(() =>
-  import("@/components/FloraChat").then((m) => ({ default: m.MafeChat }))
-);
 
 // Lazy-loaded routes for better initial load performance
 const Clientes = lazyWithRetry(() => import("./pages/Clientes"));
@@ -163,7 +160,7 @@ const App = () => (
           </Routes>
         </Suspense>
         <Suspense fallback={null}>
-          <ProtectedRoute><MafeChat /></ProtectedRoute>
+          <AuthenticatedAssistant />
         </Suspense>
       </BrowserRouter>
     </TooltipProvider>
