@@ -111,19 +111,6 @@ export default function ControleAcessos() {
     },
   });
 
-  const toggleActiveMutation = useMutation({
-    mutationFn: async ({ userId, ativo }: { userId: string; ativo: boolean }) => {
-      const { error } = await supabase.from("profiles").update({ ativo }).eq("id", userId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users-with-roles"] });
-      toast({ title: "Status atualizado" });
-    },
-    onError: () => {
-      toast({ title: "Erro", variant: "destructive" });
-    },
-  });
 
   const executarAcao = async () => {
     if (!acaoPendente) return;
