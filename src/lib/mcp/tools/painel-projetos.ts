@@ -56,7 +56,7 @@ export default defineTool({
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ tipo, status, cliente_id, responsavel_id, ordenar_por, limite }, ctx) => {
-    const unauth = requireAuth(ctx);
+    const unauth = await requireAuth(ctx);
     if (unauth) return unauth;
     const supabase = supabaseForUser(ctx);
     const restrito = await acessoRestrito(supabase, ctx.getUserId()!);

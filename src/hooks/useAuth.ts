@@ -162,3 +162,25 @@ export function useHasAnyRole(userId: string | undefined, allowedRoles: AppRole[
   const { data: roles = [] } = useUserRoles(userId);
   return roles.some(r => allowedRoles.includes(r.role));
 }
+
+export interface AccessState {
+  must_change_password: boolean;
+  temp_password_expires_at: string | null;
+}
+
+/** First-access state of the signed-in user (temporary password flag). */
+export function useAccessState(userId: string | undefined) {
+  return useQuery({
+    queryKey: ["access_state", userId],
+    queryFn: async (): Promise<AccessState> => {
+      const { data, error } = await supabase
+        .from("user_access_security")
+        .select("must_change_password, temp_password_expires_at")
+        .eq("user_id", userId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data ?? { must_change_password: false, temp_password_expires_at: null };
+    },
+    enabled: !!userId,
+  });
+}

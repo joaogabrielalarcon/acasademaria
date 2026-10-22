@@ -203,7 +203,7 @@ export default defineTool({
     openWorldHint: false,
   },
   handler: async ({ tabela, linhas, forcar }, ctx) => {
-    const unauth = requireAuth(ctx);
+    const unauth = await requireAuth(ctx);
     if (unauth) return unauth;
     const supabase = supabaseForUser(ctx);
     const userId = ctx.getUserId()!;

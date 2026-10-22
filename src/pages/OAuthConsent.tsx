@@ -46,6 +46,18 @@ export default function OAuthConsent() {
         return;
       }
 
+      // Accounts with a pending temporary password must change it first.
+      const { data: access, error: accessError } = await supabase
+        .from("user_access_security")
+        .select("must_change_password")
+        .eq("user_id", sess.session.user.id)
+        .maybeSingle();
+      if (accessError || access?.must_change_password) {
+        const next = window.location.pathname + window.location.search;
+        window.location.href = "/primeiro-acesso?next=" + encodeURIComponent(next);
+        return;
+      }
+
       if (!authOauth?.getAuthorizationDetails) {
         setError("O servidor de autorização não está disponível neste ambiente.");
         return;

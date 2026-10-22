@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeFunction } from "@/lib/invoke-function";
 import { Loader2 } from "lucide-react";
 import logoMfm from "@/assets/logo-mfm-raiz.png";
 
@@ -61,38 +62,41 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke("login-by-username", {
-        body: { username: normalizedUsername, password },
+      const { data, error } = await invokeFunction<{
+        session?: { access_token: string; refresh_token: string };
+        must_change_password?: boolean;
+      }>("login-by-username", { username: normalizedUsername, password });
+
+      if (error || !data?.session) {
+        throw new Error(error || "Usuário ou senha incorretos");
+      }
+
+      await supabase.auth.setSession({
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
       });
 
-      if (error || data?.error) {
-        throw new Error(data?.error || error?.message || "Erro ao fazer login");
-      }
-
-      // Definir a sessão manualmente
-      if (data.session) {
-        await supabase.auth.setSession({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
-        });
-      }
-
-      // Save or clear remember preference
       if (rememberMe) {
         localStorage.setItem(REMEMBER_KEY, normalizedUsername);
       } else {
         localStorage.removeItem(REMEMBER_KEY);
       }
 
+      if (data.must_change_password) {
+        navigate(`/primeiro-acesso?next=${encodeURIComponent(nextPath)}`, { replace: true });
+        return;
+      }
+
+      toast({ title: "Bem-vindo!", description: "Login realizado com sucesso." });
+      if (nextPath.startsWith("/.lovable/oauth")) {
+        window.location.assign(nextPath);
+      } else {
+        navigate(nextPath);
+      }
+    } catch (error: unknown) {
       toast({
-        title: "Bem-vindo!",
-        description: "Login realizado com sucesso.",
-      });
-      navigate(nextPath);
-    } catch (error: any) {
-      toast({
-        title: "Erro",
-        description: error.message || "Não foi possível fazer login.",
+        title: "Não foi possível entrar",
+        description: error instanceof Error ? error.message : "Usuário ou senha incorretos",
         variant: "destructive",
       });
     } finally {

@@ -10,7 +10,7 @@ export default defineTool({
   inputSchema: {},
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async (_input, ctx) => {
-    const unauth = requireAuth(ctx);
+    const unauth = await requireAuth(ctx);
     if (unauth) return unauth;
 
     const supabase = supabaseForUser(ctx);

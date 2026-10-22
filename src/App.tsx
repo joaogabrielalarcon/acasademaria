@@ -69,6 +69,7 @@ const Compras = lazyWithRetry(() => import("./pages/Compras"));
 const CustosEquipe = lazyWithRetry(() => import("./pages/CustosEquipe"));
 const Maquinas = lazyWithRetry(() => import("./pages/Maquinas"));
 const AlterarSenha = lazyWithRetry(() => import("./pages/AlterarSenha"));
+const PrimeiroAcesso = lazyWithRetry(() => import("./pages/PrimeiroAcesso"));
 const EsqueciSenha = lazyWithRetry(() => import("./pages/EsqueciSenha"));
 const ResetPassword = lazyWithRetry(() => import("./pages/ResetPassword"));
 const Areas = lazyWithRetry(() => import("./pages/Areas"));
@@ -111,6 +112,7 @@ const App = () => (
             <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
             <Route path="/esqueci-senha" element={<EsqueciSenha />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/primeiro-acesso" element={<ProtectedRoute allowPendingPassword><PrimeiroAcesso /></ProtectedRoute>} />
             <Route path="/bootstrap" element={<BootstrapAdmin />} />
             <Route path="/" element={<ProtectedRoute><MeuDia /></ProtectedRoute>} />
             <Route path="/clientes" element={<ProtectedRoute><Clientes /></ProtectedRoute>} />

@@ -30,10 +30,18 @@ function supabaseForUser(ctx) {
     auth: { persistSession: false, autoRefreshToken: false }
   });
 }
-function requireAuth(ctx) {
+var MSG_TROCAR_SENHA = "Troque sua senha no primeiro acesso em acasademaria.lovable.app antes de usar o conector.";
+async function requireAuth(ctx) {
   if (!ctx.isAuthenticated()) {
     return {
       content: [{ type: "text", text: "N\xE3o autenticado." }],
+      isError: true
+    };
+  }
+  const { data, error } = await supabaseForUser(ctx).from("user_access_security").select("must_change_password").eq("user_id", ctx.getUserId()).maybeSingle();
+  if (error || data?.must_change_password) {
+    return {
+      content: [{ type: "text", text: error ? "N\xE3o foi poss\xEDvel conferir o seu acesso." : MSG_TROCAR_SENHA }],
       isError: true
     };
   }
@@ -48,7 +56,7 @@ var whoami_default = defineTool({
   inputSchema: {},
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async (_input, ctx) => {
-    const unauth = requireAuth(ctx);
+    const unauth = await requireAuth(ctx);
     if (unauth) return unauth;
     const supabase = supabaseForUser(ctx);
     const userId = ctx.getUserId();
@@ -506,7 +514,7 @@ var list_clientes_default = defineTool2({
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ busca, status, limite }, ctx) => {
-    const unauth = requireAuth(ctx);
+    const unauth = await requireAuth(ctx);
     if (unauth) return unauth;
     const supabase = supabaseForUser(ctx);
     let q = supabase.from("clientes").select("id, nome, email, telefone, cidade, estado, status, cpf_cnpj, created_at").order("nome", { ascending: true }).limit(limite ?? 25);
@@ -538,7 +546,7 @@ var get_cliente_default = defineTool3({
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ cliente_id }, ctx) => {
-    const unauth = requireAuth(ctx);
+    const unauth = await requireAuth(ctx);
     if (unauth) return unauth;
     const supabase = supabaseForUser(ctx);
     const [cliente, projetos] = await Promise.all([
@@ -575,7 +583,7 @@ var list_projetos_default = defineTool4({
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ status, tipo, cliente_id, busca, limite }, ctx) => {
-    const unauth = requireAuth(ctx);
+    const unauth = await requireAuth(ctx);
     if (unauth) return unauth;
     const supabase = supabaseForUser(ctx);
     let q = supabase.from("projetos").select("id, titulo, tipo, status, cliente_id, data_inicio, data_previsao, data_conclusao, valor_total, valor_mensal, responsavel_id").order("created_at", { ascending: false }).limit(limite ?? 25);
@@ -609,7 +617,7 @@ var list_crm_cards_default = defineTool5({
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ status, cliente_id, busca, limite }, ctx) => {
-    const unauth = requireAuth(ctx);
+    const unauth = await requireAuth(ctx);
     if (unauth) return unauth;
     const supabase = supabaseForUser(ctx);
     let q = supabase.from("crm_cards").select("id, titulo, tipo, status, cliente_id, projeto_id, contato_nome, contato_email, contato_whatsapp, prazo, responsavel_id, created_at").order("updated_at", { ascending: false }).limit(limite ?? 25);
@@ -649,7 +657,7 @@ var create_crm_card_default = defineTool6({
   },
   annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
   handler: async (input, ctx) => {
-    const unauth = requireAuth(ctx);
+    const unauth = await requireAuth(ctx);
     if (unauth) return unauth;
     const supabase = supabaseForUser(ctx);
     const { data: colaborador } = await supabase.from("colaboradores").select("id").eq("user_id", ctx.getUserId()).maybeSingle();
@@ -687,7 +695,7 @@ var describe_schema_default = defineTool7({
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ tabela }, ctx) => {
-    const unauth = requireAuth(ctx);
+    const unauth = await requireAuth(ctx);
     if (unauth) return unauth;
     const supabase = supabaseForUser(ctx);
     if (!tabela) {
@@ -730,7 +738,7 @@ var read_table_default = defineTool8({
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ tabela, colunas, filtros, ordenar_por, limite, offset }, ctx) => {
-    const unauth = requireAuth(ctx);
+    const unauth = await requireAuth(ctx);
     if (unauth) return unauth;
     const supabase = supabaseForUser(ctx);
     const { data: tabelas, error: eList } = await supabase.rpc("mcp_list_public_tables");
@@ -824,7 +832,7 @@ var list_storage_default = defineTool9({
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ bucket, prefixo }, ctx) => {
-    const unauth = requireAuth(ctx);
+    const unauth = await requireAuth(ctx);
     if (unauth) return unauth;
     const supabase = supabaseForUser(ctx);
     if (!bucket) {
@@ -1028,7 +1036,7 @@ var criar_registros_default = defineTool10({
     openWorldHint: false
   },
   handler: async ({ tabela, linhas, forcar }, ctx) => {
-    const unauth = requireAuth(ctx);
+    const unauth = await requireAuth(ctx);
     if (unauth) return unauth;
     const supabase = supabaseForUser(ctx);
     const userId = ctx.getUserId();
@@ -1384,7 +1392,7 @@ var atualizar_registro_default = defineTool11({
     openWorldHint: false
   },
   handler: async ({ tabela, id, campos, modo, motivo, quem_executou, observacao }, ctx) => {
-    const unauth = requireAuth(ctx);
+    const unauth = await requireAuth(ctx);
     if (unauth) return unauth;
     const supabase = supabaseForUser(ctx);
     const userId = ctx.getUserId();
@@ -1613,7 +1621,7 @@ var painel_projetos_default = defineTool12({
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ tipo, status, cliente_id, responsavel_id, ordenar_por, limite }, ctx) => {
-    const unauth = requireAuth(ctx);
+    const unauth = await requireAuth(ctx);
     if (unauth) return unauth;
     const supabase = supabaseForUser(ctx);
     const restrito = await acessoRestrito(supabase, ctx.getUserId());

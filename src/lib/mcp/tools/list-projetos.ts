@@ -17,7 +17,7 @@ export default defineTool({
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ status, tipo, cliente_id, busca, limite }, ctx) => {
-    const unauth = requireAuth(ctx);
+    const unauth = await requireAuth(ctx);
     if (unauth) return unauth;
 
     const supabase = supabaseForUser(ctx);

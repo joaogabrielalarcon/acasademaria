@@ -35,7 +35,7 @@ export default defineTool({
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ tabela, colunas, filtros, ordenar_por, limite, offset }, ctx) => {
-    const unauth = requireAuth(ctx);
+    const unauth = await requireAuth(ctx);
     if (unauth) return unauth;
 
     const supabase = supabaseForUser(ctx);
