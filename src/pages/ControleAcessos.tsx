@@ -173,7 +173,7 @@ export default function ControleAcessos() {
             <div className="grid gap-3 md:grid-cols-3">
               {(Object.entries(roleConfig) as [AppRole, typeof roleConfig[AppRole]][]).map(([key, value]) => (
                 <div key={key} className="flex flex-col gap-1 p-3 rounded-lg border bg-card">
-                  <Badge className={value.color}>{roleLabels[key]}</Badge>
+                        <Badge className={value.color}>{roleLabels[key]}</Badge>
                   <p className="text-xs text-muted-foreground">{value.description}</p>
                 </div>
               ))}
@@ -236,7 +236,7 @@ export default function ControleAcessos() {
                   filteredUsers.map(u => (
                     <TableRow key={u.id} className={!u.ativo ? "opacity-50" : ""}>
                       <TableCell className="font-medium">{u.nome}</TableCell>
-                      <TableCell className="text-muted-foreground">{u.email || "—"}</TableCell>
+                      <TableCell className="text-muted-foreground">{u.email?.endsWith("@usuarios.mfm.local") ? "Sem e-mail" : u.email || "Sem e-mail"}</TableCell>
                       <TableCell>
                         <Select
                           value={u.role || "operador_campo"}
@@ -266,7 +266,7 @@ export default function ControleAcessos() {
                       <TableCell className="text-sm text-muted-foreground">
                         {u.ultimo_acesso
                           ? format(new Date(u.ultimo_acesso), "dd/MM/yy HH:mm", { locale: ptBR })
-                          : "—"}
+                          : "Ainda não entrou"}
                       </TableCell>
                       <TableCell>
                         {u.id !== user?.id && u.role !== "admin" && (

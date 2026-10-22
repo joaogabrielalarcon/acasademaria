@@ -141,7 +141,7 @@ const App = () => (
             <Route path="/projetos/:id/editar" element={<ProtectedRoute><NovoProjeto /></ProtectedRoute>} />
             <Route path="/maquinas" element={<ProtectedRoute><Maquinas /></ProtectedRoute>} />
             <Route path="/areas" element={<ProtectedRoute><Areas /></ProtectedRoute>} />
-            <Route path="/acessos" element={<ProtectedRoute><ControleAcessos /></ProtectedRoute>} />
+            <Route path="/acessos" element={<ProtectedRoute allowedRoles={["admin"]}><ControleAcessos /></ProtectedRoute>} />
             <Route path="/custos-equipe" element={<ProtectedRoute><CustosEquipe /></ProtectedRoute>} />
             <Route path="/processos" element={<ProtectedRoute><ProcessosInternos /></ProtectedRoute>} />
             <Route path="/calendario" element={<ProtectedRoute><Calendario /></ProtectedRoute>} />
@@ -152,7 +152,7 @@ const App = () => (
             <Route path="/orcamentos/:id" element={<ProtectedRoute allowedRoles={["admin","administrativo","gestao_campo"]}><NovoOrcamento /></ProtectedRoute>} />
             <Route path="/indicadores" element={<ProtectedRoute><Indicadores /></ProtectedRoute>} />
             <Route path="/solicitacoes-compras" element={<ProtectedRoute><SolicitacoesCompras /></ProtectedRoute>} />
-            <Route path="/design-system" element={<DesignSystem />} />
+            <Route path="/design-system" element={<ProtectedRoute><DesignSystem /></ProtectedRoute>} />
             <Route path="/agenda" element={<ProtectedRoute><MinhaAgenda /></ProtectedRoute>} />
             <Route path="/conciliacao" element={<ProtectedRoute><Conciliacao /></ProtectedRoute>} />
             <Route path="/financeiro/a-receber" element={<ProtectedRoute><AReceber /></ProtectedRoute>} />
@@ -163,7 +163,7 @@ const App = () => (
           </Routes>
         </Suspense>
         <Suspense fallback={null}>
-          <MafeChat />
+          <ProtectedRoute><MafeChat /></ProtectedRoute>
         </Suspense>
       </BrowserRouter>
     </TooltipProvider>
