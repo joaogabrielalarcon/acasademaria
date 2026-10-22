@@ -44,7 +44,8 @@ Deno.serve(async (req) => {
     const probe = createClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false } });
     const { data: igual } = await probe.auth.signInWithPassword({ email: user.email, password: nova_senha });
     if (igual?.session) {
-      await probe.auth.signOut();
+      // Only close the probe session; global logout would revoke the caller's first-access session.
+      await probe.auth.signOut({ scope: "local" });
       return json({ error: "A nova senha precisa ser diferente da provisória." }, 400);
     }
 
