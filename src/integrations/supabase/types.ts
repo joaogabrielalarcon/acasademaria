@@ -3575,6 +3575,27 @@ export type Database = {
           },
         ]
       }
+      login_attempts: {
+        Row: {
+          failed_count: number
+          locked_until: string | null
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          failed_count?: number
+          locked_until?: string | null
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          failed_count?: number
+          locked_until?: string | null
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
       mafe_correcoes_ia: {
         Row: {
           colaborador_id: string | null
@@ -6320,6 +6341,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_access_security: {
+        Row: {
+          must_change_password: boolean
+          temp_password_expires_at: string | null
+          updated_at: string
+          user_id: string
+          username: string | null
+        }
+        Insert: {
+          must_change_password?: boolean
+          temp_password_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+          username?: string | null
+        }
+        Update: {
+          must_change_password?: boolean
+          temp_password_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+          username?: string | null
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
