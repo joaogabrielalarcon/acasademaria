@@ -30,10 +30,18 @@ function supabaseForUser(ctx) {
     auth: { persistSession: false, autoRefreshToken: false }
   });
 }
-function requireAuth(ctx) {
+var MSG_TROCAR_SENHA = "Troque sua senha no primeiro acesso em acasademaria.lovable.app antes de usar o conector.";
+async function requireAuth(ctx) {
   if (!ctx.isAuthenticated()) {
     return {
       content: [{ type: "text", text: "N\xE3o autenticado." }],
+      isError: true
+    };
+  }
+  const { data, error } = await supabaseForUser(ctx).from("user_access_security").select("must_change_password").eq("user_id", ctx.getUserId()).maybeSingle();
+  if (error || data?.must_change_password) {
+    return {
+      content: [{ type: "text", text: error ? "N\xE3o foi poss\xEDvel conferir o seu acesso." : MSG_TROCAR_SENHA }],
       isError: true
     };
   }
