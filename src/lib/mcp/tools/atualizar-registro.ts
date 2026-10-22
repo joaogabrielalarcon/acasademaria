@@ -172,7 +172,7 @@ export default defineTool({
     { tabela, id, campos, modo, motivo, quem_executou, observacao },
     ctx,
   ) => {
-    const unauth = requireAuth(ctx);
+    const unauth = await requireAuth(ctx);
     if (unauth) return unauth;
     const supabase = supabaseForUser(ctx);
     const userId = ctx.getUserId()!;
