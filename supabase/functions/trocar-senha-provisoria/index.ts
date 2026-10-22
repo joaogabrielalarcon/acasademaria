@@ -3,6 +3,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "npm:zod@3";
+import { temporaryPasswordExpired } from "../_shared/access-policy.ts";
 
 const Body = z.object({ nova_senha: z.string().min(8, "A nova senha precisa ter pelo menos 8 caracteres.").max(128) });
 
@@ -15,8 +16,10 @@ const json = (body: unknown, status = 200) =>
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const url = Deno.env.get("SUPABASE_URL")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const url = Deno.env.get("SUPABASE_URL");
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!url || !anonKey || !serviceKey) return json({ error: "Serviço indisponível." }, 503);
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return json({ error: "Não autorizado" }, 401);
     const caller = createClient(url, anonKey, { global: { headers: { Authorization: authHeader } } });
@@ -27,13 +30,13 @@ Deno.serve(async (req) => {
     if (!parsed.success) return json({ error: parsed.error.issues[0]?.message ?? "Senha inválida" }, 400);
     const { nova_senha } = parsed.data;
 
-    const admin = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+    const admin = createClient(url, serviceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
     const { data: sec } = await admin.from("user_access_security")
       .select("must_change_password, temp_password_expires_at").eq("user_id", user.id).maybeSingle();
     if (!sec?.must_change_password) return json({ error: "Não há troca de senha pendente." }, 400);
-    if (sec.temp_password_expires_at && new Date(sec.temp_password_expires_at) < new Date()) {
+    if (temporaryPasswordExpired(sec.temp_password_expires_at)) {
       return json({ error: "Sua senha provisória expirou. Peça uma nova à direção." }, 400);
     }
 
@@ -47,9 +50,12 @@ Deno.serve(async (req) => {
 
     const { error: upErr } = await admin.auth.admin.updateUserById(user.id, { password: nova_senha });
     if (upErr) return json({ error: "Não foi possível salvar a nova senha. Tente outra." }, 400);
-    await admin.from("user_access_security").update({
+    const { data: cleared, error: clearError } = await admin.from("user_access_security").update({
       must_change_password: false, temp_password_expires_at: null, updated_at: new Date().toISOString(),
-    }).eq("user_id", user.id);
+    }).eq("user_id", user.id).select("must_change_password").single();
+    if (clearError || cleared?.must_change_password !== false) {
+      return json({ error: "A senha mudou, mas o acesso não foi liberado. Peça uma nova senha provisória à direção." }, 500);
+    }
     return json({ ok: true });
   } catch (_e) {
     return json({ error: "Erro interno do servidor" }, 500);

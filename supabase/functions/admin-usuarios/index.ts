@@ -5,13 +5,13 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "npm:zod@3";
+import { generateTemporaryPassword, temporaryPasswordExpiresAt } from "../_shared/access-policy.ts";
 
 const ROLES_PERMITIDOS = [
   "gestor", "operador", "administrativo", "gestao_campo",
   "responsavel_obra", "operador_campo", "arquitetura", "diretor",
 ] as const;
 
-const TEMP_HOURS = 72;
 const INTERNAL_DOMAIN = "usuarios.mfm.local";
 
 const Username = z.string().trim().toLowerCase().regex(/^[a-z0-9._-]{3,30}$/, "Usuário: 3 a 30 caracteres, minúsculas, sem espaço (letras, números, ponto, hífen).");
@@ -35,34 +35,24 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
   });
 
-function gerarSenha(): string {
-  // 14 chars, no ambiguous characters; guarantees letters and digits.
-  const letras = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ";
-  const digitos = "23456789";
-  const todos = letras + digitos;
-  const bytes = new Uint32Array(14);
-  crypto.getRandomValues(bytes);
-  const chars = Array.from(bytes, (b) => todos[b % todos.length]);
-  chars[3] = digitos[bytes[3] % digitos.length];
-  chars[9] = letras[bytes[9] % letras.length];
-  return chars.join("");
-}
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const url = Deno.env.get("SUPABASE_URL")!;
+    const url = Deno.env.get("SUPABASE_URL");
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!url || !anonKey || !serviceKey) return json({ error: "Serviço indisponível." }, 503);
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return json({ error: "Não autorizado" }, 401);
 
-    const caller = createClient(url, Deno.env.get("SUPABASE_ANON_KEY")!, {
+    const caller = createClient(url, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
     const { data: { user }, error: uErr } = await caller.auth.getUser();
     if (uErr || !user) return json({ error: "Não autorizado" }, 401);
 
-    const admin = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+    const admin = createClient(url, serviceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
     const { data: ehAdmin } = await admin.rpc("has_role", { _user_id: user.id, _role: "admin" });
@@ -74,7 +64,7 @@ Deno.serve(async (req) => {
       return json({ error: msg }, 400);
     }
     const body = parsed.data;
-    const expira = new Date(Date.now() + TEMP_HOURS * 3600 * 1000).toISOString();
+    const expira = temporaryPasswordExpiresAt();
 
     if (body.acao === "criar") {
       const { data: jaExiste } = await admin
@@ -90,7 +80,7 @@ Deno.serve(async (req) => {
         if (c.user_id) return json({ error: "Esse colaborador já tem uma conta." }, 400);
       }
 
-      const senha = gerarSenha();
+      const senha = generateTemporaryPassword();
       const email = body.email || `${body.username}@${INTERNAL_DOMAIN}`;
       const { data: novo, error: cErr } = await admin.auth.admin.createUser({
         email,
@@ -129,7 +119,7 @@ Deno.serve(async (req) => {
     if (alvoAdmin) return json({ error: "Contas de direção não são alteradas por aqui." }, 400);
 
     if (body.acao === "nova_senha") {
-      const senha = gerarSenha();
+      const senha = generateTemporaryPassword();
       const { data: alvo, error: gErr } = await admin.auth.admin.getUserById(body.user_id);
       if (gErr || !alvo.user) return json({ error: "Conta não encontrada." }, 404);
       const { error: upErr } = await admin.auth.admin.updateUserById(body.user_id, {
@@ -140,22 +130,29 @@ Deno.serve(async (req) => {
       const { data: colab } = await admin.from("colaboradores").select("username").eq("user_id", body.user_id).maybeSingle();
       const username = (colab?.username as string | null) ?? (typeof meta?.username === "string" ? meta.username : null);
       const { data: atual } = await admin.from("user_access_security").select("username").eq("user_id", body.user_id).maybeSingle();
-      await admin.from("user_access_security").upsert({
+      const { error: stateError } = await admin.from("user_access_security").upsert({
         user_id: body.user_id,
         username: atual?.username ?? username,
         must_change_password: true,
         temp_password_expires_at: expira,
         updated_at: new Date().toISOString(),
       });
-      await admin.from("profiles").update({ ativo: true }).eq("id", body.user_id);
-      if (username) await admin.from("login_attempts").delete().eq("username", username);
-      return json({ ok: true, username, senha_provisoria: senha, expira_em: expira });
+      if (stateError) {
+        await admin.auth.admin.updateUserById(body.user_id, { ban_duration: "876000h" });
+        return json({ error: "Não foi possível preparar o primeiro acesso. Gere outra senha provisória." }, 500);
+      }
+      const { error: profileError } = await admin.from("profiles").update({ ativo: true }).eq("id", body.user_id);
+      if (profileError) return json({ error: "Não foi possível reativar o acesso." }, 500);
+      const effectiveUsername = atual?.username ?? username;
+      if (effectiveUsername) await admin.from("login_attempts").delete().eq("username", effectiveUsername);
+      return json({ ok: true, username: effectiveUsername, senha_provisoria: senha, expira_em: expira });
     }
 
     // desativar
     const { error: banErr } = await admin.auth.admin.updateUserById(body.user_id, { ban_duration: "876000h" });
     if (banErr) return json({ error: "Não foi possível desativar o acesso." }, 400);
-    await admin.from("profiles").update({ ativo: false }).eq("id", body.user_id);
+    const { error: profileError } = await admin.from("profiles").update({ ativo: false }).eq("id", body.user_id);
+    if (profileError) return json({ error: "O login foi bloqueado, mas não foi possível atualizar o acesso. Tente desativar novamente." }, 500);
     return json({ ok: true });
   } catch (_e) {
     return json({ error: "Erro interno do servidor" }, 500);
