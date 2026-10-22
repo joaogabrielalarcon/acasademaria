@@ -13,7 +13,7 @@ export interface UserProfile {
   ativo: boolean;
 }
 
-export type AppRole = "admin" | "administrativo" | "gestao_campo" | "responsavel_obra" | "operador_campo" | "arquitetura";
+export type AppRole = "admin" | "administrativo" | "gestor" | "diretor" | "gestao_campo" | "responsavel_obra" | "operador_campo" | "operador" | "arquitetura";
 
 export interface UserRole {
   role: AppRole;
@@ -22,6 +22,9 @@ export interface UserRole {
 export const roleLabels: Record<AppRole, string> = {
   admin: "Direção",
   administrativo: "Administrativo",
+  gestor: "Gestor",
+  diretor: "Diretoria",
+  operador: "Operador",
   gestao_campo: "Coordenação de Campo",
   responsavel_obra: "Responsável de Obra",
   operador_campo: "Operador de Campo",

@@ -32,29 +32,32 @@ interface UserWithRole {
 
 const roleConfig: Record<AppRole, { color: string; description: string }> = {
   admin: {
-    color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+    color: "bg-muted text-foreground",
     description: "Acesso total a tudo sem exceção",
   },
   administrativo: {
-    color: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+    color: "bg-muted text-foreground",
     description: "Orçamentos, clientes, fornecedores, projetos, salários",
   },
   gestao_campo: {
-    color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+    color: "bg-muted text-foreground",
     description: "Escala, diário, registros, máquinas, insumos",
   },
   responsavel_obra: {
-    color: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
+    color: "bg-muted text-foreground",
     description: "Projetos alocados, diário de obra, uploads",
   },
   operador_campo: {
-    color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+    color: "bg-muted text-foreground",
     description: "Somente a escala do dia",
   },
   arquitetura: {
-    color: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200",
+    color: "bg-muted text-foreground",
     description: "Projetos, memorial descritivo, sem valores financeiros",
   },
+  gestor: { color: "bg-muted text-foreground", description: "Gestão da operação" },
+  diretor: { color: "bg-muted text-foreground", description: "Diretoria e acompanhamento financeiro" },
+  operador: { color: "bg-muted text-foreground", description: "Operação de campo" },
 };
 
 export default function ControleAcessos() {
