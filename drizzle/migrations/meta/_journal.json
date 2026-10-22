@@ -36,6 +36,13 @@
       "when": 1792687328176,
       "tag": "0004_acesso_senha_provisoria",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792689112305,
+      "tag": "0005_atomic_username_login_failures",
+      "breakpoints": true
     }
   ]
 }
