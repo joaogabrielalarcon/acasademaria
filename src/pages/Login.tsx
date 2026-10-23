@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { invokeFunction } from "@/lib/invoke-function";
 import { Loader2 } from "lucide-react";
 import logoMfm from "@/assets/logo-mfm-raiz.png";
+import { normalizeLoginPassword, normalizeLoginUsername } from "../../supabase/functions/_shared/access-policy";
 
 const REMEMBER_KEY = "mfm_remember_user";
 
@@ -57,7 +58,8 @@ export default function Login() {
       return;
     }
 
-    const normalizedUsername = username.trim().toLowerCase();
+    const normalizedUsername = normalizeLoginUsername(username);
+    const normalizedPassword = normalizeLoginPassword(password);
 
     setIsLoading(true);
 
@@ -65,7 +67,7 @@ export default function Login() {
       const { data, error } = await invokeFunction<{
         session?: { access_token: string; refresh_token: string };
         must_change_password?: boolean;
-      }>("login-by-username", { username: normalizedUsername, password });
+      }>("login-by-username", { username: normalizedUsername, password: normalizedPassword });
 
       if (error || !data?.session) {
         throw new Error(error || "Usuário ou senha incorretos");

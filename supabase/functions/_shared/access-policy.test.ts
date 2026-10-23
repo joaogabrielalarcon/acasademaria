@@ -1,7 +1,13 @@
 import { describe, expect, test } from "bun:test";
-import { accessDenial, generateTemporaryPassword, temporaryPasswordExpired, temporaryPasswordExpiresAt } from "./access-policy";
+import { accessDenial, generateTemporaryPassword, normalizeLoginPassword, normalizeLoginUsername, temporaryPasswordExpired, temporaryPasswordExpiresAt } from "./access-policy";
 
 describe("first access rules", () => {
+  test("username ignores surrounding spaces and uppercase", () => {
+    expect(normalizeLoginUsername("  TANIA.P \n")).toBe("tania.p");
+  });
+  test("password ignores surrounding paste whitespace but keeps internal characters", () => {
+    expect(normalizeLoginPassword("  Ab cD12345 \n")).toBe("Ab cD12345");
+  });
   test("temporary passwords last exactly 72 hours", () => {
     const now = Date.UTC(2026, 9, 22, 17);
     expect(Date.parse(temporaryPasswordExpiresAt(now)) - now).toBe(72 * 60 * 60 * 1000);

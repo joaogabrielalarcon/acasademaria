@@ -1,4 +1,6 @@
 export const TEMP_PASSWORD_HOURS = 72;
+export const normalizeLoginUsername = (username: string): string => username.trim().toLowerCase();
+export const normalizeLoginPassword = (password: string): string => password.trim();
 export const GENERIC_AUTH_ERROR = "usuário ou senha incorretos";
 export const MSG_TROCAR_SENHA =
   "Troque sua senha no primeiro acesso em acasademaria.lovable.app antes de usar o conector.";
