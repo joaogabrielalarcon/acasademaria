@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
       const { data: alvo, error: gErr } = await admin.auth.admin.getUserById(body.user_id);
       if (gErr || !alvo.user) return json({ error: "Conta não encontrada." }, 404);
       const { error: upErr } = await admin.auth.admin.updateUserById(body.user_id, {
-        password: senha, ban_duration: "none",
+        password: senha, ban_duration: "none", email_confirm: true,
       });
       if (upErr) return json({ error: "Não foi possível gerar a nova senha." }, 400);
       const meta = alvo.user.user_metadata as Record<string, unknown> | undefined;

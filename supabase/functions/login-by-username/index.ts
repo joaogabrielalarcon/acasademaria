@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-import { GENERIC_AUTH_ERROR, temporaryPasswordExpired } from "../_shared/access-policy.ts";
+import { GENERIC_AUTH_ERROR, normalizeLoginPassword, normalizeLoginUsername, temporaryPasswordExpired } from "../_shared/access-policy.ts";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -23,8 +23,8 @@ Deno.serve(async (req) => {
     });
 
     const body = await req.json().catch(() => ({}));
-    const username = typeof body?.username === "string" ? body.username.trim().toLowerCase() : "";
-    const password = typeof body?.password === "string" ? body.password : "";
+    const username = typeof body?.username === "string" ? normalizeLoginUsername(body.username) : "";
+    const password = typeof body?.password === "string" ? normalizeLoginPassword(body.password) : "";
     if (!validUsername(username) || password.length < 6 || password.length > 128) {
       return json({ error: GENERIC_AUTH_ERROR }, 401);
     }

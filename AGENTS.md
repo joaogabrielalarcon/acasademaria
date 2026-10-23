@@ -7,3 +7,5 @@
 - Preserve generated MCP functions and auth client files; regenerate the manifest after MCP source changes and publish separately.
 - Render the global assistant through AuthenticatedAssistant without navigation side effects, so signed-out visitors and first-access users cannot open product actions.
 - Password equivalence probes must sign out locally, never globally, to avoid revoking the caller session when a temporary password is rejected.
+- Admin-issued temporary password resets must confirm the existing auth email as account creation does, so legacy invitations can use username login without email acceptance.
+- Normalize username and password login inputs with shared pure helpers on client and server to tolerate pasted whitespace without changing internal password characters.
