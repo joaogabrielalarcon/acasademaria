@@ -48,7 +48,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Badge } from "@/components/ui/badge";
 import { useColaboradores, Colaborador } from "@/hooks/useColaboradores";
 import { useMaquinas } from "@/hooks/useMaquinas";
-import { useInsumos } from "@/hooks/useInsumos";
+import { CatalogoPicker } from "@/components/blocks/CatalogoPicker";
+import type { InsumoBusca } from "@/hooks/useCatalogoBusca";
 import { useAreas } from "@/hooks/useAreas";
 import { useEntregasColaborador, useCreateEntrega, useDeleteEntrega } from "@/hooks/useEntregasColaborador";
 import { supabase } from "@/integrations/supabase/client";
@@ -168,7 +169,7 @@ export default function Equipe() {
   
   const { data: colaboradores = [], isLoading } = useColaboradores();
   const { data: maquinas = [] } = useMaquinas();
-  const { data: insumos = [] } = useInsumos();
+  const [entregaInsumoLabel, setEntregaInsumoLabel] = useState<string | null>(null);
   const { data: areas = [] } = useAreas();
   const { data: entregas = [], isLoading: isLoadingEntregas } = useEntregasColaborador(selectedColaboradorEntrega?.id);
   const queryClient = useQueryClient();
@@ -1388,16 +1389,13 @@ export default function Equipe() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Item *</Label>
-                  <Select value={entregaInsumoId} onValueChange={setEntregaInsumoId}>
-                    <SelectTrigger><SelectValue placeholder="Selecione o item" /></SelectTrigger>
-                    <SelectContent>
-                      {insumos.map((insumo) => (
-                        <SelectItem key={insumo.id} value={insumo.id}>
-                          {insumo.nome}{insumo.categoria && <span className="text-muted-foreground"> ({insumo.categoria})</span>}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <CatalogoPicker<InsumoBusca>
+                    tipo="insumos"
+                    value={entregaInsumoId || null}
+                    valueLabel={entregaInsumoId ? entregaInsumoLabel : null}
+                    placeholder="Buscar item..."
+                    onSelect={(ins) => { setEntregaInsumoId(ins.id); setEntregaInsumoLabel(ins.nome); }}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Quantidade</Label>
