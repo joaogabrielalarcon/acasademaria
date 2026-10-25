@@ -1872,11 +1872,13 @@ export default function NovoOrcamento() {
 
       // Snapshot do memorial — sobrescreve com metadados ricos (confiança, sugestões, insumos extras).
       try {
-        const { data: orcRow } = await (supabase as any)
+        // Reuse the already-loaded budget row; fetch only if it is not cached yet.
+        const cached = queryClient.getQueryData<{ memorial_snapshot?: unknown } | null>(["orcamento", id]);
+        const orcRow = cached ?? (await (supabase as any)
           .from("orcamentos")
           .select("memorial_snapshot")
           .eq("id", id)
-          .maybeSingle();
+          .maybeSingle()).data;
         const snap = orcRow?.memorial_snapshot;
         if (snap && typeof snap === "object") {
           if (Array.isArray(snap.itens) && snap.itens.length > 0) {
