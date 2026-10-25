@@ -141,7 +141,8 @@ function PlantaAutocomplete({
   placeholder?: string;
 }) {
   // Server search driven by what the person types (max 30 results).
-  const { data: plantas = [] } = useCatalogoBusca("plantas", value);
+  const [ativo, setAtivo] = useState(false);
+  const { data: plantas = [] } = useCatalogoBusca("plantas", value, ativo);
   const suggestions = plantas
     .filter((p) => campo === "popular" || !!p.nome_cientifico)
     .map((p) => ({
@@ -151,7 +152,11 @@ function PlantaAutocomplete({
           : `${p.nome_cientifico} (${p.nome_popular})`,
       onSelect: () => onSelectPlanta(p),
     }));
-  return <AutocompleteInput value={value} onChange={onChange} placeholder={placeholder} suggestions={suggestions} />;
+  return (
+    <div onFocusCapture={() => setAtivo(true)}>
+      <AutocompleteInput value={value} onChange={onChange} placeholder={placeholder} suggestions={suggestions} />
+    </div>
+  );
 }
 
 function PlantasSection({
