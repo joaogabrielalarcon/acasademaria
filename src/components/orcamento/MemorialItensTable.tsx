@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/command";
 import { AlertTriangle, Check, CircleHelp, Link2, MessageSquareText, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCatalogoBusca } from "@/hooks/useCatalogoBusca";
 import { UnidadeCell } from "./UnidadeCell";
 
 export interface SugestaoCatalogoLite {
@@ -107,7 +108,6 @@ function ConfiancaIcone({ c }: { c: ItemMemorialLike["confianca"] }) {
 function CatalogoCell({
   it,
   realIdx,
-  plantasCatalogo,
   onLinkPlanta,
   onOpenCadastro,
 }: {

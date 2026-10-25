@@ -106,7 +106,6 @@ import { VirtualWindowList } from "@/components/orcamento/VirtualWindowList";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatPorteMetros, parsePorteMetros } from "@/lib/porte";
 import { useInsumos } from "@/hooks/useInsumos";
-import { usePlantas } from "@/hooks/usePlantas";
 import { MafeCadastroChat, type EntidadeCadastro } from "@/components/cadastro/MafeCadastroChat";
 
 const CATEGORIAS_ITEM = [
@@ -446,7 +445,6 @@ export default function NovoOrcamento() {
   // Insumos completos (com is_base/base_ordem) — usado pela tabela única da Etapa 3.
   const { data: insumosFull = [] } = useInsumos();
   // Catálogo de plantas (busca/casamento de itens do memorial).
-  const { data: plantasFull = [] } = usePlantas();
   // Dialog de cadastro rápido (reusa Mafe-cadastro). Quando uma planta nova é gravada, recasamos o item.
   const [cadastroChat, setCadastroChat] = useState<
     { entidade: EntidadeCadastro; itemIdx: number } | null
@@ -3340,23 +3338,8 @@ export default function NovoOrcamento() {
       firstAutoSaveRef.current = false;
       // Casa cada item com o catálogo real de plantas (por nome popular/científico normalizado).
       const norm = normalizarNomeCatalogo;
-      const plantasMap = new Map<string, any>();
-      (plantasFull as any[]).forEach((p: any) => {
-        const pop = norm(p.nome_popular || "");
-        const sci = norm(p.nome_cientifico || "");
-        if (pop && !plantasMap.has(pop)) plantasMap.set(pop, p);
-        if (sci && !plantasMap.has(sci)) plantasMap.set(sci, p);
-      });
-      const itensPreCasados = itens.map((it) => {
-        const hit = plantasMap.get(norm(it.nome_popular)) || plantasMap.get(norm(it.nome_cientifico || ""));
-        if (!hit) return it;
-        return {
-          ...it,
-          planta_id: hit.id,
-          nome_cientifico: it.nome_cientifico || hit.nome_cientifico || null,
-          unidade: it.unidade || (hit.unidade ? String(hit.unidade).toUpperCase() : it.unidade),
-        };
-      });
+      // Matching goes through the server (match_catalogo); the catalog is never loaded whole.
+      const itensPreCasados = itens;
       // Funil inteligente: para o que não casou direto, chama match_catalogo (apelido/científico/fuzzy).
       const itensCasados = await Promise.all(
         itensPreCasados.map(async (it) => {
@@ -4312,7 +4295,6 @@ export default function NovoOrcamento() {
                         removeItem(idx);
                       }
                     }}
-                    plantasCatalogo={plantasFull as any[]}
                     onLinkPlanta={(idx, planta) => {
                       const realIdx = filtroBaixaConfianca
                         ? itensMaterial.map((it, i) => ({ it, i })).filter((x) => x.it.confianca === "baixa")[idx]?.i
