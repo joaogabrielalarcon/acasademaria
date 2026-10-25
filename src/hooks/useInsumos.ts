@@ -24,10 +24,6 @@ export function useInsumos() {
   return useQuery({
     queryKey: ["insumos"],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.warn("[useInsumos] Sem sessão ativa");
-      }
 
       const pageSize = 1000;
       let from = 0;
@@ -35,13 +31,12 @@ export function useInsumos() {
       while (true) {
         const { data, error } = await supabase
           .from("insumos")
-          .select("*")
+          .select("id, nome, categoria, unidade, preco_unitario, fornecedor_id, descricao_produto, volume_apresentacao, observacoes, ultima_compra, ativo, tipo_produto, is_base, base_ordem")
           .eq("ativo", true)
           .order("nome", { ascending: true })
           .range(from, from + pageSize - 1);
 
         if (error) {
-          console.error("[useInsumos] Erro na query:", error);
           throw error;
         }
         const batch = (data ?? []) as Insumo[];
@@ -49,8 +44,6 @@ export function useInsumos() {
         if (batch.length < pageSize) break;
         from += pageSize;
       }
-
-      console.log(`[useInsumos] ${all.length} insumos retornados`);
       return all;
     },
     staleTime: 0,
