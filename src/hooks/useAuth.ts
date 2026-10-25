@@ -107,7 +107,7 @@ export function useProfile(userId: string | undefined) {
       
       const { data, error } = await supabase
         .from("profiles")
-        .select("*")
+        .select("id, nome, email, area_id, telefone, avatar_url, ativo")
         .eq("id", userId)
         .maybeSingle();
 
@@ -115,6 +115,9 @@ export function useProfile(userId: string | undefined) {
       return data as UserProfile | null;
     },
     enabled: !!userId,
+    // Checked once per session; cleared on logout and on password change.
+    staleTime: Infinity,
+    gcTime: 1000 * 60 * 60,
   });
 }
 
@@ -188,8 +191,8 @@ export function useAccessState(userId: string | undefined) {
       return data ?? { must_change_password: false, temp_password_expires_at: null };
     },
     enabled: !!userId,
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchInterval: 30_000,
+    // Checked once per session; cleared on logout and on password change.
+    staleTime: Infinity,
+    gcTime: 1000 * 60 * 60,
   });
 }
