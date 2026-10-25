@@ -6450,6 +6450,38 @@ export type Database = {
         }
         Returns: undefined
       }
+      buscar_fornecedores: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: {
+          cidade: string
+          estado: string
+          id: string
+          nome: string
+        }[]
+      }
+      buscar_insumos: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: {
+          categoria: string
+          id: string
+          nome: string
+          unidade: string
+        }[]
+      }
+      buscar_plantas: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: {
+          altura_m: number
+          categoria_id: string
+          dap_cm: number
+          id: string
+          nome_cientifico: string
+          nome_popular: string
+          porte: string
+          preco_unitario: number
+          unidade: string
+        }[]
+      }
       can_access_avaliacao: {
         Args: { p_colaborador_id: string; p_user_id: string }
         Returns: boolean
