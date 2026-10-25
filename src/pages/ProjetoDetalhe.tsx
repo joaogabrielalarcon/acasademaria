@@ -59,7 +59,7 @@ import {
 import { CatalogoPicker } from "@/components/blocks/CatalogoPicker";
 import { usePlantasPorIds, type PlantaBusca, type InsumoBusca } from "@/hooks/useCatalogoBusca";
 import { supabase } from "@/integrations/supabase/client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ResumoFinanceiroTab } from "@/components/projeto/ResumoFinanceiroTab";
 import { ExecucaoTab } from "@/components/projeto/ExecucaoTab";
 import { DashboardTab } from "@/components/projeto/DashboardTab";
