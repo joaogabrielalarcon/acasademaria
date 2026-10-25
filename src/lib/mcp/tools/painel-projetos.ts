@@ -42,6 +42,7 @@ export default defineTool({
   description:
     "Vista de acompanhamento da gestão: projetos não concluídos e não cancelados, com cliente, local, responsáveis, datas, " +
     "dias_no_status (desde a última mudança de status registrada, ou desde a criação) e demandas_abertas. " +
+    "Para manutenção (contrato recorrente), devolve ultima_visita e dias_desde_ultima_visita no lugar de dias_no_status. " +
     "Para quem não tem papel de gestão (admin, administrativo, gestor, diretor), valor_total não é devolvido.",
   inputSchema: {
     tipo: z.string().optional(),
@@ -89,7 +90,8 @@ export default defineTool({
     const localIds = uniq(projetos.map((p) => p.local_id));
     const pessoaIds = uniq(projetos.flatMap((p) => [p.responsavel_id, p.lider_responsavel_id]));
 
-    const [audit, dem, cli, loc, colab, prof] = await Promise.all([
+    const manutIds = projetos.filter((p) => p.tipo === "manutencao").map((p) => p.id);
+    const [audit, dem, cli, loc, colab, prof, visitas] = await Promise.all([
       supabase
         .from("audit_status_changes")
         .select("entity_id,changed_at")
@@ -116,7 +118,13 @@ export default defineTool({
       pessoaIds.length
         ? supabase.from("profiles").select("id,nome").in("id", pessoaIds)
         : Promise.resolve({ data: [] }),
+      manutIds.length
+        ? supabase.from("projetos_ultima_visita").select("projeto_id,ultima_visita").in("projeto_id", manutIds)
+        : Promise.resolve({ data: [] }),
     ]);
+    const ultimaVisita = new Map<string, string | null>(
+      ((visitas.data ?? []) as Array<{ projeto_id: string; ultima_visita: string | null }>).map((v) => [v.projeto_id, v.ultima_visita]),
+    );
 
     // Última mudança de status por projeto (lista já vem em ordem decrescente).
     const ultimaMudanca = new Map<string, string>();
@@ -159,6 +167,13 @@ export default defineTool({
         status_desde: desde,
         demandas_abertas: abertas.get(p.id) ?? 0,
       };
+      if (p.tipo === "manutencao") {
+        const uv = ultimaVisita.get(p.id) ?? null;
+        delete linha.dias_no_status;
+        delete linha.status_desde;
+        linha.ultima_visita = uv;
+        linha.dias_desde_ultima_visita = uv ? Math.max(0, Math.floor((agora - new Date(`${uv}T12:00:00`).getTime()) / DIA_MS)) : null;
+      }
       if (restrito) delete linha.valor_total;
       return linha;
     });
