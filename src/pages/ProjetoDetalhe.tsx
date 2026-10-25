@@ -56,9 +56,8 @@ import {
   OrcamentoItem,
   OrcamentoCotacao,
 } from "@/hooks/useOrcamento";
-import { usePlantas } from "@/hooks/usePlantas";
-import { useInsumos } from "@/hooks/useInsumos";
-import { useFornecedores } from "@/hooks/useFornecedores";
+import { CatalogoPicker } from "@/components/blocks/CatalogoPicker";
+import { usePlantasPorIds, type PlantaBusca, type InsumoBusca } from "@/hooks/useCatalogoBusca";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ResumoFinanceiroTab } from "@/components/projeto/ResumoFinanceiroTab";
@@ -112,9 +111,6 @@ export default function ProjetoDetalhe() {
   const { data: itens = [], isLoading: loadingItens } = useOrcamentoItens(needsOrcamento ? id : undefined);
   const itemIds = itens.map((i) => i.id);
   const { data: todasCotacoes = [] } = useOrcamentoCotacoes(needsOrcamento ? itemIds : []);
-  const { data: plantas = [] } = usePlantas();
-  const { data: insumos = [] } = useInsumos();
-  const { data: fornecedores = [] } = useFornecedores();
 
   // State
   const [showItemDialog, setShowItemDialog] = useState(false);
@@ -178,19 +174,24 @@ export default function ProjetoDetalhe() {
     return { ...item, cotacoes: todasCotacoes.filter((c) => c.item_id === item.id) };
   }, [cotacaoSheetItem, itens, todasCotacoes]);
 
+  // Reference price: only the one catalog row of the open item is fetched.
+  const { data: precoReferenciaRow } = useQuery({
+    queryKey: ["preco-referencia", sheetItem?.planta_id ?? null, sheetItem?.insumo_id ?? null],
+    enabled: !!(sheetItem?.planta_id || sheetItem?.insumo_id),
+    staleTime: 60_000,
+    queryFn: async () => {
+      const tabela = sheetItem?.planta_id ? "plantas" : "insumos";
+      const alvo = (sheetItem?.planta_id || sheetItem?.insumo_id) as string;
+      const { data, error } = await supabase.from(tabela).select("preco_unitario").eq("id", alvo).maybeSingle();
+      if (error) throw error;
+      return data as { preco_unitario: number | null } | null;
+    },
+  });
   // Get reference price for sheet item
   const sheetPrecoReferencia = useMemo(() => {
     if (!sheetItem) return null;
-    if (sheetItem.planta_id) {
-      const p = plantas.find((x) => x.id === sheetItem.planta_id);
-      return p?.preco_unitario ?? null;
-    }
-    if (sheetItem.insumo_id) {
-      const ins = insumos.find((x) => x.id === sheetItem.insumo_id);
-      return ins?.preco_unitario ?? null;
-    }
-    return null;
-  }, [sheetItem, plantas, insumos]);
+    return precoReferenciaRow?.preco_unitario ?? null;
+  }, [sheetItem, precoReferenciaRow]);
 
   const formatCurrency = (v: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
@@ -249,6 +250,10 @@ export default function ProjetoDetalhe() {
 
 
   // --- Handlers ---
+  const [plantaLabel, setPlantaLabel] = useState<string | null>(null);
+  const [insumoLabel, setInsumoLabel] = useState<string | null>(null);
+  const { data: plantaAtualRows = [] } = usePlantasPorIds(itemForm.planta_id ? [itemForm.planta_id] : []);
+  const plantaAtual = plantaAtualRows[0];
   const openNewItem = (tipo = "servico") => {
     setEditingItem(null);
     setItemForm({
@@ -282,21 +287,21 @@ export default function ProjetoDetalhe() {
   };
 
   // Auto-fill description from planta/insumo selection
-  const handlePlantaChange = (plantaId: string) => {
-    const p = plantas.find((x) => x.id === plantaId);
+  const handlePlantaChange = (p: PlantaBusca) => {
+    setPlantaLabel(p.nome_popular);
     setItemForm((f) => ({
       ...f,
-      planta_id: plantaId,
+      planta_id: p.id,
       descricao: p ? `${p.nome_popular}${p.nome_cientifico ? ` (${p.nome_cientifico})` : ""}` : f.descricao,
       unidade: p?.unidade || f.unidade,
     }));
   };
 
-  const handleInsumoChange = (insumoId: string) => {
-    const ins = insumos.find((x) => x.id === insumoId);
+  const handleInsumoChange = (ins: InsumoBusca) => {
+    setInsumoLabel(ins.nome);
     setItemForm((f) => ({
       ...f,
-      insumo_id: insumoId,
+      insumo_id: ins.id,
       descricao: ins?.nome || f.descricao,
       unidade: ins?.unidade || f.unidade,
     }));
@@ -615,28 +620,26 @@ export default function ProjetoDetalhe() {
             {itemForm.tipo === "planta" && (
               <div className="space-y-2">
                 <Label>Planta</Label>
-                <Select value={itemForm.planta_id} onValueChange={handlePlantaChange}>
-                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                  <SelectContent>
-                    {plantas.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>{p.nome_popular}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <CatalogoPicker<PlantaBusca>
+                  tipo="plantas"
+                  value={itemForm.planta_id || null}
+                  valueLabel={itemForm.planta_id ? (plantaLabel || plantaAtual?.nome_popular || null) : null}
+                  placeholder="Buscar planta..."
+                  onSelect={handlePlantaChange}
+                />
               </div>
             )}
 
             {itemForm.tipo === "insumo" && (
               <div className="space-y-2">
                 <Label>Insumo</Label>
-                <Select value={itemForm.insumo_id} onValueChange={handleInsumoChange}>
-                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                  <SelectContent>
-                    {insumos.map((ins) => (
-                      <SelectItem key={ins.id} value={ins.id}>{ins.nome}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <CatalogoPicker<InsumoBusca>
+                  tipo="insumos"
+                  value={itemForm.insumo_id || null}
+                  valueLabel={itemForm.insumo_id ? (insumoLabel || itemForm.descricao || null) : null}
+                  placeholder="Buscar insumo..."
+                  onSelect={handleInsumoChange}
+                />
               </div>
             )}
 
@@ -707,7 +710,6 @@ export default function ProjetoDetalhe() {
         item={sheetItem}
         open={!!cotacaoSheetItem}
         onOpenChange={(open) => !open && setCotacaoSheetItem(null)}
-        fornecedores={fornecedores}
         isAdmin={isAdmin}
         projetoId={id!}
         precoReferencia={sheetPrecoReferencia}
