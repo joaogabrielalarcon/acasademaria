@@ -533,7 +533,7 @@
       {
         "name": "painel_projetos",
         "title": "Painel de projetos",
-        "description": "Vista de acompanhamento da gestão: projetos não concluídos e não cancelados, com cliente, local, responsáveis, datas, dias_no_status (desde a última mudança de status registrada, ou desde a criação) e demandas_abertas. Para quem não tem papel de gestão (admin, administrativo, gestor, diretor), valor_total não é devolvido.",
+        "description": "Vista de acompanhamento da gestão: projetos não concluídos e não cancelados, com cliente, local, responsáveis, datas, dias_no_status (desde a última mudança de status registrada, ou desde a criação) e demandas_abertas. Para manutenção (contrato recorrente), devolve ultima_visita e dias_desde_ultima_visita no lugar de dias_no_status. Para quem não tem papel de gestão (admin, administrativo, gestor, diretor), valor_total não é devolvido.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
