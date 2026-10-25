@@ -43,6 +43,13 @@
       "when": 1792689112305,
       "tag": "0005_atomic_username_login_failures",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792942114422,
+      "tag": "0006_perf_fk_indexes",
+      "breakpoints": true
     }
   ]
 }

@@ -92,12 +92,12 @@ export function useProjetosPipeline() {
 
       const [clientesRes, locaisRes, colsRes] = await Promise.all([
         clienteIds.length ? supabase.from("clientes").select("id, nome").in("id", clienteIds) : Promise.resolve({ data: [] as any[] }),
-        localIds.length ? supabase.from("locais_cliente").select("id, apelido").in("id", localIds) : Promise.resolve({ data: [] as any[] }),
+        localIds.length ? supabase.from("locais_cliente").select("id, nome").in("id", localIds) : Promise.resolve({ data: [] as any[] }),
         respIds.length ? supabase.from("colaboradores_basico").select("id, nome, foto_url").in("id", respIds) : Promise.resolve({ data: [] as any[] }),
       ]);
 
       const clientes = new Map((clientesRes.data ?? []).map((c: any) => [c.id, c.nome]));
-      const locais = new Map((locaisRes.data ?? []).map((l: any) => [l.id, l.apelido]));
+      const locais = new Map((locaisRes.data ?? []).map((l: any) => [l.id, l.nome]));
       const cols = new Map((colsRes.data ?? []).map((c: any) => [c.id, c]));
 
       return rows.map((r) => ({
