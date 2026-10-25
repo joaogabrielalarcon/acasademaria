@@ -57,6 +57,13 @@
       "when": 1792942240050,
       "tag": "0007_perf_catalogo_busca",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792942672910,
+      "tag": "0008_perf_rls_select_wrap",
+      "breakpoints": true
     }
   ]
 }
