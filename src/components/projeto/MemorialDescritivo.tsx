@@ -20,7 +20,7 @@ const CATEGORIA_OPTIONS = [
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { usePlantas, Planta } from "@/hooks/usePlantas";
+import { useCatalogoBusca, type PlantaBusca } from "@/hooks/useCatalogoBusca";
 import { useInsumos } from "@/hooks/useInsumos";
 import { useCategoriasPlantas } from "@/hooks/useCategoriasPlantas";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -127,13 +127,44 @@ function AutocompleteInput({
   );
 }
 
+function PlantaAutocomplete({
+  value,
+  onChange,
+  onSelectPlanta,
+  campo,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onSelectPlanta: (p: PlantaBusca) => void;
+  campo: "popular" | "cientifico";
+  placeholder?: string;
+}) {
+  // Server search driven by what the person types (max 30 results).
+  const [ativo, setAtivo] = useState(false);
+  const { data: plantas = [] } = useCatalogoBusca("plantas", value, ativo);
+  const suggestions = plantas
+    .filter((p) => campo === "popular" || !!p.nome_cientifico)
+    .map((p) => ({
+      label:
+        campo === "popular"
+          ? `${p.nome_popular}${p.nome_cientifico ? ` (${p.nome_cientifico})` : ""}`
+          : `${p.nome_cientifico} (${p.nome_popular})`,
+      onSelect: () => onSelectPlanta(p),
+    }));
+  return (
+    <div onFocusCapture={() => setAtivo(true)}>
+      <AutocompleteInput value={value} onChange={onChange} placeholder={placeholder} suggestions={suggestions} />
+    </div>
+  );
+}
+
 function PlantasSection({
   items,
   isEditing,
   onUpdate,
   onRemove,
   onAdd,
-  plantas,
   categoriasMap,
 }: {
   items: MemorialItem[];
@@ -141,21 +172,8 @@ function PlantasSection({
   onUpdate: (index: number, field: keyof MemorialItem, value: string | number | null) => void;
   onRemove: (index: number) => void;
   onAdd: () => void;
-  plantas: Planta[];
   categoriasMap: Record<string, string>;
 }) {
-  const plantaSuggestions = plantas.map((p) => ({
-    label: `${p.nome_popular}${p.nome_cientifico ? ` (${p.nome_cientifico})` : ""}`,
-    planta: p,
-  }));
-
-  const plantaCientificoSuggestions = plantas
-    .filter((p) => !!p.nome_cientifico)
-    .map((p) => ({
-      label: `${p.nome_cientifico} (${p.nome_popular})`,
-      planta: p,
-    }));
-
   return (
     <div>
       <h4 className="font-medium text-foreground mb-3 flex items-center gap-2">
@@ -179,7 +197,7 @@ function PlantasSection({
             </TableHeader>
             <TableBody>
               {items.map((item, idx) => {
-                const selectPlanta = (planta: Planta) => {
+                const selectPlanta = (planta: PlantaBusca) => {
                   onUpdate(idx, "nome_popular", planta.nome_popular);
                   onUpdate(idx, "nome_cientifico", planta.nome_cientifico || "");
                   onUpdate(idx, "altura_m", planta.altura_m);
@@ -212,17 +230,15 @@ function PlantasSection({
                     </TableCell>
                     <TableCell>
                       {isEditing ? (
-                        <AutocompleteInput
+                        <PlantaAutocomplete
+                          campo="popular"
+                          onSelectPlanta={selectPlanta}
                           value={item.nome_popular}
                           onChange={(v) => {
                             onUpdate(idx, "nome_popular", v);
                             onUpdate(idx, "planta_id", null);
                           }}
                           placeholder="Buscar planta..."
-                          suggestions={plantaSuggestions.map((ps) => ({
-                            label: ps.label,
-                            onSelect: () => selectPlanta(ps.planta),
-                          }))}
                         />
                       ) : (
                         <span>{item.nome_popular}</span>
@@ -230,17 +246,15 @@ function PlantasSection({
                     </TableCell>
                     <TableCell>
                       {isEditing ? (
-                        <AutocompleteInput
+                        <PlantaAutocomplete
+                          campo="cientifico"
+                          onSelectPlanta={selectPlanta}
                           value={item.nome_cientifico}
                           onChange={(v) => {
                             onUpdate(idx, "nome_cientifico", v);
                             onUpdate(idx, "planta_id", null);
                           }}
                           placeholder="Nome científico"
-                          suggestions={plantaCientificoSuggestions.map((ps) => ({
-                            label: ps.label,
-                            onSelect: () => selectPlanta(ps.planta),
-                          }))}
                         />
                       ) : (
                         <span className="italic">{item.nome_cientifico || "—"}</span>
@@ -484,7 +498,6 @@ export function MemorialDescritivo({ projetoId, isAdmin }: MemorialDescritivoPro
     },
   });
 
-  const { data: plantas = [] } = usePlantas();
   const { data: categoriasPlantas = [] } = useCategoriasPlantas();
   const categoriasMap: Record<string, string> = {};
   categoriasPlantas.forEach((c) => { categoriasMap[c.id] = c.nome; });
@@ -652,7 +665,6 @@ export function MemorialDescritivo({ projetoId, isAdmin }: MemorialDescritivoPro
             onUpdate={updateItem("planta")}
             onRemove={removeItem("planta")}
             onAdd={addPlanta}
-            plantas={plantas}
             categoriasMap={categoriasMap}
           />
 

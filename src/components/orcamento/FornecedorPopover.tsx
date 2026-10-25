@@ -45,7 +45,7 @@ export function FornecedorPopover({ fornecedorId, nome, itemId, itemTipo, onAval
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("fornecedores")
-        .select("*")
+        .select("id, nome, cnpj, telefone, email, endereco, cidade, estado, observacoes, status, created_at, updated_at, created_by, updated_by, whatsapp, mercado, categoria_fornecedor, nome_alternativo, fundido_em")
         .eq("id", fornecedorId)
         .maybeSingle();
       if (error) throw error;

@@ -102,7 +102,7 @@ export function Etapa4MarkupBlocoA(props: Props) {
       if (!orcamentoId) return [];
       const { data, error } = await (supabase as any)
         .from("orcamento_categorias_markup")
-        .select("*")
+        .select("id, orcamento_id, categoria, markup_pct, margem_pct, perfil_id_aplicado, ajustado_manualmente, created_at, updated_at, created_by, updated_by, piso_margem_pct")
         .eq("orcamento_id", orcamentoId);
       if (error) throw error;
       return data || [];

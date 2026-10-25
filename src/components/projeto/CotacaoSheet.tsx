@@ -1,4 +1,6 @@
 import { useState, useMemo } from "react";
+import { CatalogoPicker } from "@/components/blocks/CatalogoPicker";
+import type { FornecedorBusca } from "@/hooks/useCatalogoBusca";
 import {
   Sheet,
   SheetContent,
@@ -30,7 +32,6 @@ import {
   History,
 } from "lucide-react";
 import { OrcamentoItem, OrcamentoCotacao, calcularPrecoVenda } from "@/hooks/useOrcamento";
-import { Fornecedor } from "@/hooks/useFornecedores";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -41,7 +42,6 @@ interface CotacaoSheetProps {
   item: (OrcamentoItem & { cotacoes: OrcamentoCotacao[] }) | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  fornecedores: Fornecedor[];
   isAdmin: boolean;
   projetoId: string;
   precoReferencia?: number | null;
@@ -51,13 +51,27 @@ export function CotacaoSheet({
   item,
   open,
   onOpenChange,
-  fornecedores,
   isAdmin,
   projetoId,
   precoReferencia,
 }: CotacaoSheetProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const idsFornecedores = useMemo(
+    () => Array.from(new Set((item?.cotacoes ?? []).filter((c) => !c.fornecedor_nome && c.fornecedor_id).map((c) => c.fornecedor_id as string))),
+    [item],
+  );
+  const { data: fornecedoresNomes = [] } = useQuery({
+    queryKey: ["fornecedores-nomes", idsFornecedores],
+    enabled: idsFornecedores.length > 0,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("fornecedores").select("id, nome").in("id", idsFornecedores);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const nomesFornecedores = useMemo(() => new Map(fornecedoresNomes.map((f) => [f.id, f.nome] as const)), [fornecedoresNomes]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
     fornecedor_id: "",
@@ -278,7 +292,7 @@ export function CotacaoSheet({
                   <div className="min-w-0">
                     <p className="font-medium text-sm text-foreground truncate">
                       {cot.fornecedor_nome ||
-                        fornecedores.find((f) => f.id === cot.fornecedor_id)?.nome ||
+                        nomesFornecedores.get(cot.fornecedor_id ?? "") ||
                         "Fornecedor"}
                     </p>
                     {cot.observacao && (
@@ -313,20 +327,14 @@ export function CotacaoSheet({
             <h5 className="text-sm font-semibold text-foreground">Nova Cotação</h5>
             <div className="space-y-2">
               <Label className="text-xs">Fornecedor</Label>
-              <Select
-                value={form.fornecedor_id}
-                onValueChange={(v) => {
-                  const f = fornecedores.find((x) => x.id === v);
-                  setForm((c) => ({ ...c, fornecedor_id: v, fornecedor_nome: f?.nome || "" }));
-                }}
-              >
-                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                <SelectContent>
-                  {fornecedores.map((f) => (
-                    <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <CatalogoPicker<FornecedorBusca>
+                tipo="fornecedores"
+                value={form.fornecedor_id || null}
+                valueLabel={form.fornecedor_id ? form.fornecedor_nome : null}
+                placeholder="Buscar fornecedor..."
+                onSelect={(f) => setForm((c) => ({ ...c, fornecedor_id: f.id, fornecedor_nome: f.nome }))}
+              />
+
             </div>
             <div className="space-y-2">
               <Label className="text-xs">Ou nome avulso</Label>

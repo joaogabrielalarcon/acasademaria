@@ -42,7 +42,7 @@ export function useProjetosCliente(clienteId: string | undefined) {
       if (!clienteId) return [];
       const { data, error } = await supabase
         .from("projetos")
-        .select("*")
+        .select("id, cliente_id, titulo, descricao, status, valor_total, data_inicio, data_previsao, data_conclusao, responsavel_id, observacoes, created_at, updated_at, created_by, updated_by, tipo, local_id, valor_mensal, dia_vencimento, parcelas_config, lider_responsavel_id, usa_mao_de_obra_campo, escala_periodicidade, escala_dias_semana, escala_duracao_dias, escala_equipe_qtd, substatus, temperatura, data_retorno_prometida, proximo_contato_em, origem, data_prometida_cliente, data_alvo_interna")
         .eq("cliente_id", clienteId)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -59,7 +59,7 @@ export function useProjeto(id: string | undefined) {
       if (!id) return null;
       const { data, error } = await supabase
         .from("projetos")
-        .select("*")
+        .select("id, cliente_id, titulo, descricao, status, valor_total, data_inicio, data_previsao, data_conclusao, responsavel_id, observacoes, created_at, updated_at, created_by, updated_by, tipo, local_id, valor_mensal, dia_vencimento, parcelas_config, lider_responsavel_id, usa_mao_de_obra_campo, escala_periodicidade, escala_dias_semana, escala_duracao_dias, escala_equipe_qtd, substatus, temperatura, data_retorno_prometida, proximo_contato_em, origem, data_prometida_cliente, data_alvo_interna")
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;

@@ -22,10 +22,6 @@ export function useFornecedores() {
   return useQuery({
     queryKey: ["fornecedores"],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.warn("[useFornecedores] Sem sessão ativa");
-      }
 
       const pageSize = 1000;
       let from = 0;
@@ -33,13 +29,12 @@ export function useFornecedores() {
       while (true) {
         const { data, error } = await supabase
           .from("fornecedores")
-          .select("*")
+          .select("id, nome, cnpj, telefone, email, whatsapp, endereco, cidade, estado, observacoes, status, mercado, categoria_fornecedor, nome_alternativo")
           .eq("status", "ativo")
           .order("nome", { ascending: true })
           .range(from, from + pageSize - 1);
 
         if (error) {
-          console.error("[useFornecedores] Erro na query:", error);
           throw error;
         }
         const batch = (data ?? []) as Fornecedor[];
@@ -47,8 +42,6 @@ export function useFornecedores() {
         if (batch.length < pageSize) break;
         from += pageSize;
       }
-
-      console.log(`[useFornecedores] ${all.length} fornecedores retornados`);
       return all;
     },
     staleTime: 0,
@@ -67,7 +60,7 @@ export function useFornecedoresTodos() {
       while (true) {
         const { data, error } = await supabase
           .from("fornecedores")
-          .select("*")
+          .select("id, nome, cnpj, telefone, email, whatsapp, endereco, cidade, estado, observacoes, status, mercado, categoria_fornecedor, nome_alternativo")
           .order("nome", { ascending: true })
           .range(from, from + pageSize - 1);
 

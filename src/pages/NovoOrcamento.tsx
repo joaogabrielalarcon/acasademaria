@@ -106,7 +106,6 @@ import { VirtualWindowList } from "@/components/orcamento/VirtualWindowList";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatPorteMetros, parsePorteMetros } from "@/lib/porte";
 import { useInsumos } from "@/hooks/useInsumos";
-import { usePlantas } from "@/hooks/usePlantas";
 import { MafeCadastroChat, type EntidadeCadastro } from "@/components/cadastro/MafeCadastroChat";
 
 const CATEGORIAS_ITEM = [
@@ -446,7 +445,6 @@ export default function NovoOrcamento() {
   // Insumos completos (com is_base/base_ordem) — usado pela tabela única da Etapa 3.
   const { data: insumosFull = [] } = useInsumos();
   // Catálogo de plantas (busca/casamento de itens do memorial).
-  const { data: plantasFull = [] } = usePlantas();
   // Dialog de cadastro rápido (reusa Mafe-cadastro). Quando uma planta nova é gravada, recasamos o item.
   const [cadastroChat, setCadastroChat] = useState<
     { entidade: EntidadeCadastro; itemIdx: number } | null
@@ -1772,7 +1770,7 @@ export default function NovoOrcamento() {
       if (!id) return null;
       const { data, error } = await (supabase as any)
         .from("orcamentos")
-        .select("*")
+        .select("id, codigo, versao_sufixo, tipo_proposta_id, cliente_id, local_endereco, tipo_cliente, cidade, estado, area_m2, status, perfil_markup_id, responsavel_id, data_criacao, data_envio, prazo_validade_dias, data_expiracao, obs_interna, obs_proposta, valor_negociado_final, margem_negociacao_pct, data_aprovacao, aprovado_por, aliquota_mes_pct, tipo_nf, editavel, created_at, updated_at, motivo_nao_aprovacao, data_nao_aprovacao, local_id, observacao_aprovacao, aliquota_produtos_pct, negociacao_valor, memorial_snapshot, memorial_atualizado_em")
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
@@ -1831,13 +1829,13 @@ export default function NovoOrcamento() {
         { data: indirDb },
         { data: comDb },
       ] = await Promise.all([
-        (supabase as any).from("orcamento_itens").select("*").eq("orcamento_id", id).order("ordem"),
-        (supabase as any).from("orcamento_insumos").select("*").eq("orcamento_id", id).order("ordem"),
-        (supabase as any).from("orcamento_mo").select("*").eq("orcamento_id", id),
-        (supabase as any).from("orcamento_fretes").select("*").eq("orcamento_id", id),
-        (supabase as any).from("orcamento_transporte").select("*").eq("orcamento_id", id),
-        (supabase as any).from("orcamento_custos_indiretos").select("*").eq("orcamento_id", id),
-        (supabase as any).from("orcamento_comissoes").select("*").eq("orcamento_id", id).maybeSingle(),
+        (supabase as any).from("orcamento_itens").select("id, orcamento_id, categoria, nome_popular, nome_cientifico, porte_solicitado, quantidade_esperada, margem_seguranca_pct, quantidade_orcar, unidade, origem, fornecedor_escolhido_id, custo_unitario, porte_fornecedor, porte_divergente, markup_pct, markup_motivo, preco_venda_unitario, imposto_pct, preco_venda_final, margem_bruta_pct, obs_interna, obs_proposta, ordem, created_at, planta_id, insumo_id, markup_override_pct, preco_venda_override, ajustado_por, ajustado_em, ajuste_obs").eq("orcamento_id", id).order("ordem"),
+        (supabase as any).from("orcamento_insumos").select("id, orcamento_id, insumo_id, nome, fornecedor_id, quantidade_esperada, margem_seguranca_pct, quantidade_orcar, unidade, valor_unitario, valor_total, markup_pct, preco_venda_unitario, preco_venda_total, calculado_automaticamente, obs_interna, obs_proposta, ordem, created_at, markup_override_pct, ajustado_por, ajustado_em, ajuste_obs").eq("orcamento_id", id).order("ordem"),
+        (supabase as any).from("orcamento_mo").select("id, orcamento_id, cargo_id, qtd_funcionarios, qtd_dias, salario_diario, custo_total, aliquota_mes_pct, tipo_nf, valor_com_imposto, created_at, colaborador_id, markup_override_pct, ajustado_por, ajustado_em, ajuste_obs").eq("orcamento_id", id),
+        (supabase as any).from("orcamento_fretes").select("id, orcamento_id, transportador, descricao_percurso, valor_unitario, qtd_esperada, margem_seguranca_pct, qtd_orcar, valor_total, obs, created_at, fornecedor_id, percurso, markup_override_pct, ajustado_por, ajustado_em, ajuste_obs").eq("orcamento_id", id),
+        (supabase as any).from("orcamento_transporte").select("id, orcamento_id, tipo, valor_km, qtd_dias, qtd_km, subtotal, created_at, markup_override_pct, ajustado_por, ajustado_em, ajuste_obs").eq("orcamento_id", id),
+        (supabase as any).from("orcamento_custos_indiretos").select("id, orcamento_id, tipo, descricao, valor_unitario, quantidade, total, obs, created_at, markup_override_pct, ajustado_por, ajustado_em, ajuste_obs").eq("orcamento_id", id),
+        (supabase as any).from("orcamento_comissoes").select("id, orcamento_id, tipo, percentual, beneficiario, valor_calculado, created_at").eq("orcamento_id", id).maybeSingle(),
       ]);
 
       const itensList = itens || [];
@@ -1846,7 +1844,7 @@ export default function NovoOrcamento() {
       if (itemIds.length > 0) {
         const { data: cot } = await (supabase as any)
           .from("orcamento_cotacoes")
-          .select("*")
+          .select("id, item_id, fornecedor_id, valor_unitario_cotado, porte_ofertado, unidade_ofertada, disponivel, status_selecao, obs, cotado_em, cotado_por")
           .in("item_id", itemIds);
         cotacoesDb = cot || [];
       }
@@ -1874,11 +1872,13 @@ export default function NovoOrcamento() {
 
       // Snapshot do memorial — sobrescreve com metadados ricos (confiança, sugestões, insumos extras).
       try {
-        const { data: orcRow } = await (supabase as any)
+        // Reuse the already-loaded budget row; fetch only if it is not cached yet.
+        const cached = queryClient.getQueryData<{ memorial_snapshot?: unknown } | null>(["orcamento", id]);
+        const orcRow = cached ?? (await (supabase as any)
           .from("orcamentos")
           .select("memorial_snapshot")
           .eq("id", id)
-          .maybeSingle();
+          .maybeSingle()).data;
         const snap = orcRow?.memorial_snapshot;
         if (snap && typeof snap === "object") {
           if (Array.isArray(snap.itens) && snap.itens.length > 0) {
@@ -2143,7 +2143,7 @@ export default function NovoOrcamento() {
       try {
         const { count } = await (supabase as any)
           .from("orcamentos")
-          .select("*", { count: "exact", head: true })
+          .select("id", { count: "exact", head: true })
           .like("codigo", `${sigla}%${mes}${ano}`);
         const sequencial = String((count || 0) + 1).padStart(2, "0");
         const codigo = `${sigla}${sequencial}${mes}${ano}`;
@@ -3340,23 +3340,8 @@ export default function NovoOrcamento() {
       firstAutoSaveRef.current = false;
       // Casa cada item com o catálogo real de plantas (por nome popular/científico normalizado).
       const norm = normalizarNomeCatalogo;
-      const plantasMap = new Map<string, any>();
-      (plantasFull as any[]).forEach((p: any) => {
-        const pop = norm(p.nome_popular || "");
-        const sci = norm(p.nome_cientifico || "");
-        if (pop && !plantasMap.has(pop)) plantasMap.set(pop, p);
-        if (sci && !plantasMap.has(sci)) plantasMap.set(sci, p);
-      });
-      const itensPreCasados = itens.map((it) => {
-        const hit = plantasMap.get(norm(it.nome_popular)) || plantasMap.get(norm(it.nome_cientifico || ""));
-        if (!hit) return it;
-        return {
-          ...it,
-          planta_id: hit.id,
-          nome_cientifico: it.nome_cientifico || hit.nome_cientifico || null,
-          unidade: it.unidade || (hit.unidade ? String(hit.unidade).toUpperCase() : it.unidade),
-        };
-      });
+      // Matching goes through the server (match_catalogo); the catalog is never loaded whole.
+      const itensPreCasados = itens;
       // Funil inteligente: para o que não casou direto, chama match_catalogo (apelido/científico/fuzzy).
       const itensCasados = await Promise.all(
         itensPreCasados.map(async (it) => {
@@ -4312,7 +4297,6 @@ export default function NovoOrcamento() {
                         removeItem(idx);
                       }
                     }}
-                    plantasCatalogo={plantasFull as any[]}
                     onLinkPlanta={(idx, planta) => {
                       const realIdx = filtroBaixaConfianca
                         ? itensMaterial.map((it, i) => ({ it, i })).filter((x) => x.it.confianca === "baixa")[idx]?.i

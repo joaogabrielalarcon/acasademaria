@@ -1624,7 +1624,7 @@ function nomesPorId(rows) {
 var painel_projetos_default = defineTool12({
   name: "painel_projetos",
   title: "Painel de projetos",
-  description: "Vista de acompanhamento da gest\xE3o: projetos n\xE3o conclu\xEDdos e n\xE3o cancelados, com cliente, local, respons\xE1veis, datas, dias_no_status (desde a \xFAltima mudan\xE7a de status registrada, ou desde a cria\xE7\xE3o) e demandas_abertas. Para quem n\xE3o tem papel de gest\xE3o (admin, administrativo, gestor, diretor), valor_total n\xE3o \xE9 devolvido.",
+  description: "Vista de acompanhamento da gest\xE3o: projetos n\xE3o conclu\xEDdos e n\xE3o cancelados, com cliente, local, respons\xE1veis, datas, dias_no_status (desde a \xFAltima mudan\xE7a de status registrada, ou desde a cria\xE7\xE3o) e demandas_abertas. Para manuten\xE7\xE3o (contrato recorrente), devolve ultima_visita e dias_desde_ultima_visita no lugar de dias_no_status. Para quem n\xE3o tem papel de gest\xE3o (admin, administrativo, gestor, diretor), valor_total n\xE3o \xE9 devolvido.",
   inputSchema: {
     tipo: z11.string().optional(),
     status: z11.string().optional(),
@@ -1660,7 +1660,8 @@ var painel_projetos_default = defineTool12({
     const clienteIds = uniq(projetos.map((p) => p.cliente_id));
     const localIds = uniq(projetos.map((p) => p.local_id));
     const pessoaIds = uniq(projetos.flatMap((p) => [p.responsavel_id, p.lider_responsavel_id]));
-    const [audit, dem, cli, loc, colab, prof] = await Promise.all([
+    const manutIds = projetos.filter((p) => p.tipo === "manutencao").map((p) => p.id);
+    const [audit, dem, cli, loc, colab, prof, visitas] = await Promise.all([
       supabase.from("audit_status_changes").select("entity_id,changed_at").eq("entity_table", "projetos").in("entity_id", ids).order("changed_at", { ascending: false }),
       supabase.from("demandas").select("projeto_id").in("projeto_id", ids).eq("arquivada", false).is("status_saida", null),
       clienteIds.length ? supabase.from("clientes").select("id,nome").in("id", clienteIds) : Promise.resolve({ data: [] }),
@@ -1668,8 +1669,12 @@ var painel_projetos_default = defineTool12({
       pessoaIds.length ? supabase.from("colaboradores").select("id,nome,user_id").or(
         `id.in.(${pessoaIds.join(",")}),user_id.in.(${pessoaIds.join(",")})`
       ) : Promise.resolve({ data: [] }),
-      pessoaIds.length ? supabase.from("profiles").select("id,nome").in("id", pessoaIds) : Promise.resolve({ data: [] })
+      pessoaIds.length ? supabase.from("profiles").select("id,nome").in("id", pessoaIds) : Promise.resolve({ data: [] }),
+      manutIds.length ? supabase.from("projetos_ultima_visita").select("projeto_id,ultima_visita").in("projeto_id", manutIds) : Promise.resolve({ data: [] })
     ]);
+    const ultimaVisita = new Map(
+      (visitas.data ?? []).map((v) => [v.projeto_id, v.ultima_visita])
+    );
     const ultimaMudanca = /* @__PURE__ */ new Map();
     for (const a of audit.data ?? []) {
       if (!ultimaMudanca.has(a.entity_id)) ultimaMudanca.set(a.entity_id, a.changed_at);
@@ -1708,6 +1713,13 @@ var painel_projetos_default = defineTool12({
         status_desde: desde,
         demandas_abertas: abertas.get(p.id) ?? 0
       };
+      if (p.tipo === "manutencao") {
+        const uv = ultimaVisita.get(p.id) ?? null;
+        delete linha.dias_no_status;
+        delete linha.status_desde;
+        linha.ultima_visita = uv;
+        linha.dias_desde_ultima_visita = uv ? Math.max(0, Math.floor((agora - (/* @__PURE__ */ new Date(`${uv}T12:00:00`)).getTime()) / DIA_MS)) : null;
+      }
       if (restrito) delete linha.valor_total;
       return linha;
     });

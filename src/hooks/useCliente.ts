@@ -112,7 +112,7 @@ export function useCliente(id: string | undefined) {
       
       const { data, error } = await supabase
         .from("clientes")
-        .select("*")
+        .select("id, nome, endereco, bairro, telefone, email, notas, status, created_at, updated_at, cidade, estado, cep, condominio, cpf_cnpj, inscricao_estadual, proprietarios, funcionarios_casa, assessores, datas_importantes, particularidades, created_by, updated_by")
         .eq("id", id)
         .maybeSingle();
       

@@ -24,10 +24,6 @@ export function usePlantas() {
   return useQuery({
     queryKey: ["plantas"],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.warn("[usePlantas] Sem sessão ativa — query pode falhar com RLS");
-      }
 
       // Paginação manual para contornar o limite padrão de 1000 linhas do Supabase
       const pageSize = 1000;
@@ -36,13 +32,12 @@ export function usePlantas() {
       while (true) {
         const { data, error } = await supabase
           .from("plantas")
-          .select("*")
+          .select("id, nome_popular, nome_cientifico, categoria_id, fornecedor_id, altura_m, altura_min_m, altura_max_m, dap_cm, unidade, embalagem, alerta_validacao, nota_qualidade, preco_unitario, midia, ativo")
           .eq("ativo", true)
           .order("nome_popular", { ascending: true })
           .range(from, from + pageSize - 1);
 
         if (error) {
-          console.error("[usePlantas] Erro na query:", error);
           throw error;
         }
         const batch = (data ?? []) as unknown as Planta[];
@@ -50,8 +45,6 @@ export function usePlantas() {
         if (batch.length < pageSize) break;
         from += pageSize;
       }
-
-      console.log(`[usePlantas] ${all.length} plantas retornadas`);
       return all;
     },
     staleTime: 0,

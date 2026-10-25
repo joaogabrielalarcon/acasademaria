@@ -51,7 +51,7 @@ export default function Orcamentos() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("orcamentos")
-        .select("*")
+        .select("id, codigo, versao_sufixo, tipo_proposta_id, cliente_id, local_endereco, tipo_cliente, cidade, estado, area_m2, status, perfil_markup_id, responsavel_id, data_criacao, data_envio, prazo_validade_dias, data_expiracao, obs_interna, obs_proposta, valor_negociado_final, margem_negociacao_pct, data_aprovacao, aprovado_por, aliquota_mes_pct, tipo_nf, editavel, created_at, updated_at, motivo_nao_aprovacao, data_nao_aprovacao, local_id, observacao_aprovacao, aliquota_produtos_pct, negociacao_valor, memorial_snapshot, memorial_atualizado_em")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data || []) as OrcamentoRow[];

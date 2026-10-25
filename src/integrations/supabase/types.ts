@@ -1458,6 +1458,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "crm_cards_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos_ultima_visita"
+            referencedColumns: ["projeto_id"]
+          },
+          {
             foreignKeyName: "crm_cards_responsavel_id_fkey"
             columns: ["responsavel_id"]
             isOneToOne: false
@@ -1931,6 +1938,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "demandas_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos_ultima_visita"
+            referencedColumns: ["projeto_id"]
+          },
+          {
             foreignKeyName: "demandas_registro_origem_id_fkey"
             columns: ["registro_origem_id"]
             isOneToOne: false
@@ -2069,6 +2083,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "diario_alertas_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos_ultima_visita"
+            referencedColumns: ["projeto_id"]
+          },
+          {
             foreignKeyName: "diario_alertas_visita_id_fkey"
             columns: ["visita_id"]
             isOneToOne: false
@@ -2121,6 +2142,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "projetos"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diario_areas_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos_ultima_visita"
+            referencedColumns: ["projeto_id"]
           },
           {
             foreignKeyName: "diario_areas_visita_id_fkey"
@@ -2188,6 +2216,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "projetos"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diario_entregas_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos_ultima_visita"
+            referencedColumns: ["projeto_id"]
           },
         ]
       }
@@ -2460,6 +2495,13 @@ export type Database = {
             referencedRelation: "projetos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "diario_visitas_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos_ultima_visita"
+            referencedColumns: ["projeto_id"]
+          },
         ]
       }
       entregas_colaborador: {
@@ -2606,6 +2648,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "projetos"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escala_alocacoes_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos_ultima_visita"
+            referencedColumns: ["projeto_id"]
           },
         ]
       }
@@ -2779,6 +2828,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "projetos"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_parcelas_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos_ultima_visita"
+            referencedColumns: ["projeto_id"]
           },
         ]
       }
@@ -3391,6 +3447,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "irrigacao_historico_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos_ultima_visita"
+            referencedColumns: ["projeto_id"]
+          },
+          {
             foreignKeyName: "irrigacao_historico_setor_id_fkey"
             columns: ["setor_id"]
             isOneToOne: false
@@ -3437,6 +3500,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "projetos"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "irrigacao_setores_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos_ultima_visita"
+            referencedColumns: ["projeto_id"]
           },
         ]
       }
@@ -3646,6 +3716,13 @@ export type Database = {
             referencedRelation: "projetos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "mafe_correcoes_ia_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos_ultima_visita"
+            referencedColumns: ["projeto_id"]
+          },
         ]
       }
       manutencao_recursos: {
@@ -3803,6 +3880,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "projetos"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manutencao_visitas_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos_ultima_visita"
+            referencedColumns: ["projeto_id"]
           },
         ]
       }
@@ -3995,6 +4079,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "projetos"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memorial_descritivo_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos_ultima_visita"
+            referencedColumns: ["projeto_id"]
           },
         ]
       }
@@ -5583,6 +5674,13 @@ export type Database = {
             referencedRelation: "projetos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "projeto_arquivos_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos_ultima_visita"
+            referencedColumns: ["projeto_id"]
+          },
         ]
       }
       projeto_comentarios: {
@@ -5617,6 +5715,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "projetos"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projeto_comentarios_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos_ultima_visita"
+            referencedColumns: ["projeto_id"]
           },
         ]
       }
@@ -5661,6 +5766,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "projetos"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projeto_mao_de_obra_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos_ultima_visita"
+            referencedColumns: ["projeto_id"]
           },
         ]
       }
@@ -5867,6 +5979,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "projetos"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "propostas_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos_ultima_visita"
+            referencedColumns: ["projeto_id"]
           },
         ]
       }
@@ -6146,6 +6265,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "projetos"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos_ultima_visita"
+            referencedColumns: ["projeto_id"]
           },
           {
             foreignKeyName: "registros_proposta_id_fkey"
@@ -6438,6 +6564,21 @@ export type Database = {
         }
         Relationships: []
       }
+      projetos_ultima_visita: {
+        Row: {
+          projeto_id: string | null
+          ultima_visita: string | null
+        }
+        Insert: {
+          projeto_id?: string | null
+          ultima_visita?: never
+        }
+        Update: {
+          projeto_id?: string | null
+          ultima_visita?: never
+        }
+        Relationships: []
+      }
     }
     Functions: {
       ajustar_markup_categoria: {
@@ -6449,6 +6590,38 @@ export type Database = {
           p_orcamento_id: string
         }
         Returns: undefined
+      }
+      buscar_fornecedores: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: {
+          cidade: string
+          estado: string
+          id: string
+          nome: string
+        }[]
+      }
+      buscar_insumos: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: {
+          categoria: string
+          id: string
+          nome: string
+          unidade: string
+        }[]
+      }
+      buscar_plantas: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: {
+          altura_m: number
+          categoria_id: string
+          dap_cm: number
+          id: string
+          nome_cientifico: string
+          nome_popular: string
+          porte: string
+          preco_unitario: number
+          unidade: string
+        }[]
       }
       can_access_avaliacao: {
         Args: { p_colaborador_id: string; p_user_id: string }

@@ -96,7 +96,7 @@ export function useFeedProjeto(projetoId?: string, clienteId?: string) {
       // Eventos referenciando o projeto OU manuais registrados no painel via referencia_id=projeto
       const { data, error } = await supabase
         .from("cliente_feed_eventos")
-        .select("*")
+        .select("id, cliente_id, tipo, titulo, dados, usuario_nome, visivel_cliente, referencia_id, referencia_tipo, created_at")
         .eq("cliente_id", clienteId!)
         .or(`referencia_id.eq.${projetoId},and(referencia_tipo.eq.projeto,referencia_id.eq.${projetoId})`)
         .order("created_at", { ascending: false })
