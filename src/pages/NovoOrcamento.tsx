@@ -2141,7 +2141,7 @@ export default function NovoOrcamento() {
       try {
         const { count } = await (supabase as any)
           .from("orcamentos")
-          .select("*", { count: "exact", head: true })
+          .select("id", { count: "exact", head: true })
           .like("codigo", `${sigla}%${mes}${ano}`);
         const sequencial = String((count || 0) + 1).padStart(2, "0");
         const codigo = `${sigla}${sequencial}${mes}${ano}`;
