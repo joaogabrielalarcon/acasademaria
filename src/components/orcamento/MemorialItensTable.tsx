@@ -122,17 +122,14 @@ function CatalogoCell({
 
   const ligadaAoCatalogo = !!it.planta_id || !!it.insumo_id;
 
-  const sugestoesLista = useMemo(() => {
-    if (!plantasCatalogo || plantasCatalogo.length === 0) return [];
-    const q = normalizar(query || it.nome_popular || "");
-    if (!q) return plantasCatalogo.slice(0, 30);
-    const filtradas = plantasCatalogo.filter((p) => {
-      const a = normalizar(p.nome_popular);
-      const b = normalizar(p.nome_cientifico || "");
-      return a.includes(q) || b.includes(q);
-    });
-    return filtradas.slice(0, 60);
-  }, [plantasCatalogo, query, it.nome_popular]);
+  // Server search (max 30), only while the popover is open.
+  const termoBusca = query || it.nome_popular || "";
+  const { data: sugestoesLista = [], isFetching: buscando } = useCatalogoBusca("plantas", termoBusca, open);
+  const daSugestao = (s: { item_id: string; nome: string; nome_secundario?: string | null }): PlantaCatalogoLite => ({
+    id: s.item_id,
+    nome_popular: s.nome,
+    nome_cientifico: s.nome_secundario ?? null,
+  });
 
   if (!onLinkPlanta && !onOpenCadastro) {
     return <div className="text-xs text-muted-foreground">—</div>;
@@ -140,9 +137,8 @@ function CatalogoCell({
 
   const sugestaoTop = !ligadaAoCatalogo && it.sugestoes && it.sugestoes.length > 0 ? it.sugestoes[0] : null;
   const aplicarSugestao = () => {
-    if (!sugestaoTop || !plantasCatalogo) return;
-    const p = plantasCatalogo.find((x) => x.id === sugestaoTop.item_id);
-    if (p) onLinkPlanta?.(realIdx, p);
+    if (!sugestaoTop) return;
+    onLinkPlanta?.(realIdx, daSugestao(sugestaoTop));
   };
 
   return (
@@ -178,7 +174,7 @@ function CatalogoCell({
         <Command shouldFilter={false}>
           <CommandInput placeholder="Buscar no catálogo..." value={query} onValueChange={setQuery} />
           <CommandList>
-            <CommandEmpty>Nada encontrado.</CommandEmpty>
+            <CommandEmpty>{buscando ? "Buscando no catálogo..." : termoBusca.trim().length < 2 ? "Digite ao menos 2 letras." : "Nada encontrado com esse nome."}</CommandEmpty>
             {ligadaAoCatalogo && (
               <CommandGroup heading="Vínculo atual">
                 <CommandItem
@@ -193,11 +189,11 @@ function CatalogoCell({
             {it.sugestoes && it.sugestoes.length > 0 && !ligadaAoCatalogo && (
               <CommandGroup heading="Sugestões da Mafe">
                 {it.sugestoes.map((s) => {
-                  const p = plantasCatalogo?.find((x) => x.id === s.item_id);
+                  const p = daSugestao(s);
                   return (
                     <CommandItem
                       key={s.item_id}
-                      onSelect={() => { if (p) { onLinkPlanta?.(realIdx, p); setOpen(false); } }}
+                      onSelect={() => { onLinkPlanta?.(realIdx, p); setOpen(false); }}
                     >
                       <Sparkles className="w-4 h-4 text-primary" />
                       <div className="flex flex-col">
