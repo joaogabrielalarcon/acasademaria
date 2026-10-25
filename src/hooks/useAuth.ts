@@ -39,11 +39,15 @@ export function useAuth() {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
 
+        if (event === "USER_UPDATED") {
+          queryClient.invalidateQueries({ queryKey: ["access_state"] });
+          queryClient.invalidateQueries({ queryKey: ["profile"] });
+        }
         // On logout, clear cached roles
         if (!session) {
           queryClient.removeQueries({ queryKey: ["user_roles"] });
