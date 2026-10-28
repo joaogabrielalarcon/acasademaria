@@ -1,3 +1,14 @@
+# Rodada de ferramentas compartilhadas
+
+- [ ] Confirmar versão de desempenho no site publicado.
+- [ ] Apresentar plano de extração, permissões e lacunas do schema.
+- [ ] Unificar handlers e substituir operações de dados da Mafe após aprovação do plano.
+- [ ] Ampliar sete tabelas, validar CHECKs e campos de admissão existentes.
+- [ ] Implementar painel de vencimentos com corte financeiro.
+- [ ] Testar frase equivalente, operações administrativas e restrições do campo.
+- [ ] Listar dependências e remover somente contas e registros descartáveis autorizados.
+- [ ] Extrair manifesto, publicar e verificar versão servida.
+
 # Cadastro interno e primeiro acesso
 
 ## Prioridade: acesso da Tânia
