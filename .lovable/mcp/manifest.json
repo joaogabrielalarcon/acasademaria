@@ -11,9 +11,9 @@
   },
   "mcp": {
     "server": {
-      "name": "mfm-paisagismo-mcp",
+      "name": "mfm",
       "version": "0.1.0",
-      "title": "MFM Paisagismo"
+      "title": "MFM"
     },
     "tools": [
       {
@@ -404,6 +404,13 @@
             "tabela": {
               "type": "string",
               "enum": [
+                "calendario_eventos",
+                "entregas_colaborador",
+                "condominios",
+                "colaborador_liberacoes",
+                "financeiro_parcelas",
+                "financeiro_movimentacoes",
+                "solicitacoes_compras",
                 "clientes",
                 "locais_cliente",
                 "colaboradores",
@@ -423,7 +430,7 @@
                 "demandas",
                 "demanda_responsaveis"
               ],
-              "description": "Tabela alvo. Aceita apenas: clientes, locais_cliente, colaboradores, maquinas, insumos, insumo_unidades, plantas, fornecedores, fornecedor_atendentes, estoque_movimentacoes, projetos, registros, diarias, escala_alocacoes, registro_insumos, registro_maquinas, demandas, demanda_responsaveis"
+              "description": "Tabela alvo. Aceita apenas: calendario_eventos, entregas_colaborador, condominios, colaborador_liberacoes, financeiro_parcelas, financeiro_movimentacoes, solicitacoes_compras, clientes, locais_cliente, colaboradores, maquinas, insumos, insumo_unidades, plantas, fornecedores, fornecedor_atendentes, estoque_movimentacoes, projetos, registros, diarias, escala_alocacoes, registro_insumos, registro_maquinas, demandas, demanda_responsaveis"
             },
             "linhas": {
               "minItems": 1,
@@ -467,6 +474,11 @@
             "tabela": {
               "type": "string",
               "enum": [
+                "calendario_eventos",
+                "condominios",
+                "colaborador_liberacoes",
+                "financeiro_parcelas",
+                "solicitacoes_compras",
                 "clientes",
                 "locais_cliente",
                 "colaboradores",
@@ -485,7 +497,7 @@
                 "registro_maquinas",
                 "demandas"
               ],
-              "description": "Tabela alvo. Aceita: clientes, locais_cliente, colaboradores, maquinas, insumos, insumo_unidades, plantas, fornecedores, fornecedor_atendentes, estoque_movimentacoes, projetos, registros, diarias, escala_alocacoes, registro_insumos, registro_maquinas, demandas"
+              "description": "Tabela alvo. Aceita: calendario_eventos, condominios, colaborador_liberacoes, financeiro_parcelas, solicitacoes_compras, clientes, locais_cliente, colaboradores, maquinas, insumos, insumo_unidades, plantas, fornecedores, fornecedor_atendentes, estoque_movimentacoes, projetos, registros, diarias, escala_alocacoes, registro_insumos, registro_maquinas, demandas"
             },
             "id": {
               "type": "string",
@@ -576,6 +588,46 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 200
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "painel_vencimentos",
+        "title": "Painel de vencimentos",
+        "description": "Eventos não concluídos nos próximos dias (padrão 30), com pessoa, cliente e responsável. Somente admin, administrativo, gestor e diretor recebem também parcelas não pagas próximas e atrasadas. Respeita RLS; não amplia acesso ao calendário.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "tipo": {
+              "type": "string"
+            },
+            "responsavel_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "dias": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 366
+            },
+            "offset": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "limite": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
             }
           }
         },
