@@ -93,9 +93,46 @@ var whoami_default = defineTool({
 
 // src/lib/mcp/tools/list-clientes.ts
 import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@0.24.0";
-import { z } from "npm:zod@^4.4.3";
 
-// src/lib/mcp/tools/_validacao.ts
+// supabase/functions/_shared/operations/contracts.ts
+import { z } from "npm:zod@4.4.3";
+function defineOperation(definition) {
+  return { ...definition, execute: (input, context) => definition.handler(z.object(definition.inputSchema).strict().parse(input), context) };
+}
+var supabaseForUser2 = (context) => context.db;
+async function requireAuth2(context) {
+  if (!context.isAuthenticated() || !context.userId) return failure("N\xE3o autenticado.");
+  const [profile, security] = await Promise.all([
+    context.db.from("profiles").select("ativo").eq("id", context.userId).maybeSingle(),
+    context.db.from("user_access_security").select("must_change_password").eq("user_id", context.userId).maybeSingle()
+  ]);
+  if (profile.error || security.error) return failure("N\xE3o foi poss\xEDvel conferir o seu acesso.");
+  const denial = accessDenial(profile.data?.ativo, security.data?.must_change_password === true);
+  return denial ? failure(denial) : null;
+}
+function failure(text) {
+  return { content: [{ type: "text", text }], isError: true };
+}
+function jsonValue(value) {
+  if (value === null || value === void 0) return null;
+  if (typeof value === "string" || typeof value === "boolean") return value;
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (Array.isArray(value)) return value.map(jsonValue);
+  if (typeof value === "object") return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, jsonValue(v)]));
+  return String(value);
+}
+function operationResult(value) {
+  const result = value && typeof value === "object" ? value : {};
+  const raw = Array.isArray(result.content) ? result.content : [];
+  const content = raw.map((entry) => ({ type: "text", text: typeof entry === "object" && entry && "text" in entry ? String(entry.text) : String(entry) }));
+  const structured = jsonValue(result.structuredContent);
+  return { content, ...result.isError ? { isError: true } : {}, ...structured && !Array.isArray(structured) && typeof structured === "object" ? { structuredContent: structured } : {} };
+}
+
+// supabase/functions/_shared/operations/list-clientes.ts
+import { z as z2 } from "npm:zod@4.4.3";
+
+// supabase/functions/_shared/operations/validation.ts
 function normalizarValor(v) {
   return String(v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase().replace(/[\s-]+/g, "_");
 }
@@ -516,21 +553,21 @@ function cortarLinhas(tabela, linhas) {
   return (linhas ?? []).map((l) => cortarLinha(tabela, l));
 }
 
-// src/lib/mcp/tools/list-clientes.ts
-var list_clientes_default = defineTool2({
+// supabase/functions/_shared/operations/list-clientes.ts
+var operation = defineOperation({
   name: "list_clientes",
   title: "Listar clientes",
   description: "Lista clientes vis\xEDveis ao usu\xE1rio autenticado, com busca opcional por nome, cidade ou CPF/CNPJ. Respeita as permiss\xF5es (RLS) do usu\xE1rio.",
   inputSchema: {
-    busca: z.string().trim().optional().describe("Termo de busca (nome, cidade, CPF/CNPJ)."),
-    status: z.string().optional().describe("Filtrar por status (ex.: 'ativo', 'inativo')."),
-    limite: z.number().int().min(1).max(100).optional().describe("M\xE1ximo de resultados (padr\xE3o 25).")
+    busca: z2.string().trim().optional().describe("Termo de busca (nome, cidade, CPF/CNPJ)."),
+    status: z2.string().optional().describe("Filtrar por status (ex.: 'ativo', 'inativo')."),
+    limite: z2.number().int().min(1).max(100).optional().describe("M\xE1ximo de resultados (padr\xE3o 25).")
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ busca, status, limite }, ctx) => {
-    const unauth = await requireAuth(ctx);
+    const unauth = await requireAuth2(ctx);
     if (unauth) return unauth;
-    const supabase = supabaseForUser(ctx);
+    const supabase = supabaseForUser2(ctx);
     let q = supabase.from("clientes").select("id, nome, email, telefone, cidade, estado, status, cpf_cnpj, created_at").order("nome", { ascending: true }).limit(limite ?? 25);
     if (status) q = q.eq("status", status);
     if (busca) {
@@ -548,21 +585,45 @@ var list_clientes_default = defineTool2({
   }
 });
 
+// src/lib/mcp/operation-context.ts
+function operationContext(context) {
+  return {
+    db: supabaseForUser(context),
+    userId: context.getUserId() ?? "",
+    email: context.getUserEmail(),
+    getUserId: () => context.getUserId() ?? "",
+    getUserEmail: () => context.getUserEmail(),
+    isAuthenticated: () => context.isAuthenticated()
+  };
+}
+
+// src/lib/mcp/tools/list-clientes.ts
+var list_clientes_default = defineTool2({
+  name: operation.name,
+  title: operation.title,
+  description: operation.description,
+  inputSchema: operation.inputSchema,
+  annotations: operation.annotations,
+  handler: async (input, context) => operationResult(await operation.execute(input, operationContext(context)))
+});
+
 // src/lib/mcp/tools/get-cliente.ts
 import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@0.24.0";
-import { z as z2 } from "npm:zod@^4.4.3";
-var get_cliente_default = defineTool3({
+
+// supabase/functions/_shared/operations/get-cliente.ts
+import { z as z3 } from "npm:zod@4.4.3";
+var operation2 = defineOperation({
   name: "get_cliente",
   title: "Detalhes do cliente",
   description: "Retorna dados detalhados de um cliente pelo id, incluindo projetos vinculados.",
   inputSchema: {
-    cliente_id: z2.string().uuid().describe("UUID do cliente.")
+    cliente_id: z3.string().uuid().describe("UUID do cliente.")
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ cliente_id }, ctx) => {
-    const unauth = await requireAuth(ctx);
+    const unauth = await requireAuth2(ctx);
     if (unauth) return unauth;
-    const supabase = supabaseForUser(ctx);
+    const supabase = supabaseForUser2(ctx);
     const [cliente, projetos] = await Promise.all([
       supabase.from("clientes").select("*").eq("id", cliente_id).maybeSingle(),
       supabase.from("projetos").select("id, titulo, tipo, status, data_inicio, data_previsao, valor_total").eq("cliente_id", cliente_id).order("created_at", { ascending: false })
@@ -581,25 +642,37 @@ var get_cliente_default = defineTool3({
   }
 });
 
+// src/lib/mcp/tools/get-cliente.ts
+var get_cliente_default = defineTool3({
+  name: operation2.name,
+  title: operation2.title,
+  description: operation2.description,
+  inputSchema: operation2.inputSchema,
+  annotations: operation2.annotations,
+  handler: async (input, context) => operationResult(await operation2.execute(input, operationContext(context)))
+});
+
 // src/lib/mcp/tools/list-projetos.ts
 import { defineTool as defineTool4 } from "npm:@lovable.dev/mcp-js@0.24.0";
-import { z as z3 } from "npm:zod@^4.4.3";
-var list_projetos_default = defineTool4({
+
+// supabase/functions/_shared/operations/list-projetos.ts
+import { z as z4 } from "npm:zod@4.4.3";
+var operation3 = defineOperation({
   name: "list_projetos",
   title: "Listar projetos",
   description: "Lista projetos vis\xEDveis ao usu\xE1rio (respeita aloca\xE7\xE3o e RLS). Filtre por status, tipo ou cliente.",
   inputSchema: {
-    status: z3.string().optional().describe("Ex.: 'em_andamento', 'concluido'."),
-    tipo: z3.string().optional().describe("Ex.: 'implantacao', 'manutencao'."),
-    cliente_id: z3.string().uuid().optional(),
-    busca: z3.string().trim().optional().describe("Busca por t\xEDtulo."),
-    limite: z3.number().int().min(1).max(100).optional()
+    status: z4.string().optional().describe("Ex.: 'em_andamento', 'concluido'."),
+    tipo: z4.string().optional().describe("Ex.: 'implantacao', 'manutencao'."),
+    cliente_id: z4.string().uuid().optional(),
+    busca: z4.string().trim().optional().describe("Busca por t\xEDtulo."),
+    limite: z4.number().int().min(1).max(100).optional()
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ status, tipo, cliente_id, busca, limite }, ctx) => {
-    const unauth = await requireAuth(ctx);
+    const unauth = await requireAuth2(ctx);
     if (unauth) return unauth;
-    const supabase = supabaseForUser(ctx);
+    const supabase = supabaseForUser2(ctx);
     let q = supabase.from("projetos").select("id, titulo, tipo, status, cliente_id, data_inicio, data_previsao, data_conclusao, valor_total, valor_mensal, responsavel_id").order("created_at", { ascending: false }).limit(limite ?? 25);
     if (status) q = q.eq("status", status);
     if (tipo) q = q.eq("tipo", tipo);
@@ -616,18 +689,28 @@ var list_projetos_default = defineTool4({
   }
 });
 
+// src/lib/mcp/tools/list-projetos.ts
+var list_projetos_default = defineTool4({
+  name: operation3.name,
+  title: operation3.title,
+  description: operation3.description,
+  inputSchema: operation3.inputSchema,
+  annotations: operation3.annotations,
+  handler: async (input, context) => operationResult(await operation3.execute(input, operationContext(context)))
+});
+
 // src/lib/mcp/tools/list-crm-cards.ts
 import { defineTool as defineTool5 } from "npm:@lovable.dev/mcp-js@0.24.0";
-import { z as z4 } from "npm:zod@^4.4.3";
+import { z as z5 } from "npm:zod@^4.4.3";
 var list_crm_cards_default = defineTool5({
   name: "list_crm_cards",
   title: "Listar cards do CRM",
   description: "Lista cards do funil de CRM (leads, propostas, aprovados, em execu\xE7\xE3o, etc). Respeita RLS do usu\xE1rio.",
   inputSchema: {
-    status: z4.string().optional().describe("Ex.: 'Lead', 'Proposta Enviada', 'Aprovado', 'Em Execucao', 'Concluido', 'Pos-venda', 'Nao Aprovado'."),
-    cliente_id: z4.string().uuid().optional(),
-    busca: z4.string().trim().optional().describe("Busca por t\xEDtulo ou nome do contato."),
-    limite: z4.number().int().min(1).max(100).optional()
+    status: z5.string().optional().describe("Ex.: 'Lead', 'Proposta Enviada', 'Aprovado', 'Em Execucao', 'Concluido', 'Pos-venda', 'Nao Aprovado'."),
+    cliente_id: z5.string().uuid().optional(),
+    busca: z5.string().trim().optional().describe("Busca por t\xEDtulo ou nome do contato."),
+    limite: z5.number().int().min(1).max(100).optional()
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ status, cliente_id, busca, limite }, ctx) => {
@@ -652,22 +735,22 @@ var list_crm_cards_default = defineTool5({
 
 // src/lib/mcp/tools/create-crm-card.ts
 import { defineTool as defineTool6 } from "npm:@lovable.dev/mcp-js@0.24.0";
-import { z as z5 } from "npm:zod@^4.4.3";
+import { z as z6 } from "npm:zod@^4.4.3";
 var create_crm_card_default = defineTool6({
   name: "create_crm_card",
   title: "Criar card no CRM",
   description: "Cria um novo card (lead) no funil de CRM. O card \xE9 criado com o usu\xE1rio autenticado como respons\xE1vel quando n\xE3o indicado.",
   inputSchema: {
-    titulo: z5.string().trim().min(1).describe("T\xEDtulo do card (obrigat\xF3rio)."),
-    tipo: z5.string().trim().min(1).describe("Tipo do card (ex.: 'Implanta\xE7\xE3o', 'Manuten\xE7\xE3o')."),
-    status: z5.string().trim().optional().describe("Status inicial (padr\xE3o 'Lead')."),
-    cliente_id: z5.string().uuid().nullable().optional(),
-    projeto_id: z5.string().uuid().nullable().optional(),
-    contato_nome: z5.string().trim().nullable().optional(),
-    contato_email: z5.string().trim().nullable().optional(),
-    contato_whatsapp: z5.string().trim().nullable().optional(),
-    observacoes: z5.string().trim().nullable().optional(),
-    prazo: z5.string().trim().nullable().optional().describe("Data em ISO (YYYY-MM-DD).")
+    titulo: z6.string().trim().min(1).describe("T\xEDtulo do card (obrigat\xF3rio)."),
+    tipo: z6.string().trim().min(1).describe("Tipo do card (ex.: 'Implanta\xE7\xE3o', 'Manuten\xE7\xE3o')."),
+    status: z6.string().trim().optional().describe("Status inicial (padr\xE3o 'Lead')."),
+    cliente_id: z6.string().uuid().nullable().optional(),
+    projeto_id: z6.string().uuid().nullable().optional(),
+    contato_nome: z6.string().trim().nullable().optional(),
+    contato_email: z6.string().trim().nullable().optional(),
+    contato_whatsapp: z6.string().trim().nullable().optional(),
+    observacoes: z6.string().trim().nullable().optional(),
+    prazo: z6.string().trim().nullable().optional().describe("Data em ISO (YYYY-MM-DD).")
   },
   annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
   handler: async (input, ctx) => {
@@ -699,19 +782,21 @@ var create_crm_card_default = defineTool6({
 
 // src/lib/mcp/tools/describe-schema.ts
 import { defineTool as defineTool7 } from "npm:@lovable.dev/mcp-js@0.24.0";
-import { z as z6 } from "npm:zod@^4.4.3";
-var describe_schema_default = defineTool7({
+
+// supabase/functions/_shared/operations/describe-schema.ts
+import { z as z7 } from "npm:zod@4.4.3";
+var operation4 = defineOperation({
   name: "describe_schema",
   title: "Descrever schema",
   description: "Introspec\xE7\xE3o s\xF3-leitura do schema public. Sem par\xE2metro, lista todas as tabelas com contagem de colunas e status de RLS. Com 'tabela', devolve colunas, chave prim\xE1ria, chaves estrangeiras e status de RLS. Nunca l\xEA dados.",
   inputSchema: {
-    tabela: z6.string().trim().optional().describe("Nome da tabela do schema public. Omita para listar todas.")
+    tabela: z7.string().trim().optional().describe("Nome da tabela do schema public. Omita para listar todas.")
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ tabela }, ctx) => {
-    const unauth = await requireAuth(ctx);
+    const unauth = await requireAuth2(ctx);
     if (unauth) return unauth;
-    const supabase = supabaseForUser(ctx);
+    const supabase = supabaseForUser2(ctx);
     if (!tabela) {
       const { data: data2, error: error2 } = await supabase.rpc("mcp_list_public_tables");
       if (error2) return { content: [{ type: "text", text: error2.message }], isError: true };
@@ -735,26 +820,38 @@ var describe_schema_default = defineTool7({
   }
 });
 
+// src/lib/mcp/tools/describe-schema.ts
+var describe_schema_default = defineTool7({
+  name: operation4.name,
+  title: operation4.title,
+  description: operation4.description,
+  inputSchema: operation4.inputSchema,
+  annotations: operation4.annotations,
+  handler: async (input, context) => operationResult(await operation4.execute(input, operationContext(context)))
+});
+
 // src/lib/mcp/tools/read-table.ts
 import { defineTool as defineTool8 } from "npm:@lovable.dev/mcp-js@0.24.0";
-import { z as z7 } from "npm:zod@^4.4.3";
-var read_table_default = defineTool8({
+
+// supabase/functions/_shared/operations/read-table.ts
+import { z as z8 } from "npm:zod@4.4.3";
+var operation5 = defineOperation({
   name: "read_table",
   title: "Ler tabela",
   description: "Leitura gen\xE9rica de qualquer tabela do schema public, respeitando as permiss\xF5es (RLS) do usu\xE1rio autenticado. S\xF3 retorna o que o usu\xE1rio tem permiss\xE3o para ver.",
   inputSchema: {
-    tabela: z7.string().trim().min(1).describe("Nome da tabela do schema public."),
-    colunas: z7.string().trim().optional().describe("Lista de colunas separadas por v\xEDrgula (padr\xE3o '*')."),
-    filtros: z7.record(z7.string(), z7.union([z7.string(), z7.number(), z7.boolean(), z7.null()])).optional().describe("Objeto campo\u2192valor para igualdade estrita."),
-    ordenar_por: z7.string().trim().optional().describe("Coluna para ordenar. Prefixe com '-' para descendente (ex.: '-created_at')."),
-    limite: z7.number().int().min(1).max(100).optional().describe("Padr\xE3o 25, m\xE1ximo 100."),
-    offset: z7.number().int().min(0).optional()
+    tabela: z8.string().trim().min(1).describe("Nome da tabela do schema public."),
+    colunas: z8.string().trim().optional().describe("Lista de colunas separadas por v\xEDrgula (padr\xE3o '*')."),
+    filtros: z8.record(z8.string(), z8.union([z8.string(), z8.number(), z8.boolean(), z8.null()])).optional().describe("Objeto campo\u2192valor para igualdade estrita."),
+    ordenar_por: z8.string().trim().optional().describe("Coluna para ordenar. Prefixe com '-' para descendente (ex.: '-created_at')."),
+    limite: z8.number().int().min(1).max(100).optional().describe("Padr\xE3o 25, m\xE1ximo 100."),
+    offset: z8.number().int().min(0).optional()
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ tabela, colunas, filtros, ordenar_por, limite, offset }, ctx) => {
-    const unauth = await requireAuth(ctx);
+    const unauth = await requireAuth2(ctx);
     if (unauth) return unauth;
-    const supabase = supabaseForUser(ctx);
+    const supabase = supabaseForUser2(ctx);
     const { data: tabelas, error: eList } = await supabase.rpc("mcp_list_public_tables");
     if (eList) return { content: [{ type: "text", text: eList.message }], isError: true };
     const nomes = new Set(
@@ -833,16 +930,26 @@ var read_table_default = defineTool8({
 var COLUNAS_ESTOQUE_VALOR = ["preco_unitario", "valor_total"];
 var COLUNAS_ESTOQUE_LIVRES = "id, item_id, item_tipo, tipo_movimento, quantidade, fornecedor_id, origem, referencia_id, observacoes, registrado_por_nome, created_at";
 
+// src/lib/mcp/tools/read-table.ts
+var read_table_default = defineTool8({
+  name: operation5.name,
+  title: operation5.title,
+  description: operation5.description,
+  inputSchema: operation5.inputSchema,
+  annotations: operation5.annotations,
+  handler: async (input, context) => operationResult(await operation5.execute(input, operationContext(context)))
+});
+
 // src/lib/mcp/tools/list-storage.ts
 import { defineTool as defineTool9 } from "npm:@lovable.dev/mcp-js@0.24.0";
-import { z as z8 } from "npm:zod@^4.4.3";
+import { z as z9 } from "npm:zod@^4.4.3";
 var list_storage_default = defineTool9({
   name: "list_storage",
   title: "Listar Storage",
   description: "Lista buckets ou arquivos do Storage. Sem par\xE2metro, devolve buckets (nome, p\xFAblico/privado). Com 'bucket' (e 'prefixo' opcional), lista arquivos (nome, tamanho, criado em), m\xE1ximo 100. N\xE3o devolve conte\xFAdo nem URLs assinadas.",
   inputSchema: {
-    bucket: z8.string().trim().optional().describe("Nome do bucket."),
-    prefixo: z8.string().trim().optional().describe("Prefixo (pasta) dentro do bucket.")
+    bucket: z9.string().trim().optional().describe("Nome do bucket."),
+    prefixo: z9.string().trim().optional().describe("Prefixo (pasta) dentro do bucket.")
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ bucket, prefixo }, ctx) => {
@@ -880,7 +987,9 @@ var list_storage_default = defineTool9({
 
 // src/lib/mcp/tools/criar-registros.ts
 import { defineTool as defineTool10 } from "npm:@lovable.dev/mcp-js@0.24.0";
-import { z as z9 } from "npm:zod@^4.4.3";
+
+// supabase/functions/_shared/operations/criar-registros.ts
+import { z as z10 } from "npm:zod@4.4.3";
 var TABELAS = [
   "clientes",
   "locais_cliente",
@@ -1032,14 +1141,14 @@ var CAMPOS_OPERACAO = {
     permitidos: ["registro_id", "maquina_id", "horas_utilizadas", "observacao"]
   }
 };
-var criar_registros_default = defineTool10({
+var operation6 = defineOperation({
   name: "criar_registros",
   title: "Criar registros em lote",
   description: "Cria linhas em lote em tabelas de cadastro e da opera\xE7\xE3o de campo (whitelist). Cadastro (plantas, insumos, fornecedores) roda deduplica\xE7\xE3o por nome. Opera\xE7\xE3o (projetos, registros, diarias, escala_alocacoes, registro_insumos, registro_maquinas, demandas, demanda_responsaveis) roda valida\xE7\xE3o de campos/valores e prote\xE7\xE3o contra grava\xE7\xE3o repetida por chave natural: diarias = cliente_id + data_visita; registros = cliente_id + data_servico + tipo + descri\xE7\xE3o parecida; escala_alocacoes = data + colaborador_id + local_id; demandas = cliente_id + t\xEDtulo parecido entre as n\xE3o arquivadas. Use forcar=true para criar mesmo assim. M\xE1x 50 linhas por chamada. Escreve com o token do usu\xE1rio (RLS ativa).",
   inputSchema: {
-    tabela: z9.enum(TABELAS).describe("Tabela alvo. Aceita apenas: " + TABELAS.join(", ")),
-    linhas: z9.array(z9.record(z9.string(), z9.unknown())).min(1).max(50).describe("Array de objetos (m\xE1x 50)."),
-    forcar: z9.boolean().optional().describe(
+    tabela: z10.enum(TABELAS).describe("Tabela alvo. Aceita apenas: " + TABELAS.join(", ")),
+    linhas: z10.array(z10.record(z10.string(), z10.unknown())).min(1).max(50).describe("Array de objetos (m\xE1x 50)."),
+    forcar: z10.boolean().optional().describe(
       "Se true, cria mesmo quando houver poss\xEDvel duplicado ou visita repetida."
     )
   },
@@ -1050,9 +1159,9 @@ var criar_registros_default = defineTool10({
     openWorldHint: false
   },
   handler: async ({ tabela, linhas, forcar }, ctx) => {
-    const unauth = await requireAuth(ctx);
+    const unauth = await requireAuth2(ctx);
     if (unauth) return unauth;
-    const supabase = supabaseForUser(ctx);
+    const supabase = supabaseForUser2(ctx);
     const userId = ctx.getUserId();
     const tbl = tabela;
     const regrasOperacao = CAMPOS_OPERACAO[tbl];
@@ -1282,9 +1391,21 @@ function diffPreview(existente, nova) {
   return diff;
 }
 
+// src/lib/mcp/tools/criar-registros.ts
+var criar_registros_default = defineTool10({
+  name: operation6.name,
+  title: operation6.title,
+  description: operation6.description,
+  inputSchema: operation6.inputSchema,
+  annotations: operation6.annotations,
+  handler: async (input, context) => operationResult(await operation6.execute(input, operationContext(context)))
+});
+
 // src/lib/mcp/tools/atualizar-registro.ts
 import { defineTool as defineTool11 } from "npm:@lovable.dev/mcp-js@0.24.0";
-import { z as z10 } from "npm:zod@^4.4.3";
+
+// supabase/functions/_shared/operations/atualizar-registro.ts
+import { z as z11 } from "npm:zod@4.4.3";
 var TABELAS2 = [
   "clientes",
   "locais_cliente",
@@ -1384,20 +1505,20 @@ var CAMPOS_BLOQUEADOS = {
     projeto_id: "mover um registro de projeto por engano \xE9 pior que apagar e refazer. Crie um novo registro no projeto certo e cancele este."
   }
 };
-var atualizar_registro_default = defineTool11({
+var operation7 = defineOperation({
   name: "atualizar_registro",
   title: "Atualizar registro por id",
   description: "Atualiza UMA linha por id em tabelas de cadastro e da opera\xE7\xE3o de campo (whitelist), com campos restritos por tabela. Use modo='acrescentar' para somar texto ao que j\xE1 existe (separado por ' | ') em vez de sobrescrever. Toda mudan\xE7a de status \xE9 gravada em audit_status_changes com metadata padronizado (motivo, quem_executou, observacao). Escreve com o token do usu\xE1rio (RLS ativa). Retorna antes \u2192 depois.",
   inputSchema: {
-    tabela: z10.enum(TABELAS2).describe("Tabela alvo. Aceita: " + TABELAS2.join(", ")),
-    id: z10.string().uuid().describe("UUID da linha."),
-    campos: z10.record(z10.string(), z10.unknown()).describe("Campos a atualizar (objeto). N\xE3o passe id."),
-    modo: z10.enum(["substituir", "acrescentar"]).optional().describe(
+    tabela: z11.enum(TABELAS2).describe("Tabela alvo. Aceita: " + TABELAS2.join(", ")),
+    id: z11.string().uuid().describe("UUID da linha."),
+    campos: z11.record(z11.string(), z11.unknown()).describe("Campos a atualizar (objeto). N\xE3o passe id."),
+    modo: z11.enum(["substituir", "acrescentar"]).optional().describe(
       "substituir (padr\xE3o) troca o valor. acrescentar soma o texto novo ao existente, separado por ' | ', nos campos de texto livre."
     ),
-    motivo: z10.string().optional().describe("Por que o status mudou (vai para o hist\xF3rico)."),
-    quem_executou: z10.string().optional().describe("Quem de fato executou (vai para o hist\xF3rico)."),
-    observacao: z10.string().optional().describe("Observa\xE7\xE3o livre sobre a mudan\xE7a (vai para o hist\xF3rico).")
+    motivo: z11.string().optional().describe("Por que o status mudou (vai para o hist\xF3rico)."),
+    quem_executou: z11.string().optional().describe("Quem de fato executou (vai para o hist\xF3rico)."),
+    observacao: z11.string().optional().describe("Observa\xE7\xE3o livre sobre a mudan\xE7a (vai para o hist\xF3rico).")
   },
   annotations: {
     readOnlyHint: false,
@@ -1406,9 +1527,9 @@ var atualizar_registro_default = defineTool11({
     openWorldHint: false
   },
   handler: async ({ tabela, id, campos, modo, motivo, quem_executou, observacao }, ctx) => {
-    const unauth = await requireAuth(ctx);
+    const unauth = await requireAuth2(ctx);
     if (unauth) return unauth;
-    const supabase = supabaseForUser(ctx);
+    const supabase = supabaseForUser2(ctx);
     const userId = ctx.getUserId();
     const tbl = tabela;
     const acrescentar = modo === "acrescentar";
@@ -1606,9 +1727,21 @@ var atualizar_registro_default = defineTool11({
   }
 });
 
+// src/lib/mcp/tools/atualizar-registro.ts
+var atualizar_registro_default = defineTool11({
+  name: operation7.name,
+  title: operation7.title,
+  description: operation7.description,
+  inputSchema: operation7.inputSchema,
+  annotations: operation7.annotations,
+  handler: async (input, context) => operationResult(await operation7.execute(input, operationContext(context)))
+});
+
 // src/lib/mcp/tools/painel-projetos.ts
 import { defineTool as defineTool12 } from "npm:@lovable.dev/mcp-js@0.24.0";
-import { z as z11 } from "npm:zod@^4.4.3";
+
+// supabase/functions/_shared/operations/painel-projetos.ts
+import { z as z12 } from "npm:zod@4.4.3";
 var ORDENACOES = [
   "dias_no_status",
   "proximo_contato_em",
@@ -1621,23 +1754,23 @@ var DIA_MS = 864e5;
 function nomesPorId(rows) {
   return new Map((rows ?? []).map((r) => [r.id, r.nome ?? ""]));
 }
-var painel_projetos_default = defineTool12({
+var operation8 = defineOperation({
   name: "painel_projetos",
   title: "Painel de projetos",
   description: "Vista de acompanhamento da gest\xE3o: projetos n\xE3o conclu\xEDdos e n\xE3o cancelados, com cliente, local, respons\xE1veis, datas, dias_no_status (desde a \xFAltima mudan\xE7a de status registrada, ou desde a cria\xE7\xE3o) e demandas_abertas. Para manuten\xE7\xE3o (contrato recorrente), devolve ultima_visita e dias_desde_ultima_visita no lugar de dias_no_status. Para quem n\xE3o tem papel de gest\xE3o (admin, administrativo, gestor, diretor), valor_total n\xE3o \xE9 devolvido.",
   inputSchema: {
-    tipo: z11.string().optional(),
-    status: z11.string().optional(),
-    cliente_id: z11.string().uuid().optional(),
-    responsavel_id: z11.string().uuid().optional(),
-    ordenar_por: z11.enum(ORDENACOES).optional().describe("Padr\xE3o: dias_no_status (decrescente). Datas ordenam da mais pr\xF3xima para a mais distante."),
-    limite: z11.number().int().min(1).max(200).optional().describe("Padr\xE3o 50.")
+    tipo: z12.string().optional(),
+    status: z12.string().optional(),
+    cliente_id: z12.string().uuid().optional(),
+    responsavel_id: z12.string().uuid().optional(),
+    ordenar_por: z12.enum(ORDENACOES).optional().describe("Padr\xE3o: dias_no_status (decrescente). Datas ordenam da mais pr\xF3xima para a mais distante."),
+    limite: z12.number().int().min(1).max(200).optional().describe("Padr\xE3o 50.")
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ tipo, status, cliente_id, responsavel_id, ordenar_por, limite }, ctx) => {
-    const unauth = await requireAuth(ctx);
+    const unauth = await requireAuth2(ctx);
     if (unauth) return unauth;
-    const supabase = supabaseForUser(ctx);
+    const supabase = supabaseForUser2(ctx);
     const restrito = await acessoRestrito(supabase, ctx.getUserId());
     let q = supabase.from("projetos").select(
       "id,titulo,tipo,status,substatus,temperatura,cliente_id,local_id,responsavel_id,lider_responsavel_id,proximo_contato_em,data_prometida_cliente,data_alvo_interna,valor_total,created_at"
@@ -1740,6 +1873,16 @@ var painel_projetos_default = defineTool12({
       structuredContent: { count: resultado.length, total_em_aberto: linhas.length, projetos: resultado }
     };
   }
+});
+
+// src/lib/mcp/tools/painel-projetos.ts
+var painel_projetos_default = defineTool12({
+  name: operation8.name,
+  title: operation8.title,
+  description: operation8.description,
+  inputSchema: operation8.inputSchema,
+  annotations: operation8.annotations,
+  handler: async (input, context) => operationResult(await operation8.execute(input, operationContext(context)))
 });
 
 // src/lib/mcp/index.ts
