@@ -1,7 +1,7 @@
 // Helper: build a per-request Supabase client that acts as the OAuth user.
 // This module is bundled by the MCP Vite plugin into a Deno edge function.
 // Read env lazily inside the function — never at module top level (extractor eval).
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.90.1";
 import type { ToolContext } from "@lovable.dev/mcp-js";
 import { accessDenial } from "../../../supabase/functions/_shared/access-policy";
 

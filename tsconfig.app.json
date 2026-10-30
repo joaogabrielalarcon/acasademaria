@@ -17,6 +17,8 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "paths": {
+      "npm:zod@4.4.3": ["./node_modules/zod"],
+      "npm:@supabase/supabase-js@2.90.1": ["./node_modules/@supabase/supabase-js"],
       "@/*": [
         "./src/*"
       ]
