@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
 import { useAuth, useProfile, useUserRoles } from "@/hooks/useAuth";
+import { confirmMafeProposal } from "@/services/mfm-operations";
 
 interface Message {
   role: "user" | "assistant";
@@ -76,6 +77,8 @@ export function MafeChat() {
     { role: "assistant", content: MAFE_INTRO },
   ]);
   const [input, setInput] = useState("");
+  const [proposals, setProposals] = useState<Array<{ operation: string; input: unknown; approval: string }>>([]);
+  const [isConfirming, setIsConfirming] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -222,6 +225,7 @@ export function MafeChat() {
 
   const sendToMafe = async (allMessages: Message[], route?: string, page?: string) => {
     setIsLoading(true);
+    setProposals([]);
     let assistantSoFar = "";
 
     try {
@@ -264,6 +268,8 @@ export function MafeChat() {
           if (jsonStr === "[DONE]") break;
           try {
             const parsed = JSON.parse(jsonStr);
+            if (parsed.proposals) setProposals(parsed.proposals);
+            if (parsed.error) toast({ title: "Erro na Mafe", description: parsed.error, variant: "destructive" });
             const content = parsed.delta;
             if (content) {
               assistantSoFar += content;
@@ -478,6 +484,24 @@ export function MafeChat() {
             </div>
           )}
           <div ref={messagesEndRef} />
+          {proposals.map((proposal, index) => (
+            <div key={proposal.approval} className="space-y-2 border-t border-border pt-3">
+              <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words text-xs font-sans">{JSON.stringify(proposal.input, null, 2)}</pre>
+              <div className="flex gap-2">
+                <Button disabled={isConfirming} onClick={async () => {
+                  setIsConfirming(true);
+                  try {
+                    const result = await confirmMafeProposal(proposal.approval);
+                    setProposals((current) => current.filter((_, i) => i !== index));
+                    setMessages((current) => [...current, { role: "assistant", content: result.content?.[0]?.text || "Registro salvo." }]);
+                    toast({ title: "Registro salvo" });
+                  } catch (error) { toast({ title: "Não foi possível gravar", description: error instanceof Error ? error.message : "Tente novamente.", variant: "destructive" }); }
+                  finally { setIsConfirming(false); }
+                }}>Confirmar gravação</Button>
+                <Button variant="outline" disabled={isConfirming} onClick={() => setProposals((current) => current.filter((_, i) => i !== index))}>Cancelar</Button>
+              </div>
+            </div>
+          ))}
         </div>
 
         <div className="border-t border-border px-3 py-2 shrink-0">
