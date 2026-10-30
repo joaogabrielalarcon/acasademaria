@@ -7,9 +7,13 @@ import {
   validarValoresRegistro,
   validarCamposExtras,
   TEM_AUTORIA,
+  acessoRestrito, colunaCortada, nomeDoUsuario,
 } from "./validation.ts";
 
+import { ADMIN_CREATE, validateAdministrative, financialOperation } from "./administrative.ts";
+
 const TABELAS = [
+  ...Object.keys(ADMIN_CREATE) as Array<keyof typeof ADMIN_CREATE>,
   "clientes",
   "locais_cliente",
   "colaboradores",
@@ -54,6 +58,7 @@ const DEDUP_CAT: Partial<Record<Tabela, "planta" | "insumo">> = {
 const CAMPOS_OPERACAO: Partial<
   Record<Tabela, { permitidos: string[]; obrigatorios: string[] }>
 > = {
+  ...ADMIN_CREATE,
   projetos: {
     obrigatorios: ["cliente_id", "titulo", "tipo", "status"],
     permitidos: [
@@ -209,6 +214,10 @@ export const operation = defineOperation({
     const userId = ctx.getUserId();
 
     const tbl = tabela as Tabela;
+    const restricted = await acessoRestrito(supabase, userId);
+    if (restricted && financialOperation(tbl)) return { content: [{ type: "text", text: "Esse dado não está no seu acesso." }], isError: true };
+    if (restricted && linhas.some((row) => Object.keys(row).some((key) => colunaCortada(tbl, key)))) return { content: [{ type: "text", text: "Esse valor não está no seu acesso." }], isError: true };
+
     const regrasOperacao = CAMPOS_OPERACAO[tbl];
     const ehOperacao = Boolean(regrasOperacao);
     const dedupTipo = ehOperacao ? undefined : DEDUP_CAT[tbl];
@@ -350,6 +359,21 @@ export const operation = defineOperation({
         }
 
 
+        const administrativeError = validateAdministrative(tbl, payload);
+        if (administrativeError) { resultados.push({ indice: i, status: "erro", motivo: administrativeError }); continue; }
+        if (tbl === "solicitacoes_compras") {
+          payload.solicitante_id = userId;
+          payload.solicitante_nome = await nomeDoUsuario(supabase, userId);
+        }
+        if (tbl === "calendario_eventos") payload.created_by = userId;
+        if (!forcar && tbl === "calendario_eventos") {
+          let query = supabase.from(tbl).select("id").eq("tipo", payload.tipo as string).eq("data", payload.data as string);
+          for (const key of ["colaborador_id", "cliente_id"]) query = payload[key] ? query.eq(key, payload[key] as string) : query.is(key, null);
+          if (!payload.colaborador_id && !payload.cliente_id) query = query.eq("titulo", payload.titulo as string);
+          const existing = await query.limit(1).maybeSingle();
+          if (existing.error) throw existing.error;
+          if (existing.data) { resultados.push({ indice: i, status: "pulada", id: existing.data.id, motivo: "Evento já existe para tipo, data e vínculo." }); continue; }
+        }
         // Idempotência por chave natural
         if (!forcar && tbl === "diarias") {
           const { data: existente } = await supabase

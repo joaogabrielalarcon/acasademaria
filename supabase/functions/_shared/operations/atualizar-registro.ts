@@ -20,7 +20,10 @@ import {
 
 } from "./validation.ts";
 
+import { ADMIN_UPDATE, validateAdministrative, financialOperation } from "./administrative.ts";
+
 const TABELAS = [
+  ...Object.keys(ADMIN_UPDATE) as Array<keyof typeof ADMIN_UPDATE>,
   "clientes",
   "locais_cliente",
   "colaboradores",
@@ -43,6 +46,7 @@ type Tabela = (typeof TABELAS)[number];
 
 /** Tabelas com atualização restrita: só estes campos podem ser corrigidos. */
 const CAMPOS_UPDATE: Partial<Record<Tabela, string[]>> = {
+  ...ADMIN_UPDATE,
   projetos: [
     "tipo",
     "status",
@@ -178,6 +182,13 @@ export const operation = defineOperation({
     const userId = ctx.getUserId();
 
     const tbl = tabela as Tabela;
+    if (await acessoRestrito(supabase, userId)) {
+      if (financialOperation(tbl)) return { content: [{ type: "text", text: "Esse dado não está no seu acesso." }], isError: true };
+    }
+    const administrativeError = validateAdministrative(tbl, campos);
+    if (administrativeError) return { content: [{ type: "text", text: administrativeError }], isError: true };
+    if (tbl === "financeiro_parcelas" && campos.status !== undefined && !motivo?.trim()) return { content: [{ type: "text", text: "Motivo obrigatório para mudança de status financeiro." }], isError: true };
+
     const acrescentar = modo === "acrescentar";
     const entries = Object.entries(campos as Record<string, unknown>).filter(
       ([k]) => k !== "id" && k !== "created_by" && k !== "updated_by",

@@ -989,8 +989,67 @@ var list_storage_default = defineTool9({
 import { defineTool as defineTool10 } from "npm:@lovable.dev/mcp-js@0.24.0";
 
 // supabase/functions/_shared/operations/criar-registros.ts
+import { z as z11 } from "npm:zod@4.4.3";
+
+// supabase/functions/_shared/operations/administrative.ts
 import { z as z10 } from "npm:zod@4.4.3";
+var ADMIN_CREATE = {
+  calendario_eventos: { obrigatorios: ["tipo", "data", "titulo"], permitidos: ["tipo", "data", "titulo", "descricao", "recorrente", "colaborador_id", "cliente_id", "projeto_id", "responsavel_id", "concluido", "observacoes"] },
+  entregas_colaborador: { obrigatorios: ["colaborador_id", "insumo_id", "quantidade"], permitidos: ["colaborador_id", "insumo_id", "quantidade", "data_entrega", "observacao"] },
+  condominios: { obrigatorios: ["nome"], permitidos: ["nome", "regras_internas", "contatos", "responsaveis_areas", "horario_entrada", "horario_saida", "observacoes", "ativo"] },
+  colaborador_liberacoes: { obrigatorios: ["colaborador_id", "condominio_id"], permitidos: ["colaborador_id", "condominio_id", "data_emissao", "data_validade", "status", "documento_path", "observacoes"] },
+  financeiro_parcelas: { obrigatorios: ["projeto_id", "cliente_id", "valor"], permitidos: ["projeto_id", "cliente_id", "numero_parcela", "valor", "data_vencimento", "tipo", "status", "data_pagamento", "valor_recebido", "numero_nf", "data_nf", "forma_pagamento", "observacoes"] },
+  financeiro_movimentacoes: { obrigatorios: ["tipo", "categoria", "descricao", "valor"], permitidos: ["tipo", "categoria", "descricao", "valor", "data_movimentacao", "fornecedor_id", "estoque_movimentacao_id", "registrado_por_nome"] },
+  solicitacoes_compras: { obrigatorios: ["motivo"], permitidos: ["motivo", "link_ou_contato", "valor_estimado", "condicao_pagamento", "urgencia", "data_solicitacao", "observacoes"] }
+};
+var ADMIN_UPDATE = {
+  calendario_eventos: ADMIN_CREATE.calendario_eventos.permitidos,
+  condominios: ADMIN_CREATE.condominios.permitidos,
+  colaborador_liberacoes: ADMIN_CREATE.colaborador_liberacoes.permitidos,
+  financeiro_parcelas: ["status", "data_pagamento", "valor_recebido", "numero_nf", "data_nf", "forma_pagamento", "observacoes"],
+  solicitacoes_compras: ["status"]
+};
+var CHECKS = {
+  colaborador_liberacoes: { status: ["ativa", "vencida", "em_renovacao", "cancelada"] },
+  colaboradores: { tipo_cnh: ["A", "B", "AB", "C", "D", "E"], tipo_conducao: ["Carro", "Moto", "Ambos"], tipo_vinculo: ["interno", "terceiro"] },
+  financeiro_movimentacoes: { tipo: ["entrada", "saida"] },
+  solicitacoes_compras: { status: ["pendente", "aprovada", "recusada", "comprada"], urgencia: ["baixa", "media", "alta", "urgente"] },
+  // Existing A Receber vocabulary, not a new database CHECK.
+  financeiro_parcelas: { status: ["pendente", "pago", "vencido", "cancelado"] }
+};
+var uuid = z10.string().uuid();
+var date = z10.string().refine((value) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = /* @__PURE__ */ new Date(value + "T00:00:00Z");
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}, "Data inv\xE1lida; use AAAA-MM-DD.");
+var booleanFields = /* @__PURE__ */ new Set(["concluido", "recorrente", "ativo", "possui_cnh", "possui_conducao"]);
+var dateFields = /* @__PURE__ */ new Set(["data", "data_entrega", "data_emissao", "data_validade", "data_vencimento", "data_pagamento", "data_nf", "data_admissao", "data_nascimento", "cnh_validade", "data_solicitacao"]);
+var numberFields = /* @__PURE__ */ new Set(["valor", "valor_recebido", "valor_estimado", "quantidade", "numero_parcela"]);
+function validateAdministrative(table, input) {
+  for (const [key, value] of Object.entries(input)) {
+    if (value === null || value === void 0) continue;
+    const allowed = CHECKS[table]?.[key];
+    if (allowed && (typeof value !== "string" || !allowed.includes(value))) return `${table}.${key}: aceitos ${allowed.join(", ")}.`;
+    if (key.endsWith("_id") && !uuid.safeParse(value).success) return `${key} precisa de UUID v\xE1lido.`;
+    if (dateFields.has(key) && !date.safeParse(value).success) return `${key} precisa de uma data v\xE1lida AAAA-MM-DD.`;
+    if (booleanFields.has(key) && typeof value !== "boolean") return `${key} precisa ser verdadeiro ou falso.`;
+    if (numberFields.has(key)) {
+      if (typeof value !== "number" || !Number.isFinite(value) || value < 0) return `${key} precisa ser um n\xFAmero n\xE3o negativo.`;
+      if ((key === "quantidade" || key === "numero_parcela" || table === "financeiro_movimentacoes" && key === "valor") && value <= 0) return `${key} precisa ser maior que zero.`;
+      if (key === "numero_parcela" && !Number.isInteger(value)) return "numero_parcela precisa ser inteiro.";
+    }
+    if (["contatos", "responsaveis_areas"].includes(key) && !Array.isArray(value)) return `${key} precisa ser uma lista.`;
+  }
+  return null;
+}
+function financialOperation(table) {
+  return table.startsWith("financeiro_");
+}
+
+// supabase/functions/_shared/operations/criar-registros.ts
 var TABELAS = [
+  ...Object.keys(ADMIN_CREATE),
   "clientes",
   "locais_cliente",
   "colaboradores",
@@ -1027,6 +1086,7 @@ var DEDUP_CAT = {
   insumos: "insumo"
 };
 var CAMPOS_OPERACAO = {
+  ...ADMIN_CREATE,
   projetos: {
     obrigatorios: ["cliente_id", "titulo", "tipo", "status"],
     permitidos: [
@@ -1146,9 +1206,9 @@ var operation6 = defineOperation({
   title: "Criar registros em lote",
   description: "Cria linhas em lote em tabelas de cadastro e da opera\xE7\xE3o de campo (whitelist). Cadastro (plantas, insumos, fornecedores) roda deduplica\xE7\xE3o por nome. Opera\xE7\xE3o (projetos, registros, diarias, escala_alocacoes, registro_insumos, registro_maquinas, demandas, demanda_responsaveis) roda valida\xE7\xE3o de campos/valores e prote\xE7\xE3o contra grava\xE7\xE3o repetida por chave natural: diarias = cliente_id + data_visita; registros = cliente_id + data_servico + tipo + descri\xE7\xE3o parecida; escala_alocacoes = data + colaborador_id + local_id; demandas = cliente_id + t\xEDtulo parecido entre as n\xE3o arquivadas. Use forcar=true para criar mesmo assim. M\xE1x 50 linhas por chamada. Escreve com o token do usu\xE1rio (RLS ativa).",
   inputSchema: {
-    tabela: z10.enum(TABELAS).describe("Tabela alvo. Aceita apenas: " + TABELAS.join(", ")),
-    linhas: z10.array(z10.record(z10.string(), z10.unknown())).min(1).max(50).describe("Array de objetos (m\xE1x 50)."),
-    forcar: z10.boolean().optional().describe(
+    tabela: z11.enum(TABELAS).describe("Tabela alvo. Aceita apenas: " + TABELAS.join(", ")),
+    linhas: z11.array(z11.record(z11.string(), z11.unknown())).min(1).max(50).describe("Array de objetos (m\xE1x 50)."),
+    forcar: z11.boolean().optional().describe(
       "Se true, cria mesmo quando houver poss\xEDvel duplicado ou visita repetida."
     )
   },
@@ -1164,6 +1224,9 @@ var operation6 = defineOperation({
     const supabase = supabaseForUser2(ctx);
     const userId = ctx.getUserId();
     const tbl = tabela;
+    const restricted = await acessoRestrito(supabase, userId);
+    if (restricted && financialOperation(tbl)) return { content: [{ type: "text", text: "Esse dado n\xE3o est\xE1 no seu acesso." }], isError: true };
+    if (restricted && linhas.some((row) => Object.keys(row).some((key) => colunaCortada(tbl, key)))) return { content: [{ type: "text", text: "Esse valor n\xE3o est\xE1 no seu acesso." }], isError: true };
     const regrasOperacao = CAMPOS_OPERACAO[tbl];
     const ehOperacao = Boolean(regrasOperacao);
     const dedupTipo = ehOperacao ? void 0 : DEDUP_CAT[tbl];
@@ -1258,6 +1321,27 @@ var operation6 = defineOperation({
               status: "erro",
               motivo: "escala_alocacoes precisa de projeto_id ou local_id. Informe pelo menos um dos dois para dizer onde a pessoa vai trabalhar."
             });
+            continue;
+          }
+        }
+        const administrativeError = validateAdministrative(tbl, payload);
+        if (administrativeError) {
+          resultados.push({ indice: i, status: "erro", motivo: administrativeError });
+          continue;
+        }
+        if (tbl === "solicitacoes_compras") {
+          payload.solicitante_id = userId;
+          payload.solicitante_nome = await nomeDoUsuario(supabase, userId);
+        }
+        if (tbl === "calendario_eventos") payload.created_by = userId;
+        if (!forcar && tbl === "calendario_eventos") {
+          let query = supabase.from(tbl).select("id").eq("tipo", payload.tipo).eq("data", payload.data);
+          for (const key of ["colaborador_id", "cliente_id"]) query = payload[key] ? query.eq(key, payload[key]) : query.is(key, null);
+          if (!payload.colaborador_id && !payload.cliente_id) query = query.eq("titulo", payload.titulo);
+          const existing = await query.limit(1).maybeSingle();
+          if (existing.error) throw existing.error;
+          if (existing.data) {
+            resultados.push({ indice: i, status: "pulada", id: existing.data.id, motivo: "Evento j\xE1 existe para tipo, data e v\xEDnculo." });
             continue;
           }
         }
@@ -1405,8 +1489,9 @@ var criar_registros_default = defineTool10({
 import { defineTool as defineTool11 } from "npm:@lovable.dev/mcp-js@0.24.0";
 
 // supabase/functions/_shared/operations/atualizar-registro.ts
-import { z as z11 } from "npm:zod@4.4.3";
+import { z as z12 } from "npm:zod@4.4.3";
 var TABELAS2 = [
+  ...Object.keys(ADMIN_UPDATE),
   "clientes",
   "locais_cliente",
   "colaboradores",
@@ -1426,6 +1511,7 @@ var TABELAS2 = [
   "demandas"
 ];
 var CAMPOS_UPDATE = {
+  ...ADMIN_UPDATE,
   projetos: [
     "tipo",
     "status",
@@ -1510,15 +1596,15 @@ var operation7 = defineOperation({
   title: "Atualizar registro por id",
   description: "Atualiza UMA linha por id em tabelas de cadastro e da opera\xE7\xE3o de campo (whitelist), com campos restritos por tabela. Use modo='acrescentar' para somar texto ao que j\xE1 existe (separado por ' | ') em vez de sobrescrever. Toda mudan\xE7a de status \xE9 gravada em audit_status_changes com metadata padronizado (motivo, quem_executou, observacao). Escreve com o token do usu\xE1rio (RLS ativa). Retorna antes \u2192 depois.",
   inputSchema: {
-    tabela: z11.enum(TABELAS2).describe("Tabela alvo. Aceita: " + TABELAS2.join(", ")),
-    id: z11.string().uuid().describe("UUID da linha."),
-    campos: z11.record(z11.string(), z11.unknown()).describe("Campos a atualizar (objeto). N\xE3o passe id."),
-    modo: z11.enum(["substituir", "acrescentar"]).optional().describe(
+    tabela: z12.enum(TABELAS2).describe("Tabela alvo. Aceita: " + TABELAS2.join(", ")),
+    id: z12.string().uuid().describe("UUID da linha."),
+    campos: z12.record(z12.string(), z12.unknown()).describe("Campos a atualizar (objeto). N\xE3o passe id."),
+    modo: z12.enum(["substituir", "acrescentar"]).optional().describe(
       "substituir (padr\xE3o) troca o valor. acrescentar soma o texto novo ao existente, separado por ' | ', nos campos de texto livre."
     ),
-    motivo: z11.string().optional().describe("Por que o status mudou (vai para o hist\xF3rico)."),
-    quem_executou: z11.string().optional().describe("Quem de fato executou (vai para o hist\xF3rico)."),
-    observacao: z11.string().optional().describe("Observa\xE7\xE3o livre sobre a mudan\xE7a (vai para o hist\xF3rico).")
+    motivo: z12.string().optional().describe("Por que o status mudou (vai para o hist\xF3rico)."),
+    quem_executou: z12.string().optional().describe("Quem de fato executou (vai para o hist\xF3rico)."),
+    observacao: z12.string().optional().describe("Observa\xE7\xE3o livre sobre a mudan\xE7a (vai para o hist\xF3rico).")
   },
   annotations: {
     readOnlyHint: false,
@@ -1532,6 +1618,12 @@ var operation7 = defineOperation({
     const supabase = supabaseForUser2(ctx);
     const userId = ctx.getUserId();
     const tbl = tabela;
+    if (await acessoRestrito(supabase, userId)) {
+      if (financialOperation(tbl)) return { content: [{ type: "text", text: "Esse dado n\xE3o est\xE1 no seu acesso." }], isError: true };
+    }
+    const administrativeError = validateAdministrative(tbl, campos);
+    if (administrativeError) return { content: [{ type: "text", text: administrativeError }], isError: true };
+    if (tbl === "financeiro_parcelas" && campos.status !== void 0 && !motivo?.trim()) return { content: [{ type: "text", text: "Motivo obrigat\xF3rio para mudan\xE7a de status financeiro." }], isError: true };
     const acrescentar = modo === "acrescentar";
     const entries = Object.entries(campos).filter(
       ([k]) => k !== "id" && k !== "created_by" && k !== "updated_by"
@@ -1741,7 +1833,7 @@ var atualizar_registro_default = defineTool11({
 import { defineTool as defineTool12 } from "npm:@lovable.dev/mcp-js@0.24.0";
 
 // supabase/functions/_shared/operations/painel-projetos.ts
-import { z as z12 } from "npm:zod@4.4.3";
+import { z as z13 } from "npm:zod@4.4.3";
 var ORDENACOES = [
   "dias_no_status",
   "proximo_contato_em",
@@ -1759,12 +1851,12 @@ var operation8 = defineOperation({
   title: "Painel de projetos",
   description: "Vista de acompanhamento da gest\xE3o: projetos n\xE3o conclu\xEDdos e n\xE3o cancelados, com cliente, local, respons\xE1veis, datas, dias_no_status (desde a \xFAltima mudan\xE7a de status registrada, ou desde a cria\xE7\xE3o) e demandas_abertas. Para manuten\xE7\xE3o (contrato recorrente), devolve ultima_visita e dias_desde_ultima_visita no lugar de dias_no_status. Para quem n\xE3o tem papel de gest\xE3o (admin, administrativo, gestor, diretor), valor_total n\xE3o \xE9 devolvido.",
   inputSchema: {
-    tipo: z12.string().optional(),
-    status: z12.string().optional(),
-    cliente_id: z12.string().uuid().optional(),
-    responsavel_id: z12.string().uuid().optional(),
-    ordenar_por: z12.enum(ORDENACOES).optional().describe("Padr\xE3o: dias_no_status (decrescente). Datas ordenam da mais pr\xF3xima para a mais distante."),
-    limite: z12.number().int().min(1).max(200).optional().describe("Padr\xE3o 50.")
+    tipo: z13.string().optional(),
+    status: z13.string().optional(),
+    cliente_id: z13.string().uuid().optional(),
+    responsavel_id: z13.string().uuid().optional(),
+    ordenar_por: z13.enum(ORDENACOES).optional().describe("Padr\xE3o: dias_no_status (decrescente). Datas ordenam da mais pr\xF3xima para a mais distante."),
+    limite: z13.number().int().min(1).max(200).optional().describe("Padr\xE3o 50.")
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ tipo, status, cliente_id, responsavel_id, ordenar_por, limite }, ctx) => {
