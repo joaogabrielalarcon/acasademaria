@@ -9,7 +9,7 @@ import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@0.24.0";
 import { defineTool } from "npm:@lovable.dev/mcp-js@0.24.0";
 
 // src/lib/mcp/_supabase.ts
-import { createClient } from "npm:@supabase/supabase-js@^2.90.1";
+import { createClient } from "npm:@supabase/supabase-js@2.90.1";
 
 // supabase/functions/_shared/access-policy.ts
 var MSG_TROCAR_SENHA = "Troque sua senha no primeiro acesso em acasademaria.lovable.app antes de usar o conector.";
@@ -1977,13 +1977,96 @@ var painel_projetos_default = defineTool12({
   handler: async (input, context) => operationResult(await operation8.execute(input, operationContext(context)))
 });
 
+// src/lib/mcp/tools/painel-vencimentos.ts
+import { defineTool as defineTool13 } from "npm:@lovable.dev/mcp-js@0.24.0";
+
+// supabase/functions/_shared/operations/painel-vencimentos.ts
+import { z as z14 } from "npm:zod@4.4.3";
+function todayInSaoPaulo(now = /* @__PURE__ */ new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(now);
+  const part = (name) => parts.find((p) => p.type === name)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+function daysBetween(today, date2) {
+  return Math.round((Date.parse(date2 + "T00:00:00Z") - Date.parse(today + "T00:00:00Z")) / 864e5);
+}
+function dueWindow(days = 30, now = /* @__PURE__ */ new Date()) {
+  const today = todayInSaoPaulo(now);
+  const end = /* @__PURE__ */ new Date(today + "T00:00:00Z");
+  end.setUTCDate(end.getUTCDate() + days);
+  return { today, end: end.toISOString().slice(0, 10) };
+}
+async function names(context, table, ids) {
+  if (!ids.length) return /* @__PURE__ */ new Map();
+  const response = await context.db.from(table).select("id,nome").in("id", [...new Set(ids)]);
+  if (response.error) throw response.error;
+  return new Map((response.data ?? []).map((row) => [String(row.id), String(row.nome)]));
+}
+var operation9 = defineOperation({
+  name: "painel_vencimentos",
+  title: "Painel de vencimentos",
+  description: "Eventos n\xE3o conclu\xEDdos nos pr\xF3ximos dias (padr\xE3o 30), com pessoa, cliente e respons\xE1vel. Somente admin, administrativo, gestor e diretor recebem tamb\xE9m parcelas n\xE3o pagas pr\xF3ximas e atrasadas. Respeita RLS; n\xE3o amplia acesso ao calend\xE1rio.",
+  inputSchema: { tipo: z14.string().optional(), responsavel_id: z14.string().uuid().optional(), dias: z14.number().int().min(1).max(366).optional(), offset: z14.number().int().min(0).optional(), limite: z14.number().int().min(1).max(100).optional() },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ tipo, responsavel_id, dias, offset, limite }, context) => {
+    const denial = await requireAuth2(context);
+    if (denial) return denial;
+    const restricted = await acessoRestrito(context.db, context.userId);
+    const window = dueWindow(dias ?? 30);
+    const off = offset ?? 0, limit = limite ?? 100;
+    let query = context.db.from("calendario_eventos").select("id,tipo,data,titulo,colaborador_id,cliente_id,projeto_id,responsavel_id", { count: "exact" }).eq("concluido", false).gte("data", window.today).lte("data", window.end).order("data").order("id").range(off, off + limit - 1);
+    if (tipo) query = query.eq("tipo", tipo);
+    if (responsavel_id) query = query.eq("responsavel_id", responsavel_id);
+    const events = await query;
+    if (events.error) return failure(events.error.message);
+    const rows = events.data ?? [];
+    const [people, clients] = await Promise.all([
+      names(context, "colaboradores_basico", rows.flatMap((row) => [row.colaborador_id, row.responsavel_id]).filter((id) => typeof id === "string")),
+      names(context, "clientes", rows.map((row) => row.cliente_id).filter((id) => typeof id === "string"))
+    ]);
+    const payload = {
+      dias: dias ?? 30,
+      offset: off,
+      limite: limit,
+      total_eventos: events.count ?? rows.length,
+      eventos: rows.map((row) => ({ ...row, dias_para_vencer: daysBetween(window.today, row.data), pessoa: people.get(row.colaborador_id) ?? null, cliente: clients.get(row.cliente_id) ?? null, responsavel: people.get(row.responsavel_id) ?? null }))
+    };
+    if (!restricted) {
+      let financial = context.db.from("financeiro_parcelas").select("id,projeto_id,cliente_id,numero_parcela,valor,status,data_vencimento", { count: "exact" }).not("status", "in", "(pago,cancelado)").lte("data_vencimento", window.end).order("data_vencimento").order("id").range(off, off + limit - 1);
+      if (responsavel_id) {
+        const projects = await context.db.from("projetos").select("id").eq("responsavel_id", responsavel_id);
+        if (projects.error) return failure(projects.error.message);
+        financial = financial.in("projeto_id", (projects.data ?? []).map((row) => row.id));
+      }
+      const result = await financial;
+      if (result.error) return failure(result.error.message);
+      payload.total_parcelas = result.count ?? 0;
+      payload.financeiro_parcelas = (result.data ?? []).map((row) => ({ ...row, dias_para_vencer: daysBetween(window.today, row.data_vencimento), atrasada: row.data_vencimento < window.today }));
+    }
+    return { content: [{ type: "text", text: JSON.stringify(payload) }], structuredContent: payload };
+  }
+});
+
+// src/lib/mcp/tools/painel-vencimentos.ts
+var painel_vencimentos_default = defineTool13({
+  name: operation9.name,
+  title: operation9.title,
+  description: operation9.description,
+  inputSchema: operation9.inputSchema,
+  annotations: operation9.annotations,
+  handler: async (input, context) => operationResult(await operation9.execute(input, operationContext(context)))
+});
+
+// supabase/functions/_shared/operations/registry.ts
+var CONVERSATION_RULES = `A pessoa relata e voc\xEA classifica. Mostre exatamente o que pretende gravar e aguarde confirma\xE7\xE3o humana antes de gravar. Nunca pe\xE7a escolha de campo, tipo ou status. Fa\xE7a no m\xE1ximo duas perguntas por registro. N\xE3o invente v\xEDnculos, nomes, datas ou valores. Resolva refer\xEAncias consultando os registros vis\xEDveis; se houver ambiguidade, pergunte. Valores e financeiro s\xE3o exclusivos de admin, administrativo, gestor e diretor, sem exce\xE7\xE3o para papel novo. Dinheiro e NF sempre precisam de confirma\xE7\xE3o humana expl\xEDcita. Use as listas fechadas e campos reais das ferramentas, sem tradu\xE7\xE3o silenciosa. Use modo acrescentar para completar relatos. N\xE3o gere senha, token ou convite. N\xE3o apague dados. Portugu\xEAs do Brasil, sem travess\xE3o. Opera\xE7\xF5es n\xE3o cobertas devem ser informadas, nunca executadas por outro caminho.`;
+
 // src/lib/mcp/index.ts
 var projectRef = "lelteebbziredzfamkzb";
 var mcp_default = defineMcp({
-  name: "mfm-paisagismo-mcp",
-  title: "MFM Paisagismo",
+  name: "mfm",
+  title: "MFM",
   version: "0.1.0",
-  instructions: "Ferramentas do sistema MFM Paisagismo. Permite consultar clientes, projetos e cards do CRM, criar leads, e leitura gen\xE9rica de tabelas/schema/storage para auditoria e arquitetura. Toda opera\xE7\xE3o executa como o usu\xE1rio autenticado e respeita as permiss\xF5es (RLS).",
+  instructions: "Ferramentas MFM para consultas e registros com a identidade da pessoa autenticada e permiss\xF5es RLS. " + CONVERSATION_RULES,
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated"
@@ -2000,7 +2083,8 @@ var mcp_default = defineMcp({
     list_storage_default,
     criar_registros_default,
     atualizar_registro_default,
-    painel_projetos_default
+    painel_projetos_default,
+    painel_vencimentos_default
   ]
 });
 
