@@ -266,39 +266,107 @@ export type Database = {
       }
       calendario_eventos: {
         Row: {
+          cliente_id: string | null
+          colaborador_id: string | null
+          concluido: boolean
           created_at: string
           created_by: string | null
           data: string
           descricao: string | null
           id: string
+          observacoes: string | null
+          projeto_id: string | null
           recorrente: boolean
+          responsavel_id: string | null
           tipo: string
           titulo: string
           updated_at: string
         }
         Insert: {
+          cliente_id?: string | null
+          colaborador_id?: string | null
+          concluido?: boolean
           created_at?: string
           created_by?: string | null
           data: string
           descricao?: string | null
           id?: string
+          observacoes?: string | null
+          projeto_id?: string | null
           recorrente?: boolean
+          responsavel_id?: string | null
           tipo?: string
           titulo: string
           updated_at?: string
         }
         Update: {
+          cliente_id?: string | null
+          colaborador_id?: string | null
+          concluido?: boolean
           created_at?: string
           created_by?: string | null
           data?: string
           descricao?: string | null
           id?: string
+          observacoes?: string | null
+          projeto_id?: string | null
           recorrente?: boolean
+          responsavel_id?: string | null
           tipo?: string
           titulo?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "calendario_eventos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendario_eventos_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendario_eventos_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendario_eventos_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendario_eventos_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos_ultima_visita"
+            referencedColumns: ["projeto_id"]
+          },
+          {
+            foreignKeyName: "calendario_eventos_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendario_eventos_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cargos_mo: {
         Row: {
@@ -2775,8 +2843,12 @@ export type Database = {
         Row: {
           cliente_id: string
           created_at: string
+          data_nf: string | null
+          data_pagamento: string | null
           data_vencimento: string | null
+          forma_pagamento: string | null
           id: string
+          numero_nf: string | null
           numero_parcela: number
           observacoes: string | null
           projeto_id: string
@@ -2785,12 +2857,17 @@ export type Database = {
           tipo: string
           updated_at: string
           valor: number
+          valor_recebido: number | null
         }
         Insert: {
           cliente_id: string
           created_at?: string
+          data_nf?: string | null
+          data_pagamento?: string | null
           data_vencimento?: string | null
+          forma_pagamento?: string | null
           id?: string
+          numero_nf?: string | null
           numero_parcela?: number
           observacoes?: string | null
           projeto_id: string
@@ -2799,12 +2876,17 @@ export type Database = {
           tipo?: string
           updated_at?: string
           valor?: number
+          valor_recebido?: number | null
         }
         Update: {
           cliente_id?: string
           created_at?: string
+          data_nf?: string | null
+          data_pagamento?: string | null
           data_vencimento?: string | null
+          forma_pagamento?: string | null
           id?: string
+          numero_nf?: string | null
           numero_parcela?: number
           observacoes?: string | null
           projeto_id?: string
@@ -2813,6 +2895,7 @@ export type Database = {
           tipo?: string
           updated_at?: string
           valor?: number
+          valor_recebido?: number | null
         }
         Relationships: [
           {

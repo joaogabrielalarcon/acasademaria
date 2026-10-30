@@ -1,5 +1,9 @@
 # Access architecture
 
+- Keep transport-neutral operation handlers under supabase/functions/_shared/operations; MCP and Mafe adapters import the same contracts and caller-scoped rules to prevent validation drift.
+- Resolve pinned npm specifiers through Vite aliases for shared edge modules; Deno uses the same versions directly so neither runtime imports browser-only state.
+- Calendar responsavel_id references colaboradores.id, matching task ownership; financial receipt amounts use numeric(14,2) in reais to preserve the existing ledger unit.
+
 - Account creation, temporary password reset and deactivation use the authenticated admin-usuarios function, never MCP tools, so credentials only reach the requesting admin screen.
 - Share first-access expiry and access decisions in supabase/functions/_shared/access-policy.ts; frontend and MCP import the same pure rules to avoid enforcement drift.
 - Count failed username logins atomically through the server-only record_login_failure function, so concurrent requests cannot overwrite counters.

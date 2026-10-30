@@ -20,6 +20,8 @@ export default defineConfig(({ mode }) => ({
   ].filter(Boolean),
   resolve: {
     alias: {
+      "npm:zod@4.4.3": "zod",
+      "npm:@supabase/supabase-js@2.90.1": "@supabase/supabase-js",
       "@": path.resolve(__dirname, "./src"),
     },
   },

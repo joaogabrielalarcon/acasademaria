@@ -71,6 +71,13 @@
       "when": 1792942718635,
       "tag": "0009_view_ultima_visita_manutencao",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793330157365,
+      "tag": "0010_shared_tools_calendar_receipts",
+      "breakpoints": true
     }
   ]
 }
