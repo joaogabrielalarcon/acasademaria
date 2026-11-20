@@ -3,7 +3,7 @@
 - [x] Conferir estado atual e apresentar plano aprovado.
 - [x] Criar contas/categorias e seed exato, mais A classificar entrada autorizado; teste autenticado confirmou.
 - [ ] Bucket privado criado; completar testes por papel e comprovante.
-- [ ] Migrar movimentações, regras, parcela e auditoria (aguarda decisões de estoque, parcela e pagamento).
+- [ ] Migrações de movimentações, regras, parcela e auditoria aplicadas; completar verificação dos fluxos e compatibilidade.
 - Decisão confirmada: compra sem vencimento permanece no estoque; aguarda prazo antes de gerar movimentação financeira.
 - Decisão confirmada: parcela sem valor positivo ou vencimento permanece no plano, sem movimentação, até completar os dados.
 - Decisão confirmada: valor recebido é espelho automático; pagamento parcial mantém a diferença prevista em aberto.
