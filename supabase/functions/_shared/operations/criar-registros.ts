@@ -11,6 +11,7 @@ import {
 } from "./validation.ts";
 
 import { ADMIN_CREATE, validateAdministrative, financialOperation } from "./administrative.ts";
+import { runCash } from "./caixa.ts";
 
 const TABELAS = [
   ...Object.keys(ADMIN_CREATE) as Array<keyof typeof ADMIN_CREATE>,
@@ -200,6 +201,7 @@ export const operation = defineOperation({
       .describe(
         "Se true, cria mesmo quando houver possível duplicado ou visita repetida.",
       ),
+    confirmado: z.boolean().optional().describe("Somente true após confirmação humana explícita da prévia financeira."),
   },
   annotations: {
     readOnlyHint: false,
@@ -207,7 +209,7 @@ export const operation = defineOperation({
     idempotentHint: false,
     openWorldHint: false,
   },
-  handler: async ({ tabela, linhas, forcar }, ctx) => {
+  handler: async ({ tabela, linhas, forcar,confirmado }, ctx) => {
     const unauth = await requireAuth(ctx);
     if (unauth) return unauth;
     const supabase = supabaseForUser(ctx);
@@ -217,6 +219,12 @@ export const operation = defineOperation({
     const restricted = await acessoRestrito(supabase, userId);
     if (restricted && financialOperation(tbl)) return { content: [{ type: "text", text: "Esse dado não está no seu acesso." }], isError: true };
     if (restricted && linhas.some((row) => Object.keys(row).some((key) => colunaCortada(tbl, key)))) return { content: [{ type: "text", text: "Esse valor não está no seu acesso." }], isError: true };
+    if(tbl==="financeiro_movimentacoes") {
+      if(!ctx.confirmed&&!confirmado)return {content:[{type:"text",text:"Apresente os dados e aguarde confirmação humana antes de gravar dinheiro."}],isError:true};
+      const results=[];
+      for(const row of linhas){const result=await runCash(ctx,row.conta_destino_id?"transferencia":row.meses?"recorrencia":"salvar",row,[],undefined,confirmado);if("isError" in result)return result;results.push(result.structuredContent);}
+      return {content:[{type:"text",text:JSON.stringify(results)}],structuredContent:{resultados:results}};
+    }
 
     const regrasOperacao = CAMPOS_OPERACAO[tbl];
     const ehOperacao = Boolean(regrasOperacao);

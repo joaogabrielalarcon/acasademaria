@@ -8,8 +8,9 @@ import { operation as dashboard } from "./painel-projetos.ts";
 import { operation as schema } from "./describe-schema.ts";
 import { operation as due } from "./painel-vencimentos.ts";
 import type { OperationContext } from "./contracts.ts";
+import { panelOperation,writeOperation } from "./caixa.ts";
 
-export const operations = [create, update, read, projects, clients, client, dashboard, schema, due];
+export const operations = [create, update, read, projects, clients, client, dashboard, schema, due,panelOperation,writeOperation];
 export async function executeOperation(name: string, input: unknown, context: OperationContext) {
   const operation = operations.find((item) => item.name === name);
   if (!operation) throw new Error("Operação não disponível na camada compartilhada.");

@@ -2782,47 +2782,236 @@ export type Database = {
           },
         ]
       }
+      financeiro_categorias: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          entra_no_resultado: boolean
+          grupo: string
+          id: string
+          nome: string
+          ordem: number
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          entra_no_resultado?: boolean
+          grupo: string
+          id?: string
+          nome: string
+          ordem?: number
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          entra_no_resultado?: boolean
+          grupo?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      financeiro_contas: {
+        Row: {
+          agencia: string | null
+          ativo: boolean
+          banco: string | null
+          created_at: string
+          data_saldo_inicial: string
+          empresa: string | null
+          id: string
+          nome: string
+          numero: string | null
+          ordem: number
+          saldo_inicial: number
+          titular: string
+          updated_at: string
+        }
+        Insert: {
+          agencia?: string | null
+          ativo?: boolean
+          banco?: string | null
+          created_at?: string
+          data_saldo_inicial?: string
+          empresa?: string | null
+          id?: string
+          nome: string
+          numero?: string | null
+          ordem?: number
+          saldo_inicial?: number
+          titular: string
+          updated_at?: string
+        }
+        Update: {
+          agencia?: string | null
+          ativo?: boolean
+          banco?: string | null
+          created_at?: string
+          data_saldo_inicial?: string
+          empresa?: string | null
+          id?: string
+          nome?: string
+          numero?: string | null
+          ordem?: number
+          saldo_inicial?: number
+          titular?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       financeiro_movimentacoes: {
         Row: {
+          area_id: string | null
+          atualizado_por: string | null
           categoria: string
+          categoria_id: string | null
+          cliente_id: string | null
+          colaborador_id: string | null
+          comprovante_path: string | null
+          conta_id: string | null
           created_at: string
+          criado_por: string | null
           data_movimentacao: string
+          data_pagamento: string | null
+          data_vencimento: string | null
           descricao: string
+          documento: string | null
           estoque_movimentacao_id: string | null
+          forma_pagamento: string | null
           fornecedor_id: string | null
           id: string
+          id_externo: string | null
+          observacoes: string | null
+          origem: string
+          parcela_id: string | null
+          projeto_id: string | null
+          recorrencia_id: string | null
           registrado_por_nome: string | null
+          revisar: boolean
+          status: string
           tipo: string
+          transferencia_id: string | null
           updated_at: string
           valor: number
         }
         Insert: {
+          area_id?: string | null
+          atualizado_por?: string | null
           categoria?: string
+          categoria_id?: string | null
+          cliente_id?: string | null
+          colaborador_id?: string | null
+          comprovante_path?: string | null
+          conta_id?: string | null
           created_at?: string
+          criado_por?: string | null
           data_movimentacao?: string
+          data_pagamento?: string | null
+          data_vencimento?: string | null
           descricao: string
+          documento?: string | null
           estoque_movimentacao_id?: string | null
+          forma_pagamento?: string | null
           fornecedor_id?: string | null
           id?: string
+          id_externo?: string | null
+          observacoes?: string | null
+          origem?: string
+          parcela_id?: string | null
+          projeto_id?: string | null
+          recorrencia_id?: string | null
           registrado_por_nome?: string | null
+          revisar?: boolean
+          status?: string
           tipo: string
+          transferencia_id?: string | null
           updated_at?: string
           valor: number
         }
         Update: {
+          area_id?: string | null
+          atualizado_por?: string | null
           categoria?: string
+          categoria_id?: string | null
+          cliente_id?: string | null
+          colaborador_id?: string | null
+          comprovante_path?: string | null
+          conta_id?: string | null
           created_at?: string
+          criado_por?: string | null
           data_movimentacao?: string
+          data_pagamento?: string | null
+          data_vencimento?: string | null
           descricao?: string
+          documento?: string | null
           estoque_movimentacao_id?: string | null
+          forma_pagamento?: string | null
           fornecedor_id?: string | null
           id?: string
+          id_externo?: string | null
+          observacoes?: string | null
+          origem?: string
+          parcela_id?: string | null
+          projeto_id?: string | null
+          recorrencia_id?: string | null
           registrado_por_nome?: string | null
+          revisar?: boolean
+          status?: string
           tipo?: string
+          transferencia_id?: string | null
           updated_at?: string
           valor?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "financeiro_movimentacoes_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "areas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_movimentacoes_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_categorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_movimentacoes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_movimentacoes_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_movimentacoes_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_basico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_movimentacoes_conta_id_fkey"
+            columns: ["conta_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_contas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "financeiro_movimentacoes_estoque_movimentacao_id_fkey"
             columns: ["estoque_movimentacao_id"]
@@ -2837,6 +3026,27 @@ export type Database = {
             referencedRelation: "fornecedores"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "financeiro_movimentacoes_parcela_id_fkey"
+            columns: ["parcela_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_parcelas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_movimentacoes_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_movimentacoes_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos_ultima_visita"
+            referencedColumns: ["projeto_id"]
+          },
         ]
       }
       financeiro_parcelas: {
@@ -2848,6 +3058,7 @@ export type Database = {
           data_vencimento: string | null
           forma_pagamento: string | null
           id: string
+          movimentacao_id: string | null
           numero_nf: string | null
           numero_parcela: number
           observacoes: string | null
@@ -2867,6 +3078,7 @@ export type Database = {
           data_vencimento?: string | null
           forma_pagamento?: string | null
           id?: string
+          movimentacao_id?: string | null
           numero_nf?: string | null
           numero_parcela?: number
           observacoes?: string | null
@@ -2886,6 +3098,7 @@ export type Database = {
           data_vencimento?: string | null
           forma_pagamento?: string | null
           id?: string
+          movimentacao_id?: string | null
           numero_nf?: string | null
           numero_parcela?: number
           observacoes?: string | null
@@ -2903,6 +3116,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_parcelas_movimentacao_id_fkey"
+            columns: ["movimentacao_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_movimentacoes"
             referencedColumns: ["id"]
           },
           {
@@ -6742,6 +6962,43 @@ export type Database = {
           valor_total: number
         }[]
       }
+      fin1_authorized: { Args: { p_totals?: boolean }; Returns: boolean }
+      financeiro_importar: {
+        Args: { p_confirmado?: boolean; p_linhas: Json }
+        Returns: Json
+      }
+      financeiro_operar: {
+        Args: {
+          p_acao: string
+          p_confirmado?: boolean
+          p_dados?: Json
+          p_ids?: string[]
+          p_motivo?: string
+        }
+        Returns: Json
+      }
+      financeiro_resolver_nome: {
+        Args: { p_mov_tipo?: string; p_nome: string; p_tipo: string }
+        Returns: Json
+      }
+      financeiro_resumo: {
+        Args: {
+          p_area?: string
+          p_categoria?: string
+          p_conta?: string
+          p_criterio?: string
+          p_mes: string
+          p_projeto?: string
+          p_status?: string
+        }
+        Returns: Json
+      }
+      financeiro_saldo_inicial: {
+        Args: { p_conta: string; p_data: string; p_valor: number }
+        Returns: undefined
+      }
+      financeiro_saldos: { Args: { p_data: string }; Returns: Json }
+      financeiro_saldos_linhas: { Args: { p_ids: string[] }; Returns: Json }
       gerar_codigo_orcamento: { Args: { p_sigla: string }; Returns: string }
       get_colaborador_id: { Args: { _user_id: string }; Returns: string }
       get_user_area: { Args: { _user_id: string }; Returns: string }

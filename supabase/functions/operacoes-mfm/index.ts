@@ -8,7 +8,7 @@ Deno.serve(async (request) => {
   try {
     const context = await authenticatedContext(request);
     const body = schema.parse(await request.json());
-    const writes = ["criar_registros", "atualizar_registro"].includes(body.operation);
+    const writes = ["criar_registros", "atualizar_registro","operar_caixa"].includes(body.operation);
     if (writes && body.confirmed !== true) return Response.json({ error: "Confirme os dados antes de gravar." }, { status: 409, headers: corsHeaders });
     const result = await executeOperation(body.operation, body.input, { ...context, confirmed: body.confirmed });
     return Response.json(result, { headers: corsHeaders });

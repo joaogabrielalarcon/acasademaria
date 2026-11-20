@@ -12,6 +12,8 @@ import criarRegistros from "./tools/criar-registros";
 import atualizarRegistro from "./tools/atualizar-registro";
 import painelProjetos from "./tools/painel-projetos";
 import painelVencimentos from "./tools/painel-vencimentos";
+import painelCaixa from "./tools/painel-caixa";
+import operarCaixa from "./tools/operar-caixa";
 import { CONVERSATION_RULES } from "../../../supabase/functions/_shared/operations/registry";
 
 // Direct Supabase issuer (never the .lovable.cloud proxy). Vite inlines this
@@ -42,5 +44,7 @@ export default defineMcp({
     atualizarRegistro,
     painelProjetos,
     painelVencimentos,
+    painelCaixa,
+    operarCaixa,
   ],
 });
