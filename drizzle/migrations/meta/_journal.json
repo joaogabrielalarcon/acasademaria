@@ -134,6 +134,13 @@
       "when": 1795181740401,
       "tag": "0018_fin1_import_name_resolution",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1795181960200,
+      "tag": "0019_fin1_cash_record_assignment_fix",
+      "breakpoints": true
     }
   ]
 }
