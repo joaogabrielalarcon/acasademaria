@@ -1,0 +1,1 @@
+DO $$ DECLARE definition text; BEGIN SELECT pg_get_functiondef('public.financeiro_operar(text,jsonb,uuid[],text,boolean)'::regprocedure) INTO definition; definition=replace(definition,'SELECT m INTO v FROM','SELECT m.* INTO v FROM'); definition=replace(definition,'SELECT x INTO r FROM','SELECT x.* INTO r FROM'); EXECUTE definition; END $$;

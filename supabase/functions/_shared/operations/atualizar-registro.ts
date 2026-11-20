@@ -21,8 +21,10 @@ import {
 } from "./validation.ts";
 
 import { ADMIN_UPDATE, validateAdministrative, financialOperation } from "./administrative.ts";
+import { runCash } from "./caixa.ts";
 
 const TABELAS = [
+  "financeiro_movimentacoes",
   ...Object.keys(ADMIN_UPDATE) as Array<keyof typeof ADMIN_UPDATE>,
   "clientes",
   "locais_cliente",
@@ -165,6 +167,7 @@ export const operation = defineOperation({
       .string()
       .optional()
       .describe("Observação livre sobre a mudança (vai para o histórico)."),
+    confirmado: z.boolean().optional().describe("Somente true após confirmação humana explícita da prévia financeira."),
   },
   annotations: {
     readOnlyHint: false,
@@ -173,7 +176,7 @@ export const operation = defineOperation({
     openWorldHint: false,
   },
   handler: async (
-    { tabela, id, campos, modo, motivo, quem_executou, observacao },
+    { tabela, id, campos, modo, motivo, quem_executou, observacao,confirmado },
     ctx,
   ) => {
     const unauth = await requireAuth(ctx);
@@ -182,6 +185,11 @@ export const operation = defineOperation({
     const userId = ctx.getUserId();
 
     const tbl = tabela as Tabela;
+    if(tbl==="financeiro_movimentacoes") {
+      const action=campos.status==="cancelado"?"cancelar":campos.status==="realizado"?"baixar":"salvar";
+      return runCash(ctx,action,action==="salvar"?{...campos,id}:campos,action==="salvar"?[]:[id],motivo,confirmado);
+    }
+    if(tbl==="financeiro_parcelas"&&["status","data_pagamento","valor_recebido","movimentacao_id"].some((key)=>key in campos))return {content:[{type:"text",text:"Dê baixa na movimentação do Caixa; a parcela acompanha automaticamente."}],isError:true};
     if (await acessoRestrito(supabase, userId)) {
       if (financialOperation(tbl)) return { content: [{ type: "text", text: "Esse dado não está no seu acesso." }], isError: true };
     }

@@ -448,6 +448,10 @@
             "forcar": {
               "description": "Se true, cria mesmo quando houver possível duplicado ou visita repetida.",
               "type": "boolean"
+            },
+            "confirmado": {
+              "description": "Somente true após confirmação humana explícita da prévia financeira.",
+              "type": "boolean"
             }
           },
           "required": [
@@ -474,6 +478,7 @@
             "tabela": {
               "type": "string",
               "enum": [
+                "financeiro_movimentacoes",
                 "calendario_eventos",
                 "condominios",
                 "colaborador_liberacoes",
@@ -497,7 +502,7 @@
                 "registro_maquinas",
                 "demandas"
               ],
-              "description": "Tabela alvo. Aceita: calendario_eventos, condominios, colaborador_liberacoes, financeiro_parcelas, solicitacoes_compras, clientes, locais_cliente, colaboradores, maquinas, insumos, insumo_unidades, plantas, fornecedores, fornecedor_atendentes, estoque_movimentacoes, projetos, registros, diarias, escala_alocacoes, registro_insumos, registro_maquinas, demandas"
+              "description": "Tabela alvo. Aceita: financeiro_movimentacoes, calendario_eventos, condominios, colaborador_liberacoes, financeiro_parcelas, solicitacoes_compras, clientes, locais_cliente, colaboradores, maquinas, insumos, insumo_unidades, plantas, fornecedores, fornecedor_atendentes, estoque_movimentacoes, projetos, registros, diarias, escala_alocacoes, registro_insumos, registro_maquinas, demandas"
             },
             "id": {
               "type": "string",
@@ -532,6 +537,10 @@
             "observacao": {
               "description": "Observação livre sobre a mudança (vai para o histórico).",
               "type": "string"
+            },
+            "confirmado": {
+              "description": "Somente true após confirmação humana explícita da prévia financeira.",
+              "type": "boolean"
             }
           },
           "required": [
@@ -630,6 +639,91 @@
               "maximum": 100
             }
           }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "painel_caixa",
+        "title": "Painel do Caixa",
+        "description": "Lista previstos a pagar e receber vencidos, hoje, próximos N dias e a revisar. Nunca retorna saldos ou somas para administrativo/gestor; totais são exclusivos de admin/diretor. Paginação por seção.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "dias": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 366
+            },
+            "limite": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "offset": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "operar_caixa",
+        "title": "Operar Caixa",
+        "description": "Cria, edita, baixa (inclusive parcial), cancela, transfere entre contas ou gera recorrência. Dinheiro exige prévia e confirmação explícita da pessoa; nunca confirme pelo usuário. Só os quatro papéis financeiros. Para baixas use ids e dados com conta_id,data_pagamento,valor opcional; transferência usa conta_id,conta_destino_id,valor e datas.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "acao": {
+              "type": "string",
+              "enum": [
+                "salvar",
+                "baixar",
+                "cancelar",
+                "transferencia",
+                "recorrencia"
+              ]
+            },
+            "dados": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {}
+            },
+            "ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
+            },
+            "motivo": {
+              "type": "string"
+            },
+            "confirmado": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "acao",
+            "dados"
+          ]
         },
         "outputSchema": null
       }

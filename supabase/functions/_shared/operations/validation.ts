@@ -562,6 +562,7 @@ const TABELAS_BLOQUEADAS_CAMPO = new Set([
 export function tabelaBloqueadaParaCampo(tabela: string): boolean {
   return (
     TABELAS_BLOQUEADAS_CAMPO.has(tabela) ||
+    tabela.startsWith("financeiro_") ||
     tabela.startsWith("orcamento_") ||
     tabela.startsWith("conciliacao_")
   );

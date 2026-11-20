@@ -88,8 +88,7 @@ export const comprasIcon = ShoppingCart;
 export const comprasRoles: AppRole[] = ["admin", "administrativo", "gestao_campo", "arquitetura"];
 
 export const financeiroNavigationItems: NavigationItem[] = [
-  { title: "A Receber", icon: Receipt, href: "/financeiro/a-receber", roles: ["admin", "administrativo"] },
-  { title: "Movimentações", icon: DollarSign, href: "/financeiro/movimentacoes", roles: ["admin", "administrativo"] },
+  { title: "Caixa", icon: DollarSign, href: "/financeiro/caixa", roles: ["admin", "administrativo","gestor","diretor"] },
   { title: "Conciliação", icon: Landmark, href: "/conciliacao", roles: ["admin", "administrativo"] },
 ];
 

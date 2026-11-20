@@ -1,0 +1,11 @@
+import {useState} from "react";
+import {Dialog,DialogContent,DialogHeader,DialogTitle} from "@/components/ui/dialog";
+import {Input} from "@/components/ui/input";
+import {Button} from "@/components/ui/button";
+import {previewCashImport,commitCashImport,type CashImportPreview} from "@/services/caixa-importacao";
+import {toast} from "sonner";
+const money=(value:number)=>value.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+export function CashImport({open,onClose,onSaved}:{open:boolean;onClose:()=>void;onSaved:()=>void}){
+  const [preview,setPreview]=useState<CashImportPreview|null>(null);const [busy,setBusy]=useState(false);
+  return <Dialog open={open} onOpenChange={(value)=>{if(!value&&!busy){setPreview(null);onClose();}}}><DialogContent className="max-h-[90dvh] overflow-auto sm:max-w-2xl"><DialogHeader><DialogTitle>Importar Caixa</DialogTitle></DialogHeader><Input aria-label="Arquivo de importação" type="file" accept=".csv,.xlsx" disabled={busy} onChange={async(e)=>{const file=e.target.files?.[0];if(!file)return;setBusy(true);setPreview(null);try{setPreview(await previewCashImport(file));}catch(error){toast.error(error instanceof Error?error.message:"Não foi possível ler o arquivo.");}finally{setBusy(false);}}}/>{busy&&<p role="status">Conferindo arquivo...</p>}{preview&&<><p>{preview.total} linhas · {preview.review} a revisar · {preview.errors.length} com erro</p><div className="space-y-2">{preview.summary.map((sum)=><div key={`${sum.month}:${sum.account}`} className="grid grid-cols-1 gap-1 border-b border-border py-2 sm:grid-cols-3"><span>{sum.month} · {sum.account}</span><span className="text-right">Entradas {money(sum.income)}</span><span className="text-right">Saídas {money(sum.expense)}</span></div>)}</div>{preview.errors.map((error)=><p role="alert" className="text-sm text-destructive" key={error.line}>Linha {error.line}: {error.message}</p>)}<Button disabled={busy||preview.errors.length>0||preview.rows.length===0} onClick={async()=>{setBusy(true);try{await commitCashImport(preview);toast.success("Importação concluída sem duplicar identificadores.");setPreview(null);onSaved();onClose();}catch(error){toast.error(error instanceof Error?error.message:"Não foi possível importar.");}finally{setBusy(false);}}}>Confirmar importação</Button></>}</DialogContent></Dialog>;
+}

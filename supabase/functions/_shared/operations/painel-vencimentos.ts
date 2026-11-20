@@ -43,15 +43,15 @@ export const operation = defineOperation({
       eventos: rows.map((row) => ({ ...row, dias_para_vencer: daysBetween(window.today, row.data), pessoa: people.get(row.colaborador_id) ?? null, cliente: clients.get(row.cliente_id) ?? null, responsavel: people.get(row.responsavel_id) ?? null })),
     };
     if (!restricted) {
-      let financial = context.db.from("financeiro_parcelas").select("id,projeto_id,cliente_id,numero_parcela,valor,status,data_vencimento", { count: "exact" }).not("status", "in", "(pago,cancelado)").lte("data_vencimento", window.end).order("data_vencimento").order("id").range(off, off + limit - 1);
+      let financial = context.db.from("financeiro_movimentacoes").select("id,projeto_id,cliente_id,descricao,tipo,valor,status,data_vencimento", { count: "exact" }).eq("status","previsto").lte("data_vencimento", window.end).order("data_vencimento").order("id").range(off, off + limit - 1);
       if (responsavel_id) {
         const projects = await context.db.from("projetos").select("id").eq("responsavel_id", responsavel_id);
         if (projects.error) return failure(projects.error.message);
         financial = financial.in("projeto_id", (projects.data ?? []).map((row) => row.id));
       }
       const result = await financial; if (result.error) return failure(result.error.message);
-      payload.total_parcelas = result.count ?? 0;
-      payload.financeiro_parcelas = (result.data ?? []).map((row) => ({ ...row, dias_para_vencer: daysBetween(window.today, row.data_vencimento), atrasada: row.data_vencimento < window.today }));
+      payload.total_lancamentos = result.count ?? 0;
+      payload.financeiro_movimentacoes = (result.data ?? []).map((row) => ({ ...row, dias_para_vencer: daysBetween(window.today, row.data_vencimento), atrasada: row.data_vencimento < window.today }));
     }
     return { content: [{ type: "text", text: JSON.stringify(payload) }], structuredContent: payload };
   },

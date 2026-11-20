@@ -8,6 +8,7 @@ import {
   tabelaBloqueadaParaCampo,
   MSG_FORA_DO_ACESSO,
 } from "./validation.ts";
+import { CASH_COLUMNS } from "./caixa.ts";
 
 export const operation = defineOperation({
   name: "read_table",
@@ -74,7 +75,8 @@ export const operation = defineOperation({
 
     // Stock money columns have no column grant: never ask for them directly.
     const ehEstoque = tabela === "estoque_movimentacoes";
-    let colunasPedidas = colunas ?? (ehEstoque ? COLUNAS_ESTOQUE_LIVRES : "*");
+    const financialDefault = tabela==="financeiro_movimentacoes"?CASH_COLUMNS:tabela==="financeiro_contas"?"id,nome,banco,agencia,numero,titular,empresa,ativo,ordem":tabela==="financeiro_categorias"?"id,nome,tipo,grupo,entra_no_resultado,ativo,ordem":tabela==="financeiro_parcelas"?"id,projeto_id,cliente_id,numero_parcela,valor,data_vencimento,status,data_pagamento,valor_recebido,movimentacao_id":"*";
+    let colunasPedidas = colunas ?? (ehEstoque ? COLUNAS_ESTOQUE_LIVRES : financialDefault);
     if (ehEstoque && colunas) {
       const lista = colunas.split(",").map((c) => c.trim()).filter(Boolean);
       const livres = lista.filter((c) => !COLUNAS_ESTOQUE_VALOR.includes(c));

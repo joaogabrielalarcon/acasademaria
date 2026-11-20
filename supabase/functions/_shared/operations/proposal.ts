@@ -1,5 +1,5 @@
 import { z } from "npm:zod@4.4.3";
-const schema = z.object({ operation: z.enum(["criar_registros", "atualizar_registro"]), input: z.unknown(), userId: z.string().uuid(), expires: z.number() });
+const schema = z.object({ operation: z.enum(["criar_registros", "atualizar_registro","operar_caixa"]), input: z.unknown(), userId: z.string().uuid(), expires: z.number() });
 const encode = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 const decode = (text: string) => Uint8Array.from(atob(text.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
 async function signingKey(secret: string) { return crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]); }

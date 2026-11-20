@@ -3,6 +3,11 @@
 - Keep transport-neutral operation handlers under supabase/functions/_shared/operations; MCP and Mafe adapters import the same contracts and caller-scoped rules to prevent validation drift.
 - Resolve pinned npm specifiers through Vite aliases for shared edge modules; Deno uses the same versions directly so neither runtime imports browser-only state.
 - Calendar responsavel_id references colaboradores.id, matching task ownership; financial receipt amounts use numeric(14,2) in reais to preserve the existing ledger unit.
+- Keep finance operation and consolidated-read permission predicates separate and shared; operating access never implies access to balances or aggregate results.
+- Grant financial account metadata by explicit columns, excluding opening balances; expose balance reads only through caller-authorized aggregate functions.
+- Keep financial catalog queries and receipt uploads in services with explicit projections; receipt helpers issue short-lived signed links, never public URLs.
+- Route all cash mutations through financeiro_operar and use one derived installment synchronization trigger; partial payments split realized cash from the outstanding planned remainder.
+- Keep monthly report date basis explicit and selectable; only caller-authorized functions can return consolidated or running balances.
 
 - Account creation, temporary password reset and deactivation use the authenticated admin-usuarios function, never MCP tools, so credentials only reach the requesting admin screen.
 - Share first-access expiry and access decisions in supabase/functions/_shared/access-policy.ts; frontend and MCP import the same pure rules to avoid enforcement drift.

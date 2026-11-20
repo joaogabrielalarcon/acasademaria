@@ -245,7 +245,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
                   <Tooltip delayDuration={0}>
                     <TooltipTrigger asChild>
                       <Link
-                        to="/financeiro/a-receber"
+                        to="/financeiro/caixa"
                         className={cn(
                           "flex items-center justify-center h-10 rounded-md transition-colors",
                           isFinanceiroActive ? "text-primary" : "text-foreground/80 hover:bg-foreground/5",

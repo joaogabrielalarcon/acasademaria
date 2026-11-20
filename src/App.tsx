@@ -78,9 +78,8 @@ const Calendario = lazyWithRetry(() => import("./pages/Calendario"));
 const Projetos = lazyWithRetry(() => import("./pages/Projetos"));
 const MinhaAgenda = lazyWithRetry(() => import("./pages/MinhaAgenda"));
 const Conciliacao = lazyWithRetry(() => import("./pages/Conciliacao"));
-const AReceber = lazyWithRetry(() => import("./pages/AReceber"));
+const Caixa = lazyWithRetry(() => import("./pages/Caixa"));
 const CategoriasPlantas = lazyWithRetry(() => import("./pages/CategoriasPlantas"));
-const Movimentacoes = lazyWithRetry(() => import("./pages/Movimentacoes"));
 const Orcamentos = lazyWithRetry(() => import("./pages/Orcamentos"));
 const NovoOrcamento = lazyWithRetry(() => import("./pages/NovoOrcamento"));
 const Indicadores = lazyWithRetry(() => import("./pages/Indicadores"));
@@ -152,8 +151,9 @@ const App = () => (
             <Route path="/design-system" element={<ProtectedRoute><DesignSystem /></ProtectedRoute>} />
             <Route path="/agenda" element={<ProtectedRoute><MinhaAgenda /></ProtectedRoute>} />
             <Route path="/conciliacao" element={<ProtectedRoute><Conciliacao /></ProtectedRoute>} />
-            <Route path="/financeiro/a-receber" element={<ProtectedRoute><AReceber /></ProtectedRoute>} />
-            <Route path="/financeiro/movimentacoes" element={<ProtectedRoute><Movimentacoes /></ProtectedRoute>} />
+            <Route path="/financeiro/a-receber" element={<Navigate to="/financeiro/caixa" replace />} />
+            <Route path="/financeiro/movimentacoes" element={<Navigate to="/financeiro/caixa" replace />} />
+            <Route path="/financeiro/caixa" element={<ProtectedRoute allowedRoles={["admin","administrativo","gestor","diretor"]}><Caixa /></ProtectedRoute>} />
             <Route path="/diario" element={<Navigate to="/" replace />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

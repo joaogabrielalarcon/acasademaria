@@ -519,7 +519,7 @@ var TABELAS_BLOQUEADAS_CAMPO = /* @__PURE__ */ new Set([
   "audit_price_changes"
 ]);
 function tabelaBloqueadaParaCampo(tabela) {
-  return TABELAS_BLOQUEADAS_CAMPO.has(tabela) || tabela.startsWith("orcamento_") || tabela.startsWith("conciliacao_");
+  return TABELAS_BLOQUEADAS_CAMPO.has(tabela) || tabela.startsWith("financeiro_") || tabela.startsWith("orcamento_") || tabela.startsWith("conciliacao_");
 }
 var MSG_FORA_DO_ACESSO = "Esse dado n\xE3o est\xE1 no seu acesso.";
 var CORTE_CAMPO = {
@@ -834,18 +834,77 @@ var describe_schema_default = defineTool7({
 import { defineTool as defineTool8 } from "npm:@lovable.dev/mcp-js@0.24.0";
 
 // supabase/functions/_shared/operations/read-table.ts
+import { z as z9 } from "npm:zod@4.4.3";
+
+// supabase/functions/_shared/operations/caixa.ts
 import { z as z8 } from "npm:zod@4.4.3";
+var CASH_COLUMNS = "id,tipo,descricao,valor,status,data_movimentacao,data_vencimento,data_pagamento,conta_id,categoria_id,projeto_id,cliente_id,colaborador_id,fornecedor_id,area_id,parcela_id,forma_pagamento,documento,comprovante_path,transferencia_id,recorrencia_id,origem,id_externo,revisar,observacoes,conta:financeiro_contas(nome),categoria_dados:financeiro_categorias(nome,grupo),projeto:projetos(titulo),cliente:clientes(nome),colaborador:colaboradores(nome),fornecedor:fornecedores(nome),area:areas(nome)";
+async function runCash(context, action, input, ids = [], reason, confirmed = false) {
+  const denial = await requireAuth2(context);
+  if (denial) return denial;
+  if (!context.confirmed && !confirmed) return failure("Revise os dados e obtenha confirma\xE7\xE3o humana expl\xEDcita antes de gravar dinheiro.");
+  const response = await context.db.rpc("financeiro_operar", { p_acao: action, p_dados: input, p_ids: ids, p_motivo: reason ?? null, p_confirmado: true });
+  if (response.error) return failure(response.error.message);
+  const result = { registros: jsonValue(response.data) };
+  return { content: [{ type: "text", text: JSON.stringify(result) }], structuredContent: result };
+}
+var writeOperation = defineOperation({
+  name: "operar_caixa",
+  title: "Operar Caixa",
+  description: "Cria, edita, baixa (inclusive parcial), cancela, transfere entre contas ou gera recorr\xEAncia. Dinheiro exige pr\xE9via e confirma\xE7\xE3o expl\xEDcita da pessoa; nunca confirme pelo usu\xE1rio. S\xF3 os quatro pap\xE9is financeiros. Para baixas use ids e dados com conta_id,data_pagamento,valor opcional; transfer\xEAncia usa conta_id,conta_destino_id,valor e datas.",
+  inputSchema: { acao: z8.enum(["salvar", "baixar", "cancelar", "transferencia", "recorrencia"]), dados: z8.record(z8.string(), z8.unknown()), ids: z8.array(z8.string().uuid()).optional(), motivo: z8.string().optional(), confirmado: z8.boolean().optional() },
+  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+  handler: ({ acao, dados, ids, motivo, confirmado }, context) => runCash(context, acao, dados, ids, motivo, confirmado)
+});
+var panelOperation = defineOperation({
+  name: "painel_caixa",
+  title: "Painel do Caixa",
+  description: "Lista previstos a pagar e receber vencidos, hoje, pr\xF3ximos N dias e a revisar. Nunca retorna saldos ou somas para administrativo/gestor; totais s\xE3o exclusivos de admin/diretor. Pagina\xE7\xE3o por se\xE7\xE3o.",
+  inputSchema: { dias: z8.number().int().min(1).max(366).optional(), limite: z8.number().int().min(1).max(100).optional(), offset: z8.number().int().min(0).optional() },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ dias, limite, offset }, context) => {
+    const denial = await requireAuth2(context);
+    if (denial) return denial;
+    const access = await context.db.rpc("fin1_authorized", { p_totals: false });
+    if (access.error || !access.data) return failure("Sem acesso ao financeiro.");
+    const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" }).format(/* @__PURE__ */ new Date());
+    const end = /* @__PURE__ */ new Date(`${today}T12:00:00Z`);
+    end.setUTCDate(end.getUTCDate() + (dias ?? 30));
+    const horizon = end.toISOString().slice(0, 10);
+    const from = offset ?? 0, size = limite ?? 30;
+    const requests = [
+      context.db.from("financeiro_movimentacoes").select(CASH_COLUMNS).eq("status", "previsto").lt("data_vencimento", today).order("data_vencimento").order("id").range(from, from + size - 1),
+      context.db.from("financeiro_movimentacoes").select(CASH_COLUMNS).eq("status", "previsto").eq("data_vencimento", today).order("id").range(from, from + size - 1),
+      context.db.from("financeiro_movimentacoes").select(CASH_COLUMNS).eq("status", "previsto").gt("data_vencimento", today).lte("data_vencimento", horizon).order("data_vencimento").order("id").range(from, from + size - 1),
+      context.db.from("financeiro_movimentacoes").select(CASH_COLUMNS).eq("revisar", true).neq("status", "cancelado").order("created_at").order("id").range(from, from + size - 1)
+    ];
+    const responses = await Promise.all(requests);
+    const error = responses.find((r) => r.error)?.error;
+    if (error) return failure(error.message);
+    const output = { vencidos: responses[0]?.data, hoje: responses[1]?.data, proximos: responses[2]?.data, a_revisar: responses[3]?.data, offset: from, limite: size };
+    const totals = await context.db.rpc("fin1_authorized", { p_totals: true });
+    if (totals.data) {
+      const balances = await context.db.rpc("financeiro_saldos", { p_data: horizon });
+      if (balances.error) return failure(balances.error.message);
+      output.saldos = balances.data;
+    }
+    const result = jsonValue(output);
+    return { content: [{ type: "text", text: JSON.stringify(result) }], structuredContent: output };
+  }
+});
+
+// supabase/functions/_shared/operations/read-table.ts
 var operation5 = defineOperation({
   name: "read_table",
   title: "Ler tabela",
   description: "Leitura gen\xE9rica de qualquer tabela do schema public, respeitando as permiss\xF5es (RLS) do usu\xE1rio autenticado. S\xF3 retorna o que o usu\xE1rio tem permiss\xE3o para ver.",
   inputSchema: {
-    tabela: z8.string().trim().min(1).describe("Nome da tabela do schema public."),
-    colunas: z8.string().trim().optional().describe("Lista de colunas separadas por v\xEDrgula (padr\xE3o '*')."),
-    filtros: z8.record(z8.string(), z8.union([z8.string(), z8.number(), z8.boolean(), z8.null()])).optional().describe("Objeto campo\u2192valor para igualdade estrita."),
-    ordenar_por: z8.string().trim().optional().describe("Coluna para ordenar. Prefixe com '-' para descendente (ex.: '-created_at')."),
-    limite: z8.number().int().min(1).max(100).optional().describe("Padr\xE3o 25, m\xE1ximo 100."),
-    offset: z8.number().int().min(0).optional()
+    tabela: z9.string().trim().min(1).describe("Nome da tabela do schema public."),
+    colunas: z9.string().trim().optional().describe("Lista de colunas separadas por v\xEDrgula (padr\xE3o '*')."),
+    filtros: z9.record(z9.string(), z9.union([z9.string(), z9.number(), z9.boolean(), z9.null()])).optional().describe("Objeto campo\u2192valor para igualdade estrita."),
+    ordenar_por: z9.string().trim().optional().describe("Coluna para ordenar. Prefixe com '-' para descendente (ex.: '-created_at')."),
+    limite: z9.number().int().min(1).max(100).optional().describe("Padr\xE3o 25, m\xE1ximo 100."),
+    offset: z9.number().int().min(0).optional()
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ tabela, colunas, filtros, ordenar_por, limite, offset }, ctx) => {
@@ -879,7 +938,8 @@ var operation5 = defineOperation({
     const lim = Math.min(limite ?? 25, 100);
     const off = offset ?? 0;
     const ehEstoque = tabela === "estoque_movimentacoes";
-    let colunasPedidas = colunas ?? (ehEstoque ? COLUNAS_ESTOQUE_LIVRES : "*");
+    const financialDefault = tabela === "financeiro_movimentacoes" ? CASH_COLUMNS : tabela === "financeiro_contas" ? "id,nome,banco,agencia,numero,titular,empresa,ativo,ordem" : tabela === "financeiro_categorias" ? "id,nome,tipo,grupo,entra_no_resultado,ativo,ordem" : tabela === "financeiro_parcelas" ? "id,projeto_id,cliente_id,numero_parcela,valor,data_vencimento,status,data_pagamento,valor_recebido,movimentacao_id" : "*";
+    let colunasPedidas = colunas ?? (ehEstoque ? COLUNAS_ESTOQUE_LIVRES : financialDefault);
     if (ehEstoque && colunas) {
       const lista = colunas.split(",").map((c) => c.trim()).filter(Boolean);
       const livres = lista.filter((c) => !COLUNAS_ESTOQUE_VALOR.includes(c));
@@ -942,14 +1002,14 @@ var read_table_default = defineTool8({
 
 // src/lib/mcp/tools/list-storage.ts
 import { defineTool as defineTool9 } from "npm:@lovable.dev/mcp-js@0.24.0";
-import { z as z9 } from "npm:zod@^4.4.3";
+import { z as z10 } from "npm:zod@^4.4.3";
 var list_storage_default = defineTool9({
   name: "list_storage",
   title: "Listar Storage",
   description: "Lista buckets ou arquivos do Storage. Sem par\xE2metro, devolve buckets (nome, p\xFAblico/privado). Com 'bucket' (e 'prefixo' opcional), lista arquivos (nome, tamanho, criado em), m\xE1ximo 100. N\xE3o devolve conte\xFAdo nem URLs assinadas.",
   inputSchema: {
-    bucket: z9.string().trim().optional().describe("Nome do bucket."),
-    prefixo: z9.string().trim().optional().describe("Prefixo (pasta) dentro do bucket.")
+    bucket: z10.string().trim().optional().describe("Nome do bucket."),
+    prefixo: z10.string().trim().optional().describe("Prefixo (pasta) dentro do bucket.")
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ bucket, prefixo }, ctx) => {
@@ -989,10 +1049,10 @@ var list_storage_default = defineTool9({
 import { defineTool as defineTool10 } from "npm:@lovable.dev/mcp-js@0.24.0";
 
 // supabase/functions/_shared/operations/criar-registros.ts
-import { z as z11 } from "npm:zod@4.4.3";
+import { z as z12 } from "npm:zod@4.4.3";
 
 // supabase/functions/_shared/operations/administrative.ts
-import { z as z10 } from "npm:zod@4.4.3";
+import { z as z11 } from "npm:zod@4.4.3";
 var ADMIN_CREATE = {
   calendario_eventos: { obrigatorios: ["tipo", "data", "titulo"], permitidos: ["tipo", "data", "titulo", "descricao", "recorrente", "colaborador_id", "cliente_id", "projeto_id", "responsavel_id", "concluido", "observacoes"] },
   entregas_colaborador: { obrigatorios: ["colaborador_id", "insumo_id", "quantidade"], permitidos: ["colaborador_id", "insumo_id", "quantidade", "data_entrega", "observacao"] },
@@ -1017,8 +1077,8 @@ var CHECKS = {
   // Existing A Receber vocabulary, not a new database CHECK.
   financeiro_parcelas: { status: ["pendente", "pago", "vencido", "cancelado"] }
 };
-var uuid = z10.string().uuid();
-var date = z10.string().refine((value) => {
+var uuid = z11.string().uuid();
+var date = z11.string().refine((value) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const parsed = /* @__PURE__ */ new Date(value + "T00:00:00Z");
   return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
@@ -1206,11 +1266,12 @@ var operation6 = defineOperation({
   title: "Criar registros em lote",
   description: "Cria linhas em lote em tabelas de cadastro e da opera\xE7\xE3o de campo (whitelist). Cadastro (plantas, insumos, fornecedores) roda deduplica\xE7\xE3o por nome. Opera\xE7\xE3o (projetos, registros, diarias, escala_alocacoes, registro_insumos, registro_maquinas, demandas, demanda_responsaveis) roda valida\xE7\xE3o de campos/valores e prote\xE7\xE3o contra grava\xE7\xE3o repetida por chave natural: diarias = cliente_id + data_visita; registros = cliente_id + data_servico + tipo + descri\xE7\xE3o parecida; escala_alocacoes = data + colaborador_id + local_id; demandas = cliente_id + t\xEDtulo parecido entre as n\xE3o arquivadas. Use forcar=true para criar mesmo assim. M\xE1x 50 linhas por chamada. Escreve com o token do usu\xE1rio (RLS ativa).",
   inputSchema: {
-    tabela: z11.enum(TABELAS).describe("Tabela alvo. Aceita apenas: " + TABELAS.join(", ")),
-    linhas: z11.array(z11.record(z11.string(), z11.unknown())).min(1).max(50).describe("Array de objetos (m\xE1x 50)."),
-    forcar: z11.boolean().optional().describe(
+    tabela: z12.enum(TABELAS).describe("Tabela alvo. Aceita apenas: " + TABELAS.join(", ")),
+    linhas: z12.array(z12.record(z12.string(), z12.unknown())).min(1).max(50).describe("Array de objetos (m\xE1x 50)."),
+    forcar: z12.boolean().optional().describe(
       "Se true, cria mesmo quando houver poss\xEDvel duplicado ou visita repetida."
-    )
+    ),
+    confirmado: z12.boolean().optional().describe("Somente true ap\xF3s confirma\xE7\xE3o humana expl\xEDcita da pr\xE9via financeira.")
   },
   annotations: {
     readOnlyHint: false,
@@ -1218,7 +1279,7 @@ var operation6 = defineOperation({
     idempotentHint: false,
     openWorldHint: false
   },
-  handler: async ({ tabela, linhas, forcar }, ctx) => {
+  handler: async ({ tabela, linhas, forcar, confirmado }, ctx) => {
     const unauth = await requireAuth2(ctx);
     if (unauth) return unauth;
     const supabase = supabaseForUser2(ctx);
@@ -1227,6 +1288,16 @@ var operation6 = defineOperation({
     const restricted = await acessoRestrito(supabase, userId);
     if (restricted && financialOperation(tbl)) return { content: [{ type: "text", text: "Esse dado n\xE3o est\xE1 no seu acesso." }], isError: true };
     if (restricted && linhas.some((row) => Object.keys(row).some((key) => colunaCortada(tbl, key)))) return { content: [{ type: "text", text: "Esse valor n\xE3o est\xE1 no seu acesso." }], isError: true };
+    if (tbl === "financeiro_movimentacoes") {
+      if (!ctx.confirmed && !confirmado) return { content: [{ type: "text", text: "Apresente os dados e aguarde confirma\xE7\xE3o humana antes de gravar dinheiro." }], isError: true };
+      const results = [];
+      for (const row of linhas) {
+        const result = await runCash(ctx, row.conta_destino_id ? "transferencia" : row.meses ? "recorrencia" : "salvar", row, [], void 0, confirmado);
+        if ("isError" in result) return result;
+        results.push(result.structuredContent);
+      }
+      return { content: [{ type: "text", text: JSON.stringify(results) }], structuredContent: { resultados: results } };
+    }
     const regrasOperacao = CAMPOS_OPERACAO[tbl];
     const ehOperacao = Boolean(regrasOperacao);
     const dedupTipo = ehOperacao ? void 0 : DEDUP_CAT[tbl];
@@ -1489,8 +1560,9 @@ var criar_registros_default = defineTool10({
 import { defineTool as defineTool11 } from "npm:@lovable.dev/mcp-js@0.24.0";
 
 // supabase/functions/_shared/operations/atualizar-registro.ts
-import { z as z12 } from "npm:zod@4.4.3";
+import { z as z13 } from "npm:zod@4.4.3";
 var TABELAS2 = [
+  "financeiro_movimentacoes",
   ...Object.keys(ADMIN_UPDATE),
   "clientes",
   "locais_cliente",
@@ -1596,15 +1668,16 @@ var operation7 = defineOperation({
   title: "Atualizar registro por id",
   description: "Atualiza UMA linha por id em tabelas de cadastro e da opera\xE7\xE3o de campo (whitelist), com campos restritos por tabela. Use modo='acrescentar' para somar texto ao que j\xE1 existe (separado por ' | ') em vez de sobrescrever. Toda mudan\xE7a de status \xE9 gravada em audit_status_changes com metadata padronizado (motivo, quem_executou, observacao). Escreve com o token do usu\xE1rio (RLS ativa). Retorna antes \u2192 depois.",
   inputSchema: {
-    tabela: z12.enum(TABELAS2).describe("Tabela alvo. Aceita: " + TABELAS2.join(", ")),
-    id: z12.string().uuid().describe("UUID da linha."),
-    campos: z12.record(z12.string(), z12.unknown()).describe("Campos a atualizar (objeto). N\xE3o passe id."),
-    modo: z12.enum(["substituir", "acrescentar"]).optional().describe(
+    tabela: z13.enum(TABELAS2).describe("Tabela alvo. Aceita: " + TABELAS2.join(", ")),
+    id: z13.string().uuid().describe("UUID da linha."),
+    campos: z13.record(z13.string(), z13.unknown()).describe("Campos a atualizar (objeto). N\xE3o passe id."),
+    modo: z13.enum(["substituir", "acrescentar"]).optional().describe(
       "substituir (padr\xE3o) troca o valor. acrescentar soma o texto novo ao existente, separado por ' | ', nos campos de texto livre."
     ),
-    motivo: z12.string().optional().describe("Por que o status mudou (vai para o hist\xF3rico)."),
-    quem_executou: z12.string().optional().describe("Quem de fato executou (vai para o hist\xF3rico)."),
-    observacao: z12.string().optional().describe("Observa\xE7\xE3o livre sobre a mudan\xE7a (vai para o hist\xF3rico).")
+    motivo: z13.string().optional().describe("Por que o status mudou (vai para o hist\xF3rico)."),
+    quem_executou: z13.string().optional().describe("Quem de fato executou (vai para o hist\xF3rico)."),
+    observacao: z13.string().optional().describe("Observa\xE7\xE3o livre sobre a mudan\xE7a (vai para o hist\xF3rico)."),
+    confirmado: z13.boolean().optional().describe("Somente true ap\xF3s confirma\xE7\xE3o humana expl\xEDcita da pr\xE9via financeira.")
   },
   annotations: {
     readOnlyHint: false,
@@ -1612,12 +1685,17 @@ var operation7 = defineOperation({
     idempotentHint: true,
     openWorldHint: false
   },
-  handler: async ({ tabela, id, campos, modo, motivo, quem_executou, observacao }, ctx) => {
+  handler: async ({ tabela, id, campos, modo, motivo, quem_executou, observacao, confirmado }, ctx) => {
     const unauth = await requireAuth2(ctx);
     if (unauth) return unauth;
     const supabase = supabaseForUser2(ctx);
     const userId = ctx.getUserId();
     const tbl = tabela;
+    if (tbl === "financeiro_movimentacoes") {
+      const action = campos.status === "cancelado" ? "cancelar" : campos.status === "realizado" ? "baixar" : "salvar";
+      return runCash(ctx, action, action === "salvar" ? { ...campos, id } : campos, action === "salvar" ? [] : [id], motivo, confirmado);
+    }
+    if (tbl === "financeiro_parcelas" && ["status", "data_pagamento", "valor_recebido", "movimentacao_id"].some((key) => key in campos)) return { content: [{ type: "text", text: "D\xEA baixa na movimenta\xE7\xE3o do Caixa; a parcela acompanha automaticamente." }], isError: true };
     if (await acessoRestrito(supabase, userId)) {
       if (financialOperation(tbl)) return { content: [{ type: "text", text: "Esse dado n\xE3o est\xE1 no seu acesso." }], isError: true };
     }
@@ -1833,7 +1911,7 @@ var atualizar_registro_default = defineTool11({
 import { defineTool as defineTool12 } from "npm:@lovable.dev/mcp-js@0.24.0";
 
 // supabase/functions/_shared/operations/painel-projetos.ts
-import { z as z13 } from "npm:zod@4.4.3";
+import { z as z14 } from "npm:zod@4.4.3";
 var ORDENACOES = [
   "dias_no_status",
   "proximo_contato_em",
@@ -1851,12 +1929,12 @@ var operation8 = defineOperation({
   title: "Painel de projetos",
   description: "Vista de acompanhamento da gest\xE3o: projetos n\xE3o conclu\xEDdos e n\xE3o cancelados, com cliente, local, respons\xE1veis, datas, dias_no_status (desde a \xFAltima mudan\xE7a de status registrada, ou desde a cria\xE7\xE3o) e demandas_abertas. Para manuten\xE7\xE3o (contrato recorrente), devolve ultima_visita e dias_desde_ultima_visita no lugar de dias_no_status. Para quem n\xE3o tem papel de gest\xE3o (admin, administrativo, gestor, diretor), valor_total n\xE3o \xE9 devolvido.",
   inputSchema: {
-    tipo: z13.string().optional(),
-    status: z13.string().optional(),
-    cliente_id: z13.string().uuid().optional(),
-    responsavel_id: z13.string().uuid().optional(),
-    ordenar_por: z13.enum(ORDENACOES).optional().describe("Padr\xE3o: dias_no_status (decrescente). Datas ordenam da mais pr\xF3xima para a mais distante."),
-    limite: z13.number().int().min(1).max(200).optional().describe("Padr\xE3o 50.")
+    tipo: z14.string().optional(),
+    status: z14.string().optional(),
+    cliente_id: z14.string().uuid().optional(),
+    responsavel_id: z14.string().uuid().optional(),
+    ordenar_por: z14.enum(ORDENACOES).optional().describe("Padr\xE3o: dias_no_status (decrescente). Datas ordenam da mais pr\xF3xima para a mais distante."),
+    limite: z14.number().int().min(1).max(200).optional().describe("Padr\xE3o 50.")
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ tipo, status, cliente_id, responsavel_id, ordenar_por, limite }, ctx) => {
@@ -1981,7 +2059,7 @@ var painel_projetos_default = defineTool12({
 import { defineTool as defineTool13 } from "npm:@lovable.dev/mcp-js@0.24.0";
 
 // supabase/functions/_shared/operations/painel-vencimentos.ts
-import { z as z14 } from "npm:zod@4.4.3";
+import { z as z15 } from "npm:zod@4.4.3";
 function todayInSaoPaulo(now = /* @__PURE__ */ new Date()) {
   const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(now);
   const part = (name) => parts.find((p) => p.type === name)?.value ?? "";
@@ -2006,7 +2084,7 @@ var operation9 = defineOperation({
   name: "painel_vencimentos",
   title: "Painel de vencimentos",
   description: "Eventos n\xE3o conclu\xEDdos nos pr\xF3ximos dias (padr\xE3o 30), com pessoa, cliente e respons\xE1vel. Somente admin, administrativo, gestor e diretor recebem tamb\xE9m parcelas n\xE3o pagas pr\xF3ximas e atrasadas. Respeita RLS; n\xE3o amplia acesso ao calend\xE1rio.",
-  inputSchema: { tipo: z14.string().optional(), responsavel_id: z14.string().uuid().optional(), dias: z14.number().int().min(1).max(366).optional(), offset: z14.number().int().min(0).optional(), limite: z14.number().int().min(1).max(100).optional() },
+  inputSchema: { tipo: z15.string().optional(), responsavel_id: z15.string().uuid().optional(), dias: z15.number().int().min(1).max(366).optional(), offset: z15.number().int().min(0).optional(), limite: z15.number().int().min(1).max(100).optional() },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ tipo, responsavel_id, dias, offset, limite }, context) => {
     const denial = await requireAuth2(context);
@@ -2032,7 +2110,7 @@ var operation9 = defineOperation({
       eventos: rows.map((row) => ({ ...row, dias_para_vencer: daysBetween(window.today, row.data), pessoa: people.get(row.colaborador_id) ?? null, cliente: clients.get(row.cliente_id) ?? null, responsavel: people.get(row.responsavel_id) ?? null }))
     };
     if (!restricted) {
-      let financial = context.db.from("financeiro_parcelas").select("id,projeto_id,cliente_id,numero_parcela,valor,status,data_vencimento", { count: "exact" }).not("status", "in", "(pago,cancelado)").lte("data_vencimento", window.end).order("data_vencimento").order("id").range(off, off + limit - 1);
+      let financial = context.db.from("financeiro_movimentacoes").select("id,projeto_id,cliente_id,descricao,tipo,valor,status,data_vencimento", { count: "exact" }).eq("status", "previsto").lte("data_vencimento", window.end).order("data_vencimento").order("id").range(off, off + limit - 1);
       if (responsavel_id) {
         const projects = await context.db.from("projetos").select("id").eq("responsavel_id", responsavel_id);
         if (projects.error) return failure(projects.error.message);
@@ -2040,8 +2118,8 @@ var operation9 = defineOperation({
       }
       const result = await financial;
       if (result.error) return failure(result.error.message);
-      payload.total_parcelas = result.count ?? 0;
-      payload.financeiro_parcelas = (result.data ?? []).map((row) => ({ ...row, dias_para_vencer: daysBetween(window.today, row.data_vencimento), atrasada: row.data_vencimento < window.today }));
+      payload.total_lancamentos = result.count ?? 0;
+      payload.financeiro_movimentacoes = (result.data ?? []).map((row) => ({ ...row, dias_para_vencer: daysBetween(window.today, row.data_vencimento), atrasada: row.data_vencimento < window.today }));
     }
     return { content: [{ type: "text", text: JSON.stringify(payload) }], structuredContent: payload };
   }
@@ -2056,6 +2134,14 @@ var painel_vencimentos_default = defineTool13({
   annotations: operation9.annotations,
   handler: async (input, context) => operationResult(await operation9.execute(input, operationContext(context)))
 });
+
+// src/lib/mcp/tools/painel-caixa.ts
+import { defineTool as defineTool14 } from "npm:@lovable.dev/mcp-js@0.24.0";
+var painel_caixa_default = defineTool14({ ...panelOperation, handler: async (input, ctx) => operationResult(await panelOperation.execute(input, operationContext(ctx))) });
+
+// src/lib/mcp/tools/operar-caixa.ts
+import { defineTool as defineTool15 } from "npm:@lovable.dev/mcp-js@0.24.0";
+var operar_caixa_default = defineTool15({ ...writeOperation, handler: async (input, ctx) => operationResult(await writeOperation.execute(input, operationContext(ctx))) });
 
 // supabase/functions/_shared/operations/registry.ts
 var CONVERSATION_RULES = `A pessoa relata e voc\xEA classifica. Mostre exatamente o que pretende gravar e aguarde confirma\xE7\xE3o humana antes de gravar. Nunca pe\xE7a escolha de campo, tipo ou status. Fa\xE7a no m\xE1ximo duas perguntas por registro. N\xE3o invente v\xEDnculos, nomes, datas ou valores. Resolva refer\xEAncias consultando os registros vis\xEDveis; se houver ambiguidade, pergunte. Valores e financeiro s\xE3o exclusivos de admin, administrativo, gestor e diretor, sem exce\xE7\xE3o para papel novo. Dinheiro e NF sempre precisam de confirma\xE7\xE3o humana expl\xEDcita. Use as listas fechadas e campos reais das ferramentas, sem tradu\xE7\xE3o silenciosa. Use modo acrescentar para completar relatos. N\xE3o gere senha, token ou convite. N\xE3o apague dados. Portugu\xEAs do Brasil, sem travess\xE3o. Opera\xE7\xF5es n\xE3o cobertas devem ser informadas, nunca executadas por outro caminho.`;
@@ -2084,7 +2170,9 @@ var mcp_default = defineMcp({
     criar_registros_default,
     atualizar_registro_default,
     painel_projetos_default,
-    painel_vencimentos_default
+    painel_vencimentos_default,
+    painel_caixa_default,
+    operar_caixa_default
   ]
 });
 
