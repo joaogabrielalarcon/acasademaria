@@ -10,10 +10,10 @@ A camada compartilhada já iniciada será preservada e usada pelo FIN-1. Só o p
 
 - `Movimentacoes.tsx` usa um hook com `select('*')`, carrega todas as movimentações e calcula totais no navegador; os fornecedores também são carregados como lista.
 - Existem **0 movimentações e 0 parcelas** agora; preservar também linhas criadas antes da migração.
-- Não foram encontradas `financeiro_contas` e `financeiro_categorias`. Movimentações ainda não têm os novos campos do Caixa; parcelas já têm pagamento, valor recebido e campos de NF.
+- Contas/categorias ainda não existem; parcelas já têm os campos de pagamento e NF.
 - RLS de movimentações permite leitura/escrita a admin e administrativo. Parcelas permitem leitura também a `gestao_campo`. FIN-1 substituirá essas permissões pelas solicitadas.
 - A entrada de compra no estoque gera movimentação financeira sem conta nem vencimento. Projetos podem gerar parcelas sem vencimento e com valor zero.
-- A tela antiga usa `pago`, mas o trigger que conclui projetos testa `recebido`. Essa diferença precisa ser resolvida explicitamente, não traduzida silenciosamente.
+- Tela usa `pago`, trigger de conclusão testa `recebido`: decidir explicitamente.
 - `painel_vencimentos` ainda consulta parcelas. A extração compartilhada e a Mafe não têm teste completo ou publicação confirmada nesta rodada.
 
 ## Decisões necessárias antes de executar os trechos dependentes
@@ -25,7 +25,7 @@ A camada compartilhada já iniciada será preservada e usada pelo FIN-1. Só o p
 5. **Status:** confirmar `pago` como espelho de realizado e adequar o trigger que hoje testa `recebido`, preservando conclusão de projetos não recorrentes quando todas as parcelas forem pagas. É mudança de comportamento; manutenção não muda.
 6. **Cálculo:** resultado mensal por **competência**, só realizado e categorias que entram no resultado; saldos por pagamento, previsto por vencimento. Confirmar saldo inicial contando apenas lançamentos desde `data_saldo_inicial`.
 
-Decisões abertas ficam bloqueadas, não são autorização para inventar. A aprovação do plano deve vir acompanhada das respostas aos itens 1 a 6.
+Responder aos itens 1 a 6 com a aprovação; trechos dependentes ficam bloqueados.
 
 ## Ordem de execução
 
@@ -47,8 +47,8 @@ Decisões abertas ficam bloqueadas, não são autorização para inventar. A apr
 ### 3. Motor transacional e comprovantes
 
 - Motor compartilhado para criar/editar/baixar/duplicar/cancelar, transferência e recorrência, com autoria autenticada e sem service role pela Mafe.
-- Transferência atômica: duas linhas do mesmo valor em contas distintas, mesmo identificador e categorias corretas; cancelar uma cancela ambas. Exclusão de teste/admin preserva a integridade do par e exige confirmação.
-- Recorrência: gerar N parcelas mensais na mesma transação e com o mesmo identificador; meses curtos usam o último dia quando necessário. Edição oferece “Só esta” ou “Esta e as próximas”, sem modificar automaticamente as já realizadas.
+- Transferência atômica: duas linhas em contas distintas, mesmo valor/identificador e categorias corretas; cancelar uma cancela ambas. Exclusão mantém o par e exige confirmação.
+- Recorrência mensal atômica, mesmo identificador; meses curtos usam último dia. Editar “Só esta”/“Esta e as próximas”, preservando realizadas.
 - Bucket privado `financeiro-comprovantes`, imagem/PDF até 10 MB, RLS dos quatro papéis e links curtos; tratar uploads órfãos.
 - `financeiro_saldos(data)` e `financeiro_resumo(mes)`: GRANTs mínimos e checagem interna admin/diretor, pois papéis do app não são papéis SQL. Negar sem retornar totais.
 
@@ -89,4 +89,4 @@ Decisões abertas ficam bloqueadas, não são autorização para inventar. A apr
 
 Não alterar tela/função de Conciliação, orçamento/markup, estoque, autenticação, contas reais nem permissões anônimas das demais tabelas. Nenhuma movimentação existente será apagada.
 
-Ao concluir: devolver o checklist FIN-1 item a item, evidências dos testes por papel, contagens antes/depois da importação e migração, dependências/limpeza de testes, pendências e confirmação da versão publicada. Não afirmar sucesso de teste ou publicação sem evidência.
+Entrega: checklist FIN-1, testes por papel, contagens, limpeza, pendências e versão publicada, sempre com evidências.
