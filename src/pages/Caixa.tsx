@@ -25,7 +25,8 @@ const date=(value:string|null)=>value?value.split("-").reverse().join("/"):"Sem 
 type RowActions={edit:(row:CashRow)=>void;duplicate:(row:CashRow)=>void;pay:(rows:CashRow[])=>void;cancel:(rows:CashRow[])=>void};
 function CashGroup({title,group,filters,tab,totals,actions}:{title:string;group:string;filters:CashFilters;tab:string;totals:boolean;actions:RowActions}){
   const [offset,setOffset]=useState(0);const [selected,setSelected]=useState<string[]>([]);
-  useEffect(()=>{setOffset(0);setSelected([]);},[JSON.stringify(filters),tab]);
+  const filterKey=JSON.stringify(filters);
+  useEffect(()=>{setOffset(0);setSelected([]);},[filterKey,tab]);
   const query=useQuery({queryKey:["cash","list",filters,tab,group,offset],queryFn:()=>listCash(filters,tab,group,offset)});
   const running=useQuery({queryKey:["cash","running",query.data?.rows.map((r)=>r.id)],queryFn:()=>cashRunningBalances(query.data?.rows.map((r)=>r.id)??[]),enabled:totals&&tab==="extrato"&&Boolean(query.data?.rows.length)});
   if(query.isLoading)return <section className="space-y-2"><h2 className="font-display text-2xl">{title}</h2><Skeleton className="h-20 w-full"/></section>;

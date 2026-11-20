@@ -6,6 +6,8 @@
 - Keep finance operation and consolidated-read permission predicates separate and shared; operating access never implies access to balances or aggregate results.
 - Grant financial account metadata by explicit columns, excluding opening balances; expose balance reads only through caller-authorized aggregate functions.
 - Keep financial catalog queries and receipt uploads in services with explicit projections; receipt helpers issue short-lived signed links, never public URLs.
+- Route all cash mutations through financeiro_operar and use one derived installment synchronization trigger; partial payments split realized cash from the outstanding planned remainder.
+- Keep monthly report date basis explicit and selectable; only caller-authorized functions can return consolidated or running balances.
 
 - Account creation, temporary password reset and deactivation use the authenticated admin-usuarios function, never MCP tools, so credentials only reach the requesting admin screen.
 - Share first-access expiry and access decisions in supabase/functions/_shared/access-policy.ts; frontend and MCP import the same pure rules to avoid enforcement drift.

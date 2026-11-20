@@ -1,18 +1,20 @@
 # FIN-1: Caixa
 
 - [x] Conferir estado atual e apresentar plano aprovado.
-- [ ] Criar contas/categorias e seed exato, com acesso financeiro restrito.
-- [ ] Criar bucket privado e validar acesso por papel.
+- [x] Criar contas/categorias e seed exato, mais A classificar entrada autorizado; teste autenticado confirmou.
+- [ ] Bucket privado criado; completar testes por papel e comprovante.
 - [ ] Migrar movimentações, regras, parcela e auditoria (aguarda decisões de estoque, parcela e pagamento).
 - Decisão confirmada: compra sem vencimento permanece no estoque; aguarda prazo antes de gerar movimentação financeira.
 - Decisão confirmada: parcela sem valor positivo ou vencimento permanece no plano, sem movimentação, até completar os dados.
 - Decisão confirmada: valor recebido é espelho automático; pagamento parcial mantém a diferença prevista em aberto.
 - Decisões confirmadas: adicionar A classificar de entrada; usar pago e preservar conclusão de projetos não recorrentes.
 - Decisão confirmada: Resumo com critérios selecionáveis por competência, pagamento e vencimento.
-- [ ] Motor transacional, transferência e recorrência.
-- [ ] Caixa, filtros/paginação, exportação e importação.
+- [ ] Motor transacional escrito; criação simples corrigida e conferida, demais fluxos aguardam teste completo.
+- [ ] Caixa, filtros/paginação, exportação e importação escritos; testes completos ainda pendentes.
 - [ ] Integrar ferramentas/Mafe e restringir consolidados.
 - [ ] Testes por papel, limpeza confirmada, publicação e versão servida.
+- Limpeza aguardando confirmação: movimento de teste 794f1c8b-efee-4861-a6aa-e66a51546c1f; conferir dependências finais, preservar auditoria imutável.
+- Antes de publicação: completar fluxo UI de baixa/importação e conexão Mafe, testar administrativo/campo, revisar operações de transferência prevista e permissões reais.
 
 # Rodada de ferramentas compartilhadas
 
