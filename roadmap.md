@@ -13,7 +13,7 @@
 - [ ] Caixa, filtros/paginação, exportação e importação escritos; testes completos ainda pendentes.
 - [ ] Integrar ferramentas/Mafe e restringir consolidados.
 - [ ] Testes por papel, limpeza confirmada, publicação e versão servida.
-- Limpeza aguardando confirmação: movimento de teste 794f1c8b-efee-4861-a6aa-e66a51546c1f; conferir dependências finais, preservar auditoria imutável.
+- [x] Limpeza autorizada concluída: movimento de teste 794f1c8b-efee-4861-a6aa-e66a51546c1f excluído após conferência de dependências; consulta confirmou zero movimentos e um registro de auditoria preservado.
 - Antes de publicação: completar fluxo UI de baixa/importação e conexão Mafe, testar administrativo/campo, revisar operações de transferência prevista e permissões reais.
 
 # Rodada de ferramentas compartilhadas
